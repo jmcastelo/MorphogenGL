@@ -1,0 +1,27 @@
+<RCC>
+    <qresource prefix="/">
+        <file>shaders/blend.frag</file>
+        <file>shaders/brightness.frag</file>
+        <file>shaders/random-seed.frag</file>
+        <file>shaders/random-seed.vert</file>
+        <file>shaders/screen.frag</file>
+        <file>shaders/screen.vert</file>
+        <file>shaders/colormix.frag</file>
+        <file>shaders/contrast.frag</file>
+        <file>shaders/convolution.frag</file>
+        <file>shaders/dilation.frag</file>
+        <file>shaders/erosion.frag</file>
+        <file>shaders/mask.frag</file>
+        <file>shaders/transform.vert</file>
+        <file>icons/digikam.png</file>
+        <file>icons/document-open.png</file>
+        <file>icons/document-save.png</file>
+        <file>icons/help-about.png</file>
+        <file>icons/media-playback-pause.png</file>
+        <file>icons/media-playback-start.png</file>
+        <file>icons/media-playback-stop.png</file>
+        <file>icons/media-record.png</file>
+        <file>shaders/gamma.frag</file>
+        <file>shaders/morphogradient.frag</file>
+    </qresource>
+</RCC>
