@@ -43,9 +43,10 @@ public:
 
     bool recording = false;
     
-    int framesPerSecond = 25;
+    int framesPerSecond = 50;
     QString recordFilename;
     QString preset = "ultrafast";
+    int crf = 17;
 
     bool applyMask = false;
 

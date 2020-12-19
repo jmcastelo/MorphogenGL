@@ -22,7 +22,7 @@
 
 #include "ffmpegencoder.h"
 
-FFmpegEncoder::FFmpegEncoder(const char* filename, int theWidth, int theHeight, int fps, const char* preset) : width{ theWidth }, height{ theHeight }
+FFmpegEncoder::FFmpegEncoder(const char* filename, int theWidth, int theHeight, int fps, const char* preset, const char* crf) : width{ theWidth }, height{ theHeight }
 {
     initializeOpenGLFunctions();
 
@@ -67,7 +67,7 @@ FFmpegEncoder::FFmpegEncoder(const char* filename, int theWidth, int theHeight, 
     codecContext->level = 31;
 
     av_opt_set(codecContext->priv_data, "preset", preset, 0);
-    av_opt_set(codecContext->priv_data, "crf", "0", 0);
+    av_opt_set(codecContext->priv_data, "crf", crf, 0);
 
     // Init format context
 

@@ -320,20 +320,27 @@ void ControlWidget::constructGeneralControls()
     // Video capture
 
     QPushButton* videoFilenamePushButton = new QPushButton(QIcon(QPixmap(":/icons/document-open.png")), "Select output file");
-    videoFilenamePushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+    videoFilenamePushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
 
-    QComboBox* presetsComboBox = new QComboBox;
-    presetsComboBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
-    presetsComboBox->addItem("ultrafast");
-    presetsComboBox->addItem("superfast");
-    presetsComboBox->addItem("veryfast");
-    presetsComboBox->addItem("faster");
-    presetsComboBox->addItem("fast");
-    presetsComboBox->addItem("medium");
-    presetsComboBox->addItem("slow");
-    presetsComboBox->addItem("slower");
-    presetsComboBox->addItem("veryslow");
-    presetsComboBox->setCurrentIndex(0);
+    QComboBox* presetsVideoComboBox = new QComboBox;
+    presetsVideoComboBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+    presetsVideoComboBox->addItem("ultrafast");
+    presetsVideoComboBox->addItem("superfast");
+    presetsVideoComboBox->addItem("veryfast");
+    presetsVideoComboBox->addItem("faster");
+    presetsVideoComboBox->addItem("fast");
+    presetsVideoComboBox->addItem("medium");
+    presetsVideoComboBox->addItem("slow");
+    presetsVideoComboBox->addItem("slower");
+    presetsVideoComboBox->addItem("veryslow");
+    presetsVideoComboBox->setCurrentIndex(0);
+
+    FocusLineEdit* crfVideoLineEdit = new FocusLineEdit;
+    crfVideoLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+    QIntValidator* crfVideoValidator = new QIntValidator(0, 51, crfVideoLineEdit);
+    crfVideoValidator->setLocale(QLocale::English);
+    crfVideoLineEdit->setValidator(crfVideoValidator);
+    crfVideoLineEdit->setText(QString::number(generator->crf));
 
     FocusLineEdit* fpsVideoLineEdit = new FocusLineEdit;
     fpsVideoLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
@@ -350,7 +357,8 @@ void ControlWidget::constructGeneralControls()
 
     QFormLayout* videoFormLayout = new QFormLayout;
     videoFormLayout->addRow("Filename:", videoCaptureFilenameLabel);
-    videoFormLayout->addRow("Preset:", presetsComboBox);
+    videoFormLayout->addRow("Speed:", presetsVideoComboBox);
+    videoFormLayout->addRow("Quality:", crfVideoLineEdit);
     videoFormLayout->addRow("FPS:", fpsVideoLineEdit);
     videoFormLayout->addRow("Elapsed time:", videoCaptureElapsedTimeLabel);
 
@@ -363,14 +371,10 @@ void ControlWidget::constructGeneralControls()
 
     // Main layouts
 
-    QVBoxLayout* vBoxLayout2 = new QVBoxLayout;
-    vBoxLayout2->setAlignment(Qt::AlignTop | Qt::AlignHCenter);
-    vBoxLayout2->addWidget(displayControlsGroupBox);
-    vBoxLayout2->addWidget(videoGroupBox);
-
     QHBoxLayout* generalControlsHBoxLayout = new QHBoxLayout;
     generalControlsHBoxLayout->setAlignment(Qt::AlignTop | Qt::AlignHCenter);
-    generalControlsHBoxLayout->addLayout(vBoxLayout2);
+    generalControlsHBoxLayout->addWidget(displayControlsGroupBox);
+    generalControlsHBoxLayout->addWidget(videoGroupBox);
 
     // Widget to put in tab
 
@@ -401,9 +405,11 @@ void ControlWidget::constructGeneralControls()
     connect(applyCircularMaskCheckBox, &QCheckBox::clicked, [=](bool checked) { generator->setMask(checked); });
     
     connect(videoFilenamePushButton, &QPushButton::clicked, this, &ControlWidget::setVideoFilename);
-    connect(presetsComboBox, &QComboBox::currentTextChanged, [=](QString preset) { generator->preset = preset; });
-    connect(fpsLineEdit, &FocusLineEdit::returnPressed, [=]() { generator->framesPerSecond = fpsLineEdit->text().toInt(); });
-    connect(fpsLineEdit, &FocusLineEdit::focusOut, [=]() { fpsLineEdit->setText(QString::number(generator->framesPerSecond)); });
+    connect(presetsVideoComboBox, &QComboBox::currentTextChanged, [=](QString preset) { generator->preset = preset; });
+    connect(crfVideoLineEdit, &FocusLineEdit::returnPressed, [=]() { generator->crf = crfVideoLineEdit->text().toInt(); });
+    connect(crfVideoLineEdit, &FocusLineEdit::focusOut, [=]() { crfVideoLineEdit->setText(QString::number(generator->crf)); });
+    connect(fpsVideoLineEdit, &FocusLineEdit::returnPressed, [=]() { generator->framesPerSecond = fpsVideoLineEdit->text().toInt(); });
+    connect(fpsVideoLineEdit, &FocusLineEdit::focusOut, [=]() { fpsVideoLineEdit->setText(QString::number(generator->framesPerSecond)); });
     connect(morphoWidget, &MorphoWidget::frameRecorded, this, &ControlWidget::setVideoCaptureElapsedTimeLabel);
 }
 

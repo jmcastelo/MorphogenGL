@@ -39,7 +39,7 @@ class FFmpegEncoder : protected QOpenGLFunctions
 public:
     unsigned int frameNumber = 0;
 
-    FFmpegEncoder(const char* filename, int width, int height, int fps, const char* preset);
+    FFmpegEncoder(const char* filename, int width, int height, int fps, const char* preset, const char* crf);
     ~FFmpegEncoder();
 
     void setFrameYUVFromRGB();

@@ -31,7 +31,7 @@ Blender::Blender(QString vertexShader, QString fragmentShader) : FBO(vertexShade
 
     program->release();
 
-    fboOut = new FBO("shaders/screen.vert", "shaders/screen.frag");
+    fboOut = new FBO(":/shaders/screen.vert", ":/shaders/screen.frag");
     fboOut->setInputTextureID(textureID);
 }
 

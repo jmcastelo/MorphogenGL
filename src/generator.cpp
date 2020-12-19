@@ -317,7 +317,7 @@ void GeneratorGL::resize(GLuint width, GLuint height)
 void GeneratorGL::startRecording(int width, int height)
 {
     recording = true;
-    encoder = new FFmpegEncoder(recordFilename.toStdString().c_str(), width, height, framesPerSecond, preset.toStdString().c_str());
+    encoder = new FFmpegEncoder(recordFilename.toStdString().c_str(), width, height, framesPerSecond, preset.toStdString().c_str(), QString::number(crf).toStdString().c_str());
 }
 
 void GeneratorGL::stopRecording()
