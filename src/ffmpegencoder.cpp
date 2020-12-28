@@ -22,7 +22,7 @@
 
 #include "ffmpegencoder.h"
 
-FFmpegEncoder::FFmpegEncoder(const char* filename, int theWidth, int theHeight, int fps, const char* preset, const char* crf) : width{ theWidth }, height{ theHeight }
+FFmpegEncoder::FFmpegEncoder(const char* filename, int theWidth, int theHeight, int fps, const char* preset, const char* crf, QOpenGLContext* mainContext) : width { theWidth }, height { theHeight }, context { mainContext }
 {
     initializeOpenGLFunctions();
 
@@ -171,7 +171,9 @@ FFmpegEncoder::~FFmpegEncoder()
 
 void FFmpegEncoder::setFrameYUVFromRGB()
 {
+    context->makeCurrent(context->surface());
     glReadPixels(0, 0, width, height, GL_BGRA, GL_UNSIGNED_BYTE, pixels);
+    context->doneCurrent();
 
     const int inLinesize[1] = { 4 * codecContext->width };
 

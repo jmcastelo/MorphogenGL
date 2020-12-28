@@ -29,6 +29,8 @@
 #include <QOpenGLBuffer>
 #include <QOpenGLShaderProgram>
 #include <QOpenGLTexture>
+#include <QOpenGLContext>
+#include <QOffscreenSurface>
 #include <QImage>
 #include <QString>
 #include <QDebug>
@@ -36,7 +38,7 @@
 class Seed : protected QOpenGLExtraFunctions
 {
 public:
-    Seed(QString vertexShader, QString fragmentShader);
+    Seed(QString vertexShader, QString fragmentShader, QOpenGLContext* theContext);
     ~Seed();
 
     GLuint getTextureID() { return textureID; }
@@ -52,6 +54,8 @@ public:
     void drawImage();
 
 private:
+    QOpenGLContext* context;
+    QOffscreenSurface* surface;
     GLuint textureID;
     GLuint randomTex;
     GLuint fbo;

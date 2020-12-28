@@ -23,11 +23,12 @@
 #include "controlwidget.h"
 #include "morphowidget.h"
 
-ControlWidget::ControlWidget(GeneratorGL *theGenerator, MorphoWidget* theMorphoWidget, QWidget *parent) :
+ControlWidget::ControlWidget(MorphoWidget* theMorphoWidget, QWidget *parent) :
     QWidget(parent),
-    generator{ theGenerator },
     morphoWidget{ theMorphoWidget }
 {
+    generator = new GeneratorGL();
+
     // Configuration parser
 
     parser = new ConfigurationParser(generator, morphoWidget);
@@ -112,6 +113,7 @@ ControlWidget::~ControlWidget()
     if (operationsWidget)
         delete operationsWidget;
     delete parser;
+    delete generator;
 }
 
 void ControlWidget::closeEvent(QCloseEvent* event)
@@ -151,7 +153,7 @@ void ControlWidget::record()
         {
             recordAction->setIcon(QIcon(QPixmap(":/icons/media-playback-stop.png")));
             videoCaptureElapsedTimeLabel->setText("00:00:00.000");
-            generator->startRecording(morphoWidget->width(), morphoWidget->height());
+            generator->startRecording(morphoWidget->width(), morphoWidget->height(), morphoWidget->context());
         }
     }
     else

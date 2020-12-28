@@ -21,18 +21,24 @@
 */
 
 #include "fbo.h"
-#include "morphowidget.h"
 
 GLuint FBO::width = 512;
 GLuint FBO::height = 512;
 
-MorphoWidget* FBO::morphoWidget = nullptr;
-
-FBO::FBO(QString vertexShader, QString fragmentShader)
+FBO::FBO(QString vertexShader, QString fragmentShader, QOpenGLContext* mainContext)
 {
-    initializeOpenGLFunctions();
+    context = new QOpenGLContext();
+    context->setFormat(mainContext->format());
+    context->setShareContext(mainContext);
+    context->create();
 
-    morphoWidget->makeCurrent();
+    surface = new QOffscreenSurface();
+    surface->setFormat(context->format());
+    surface->create();
+
+    context->makeCurrent(surface);
+
+    initializeOpenGLFunctions();
 
     // Old size
 
@@ -122,12 +128,12 @@ FBO::FBO(QString vertexShader, QString fragmentShader)
     glSamplerParameteri(samplerID, GL_TEXTURE_MIN_FILTER, minMagFilter);
     glSamplerParameteri(samplerID, GL_TEXTURE_MAG_FILTER, minMagFilter);
 
-    //morphoWidget->doneCurrent();
+    context->doneCurrent();
 }
 
 FBO::~FBO()
 {
-    morphoWidget->makeCurrent();
+    context->makeCurrent(surface);
 
     vao->destroy();
     vbo_pos->destroy();
@@ -139,7 +145,10 @@ FBO::~FBO()
     delete vbo_tex;
     delete program;
 
-    morphoWidget->doneCurrent();
+    context->doneCurrent();
+
+    delete context;
+    delete surface;
 }
 
 void FBO::generateFramebuffer(GLuint& framebuffer, GLuint& texture)
@@ -165,13 +174,25 @@ void FBO::setMinMagFilter(GLenum filter)
 {
     minMagFilter = filter;
     
+    context->makeCurrent(surface);
     glSamplerParameteri(samplerID, GL_TEXTURE_MIN_FILTER, minMagFilter);
     glSamplerParameteri(samplerID, GL_TEXTURE_MAG_FILTER, minMagFilter);
+    context->doneCurrent();
+}
+
+void FBO::makeCurrent()
+{
+    context->makeCurrent(surface);
+}
+
+void FBO::doneCurrent()
+{
+    context->doneCurrent();
 }
 
 void FBO::resize()
 {
-    morphoWidget->makeCurrent();
+    context->makeCurrent(surface);
 
     GLuint fbo2;
     GLuint textureID2;
@@ -193,11 +214,13 @@ void FBO::resize()
     widthOld = width;
     heightOld = height;
 
-    morphoWidget->doneCurrent();
+    context->doneCurrent();
 }
 
 void FBO::draw()
 {
+    context->makeCurrent(surface);
+
     glBindFramebuffer(GL_FRAMEBUFFER, fbo);
     
     glViewport(0, 0, width, height);
@@ -217,4 +240,6 @@ void FBO::draw()
     vao->release();
     program->release();
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    context->doneCurrent();
 }

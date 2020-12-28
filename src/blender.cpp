@@ -22,8 +22,10 @@
 
 #include "blender.h"
 
-Blender::Blender(QString vertexShader, QString fragmentShader) : FBO(vertexShader, fragmentShader)
+Blender::Blender(QString vertexShader, QString fragmentShader, QOpenGLContext* mainContext) : FBO(vertexShader, fragmentShader, mainContext)
 {
+    context->makeCurrent(surface);
+
     program->bind();
 
     program->setUniformValue("inTexture", 0);
@@ -31,7 +33,9 @@ Blender::Blender(QString vertexShader, QString fragmentShader) : FBO(vertexShade
 
     program->release();
 
-    fboOut = new FBO(":/shaders/screen.vert", ":/shaders/screen.frag");
+    context->doneCurrent();
+
+    fboOut = new FBO(":/shaders/screen.vert", ":/shaders/screen.frag", mainContext);
     fboOut->setInputTextureID(textureID);
 }
 
@@ -52,6 +56,8 @@ void Blender::blend()
 
     for (auto& inData : inputData)
     {
+        context->makeCurrent(surface);
+
         glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 
         glViewport(0, 0, width, height);
@@ -76,8 +82,10 @@ void Blender::blend()
         program->release();
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
+        context->doneCurrent();
+
         fboOut->draw();
 
         outFactor = 1.0f;
-    }
+    }    
 }

@@ -26,6 +26,8 @@
 #include <QOpenGLVertexArrayObject>
 #include <QOpenGLBuffer>
 #include <QOpenGLShaderProgram>
+#include <QOpenGLContext>
+#include <QOffscreenSurface>
 #include <QDebug>
 
 class MorphoWidget;
@@ -33,14 +35,12 @@ class MorphoWidget;
 class FBO : protected QOpenGLExtraFunctions
 {
 public:
-    static MorphoWidget *morphoWidget;
-
     static GLuint width;
     static GLuint height;
 
     QOpenGLShaderProgram* program;
     
-    FBO(QString vertexShader, QString fragmentShader);
+    FBO(QString vertexShader, QString fragmentShader, QOpenGLContext* mainContext);
     ~FBO();
     
     GLuint getTextureID() { return textureID; }
@@ -50,11 +50,16 @@ public:
 
     void setMinMagFilter(GLenum filter);
 
+    void makeCurrent();
+    void doneCurrent();
+
     virtual void resize();
 
     void draw();
 
 protected:
+    QOpenGLContext* context;
+    QOffscreenSurface* surface;
     GLuint textureID = 0;
     GLenum minMagFilter = GL_NEAREST;
     GLuint inputTextureID = 0;

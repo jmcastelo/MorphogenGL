@@ -23,7 +23,7 @@
 #include "pipeline.h"
 #include "parameter.h"
 
-Pipeline::Pipeline(GLuint id, float blend) : textureID{ id }, blendFactor{ blend }
+Pipeline::Pipeline(GLuint id, float blend, QOpenGLContext* mainContext) : textureID { id }, blendFactor { blend }, sharedContext { mainContext }
 {
     // Duplicate of GeneratorGL's
 
@@ -100,50 +100,50 @@ void Pipeline::insertImageOperation(int newOperationIndex, int currentOperationI
 
     if (operationName == Brightness::name)
     {
-        operation = new Brightness(false, ":/shaders/screen.vert", ":/shaders/brightness.frag", 0.0f);
+        operation = new Brightness(false, ":/shaders/screen.vert", ":/shaders/brightness.frag", sharedContext, 0.0f);
     }
     else if (operationName == ColorMix::name)
     {
         std::vector<float> rgbMatrix = { 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f };
-        operation = new ColorMix(false, ":/shaders/screen.vert", ":/shaders/colormix.frag", rgbMatrix);
+        operation = new ColorMix(false, ":/shaders/screen.vert", ":/shaders/colormix.frag", sharedContext, rgbMatrix);
     }
     else if (operationName == Contrast::name)
     {
-        operation = new Contrast(false, ":/shaders/screen.vert", ":/shaders/contrast.frag", 1.0f);
+        operation = new Contrast(false, ":/shaders/screen.vert", ":/shaders/contrast.frag", sharedContext, 1.0f);
     }
     else if (operationName == Convolution::name)
     {
         std::vector<float> kernel = { 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f };
-        operation = new Convolution(false, ":/shaders/screen.vert", ":/shaders/convolution.frag", kernel, 0.01f);
+        operation = new Convolution(false, ":/shaders/screen.vert", ":/shaders/convolution.frag", sharedContext, kernel, 0.01f);
     }
     else if (operationName == Dilation::name)
     {
-        operation = new Dilation(false, ":/shaders/screen.vert", ":/shaders/dilation.frag", 0.01f);
+        operation = new Dilation(false, ":/shaders/screen.vert", ":/shaders/dilation.frag", sharedContext, 0.01f);
     }
     else if (operationName == Erosion::name)
     {
-        operation = new Erosion(false, ":/shaders/screen.vert", ":/shaders/erosion.frag", 0.01f);
+        operation = new Erosion(false, ":/shaders/screen.vert", ":/shaders/erosion.frag", sharedContext, 0.01f);
     }
     else if (operationName == GammaCorrection::name)
     {
-        operation = new GammaCorrection(false, ":/shaders/screen.vert", ":/shaders/gamma.frag", 1.0f, 1.0f, 1.0f);
+        operation = new GammaCorrection(false, ":/shaders/screen.vert", ":/shaders/gamma.frag", sharedContext, 1.0f, 1.0f, 1.0f);
     }
     else if (operationName == MorphologicalGradient::name)
     {
-        operation = new MorphologicalGradient(false, ":/shaders/screen.vert", ":/shaders/morphogradient.frag", 0.01f, 0.01f);
+        operation = new MorphologicalGradient(false, ":/shaders/screen.vert", ":/shaders/morphogradient.frag", sharedContext, 0.01f, 0.01f);
     }
     else if (operationName == PolarConvolution::name)
     {
         std::vector<PolarKernel*> polarKernels = { new PolarKernel(8, 0.01f, 0.0f, 1.0f, 0.0f, -1.0f, 1.0f) };
-        operation = new PolarConvolution(false, ":/shaders/screen.vert", ":/shaders/polar-convolution.frag", polarKernels, 1.0f);
+        operation = new PolarConvolution(false, ":/shaders/screen.vert", ":/shaders/polar-convolution.frag", sharedContext, polarKernels, 1.0f);
     }
     else if (operationName == Rotation::name)
     {
-        operation = new Rotation(false, ":/shaders/transform.vert", ":/shaders/screen.frag", 0.0f, GL_NEAREST);
+        operation = new Rotation(false, ":/shaders/transform.vert", ":/shaders/screen.frag", sharedContext, 0.0f, GL_NEAREST);
     }
     else if (operationName == Scale::name)
     {
-        operation = new Scale(false, ":/shaders/transform.vert", ":/shaders/screen.frag", 1.0f, GL_NEAREST);
+        operation = new Scale(false, ":/shaders/transform.vert", ":/shaders/screen.frag", sharedContext, 1.0f, GL_NEAREST);
     }
 
     if (operation)
@@ -167,43 +167,43 @@ void Pipeline::loadImageOperation(
 
     if (operationName == Brightness::name)
     {
-        operation = new Brightness(enabled, ":/shaders/screen.vert", ":/shaders/brightness.frag", floatParameters[0]);
+        operation = new Brightness(enabled, ":/shaders/screen.vert", ":/shaders/brightness.frag", sharedContext, floatParameters[0]);
     }
     else if (operationName == ColorMix::name)
     {
-        operation = new ColorMix(enabled, ":/shaders/screen.vert", ":/shaders/colormix.frag", matrixElements);
+        operation = new ColorMix(enabled, ":/shaders/screen.vert", ":/shaders/colormix.frag", sharedContext, matrixElements);
     }
     else if (operationName == Contrast::name)
     {
-        operation = new Contrast(enabled, ":/shaders/screen.vert", ":/shaders/contrast.frag", floatParameters[0]);
+        operation = new Contrast(enabled, ":/shaders/screen.vert", ":/shaders/contrast.frag", sharedContext, floatParameters[0]);
     }
     else if (operationName == Convolution::name)
     {
-        operation = new Convolution(enabled, ":/shaders/screen.vert", ":/shaders/convolution.frag", kernelElements, floatParameters[0]);
+        operation = new Convolution(enabled, ":/shaders/screen.vert", ":/shaders/convolution.frag", sharedContext, kernelElements, floatParameters[0]);
     }
     else if (operationName == Dilation::name)
     {
-        operation = new Dilation(enabled, ":/shaders/screen.vert", ":/shaders/dilation.frag", floatParameters[0]);
+        operation = new Dilation(enabled, ":/shaders/screen.vert", ":/shaders/dilation.frag", sharedContext, floatParameters[0]);
     }
     else if (operationName == Erosion::name)
     {
-        operation = new Erosion(enabled, ":/shaders/screen.vert", ":/shaders/erosion.frag", floatParameters[0]);
+        operation = new Erosion(enabled, ":/shaders/screen.vert", ":/shaders/erosion.frag", sharedContext, floatParameters[0]);
     }
     else if (operationName == GammaCorrection::name)
     {
-        operation = new GammaCorrection(enabled, ":/shaders/screen.vert", ":/shaders/gamma.frag", floatParameters[0], floatParameters[1], floatParameters[2]);
+        operation = new GammaCorrection(enabled, ":/shaders/screen.vert", ":/shaders/gamma.frag", sharedContext, floatParameters[0], floatParameters[1], floatParameters[2]);
     }
     else if (operationName == MorphologicalGradient::name)
     {
-        operation = new MorphologicalGradient(enabled, ":/shaders/screen.vert", ":/shaders/morphogradient.frag", floatParameters[0], floatParameters[1]);
+        operation = new MorphologicalGradient(enabled, ":/shaders/screen.vert", ":/shaders/morphogradient.frag", sharedContext, floatParameters[0], floatParameters[1]);
     }
     else if (operationName == Rotation::name)
     {
-        operation = new Rotation(enabled, ":/shaders/transform.vert", ":/shaders/screen.frag", floatParameters[0], interpolationParameters[0]);
+        operation = new Rotation(enabled, ":/shaders/transform.vert", ":/shaders/screen.frag", sharedContext, floatParameters[0], interpolationParameters[0]);
     }
     else if (operationName == Scale::name)
     {
-        operation = new Scale(enabled, ":/shaders/transform.vert", ":/shaders/screen.frag", floatParameters[0], interpolationParameters[0]);
+        operation = new Scale(enabled, ":/shaders/transform.vert", ":/shaders/screen.frag", sharedContext, floatParameters[0], interpolationParameters[0]);
     }
 
     if (operation) imageOperations.push_back(operation);

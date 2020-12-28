@@ -30,6 +30,7 @@
 #include <vector>
 #include <QString>
 #include <QImage>
+#include <QOpenGLContext>
 
 class GeneratorGL
 {
@@ -52,6 +53,8 @@ public:
 
     GeneratorGL();
     ~GeneratorGL();
+
+    void init(QOpenGLContext* mainContext);
 
     void addPipeline();
     void removePipeline(int pipelineIndex);
@@ -84,7 +87,7 @@ public:
     int getWidth() { return FBO::width; }
     int getHeight() { return FBO::height; }
 
-    void startRecording(int width, int height);
+    void startRecording(int width, int height, QOpenGLContext* mainContext);
     void stopRecording();
     void record();
     bool isRecording() { return recording; }
@@ -93,6 +96,7 @@ public:
     void setMask(bool apply);
 
 private:
+    QOpenGLContext* sharedContext;
     GLuint outputTextureID = 0;
     unsigned int iteration = 0;
 

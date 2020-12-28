@@ -31,6 +31,7 @@ extern "C"
 #include <cstdlib>
 #include <iostream>
 #include <QOpenGLFunctions>
+#include <QOpenGLContext>
 
 #pragma once
 
@@ -39,7 +40,7 @@ class FFmpegEncoder : protected QOpenGLFunctions
 public:
     unsigned int frameNumber = 0;
 
-    FFmpegEncoder(const char* filename, int width, int height, int fps, const char* preset, const char* crf);
+    FFmpegEncoder(const char* filename, int width, int height, int fps, const char* preset, const char* crf, QOpenGLContext* mainContext);
     ~FFmpegEncoder();
 
     void setFrameYUVFromRGB();
@@ -57,4 +58,5 @@ private:
     uint8_t* pixels = NULL;
     int width;
     int height;
+    QOpenGLContext* context;
 };

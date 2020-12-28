@@ -25,6 +25,7 @@
 #include "imageoperations.h"
 #include <vector>
 #include <QString>
+#include <QOpenGLContext>
 
 // Pipeline: chain of iterated operations
 
@@ -35,7 +36,7 @@ public:
 
     float blendFactor;
 
-    Pipeline(GLuint id, float blend);
+    Pipeline(GLuint id, float blend, QOpenGLContext* mainContext);
     ~Pipeline();
 
     void iterate(GLuint id);
@@ -63,6 +64,7 @@ public:
     void resize();
 
 private:
+    QOpenGLContext* sharedContext;
     std::vector<QString> availableImageOperations;
     GLuint textureID;
 };

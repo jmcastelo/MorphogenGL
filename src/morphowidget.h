@@ -24,7 +24,6 @@
 
 #include "fbo.h"
 #include "controlwidget.h"
-#include "generator.h"
 #include <chrono>
 #include <QOpenGLWidget>
 #include <QOpenGLExtraFunctions>
@@ -58,7 +57,6 @@ protected:
 private:
     GLuint fbo = 0;
     ControlWidget* controlWidget = nullptr;
-    GeneratorGL* generator = nullptr;
     std::chrono::time_point<std::chrono::steady_clock> start;
     std::chrono::time_point<std::chrono::steady_clock> end;
 

@@ -40,27 +40,32 @@ GeneratorGL::GeneratorGL()
         Rotation::name,
         Scale::name
     };
+}
 
+void GeneratorGL::init(QOpenGLContext* mainContext)
+{
     // Seed
 
-    seed = new Seed(":/shaders/random-seed.vert", ":/shaders/random-seed.frag");
+    seed = new Seed(":/shaders/random-seed.vert", ":/shaders/random-seed.frag", mainContext);
 
     // Blender
 
-    blender = new Blender(":/shaders/screen.vert", ":/shaders/blend.frag");
+    blender = new Blender(":/shaders/screen.vert", ":/shaders/blend.frag", mainContext);
 
     // Output pipeline
 
-    outputPipeline = new Pipeline(outputTextureID, 1.0f);
+    outputPipeline = new Pipeline(outputTextureID, 1.0f, mainContext);
 
     // Output FBO
 
-    outputFBO[0] = new FBO(":/shaders/screen.vert", ":/shaders/screen.frag");
-    outputFBO[1] = new FBO(":/shaders/screen.vert", ":/shaders/mask.frag");
+    outputFBO[0] = new FBO(":/shaders/screen.vert", ":/shaders/screen.frag", mainContext);
+    outputFBO[1] = new FBO(":/shaders/screen.vert", ":/shaders/mask.frag", mainContext);
 
     outputFBO[1]->program->bind();
     outputFBO[1]->program->setUniformValue("apply", applyMask);
     outputFBO[1]->program->release();
+
+    sharedContext = mainContext;
 }
 
 GeneratorGL::~GeneratorGL()
@@ -86,9 +91,9 @@ void GeneratorGL::addPipeline()
     // Set first pipeline's blend factor to unity, later pipeline's to zero
     
     if (pipelines.empty())
-        pipelines.push_back(new Pipeline(outputTextureID, 1.0f));
+        pipelines.push_back(new Pipeline(outputTextureID, 1.0f, sharedContext));
     else
-        pipelines.push_back(new Pipeline(outputTextureID, 0.0f));
+        pipelines.push_back(new Pipeline(outputTextureID, 0.0f, sharedContext));
 }
 
 void GeneratorGL::removePipeline(int pipelineIndex)
@@ -121,7 +126,7 @@ void GeneratorGL::loadPipeline(float blendFactor)
 {
     // Load pipeline with given blend factor
 
-    pipelines.push_back(new Pipeline(outputTextureID, blendFactor));
+    pipelines.push_back(new Pipeline(outputTextureID, blendFactor, sharedContext));
 }
 
 void GeneratorGL::setPipelineBlendFactor(int pipelineIndex, float factor)
@@ -315,10 +320,10 @@ void GeneratorGL::resize(GLuint width, GLuint height)
     outputTextureID = outputFBO[1]->getTextureID();
 }
 
-void GeneratorGL::startRecording(int width, int height)
+void GeneratorGL::startRecording(int width, int height, QOpenGLContext* mainContext)
 {
     recording = true;
-    encoder = new FFmpegEncoder(recordFilename.toStdString().c_str(), width, height, framesPerSecond, preset.toStdString().c_str(), QString::number(crf).toStdString().c_str());
+    encoder = new FFmpegEncoder(recordFilename.toStdString().c_str(), width, height, framesPerSecond, preset.toStdString().c_str(), QString::number(crf).toStdString().c_str(), mainContext);
 }
 
 void GeneratorGL::stopRecording()
@@ -337,11 +342,9 @@ void GeneratorGL::setMask(bool apply)
 {
     applyMask = apply;
 
-    FBO::morphoWidget->makeCurrent();
-
+    outputFBO[1]->makeCurrent();
     outputFBO[1]->program->bind();
     outputFBO[1]->program->setUniformValue("apply", apply);
     outputFBO[1]->program->release();
-
-    FBO::morphoWidget->doneCurrent();
+    outputFBO[1]->doneCurrent();
 }

@@ -24,6 +24,7 @@
 
 #include "fbo.h"
 #include <vector>
+#include <QOpenGLContext>
 
 struct InputData
 {
@@ -34,7 +35,7 @@ struct InputData
 class Blender : public FBO
 {
 public:
-    Blender(QString vertexShader, QString fragmentShader);
+    Blender(QString vertexShader, QString fragmentShader, QOpenGLContext* mainContext);
     ~Blender();
 
     void addInputData(GLuint id, float factor) { inputData.push_back({ id, factor }); }

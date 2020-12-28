@@ -25,9 +25,9 @@
 
 // Image operation base class
 
-ImageOperation::ImageOperation(bool on, QString vertexShader, QString fragmentShader) : enabled{ on }
+ImageOperation::ImageOperation(bool on, QString vertexShader, QString fragmentShader, QOpenGLContext* mainContext) : enabled { on }
 {
-    fbo = new FBO(vertexShader, fragmentShader);
+    fbo = new FBO(vertexShader, fragmentShader, mainContext);
 }
 
 ImageOperation::~ImageOperation()
@@ -54,7 +54,7 @@ void ImageOperation::adjustMinMax(float value, float minValue, float maxValue, f
 
 QString Brightness::name = "Brightness";
 
-Brightness::Brightness(bool on, QString vertexShader, QString fragmentShader, float theBrightness) : ImageOperation(on, vertexShader, fragmentShader)
+Brightness::Brightness(bool on, QString vertexShader, QString fragmentShader, QOpenGLContext* mainContext, float theBrightness) : ImageOperation(on, vertexShader, fragmentShader, mainContext)
 {
     float minBrightness, maxBrightness;
     adjustMinMax(theBrightness, -1.0f, 1.0f, minBrightness, maxBrightness);
@@ -71,9 +71,11 @@ void Brightness::setFloatParameter(int index, float value)
 {
     if (index == 0)
     {
+        fbo->makeCurrent();
         fbo->program->bind();
         fbo->program->setUniformValue("brightness", value);
         fbo->program->release();
+        fbo->doneCurrent();
     }
 }
 
@@ -81,7 +83,7 @@ void Brightness::setFloatParameter(int index, float value)
 
 QString ColorMix::name = "Color mix";
 
-ColorMix::ColorMix(bool on, QString vertexShader, QString fragmentShader, std::vector<float> theMatrix) : ImageOperation(on, vertexShader, fragmentShader)
+ColorMix::ColorMix(bool on, QString vertexShader, QString fragmentShader, QOpenGLContext* mainContext, std::vector<float> theMatrix) : ImageOperation(on, vertexShader, fragmentShader, mainContext)
 {
     rgbMatrix = new MatrixParameter("RGB Matrix", this, theMatrix, -1000.0f, 1000.0f);
     setMatrixParameter(&theMatrix[0]);
@@ -96,16 +98,18 @@ void ColorMix::setMatrixParameter(GLfloat* values)
 {
     QMatrix3x3 mixMatrix(values);
 
+    fbo->makeCurrent();
     fbo->program->bind();
     fbo->program->setUniformValue("rgbMatrix", mixMatrix);
     fbo->program->release();
+    fbo->doneCurrent();
 }
 
 // Contrast
 
 QString Contrast::name = "Contrast";
 
-Contrast::Contrast(bool on, QString vertexShader, QString fragmentShader, float theContrast) : ImageOperation(on, vertexShader, fragmentShader)
+Contrast::Contrast(bool on, QString vertexShader, QString fragmentShader, QOpenGLContext* mainContext, float theContrast) : ImageOperation(on, vertexShader, fragmentShader, mainContext)
 {
     float min, max;
     adjustMinMax(theContrast, -1.0f, 2.0f, min, max);
@@ -122,9 +126,11 @@ void Contrast::setFloatParameter(int index, float value)
 {
     if (index == 0)
     {
+        fbo->makeCurrent();
         fbo->program->bind();
         fbo->program->setUniformValue("contrast", value);
         fbo->program->release();
+        fbo->doneCurrent();
     }
 }
 
@@ -132,7 +138,7 @@ void Contrast::setFloatParameter(int index, float value)
 
 QString Convolution::name = "Convolution";
 
-Convolution::Convolution(bool on, QString vertexShader, QString fragmentShader, std::vector<float> theKernel, float theSize) : ImageOperation(on, vertexShader, fragmentShader)
+Convolution::Convolution(bool on, QString vertexShader, QString fragmentShader, QOpenGLContext* mainContext, std::vector<float> theKernel, float theSize) : ImageOperation(on, vertexShader, fragmentShader, mainContext)
 {
     kernel = new KernelParameter("Kernel", this, theKernel, -1000.0f, 1000.0f, true);
     setKernelParameter(&theKernel[0]);
@@ -151,9 +157,11 @@ Convolution::~Convolution()
 
 void Convolution::setKernelParameter(GLfloat* values)
 {
+    fbo->makeCurrent();
     fbo->program->bind();
     fbo->program->setUniformValueArray("kernel", values, 9, 1);
     fbo->program->release();
+    fbo->doneCurrent();
 }
 
 void Convolution::setFloatParameter(int index, float value)
@@ -172,9 +180,11 @@ void Convolution::setFloatParameter(int index, float value)
             QVector2D(value, -value)
         };
 
+        fbo->makeCurrent();
         fbo->program->bind();
         fbo->program->setUniformValueArray("offset", offset, 9);
         fbo->program->release();
+        fbo->doneCurrent();
     }
 }
 
@@ -182,7 +192,7 @@ void Convolution::setFloatParameter(int index, float value)
 
 QString Dilation::name = "Dilation";
 
-Dilation::Dilation(bool on, QString vertexShader, QString fragmentShader, float theSize) : ImageOperation(on, vertexShader, fragmentShader)
+Dilation::Dilation(bool on, QString vertexShader, QString fragmentShader, QOpenGLContext* mainContext, float theSize) : ImageOperation(on, vertexShader, fragmentShader, mainContext)
 {
     float min, max;
     adjustMinMax(theSize, 0.0f, 1.0f, min, max);
@@ -210,9 +220,11 @@ void Dilation::setFloatParameter(int index, float value)
             QVector2D(value, -value)
         };
 
+        fbo->makeCurrent();
         fbo->program->bind();
         fbo->program->setUniformValueArray("offset", offset, 8);
         fbo->program->release();
+        fbo->doneCurrent();
     }
 }
 
@@ -220,7 +232,7 @@ void Dilation::setFloatParameter(int index, float value)
 
 QString Erosion::name = "Erosion";
 
-Erosion::Erosion(bool on, QString vertexShader, QString fragmentShader, float theSize) : ImageOperation(on, vertexShader, fragmentShader)
+Erosion::Erosion(bool on, QString vertexShader, QString fragmentShader, QOpenGLContext* mainContext, float theSize) : ImageOperation(on, vertexShader, fragmentShader, mainContext)
 {
     float min, max;
     adjustMinMax(theSize, 0.0f, 1.0f, min, max);
@@ -248,9 +260,11 @@ void Erosion::setFloatParameter(int index, float value)
             QVector2D(value, -value)
         };
 
+        fbo->makeCurrent();
         fbo->program->bind();
         fbo->program->setUniformValueArray("offset", offset, 8);
         fbo->program->release();
+        fbo->doneCurrent();
     }
 }
 
@@ -259,7 +273,7 @@ void Erosion::setFloatParameter(int index, float value)
 
 QString GammaCorrection::name = "Gamma correction";
 
-GammaCorrection::GammaCorrection(bool on, QString vertexShader, QString fragmentShader, float theGammaRed, float theGammaGreen, float theGammaBlue) : ImageOperation(on, vertexShader, fragmentShader)
+GammaCorrection::GammaCorrection(bool on, QString vertexShader, QString fragmentShader, QOpenGLContext* mainContext, float theGammaRed, float theGammaGreen, float theGammaBlue) : ImageOperation(on, vertexShader, fragmentShader, mainContext)
 {
     float min, max;
     adjustMinMax(theGammaRed, 0.0f, 100.0f, min, max);
@@ -289,9 +303,11 @@ void GammaCorrection::setFloatParameter(int index, float value)
     {
         QVector3D gamma = { gammaRed->value, gammaGreen->value, gammaBlue->value };
 
+        fbo->makeCurrent();
         fbo->program->bind();
         fbo->program->setUniformValue("gamma", gamma);
         fbo->program->release();
+        fbo->doneCurrent();
     }
 }
 
@@ -299,7 +315,7 @@ void GammaCorrection::setFloatParameter(int index, float value)
 
 QString MorphologicalGradient::name = "Morphological gradient";
 
-MorphologicalGradient::MorphologicalGradient(bool on, QString vertexShader, QString fragmentShader, float theDilationSize, float theErosionSize) : ImageOperation(on, vertexShader, fragmentShader)
+MorphologicalGradient::MorphologicalGradient(bool on, QString vertexShader, QString fragmentShader, QOpenGLContext* mainContext, float theDilationSize, float theErosionSize) : ImageOperation(on, vertexShader, fragmentShader, mainContext)
 {
     float min, max;
     adjustMinMax(theDilationSize, 0.0f, 1.0f, min, max);
@@ -332,15 +348,19 @@ void MorphologicalGradient::setFloatParameter(int index, float value)
 
     if (index == 0)
     {
+        fbo->makeCurrent();
         fbo->program->bind();
         fbo->program->setUniformValueArray("dilationOffset", offset, 8);
         fbo->program->release();
+        fbo->doneCurrent();
     }
     else if (index == 1)
     {
+        fbo->makeCurrent();
         fbo->program->bind();
         fbo->program->setUniformValueArray("erosionOffset", offset, 8);
         fbo->program->release();
+        fbo->doneCurrent();
     }
 }
 
@@ -348,7 +368,7 @@ void MorphologicalGradient::setFloatParameter(int index, float value)
 
 QString PolarConvolution::name = "Polar convolution";
 
-PolarConvolution::PolarConvolution(bool on, QString vertexShader, QString fragmentShader, std::vector<PolarKernel*> thePolarKernels, float theCenterElement) : ImageOperation(on, vertexShader, fragmentShader)
+PolarConvolution::PolarConvolution(bool on, QString vertexShader, QString fragmentShader, QOpenGLContext* mainContext, std::vector<PolarKernel*> thePolarKernels, float theCenterElement) : ImageOperation(on, vertexShader, fragmentShader, mainContext)
 {
     polarKernelParameter = new PolarKernelParameter(this, thePolarKernels, theCenterElement);
     setPolarKernelParameter();
@@ -395,22 +415,24 @@ void PolarConvolution::setPolarKernelParameter()
         }
     }
 
+    fbo->makeCurrent();
     fbo->program->bind();
     fbo->program->setUniformValue("numElements", numElements);
     fbo->program->setUniformValueArray("offset", offsets, numElements);
     fbo->program->setUniformValueArray("kernel", kernels, numElements, 1);
     fbo->program->setUniformValue("centerElement", polarKernelParameter->centerElement);
     fbo->program->release();
+    fbo->doneCurrent();
 
-    delete offsets;
-    delete kernels;
+    delete [] offsets;
+    delete [] kernels;
 }
 
 // Rotation
 
 QString Rotation::name = "Rotation";
 
-Rotation::Rotation(bool on, QString vertexShader, QString fragmentShader, float theAngle, GLenum theMinMagFilter) : ImageOperation(on, vertexShader, fragmentShader)
+Rotation::Rotation(bool on, QString vertexShader, QString fragmentShader, QOpenGLContext* mainContext, float theAngle, GLenum theMinMagFilter) : ImageOperation(on, vertexShader, fragmentShader, mainContext)
 {
     float minAngle, maxAngle;
     adjustMinMax(theAngle, -360.0f, 360.0f, minAngle, maxAngle);
@@ -441,9 +463,11 @@ void Rotation::setFloatParameter(int index, float value)
 
         // Set shader uniform
 
+        fbo->makeCurrent();
         fbo->program->bind();
         fbo->program->setUniformValue("transform", transform);
         fbo->program->release();
+        fbo->doneCurrent();
     }
 }
 
@@ -461,7 +485,7 @@ void Rotation::setOptionsParameter(int index, GLenum value)
 
 QString Scale::name = "Scale";
 
-Scale::Scale(bool on, QString vertexShader, QString fragmentShader, float theScaleFactor, GLenum theMinMagFilter) : ImageOperation(on, vertexShader, fragmentShader)
+Scale::Scale(bool on, QString vertexShader, QString fragmentShader, QOpenGLContext* mainContext, float theScaleFactor, GLenum theMinMagFilter) : ImageOperation(on, vertexShader, fragmentShader, mainContext)
 {
     float minScaleFactor, maxScaleFactor;
     adjustMinMax(theScaleFactor, 0.0f, 2.0f, minScaleFactor, maxScaleFactor);
@@ -492,9 +516,11 @@ void Scale::setFloatParameter(int index, float value)
 
         // Set shader uniform
 
+        fbo->makeCurrent();
         fbo->program->bind();
         fbo->program->setUniformValue("transform", transform);
         fbo->program->release();
+        fbo->doneCurrent();
     }
 }
 

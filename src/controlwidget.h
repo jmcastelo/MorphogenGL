@@ -64,14 +64,15 @@ class ControlWidget : public QWidget
     Q_OBJECT
 
 public:
-    ControlWidget(GeneratorGL* theGenerator, MorphoWidget* theMorphoWidget, QWidget *parent = nullptr);
+    GeneratorGL* generator;
+
+    ControlWidget(MorphoWidget* theMorphoWidget, QWidget *parent = nullptr);
     ~ControlWidget();
 
 protected:
     void closeEvent(QCloseEvent* event) override;
 
 private:
-    GeneratorGL* generator;
     MorphoWidget* morphoWidget;
     ConfigurationParser* parser;
     

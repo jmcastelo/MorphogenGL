@@ -23,8 +23,19 @@
 #include "seed.h"
 #include "morphowidget.h"
 
-Seed::Seed(QString vertexShader, QString fragmentShader)
+Seed::Seed(QString vertexShader, QString fragmentShader, QOpenGLContext* mainContext)
 {
+    context = new QOpenGLContext();
+    context->setFormat(mainContext->format());
+    context->setShareContext(mainContext);
+    context->create();
+
+    surface = new QOffscreenSurface();
+    surface->setFormat(context->format());
+    surface->create();
+
+    context->makeCurrent(surface);
+
     initializeOpenGLFunctions();
 
     // Frame buffer object
@@ -83,15 +94,17 @@ Seed::Seed(QString vertexShader, QString fragmentShader)
     vbo->release();
     program->release();
 
+    context->doneCurrent();
+
     // FBO to draw seed texture image
 
-    fboTex = new FBO(":/shaders/screen.vert", ":/shaders/screen.frag");
+    fboTex = new FBO(":/shaders/screen.vert", ":/shaders/screen.frag", mainContext);
     seedTex = new QOpenGLTexture(QOpenGLTexture::Target2D);
 }
 
 Seed::~Seed()
 {
-    FBO::morphoWidget->makeCurrent();
+    context->makeCurrent(surface);
 
     vao->destroy();
     vbo->destroy();
@@ -106,7 +119,10 @@ Seed::~Seed()
     seedTex->destroy();
     delete seedTex;
 
-    FBO::morphoWidget->doneCurrent();
+    context->doneCurrent();
+
+    delete context;
+    delete surface;
 
     delete fboTex;
 }
@@ -144,7 +160,7 @@ void Seed::generateFramebuffer(GLuint& framebuffer, GLuint& texture)
 
 void Seed::resize()
 {
-    FBO::morphoWidget->makeCurrent();
+    context->makeCurrent(surface);
 
     GLuint fbo2;
     GLuint textureID2;
@@ -172,7 +188,7 @@ void Seed::resize()
 
     // Keep texture fbo out of current context, context will be made current when resizing it
 
-    FBO::morphoWidget->doneCurrent();
+    context->doneCurrent();
 
     // Resize textured fbo
 
@@ -181,7 +197,7 @@ void Seed::resize()
 
 void Seed::drawRandom(bool grayscale)
 {
-    FBO::morphoWidget->makeCurrent();
+    context->makeCurrent(surface);
 
     glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 
@@ -203,12 +219,13 @@ void Seed::drawRandom(bool grayscale)
     program->release();
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
+    context->doneCurrent();
+
     textureID = randomTex;
 }
 
 void Seed::drawImage()
 {
-    FBO::morphoWidget->makeCurrent();
     fboTex->draw();
     textureID = fboTex->getTextureID();
 }

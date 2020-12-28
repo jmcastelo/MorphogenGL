@@ -29,6 +29,7 @@
 #include <QVector3D>
 #include <QMatrix4x4>
 #include <QString>
+#include <QOpenGLContext>
 #include <QDebug>
 
 struct BoolParameter;
@@ -46,7 +47,7 @@ class PolarKernelParameter;
 class ImageOperation
 {
 public:
-    ImageOperation(bool on, QString vertexShader, QString fragmentShader);
+    ImageOperation(bool on, QString vertexShader, QString fragmentShader, QOpenGLContext* mainContext);
     virtual ~ImageOperation();
 
     bool isEnabled() { return enabled; }
@@ -87,7 +88,7 @@ protected:
 class Brightness : public ImageOperation
 {
 public:
-    Brightness(bool on, QString vertexShader, QString fragmentShader, float theBrightness);
+    Brightness(bool on, QString vertexShader, QString fragmentShader, QOpenGLContext* mainContext, float theBrightness);
     ~Brightness();
 
     static QString name;
@@ -106,7 +107,7 @@ private:
 class ColorMix : public ImageOperation
 {
 public:
-    ColorMix(bool on, QString vertexShader, QString fragmentShader, std::vector<float> theMatrix);
+    ColorMix(bool on, QString vertexShader, QString fragmentShader, QOpenGLContext* mainContext, std::vector<float> theMatrix);
     ~ColorMix();
 
     static QString name;
@@ -125,7 +126,7 @@ private:
 class Contrast : public ImageOperation
 {
 public:
-    Contrast(bool on, QString vertexShader, QString fragmentShader, float theContrast);
+    Contrast(bool on, QString vertexShader, QString fragmentShader, QOpenGLContext* mainContext, float theContrast);
     ~Contrast();
 
     static QString name;
@@ -144,7 +145,7 @@ private:
 class Convolution : public ImageOperation
 {
 public:
-    Convolution(bool on, QString vertexShader, QString fragmentShader, std::vector<float> theKernel, float theSize);
+    Convolution(bool on, QString vertexShader, QString fragmentShader, QOpenGLContext* mainContext, std::vector<float> theKernel, float theSize);
     ~Convolution();
 
     static QString name;
@@ -166,7 +167,7 @@ private:
 class Dilation : public ImageOperation
 {
 public:
-    Dilation(bool on, QString vertexShader, QString fragmentShader, float theSize);
+    Dilation(bool on, QString vertexShader, QString fragmentShader, QOpenGLContext* mainContext, float theSize);
     ~Dilation();
 
     static QString name;
@@ -185,7 +186,7 @@ private:
 class Erosion : public ImageOperation
 {
 public:
-    Erosion(bool on, QString vertexShader, QString fragmentShader, float theSize);
+    Erosion(bool on, QString vertexShader, QString fragmentShader, QOpenGLContext* mainContext, float theSize);
     ~Erosion();
 
     static QString name;
@@ -204,7 +205,7 @@ private:
 class GammaCorrection : public ImageOperation
 {
 public:
-    GammaCorrection(bool on, QString vertexShader, QString fragmentShader, float theGammaRed, float theGammaGreen, float theGammaBlue);
+    GammaCorrection(bool on, QString vertexShader, QString fragmentShader, QOpenGLContext* mainContext, float theGammaRed, float theGammaGreen, float theGammaBlue);
     ~GammaCorrection();
 
     static QString name;
@@ -225,7 +226,7 @@ private:
 class MorphologicalGradient : public ImageOperation
 {
 public:
-    MorphologicalGradient(bool on, QString vertexShader, QString fragmentShader, float theDilationSize, float theErosionSize);
+    MorphologicalGradient(bool on, QString vertexShader, QString fragmentShader, QOpenGLContext* mainContext, float theDilationSize, float theErosionSize);
     ~MorphologicalGradient();
 
     static QString name;
@@ -245,7 +246,7 @@ private:
 class PolarConvolution : public ImageOperation
 {
 public:
-    PolarConvolution(bool on, QString vertexShader, QString fragmentShader, std::vector<PolarKernel*> thePolarKernels, float theCenterElement);
+    PolarConvolution(bool on, QString vertexShader, QString fragmentShader, QOpenGLContext* mainContext, std::vector<PolarKernel*> thePolarKernels, float theCenterElement);
     ~PolarConvolution();
 
     static QString name;
@@ -264,7 +265,7 @@ private:
 class Rotation: public ImageOperation
 {
 public:
-    Rotation(bool on, QString vertexShader, QString fragmentShader, float theAngle, GLenum theMinMagFilter);
+    Rotation(bool on, QString vertexShader, QString fragmentShader, QOpenGLContext* mainContext, float theAngle, GLenum theMinMagFilter);
     ~Rotation();
 
     static QString name;
@@ -286,7 +287,7 @@ private:
 class Scale : public ImageOperation
 {
 public:
-    Scale(bool on, QString vertexShader, QString fragmentShader, float theScaleFactor, GLenum theMinMagFilter);
+    Scale(bool on, QString vertexShader, QString fragmentShader, QOpenGLContext* mainContext, float theScaleFactor, GLenum theMinMagFilter);
     ~Scale();
 
     static QString name;

@@ -41,15 +41,24 @@ MorphoWidget::MorphoWidget()
     timer = new QTimer(this);
     timer->setTimerType(Qt::PreciseTimer);
     timer->setInterval(20);
-    
+
     connect(timer, &QTimer::timeout, this, QOverload<>::of(&MorphoWidget::update));
+
+    // Construct control widget an pass this MorphoWidget to it
+
+    controlWidget = new ControlWidget(this);
+
+    // Arrange both widgets side by side and centered on the screen
+
+    setGeometry(geometry().x() - controlWidget->width() / 2, geometry().y(), width(), height());
+    controlWidget->setGeometry(geometry().x() + width(), geometry().y(), controlWidget->width(), controlWidget->height());
+    controlWidget->show();
 }
 
 MorphoWidget::~MorphoWidget()
 {
     makeCurrent();
     glDeleteFramebuffers(1, &fbo);
-    delete generator;
     delete controlWidget;
     doneCurrent();
 }
@@ -71,21 +80,7 @@ void MorphoWidget::initializeGL()
     
     glGenFramebuffers(1, &fbo);
 
-    FBO::morphoWidget = this;
-
-    // Generator
-
-    generator = new GeneratorGL();
-
-    // Construct control widget an pass generator to it
-
-    controlWidget = new ControlWidget(generator, this);
-
-    // Arrange both widgets side by side and centered on the screen
-
-    setGeometry(geometry().x() - controlWidget->width() / 2, geometry().y(), width(), height());
-    controlWidget->setGeometry(geometry().x() + width(), geometry().y(), controlWidget->width(), controlWidget->height());
-    controlWidget->show();
+    controlWidget->generator->init(context());
 
     // Start timer
 
@@ -101,25 +96,23 @@ void MorphoWidget::paintGL()
 
     // Set generator's output texture as fbo's texture
 
-    glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, generator->getOutputTextureID(), 0);
+    glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, controlWidget->generator->getOutputTextureID(), 0);
 
     // Render to default frame buffer (screen) from fbo
 
     glBlitFramebuffer(0, 0, FBO::width, FBO::height, 0, 0, width(), height(), GL_COLOR_BUFFER_BIT, GL_NEAREST);
 
-    generator->iterate();
+    controlWidget->generator->iterate();
 
-    if (generator->isRecording())
+    if (controlWidget->generator->isRecording())
     {
-        generator->record();
+        controlWidget->generator->record();
         emit frameRecorded();
     }
 
-    //update();
-
     // Compute iteration time
 
-    if (generator->active && generator->getIterationNumber() % 10 == 0)
+    if (controlWidget->generator->active && controlWidget->generator->getIterationNumber() % 10 == 0)
     {
         end = std::chrono::steady_clock::now();
         auto iterationTime = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
@@ -128,7 +121,7 @@ void MorphoWidget::paintGL()
         emit iterationTimeMeasured(iterationTime);
     }
 
-    if (generator->active)
+    if (controlWidget->generator->active)
         emit iterationPerformed();
 }
 
