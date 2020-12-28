@@ -24,14 +24,6 @@
 
 MorphoWidget::MorphoWidget()
 {
-    // Set OpenGL version and profile
-
-    QSurfaceFormat format;
-    format.setRenderableType(QSurfaceFormat::OpenGL);
-    format.setProfile(QSurfaceFormat::CoreProfile);
-    format.setVersion(3, 3);
-    setFormat(format);
-
     // Widget setup
 
     resize(512, 512);
@@ -50,6 +42,7 @@ MorphoWidget::MorphoWidget()
 
     // Arrange both widgets side by side and centered on the screen
 
+    setGeometry(QStyle::alignedRect(Qt::LeftToRight, Qt::AlignCenter, size(), qApp->desktop()->availableGeometry()));
     setGeometry(geometry().x() - controlWidget->width() / 2, geometry().y(), width(), height());
     controlWidget->setGeometry(geometry().x() + width(), geometry().y(), controlWidget->width(), controlWidget->height());
     controlWidget->show();

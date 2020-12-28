@@ -30,6 +30,8 @@
 #include <QSurfaceFormat>
 #include <QCloseEvent>
 #include <QTimer>
+#include <QStyle>
+#include <QDesktopWidget>
 
 class ControlWidget;
 
