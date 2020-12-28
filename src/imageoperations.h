@@ -24,6 +24,7 @@
 
 #include "fbo.h"
 #include <vector>
+#include <cmath>
 #include <QVector2D>
 #include <QVector3D>
 #include <QMatrix4x4>
@@ -37,6 +38,8 @@ template <class T>
 class OptionsParameter;
 class KernelParameter;
 class MatrixParameter;
+class PolarKernel;
+class PolarKernelParameter;
 
 // Base image operation class
 
@@ -61,12 +64,14 @@ public:
     virtual std::vector<OptionsParameter<GLenum>*> getOptionsGLenumParameters() { std::vector<OptionsParameter<GLenum>*> parameters; return parameters; }
     virtual MatrixParameter* getMatrixParameter() { return nullptr; }
     virtual KernelParameter* getKernelParameter() { return nullptr; }
+    virtual PolarKernelParameter* getPolarKernelParameter() { return nullptr; }
     
     virtual void setFloatParameter(int index, float value) {}
     virtual void setOptionsParameter(int index, GLenum value) {}
     virtual void setOptionsParameter(int index, int value) {}
     virtual void setMatrixParameter(GLfloat* elements) {}
     virtual void setKernelParameter(GLfloat* elements) {}
+    virtual void setPolarKernelParameter() {}
 
     void adjustMinMax(float value, float minValue, float maxValue, float& min, float& max);
 
@@ -233,6 +238,25 @@ public:
 private:
     FloatParameter* dilationSize;
     FloatParameter* erosionSize;
+};
+
+// Polar convolution
+
+class PolarConvolution : public ImageOperation
+{
+public:
+    PolarConvolution(bool on, QString vertexShader, QString fragmentShader, std::vector<PolarKernel*> thePolarKernels, float theCenterElement);
+    ~PolarConvolution();
+
+    static QString name;
+    QString getName() { return name; }
+
+    void setPolarKernelParameter();
+
+    PolarKernelParameter* getPolarKernelParameter() { return polarKernelParameter; }
+
+private:
+    PolarKernelParameter* polarKernelParameter;
 };
 
 // Rotation

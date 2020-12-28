@@ -36,6 +36,7 @@ GeneratorGL::GeneratorGL()
         Erosion::name,
         GammaCorrection::name,
         MorphologicalGradient::name,
+        PolarConvolution::name,
         Rotation::name,
         Scale::name
     };

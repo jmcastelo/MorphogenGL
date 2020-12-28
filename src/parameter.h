@@ -145,3 +145,43 @@ public:
 
     void setValues();
 };
+
+struct PolarKernel
+{
+    int numElements;
+    float radius;
+    float initialAngle;
+    float frequency;
+    float phase;
+    float minimum;
+    float maximum;
+
+    PolarKernel(int theNumElements, float theRadius, float theInitialAngle, float theFrequency, float thePhase, float theMinimum, float theMaximum) :
+        numElements { theNumElements },
+        radius { theRadius },
+        initialAngle { theInitialAngle },
+        frequency { theFrequency },
+        phase { thePhase },
+        minimum { theMinimum},
+        maximum { theMaximum }
+    {}
+};
+
+class PolarKernelParameter
+{
+public:
+    std::vector<PolarKernel*> polarKernels;
+    float centerElement;
+
+    PolarKernelParameter(ImageOperation* theOperation, std::vector<PolarKernel*> thePolarKernels, float theCenterElement) :
+        operation { theOperation },
+        polarKernels { thePolarKernels },
+        centerElement { theCenterElement }
+    {}
+    ~PolarKernelParameter();
+
+    void setValues();
+
+private:
+    ImageOperation* operation;
+};

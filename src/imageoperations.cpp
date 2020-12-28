@@ -344,6 +344,68 @@ void MorphologicalGradient::setFloatParameter(int index, float value)
     }
 }
 
+// Polar convolution
+
+QString PolarConvolution::name = "Polar convolution";
+
+PolarConvolution::PolarConvolution(bool on, QString vertexShader, QString fragmentShader, std::vector<PolarKernel*> thePolarKernels, float theCenterElement) : ImageOperation(on, vertexShader, fragmentShader)
+{
+    polarKernelParameter = new PolarKernelParameter(this, thePolarKernels, theCenterElement);
+    setPolarKernelParameter();
+}
+
+PolarConvolution::~PolarConvolution()
+{
+    delete polarKernelParameter;
+}
+
+void PolarConvolution::setPolarKernelParameter()
+{
+    // Compute offsets and kernel elements
+
+    int numElements = 0;
+
+    for (auto& kernel : polarKernelParameter->polarKernels)
+        numElements += kernel->numElements;
+
+    QVector2D* offsets = new QVector2D[numElements];
+    GLfloat* kernels = new GLfloat[numElements];
+
+    int n = 0;
+
+    for (auto& kernel : polarKernelParameter->polarKernels)
+    {
+        for (int i = 0; i < kernel->numElements; i++)
+        {
+            // Index
+
+            float index = static_cast<float>(i) / kernel->numElements;
+
+            // Angle: degrees to radians
+
+            float angle = (kernel->initialAngle / 180.0f + 2.0f * index) * 3.14159265359f;
+
+            // Offsets
+                        
+            offsets[n] = QVector2D(kernel->radius * cosf(angle), kernel->radius * sinf(angle));            
+            
+            // Kernel elements
+
+            kernels[n++] = kernel->minimum + (kernel->maximum - kernel->minimum) * (1.0f + sinf((kernel->phase / 180.0 + kernel->frequency * 2.0f * index) * 3.14159265359f)) * 0.5f;
+        }
+    }
+
+    fbo->program->bind();
+    fbo->program->setUniformValue("numElements", numElements);
+    fbo->program->setUniformValueArray("offset", offsets, numElements);
+    fbo->program->setUniformValueArray("kernel", kernels, numElements, 1);
+    fbo->program->setUniformValue("centerElement", polarKernelParameter->centerElement);
+    fbo->program->release();
+
+    delete offsets;
+    delete kernels;
+}
+
 // Rotation
 
 QString Rotation::name = "Rotation";

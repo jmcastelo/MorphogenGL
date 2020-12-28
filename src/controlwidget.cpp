@@ -84,9 +84,9 @@ ControlWidget::ControlWidget(GeneratorGL *theGenerator, MorphoWidget* theMorphoW
 
     // Style
 
-    QString startButtonStyle = "QPushButton#startButton{ color: #ffffff; background-color: #1c9122; }";
     QString pipelineButtonStyle = "QPushButton#pipelineButton{ color: #ffffff; background-color: #6600a6; } QPushButton:checked#pipelineButton { color: #000000; background-color: #fcff59; }";
-    setStyleSheet(startButtonStyle + pipelineButtonStyle);
+    QString statusBarStyle = "QStatusBar::item{ border: 0px solid black; }";
+    setStyleSheet(pipelineButtonStyle + statusBarStyle);
 
     // Main layout
 
@@ -109,6 +109,8 @@ ControlWidget::ControlWidget(GeneratorGL *theGenerator, MorphoWidget* theMorphoW
 
 ControlWidget::~ControlWidget()
 {
+    if (operationsWidget)
+        delete operationsWidget;
     delete parser;
 }
 

@@ -21,6 +21,7 @@
 */
 
 #include "pipeline.h"
+#include "parameter.h"
 
 Pipeline::Pipeline(GLuint id, float blend) : textureID{ id }, blendFactor{ blend }
 {
@@ -35,6 +36,7 @@ Pipeline::Pipeline(GLuint id, float blend) : textureID{ id }, blendFactor{ blend
         Erosion::name,
         GammaCorrection::name,
         MorphologicalGradient::name,
+        PolarConvolution::name,
         Rotation::name,
         Scale::name
     };
@@ -129,6 +131,11 @@ void Pipeline::insertImageOperation(int newOperationIndex, int currentOperationI
     else if (operationName == MorphologicalGradient::name)
     {
         operation = new MorphologicalGradient(false, ":/shaders/screen.vert", ":/shaders/morphogradient.frag", 0.01f, 0.01f);
+    }
+    else if (operationName == PolarConvolution::name)
+    {
+        std::vector<PolarKernel*> polarKernels = { new PolarKernel(8, 0.01f, 0.0f, 1.0f, 0.0f, -1.0f, 1.0f) };
+        operation = new PolarConvolution(false, ":/shaders/screen.vert", ":/shaders/polar-convolution.frag", polarKernels, 1.0f);
     }
     else if (operationName == Rotation::name)
     {

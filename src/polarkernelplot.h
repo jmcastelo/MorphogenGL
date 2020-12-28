@@ -20,35 +20,35 @@
 *  along with MorphogenGL.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+#pragma once
+
 #include "parameter.h"
+#include <qcustomplot.h>
+#include <cmath>
+#include <vector>
+#include <QWidget>
+#include <QVector>
+#include <QString>
+#include <QHBoxLayout>
+#include <QResizeEvent>
 
-void FloatParameter::setValue(float theValue)
+class PolarKernelPlot : public QWidget
 {
-    value = theValue;
-    operation->setFloatParameter(index, value);
-}
+    Q_OBJECT
 
-void MatrixParameter::setValues()
-{
-    GLfloat* elements = &values[0];
-    operation->setMatrixParameter(elements);
-}
+public:
+    QHBoxLayout* layout;
 
-void KernelParameter::setValues()
-{
-    GLfloat* elements = &values[0];
-    operation->setKernelParameter(elements);
-}
+    PolarKernelPlot(QString title, QWidget* parent = nullptr);
+    ~PolarKernelPlot();
 
-PolarKernelParameter::~PolarKernelParameter()
-{
-    for (auto& kernel : polarKernels)
-        delete kernel;
+    void setGeometryData(std::vector<PolarKernel*> kernels);
+    void setKernelValuesData(PolarKernel* kernel);
 
-    polarKernels.clear();
-}
+protected:
+    void resizeEvent(QResizeEvent* event) override;
 
-void PolarKernelParameter::setValues()
-{
-    operation->setPolarKernelParameter();
-}
+private:
+    QCustomPlot* geometryPlot;
+    QCustomPlot* kernelValuesPlot;
+};

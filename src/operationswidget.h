@@ -25,6 +25,7 @@
 #include "parameter.h"
 #include "focuslineedit.h"
 #include "imageoperations.h"
+#include "polarkernelplot.h"
 #include <vector>
 #include <string>
 #include <cmath>
@@ -38,6 +39,7 @@
 #include <QLabel>
 #include <QFormLayout>
 #include <QVBoxLayout>
+#include <QCloseEvent>
 
 // Bool parameter widget: QCheckBox
 
@@ -379,12 +381,226 @@ private:
     std::vector<std::vector<float>> presets;
 };
 
+// Polar kernel parameter widget
+
+class PolarKernelParameterWidget : public QWidget
+{
+    Q_OBJECT
+
+public:
+    QVBoxLayout* vBoxLayout;
+    //QWidget* plotWidget;
+
+    PolarKernelParameterWidget(PolarKernelParameter* thePolarKernelParameter, QWidget* parent = nullptr) : QWidget(parent), polarKernelParameter{ thePolarKernelParameter }
+    {
+        // Polar kernel plot
+
+        plot = new PolarKernelPlot("Polar kernel");
+              
+        // Select kernel combo box
+
+        QComboBox* selectKernelComboBox = new QComboBox;
+        selectKernelComboBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+
+        for (size_t i = 0; i < polarKernelParameter->polarKernels.size(); i++)
+            selectKernelComboBox->addItem(QString::number(i + 1));
+
+        QFormLayout* selectKernelFormLayout = new QFormLayout;
+        selectKernelFormLayout->addRow("Selected kernel:", selectKernelComboBox);
+
+        // Add and remove kernel buttons
+
+        QPushButton* addKernelPushButton = new QPushButton("Add new kernel");
+        addKernelPushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+
+        QPushButton* removeKernelPushButton = new QPushButton("Remove selected");
+        removeKernelPushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+
+        QHBoxLayout* buttonsHBoxLayout = new QHBoxLayout;
+        buttonsHBoxLayout->setAlignment(Qt::AlignCenter);
+        buttonsHBoxLayout->addWidget(addKernelPushButton);
+        buttonsHBoxLayout->addWidget(removeKernelPushButton);
+
+        // Parameters line edits
+
+        numElementsLineEdit = new FocusLineEdit;
+        QIntValidator* numElementsValidator = new QIntValidator(1, 100, numElementsLineEdit);
+        numElementsLineEdit->setValidator(numElementsValidator);
+
+        centerElementLineEdit = new FocusLineEdit;
+        QDoubleValidator* centerElementValidator = new QDoubleValidator(-1000.0, 1000.0, 5, centerElementLineEdit);
+        centerElementLineEdit->setValidator(centerElementValidator);
+
+        radiusLineEdit = new FocusLineEdit;
+        QDoubleValidator* radiusValidator = new QDoubleValidator(0.0, 1.0, 5, radiusLineEdit);
+        radiusLineEdit->setValidator(radiusValidator);
+
+        initialAngleLineEdit = new FocusLineEdit;
+        QDoubleValidator* initialAngleValidator = new QDoubleValidator(0.0, 360.0, 5, initialAngleLineEdit);
+        initialAngleLineEdit->setValidator(initialAngleValidator);
+
+        frequencyLineEdit = new FocusLineEdit;
+        QDoubleValidator* frequencyValidator = new QDoubleValidator(0.0, 100.0, 5, frequencyLineEdit);
+        frequencyLineEdit->setValidator(frequencyValidator);
+
+        phaseLineEdit = new FocusLineEdit;
+        QDoubleValidator* phaseValidator = new QDoubleValidator(-360.0, 360.0, 5, phaseLineEdit);
+        phaseLineEdit->setValidator(phaseValidator);
+
+        minimumLineEdit = new FocusLineEdit;
+        QDoubleValidator* minimumValidator = new QDoubleValidator(-1000.0, 1000.0, 5, minimumLineEdit);
+        minimumLineEdit->setValidator(minimumValidator);
+
+        maximumLineEdit = new FocusLineEdit;
+        QDoubleValidator* maximumValidator = new QDoubleValidator(-1000.0, 1000.0, 5, maximumLineEdit);
+        maximumLineEdit->setValidator(maximumValidator);
+
+        if (!polarKernelParameter->polarKernels.empty())
+        {
+            setLineEditTexts();
+            setGeometryPlotData();
+            setKernelValuesPlotData();
+        }
+        
+        QFormLayout* geometryFormLayout = new QFormLayout;
+        geometryFormLayout->addRow("#Elements:", numElementsLineEdit);
+        geometryFormLayout->addRow("Center value:", centerElementLineEdit);
+        geometryFormLayout->addRow("Radius:", radiusLineEdit);
+        geometryFormLayout->addRow("Initial angle:", initialAngleLineEdit);
+
+        QFormLayout* valuesFormLayout = new QFormLayout;
+        valuesFormLayout->addRow("Frequency:", frequencyLineEdit);
+        valuesFormLayout->addRow("Phase:", phaseLineEdit);
+        valuesFormLayout->addRow("Minimum:", minimumLineEdit);
+        valuesFormLayout->addRow("Maximum:", maximumLineEdit);
+
+        QHBoxLayout* formsHBoxLayout = new QHBoxLayout;
+        formsHBoxLayout->addLayout(geometryFormLayout);
+        formsHBoxLayout->addLayout(valuesFormLayout);
+        
+        // Main layout
+
+        vBoxLayout = new QVBoxLayout;
+        vBoxLayout->addLayout(selectKernelFormLayout);
+        vBoxLayout->addLayout(buttonsHBoxLayout);
+        vBoxLayout->addLayout(formsHBoxLayout);
+        vBoxLayout->addLayout(plot->layout);
+
+        // Signals + Slots
+
+        connect(selectKernelComboBox, QOverload<int>::of(&QComboBox::activated), [=](int index) { kernelIndex = index;  setLineEditTexts(); setKernelValuesPlotData(); });
+
+        connect(addKernelPushButton, &QPushButton::pressed, [=]()
+            {
+                if (polarKernelParameter->polarKernels.size() < 5)
+                {
+                    polarKernelParameter->polarKernels.push_back(new PolarKernel(*polarKernelParameter->polarKernels.back()));
+                    polarKernelParameter->setValues();
+                    
+                    kernelIndex = polarKernelParameter->polarKernels.size() - 1;
+                    
+                    selectKernelComboBox->addItem(QString::number(kernelIndex + 1));
+                    selectKernelComboBox->setCurrentIndex(kernelIndex);
+
+                    setLineEditTexts();
+                }
+            });
+        connect(removeKernelPushButton, &QPushButton::pressed, [=]()
+            {
+                if (polarKernelParameter->polarKernels.size() > 1)
+                {
+                    polarKernelParameter->polarKernels.erase(polarKernelParameter->polarKernels.begin() + kernelIndex);
+                    polarKernelParameter->setValues();
+
+                    selectKernelComboBox->removeItem(0);
+
+                    for (int i = 0; i < selectKernelComboBox->count(); i++)
+                        selectKernelComboBox->setItemText(i, QString::number(i + 1));
+                    
+                    kernelIndex--;
+                    kernelIndex = kernelIndex < 0 ? 0 : kernelIndex;
+
+                    selectKernelComboBox->setCurrentIndex(kernelIndex);
+
+                    setLineEditTexts();
+                }
+            });
+
+        connect(numElementsLineEdit, &FocusLineEdit::returnPressed, [=]() { polarKernelParameter->polarKernels[kernelIndex]->numElements = numElementsLineEdit->text().toInt(); polarKernelParameter->setValues(); setGeometryPlotData(); setKernelValuesPlotData(); });
+        connect(numElementsLineEdit, &FocusLineEdit::focusOut, [=]() { numElementsLineEdit->setText(QString::number(polarKernelParameter->polarKernels[kernelIndex]->numElements)); });
+
+        connect(centerElementLineEdit, &FocusLineEdit::returnPressed, [=]() { polarKernelParameter->centerElement = centerElementLineEdit->text().toFloat(); polarKernelParameter->setValues(); });
+        connect(centerElementLineEdit, &FocusLineEdit::focusOut, [=]() { centerElementLineEdit->setText(QString::number(polarKernelParameter->centerElement)); });
+
+        connect(radiusLineEdit, &FocusLineEdit::returnPressed, [=]() { polarKernelParameter->polarKernels[kernelIndex]->radius = radiusLineEdit->text().toFloat(); polarKernelParameter->setValues(); setGeometryPlotData(); });
+        connect(radiusLineEdit, &FocusLineEdit::focusOut, [=]() { radiusLineEdit->setText(QString::number(polarKernelParameter->polarKernels[kernelIndex]->radius)); });
+
+        connect(initialAngleLineEdit, &FocusLineEdit::returnPressed, [=]() { polarKernelParameter->polarKernels[kernelIndex]->initialAngle = initialAngleLineEdit->text().toFloat(); polarKernelParameter->setValues(); setGeometryPlotData(); });
+        connect(initialAngleLineEdit, &FocusLineEdit::focusOut, [=]() { initialAngleLineEdit->setText(QString::number(polarKernelParameter->polarKernels[kernelIndex]->initialAngle)); });
+
+        connect(frequencyLineEdit, &FocusLineEdit::returnPressed, [=]() { polarKernelParameter->polarKernels[kernelIndex]->frequency = frequencyLineEdit->text().toFloat(); polarKernelParameter->setValues(); setKernelValuesPlotData(); });
+        connect(frequencyLineEdit, &FocusLineEdit::focusOut, [=]() { frequencyLineEdit->setText(QString::number(polarKernelParameter->polarKernels[kernelIndex]->frequency)); });
+
+        connect(phaseLineEdit, &FocusLineEdit::returnPressed, [=]() { polarKernelParameter->polarKernels[kernelIndex]->phase = phaseLineEdit->text().toFloat(); polarKernelParameter->setValues(); setKernelValuesPlotData(); });
+        connect(phaseLineEdit, &FocusLineEdit::focusOut, [=]() { phaseLineEdit->setText(QString::number(polarKernelParameter->polarKernels[kernelIndex]->phase)); });
+
+        connect(minimumLineEdit, &FocusLineEdit::returnPressed, [=]() { polarKernelParameter->polarKernels[kernelIndex]->minimum = minimumLineEdit->text().toFloat(); polarKernelParameter->setValues(); setKernelValuesPlotData(); });
+        connect(minimumLineEdit, &FocusLineEdit::focusOut, [=]() { minimumLineEdit->setText(QString::number(polarKernelParameter->polarKernels[kernelIndex]->minimum)); });
+
+        connect(maximumLineEdit, &FocusLineEdit::returnPressed, [=]() { polarKernelParameter->polarKernels[kernelIndex]->maximum = maximumLineEdit->text().toFloat(); polarKernelParameter->setValues(); setKernelValuesPlotData(); });
+        connect(maximumLineEdit, &FocusLineEdit::focusOut, [=]() { maximumLineEdit->setText(QString::number(polarKernelParameter->polarKernels[kernelIndex]->maximum)); });
+    }
+
+    ~PolarKernelParameterWidget()
+    {
+        delete plot;
+    }
+
+private:
+    PolarKernelParameter* polarKernelParameter;
+    FocusLineEdit* numElementsLineEdit;
+    FocusLineEdit* centerElementLineEdit;
+    FocusLineEdit* radiusLineEdit;
+    FocusLineEdit* initialAngleLineEdit;
+    FocusLineEdit* frequencyLineEdit;
+    FocusLineEdit* phaseLineEdit;
+    FocusLineEdit* minimumLineEdit;
+    FocusLineEdit* maximumLineEdit;
+    PolarKernelPlot* plot;
+    int kernelIndex = 0;
+
+    void setLineEditTexts()
+    {
+        numElementsLineEdit->setText(QString::number(polarKernelParameter->polarKernels[kernelIndex]->numElements));
+        centerElementLineEdit->setText(QString::number(polarKernelParameter->centerElement));
+        radiusLineEdit->setText(QString::number(polarKernelParameter->polarKernels[kernelIndex]->radius));
+        initialAngleLineEdit->setText(QString::number(polarKernelParameter->polarKernels[kernelIndex]->initialAngle));
+        frequencyLineEdit->setText(QString::number(polarKernelParameter->polarKernels[kernelIndex]->frequency));
+        phaseLineEdit->setText(QString::number(polarKernelParameter->polarKernels[kernelIndex]->phase));
+        minimumLineEdit->setText(QString::number(polarKernelParameter->polarKernels[kernelIndex]->minimum));
+        maximumLineEdit->setText(QString::number(polarKernelParameter->polarKernels[kernelIndex]->maximum));
+    }
+
+    void setGeometryPlotData()
+    {
+        plot->setGeometryData(polarKernelParameter->polarKernels);
+    }
+
+    void setKernelValuesPlotData()
+    {
+        plot->setKernelValuesData(polarKernelParameter->polarKernels[kernelIndex]);
+    }
+};
+
 // Operations widget
 
 class OperationsWidget : public QWidget
 {
+    Q_OBJECT
+
 public:
     std::vector<FloatParameterWidget*> floatParameterWidget;
+    std::vector<PolarKernelParameterWidget*> polarKernelParameterWidget;
 
     OperationsWidget(ImageOperation* operation)
     {
@@ -441,6 +657,12 @@ public:
             vBoxLayout->addLayout(widget->gridLayout);
             formLayout->addRow("Presets:", widget->presetsComboBox);
         }
+        if (operation->getPolarKernelParameter())
+        {
+            PolarKernelParameterWidget* widget = new PolarKernelParameterWidget(operation->getPolarKernelParameter(), this);
+            polarKernelParameterWidget.push_back(widget);
+            vBoxLayout->addLayout(widget->vBoxLayout);
+        }
 
         QCheckBox* enabledCheckBox = new QCheckBox("Enabled");
         enabledCheckBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
@@ -454,4 +676,16 @@ public:
 
         connect(enabledCheckBox, &QCheckBox::stateChanged, [=](int state) { operation->enable(state == Qt::Checked); });
     }
+
+    ~OperationsWidget()
+    {
+        for (auto& widget : polarKernelParameterWidget)
+            delete widget;
+    }
+
+    /*void closeEvent(QCloseEvent* event) override
+    {
+        for (auto& widget : polarKernelParameterWidget)
+            widget->plotWidget->close();
+    }*/
 };
