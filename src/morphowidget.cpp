@@ -40,6 +40,11 @@ MorphoWidget::MorphoWidget()
 
     controlWidget = new ControlWidget(this);
 
+    // Set icons
+
+    setWindowIcon(QIcon(":/icons/morphogengl.png"));
+    controlWidget->setWindowIcon(QIcon(":/icons/morphogengl.png"));
+
     // Arrange both widgets side by side and centered on the screen
 
     setGeometry(QStyle::alignedRect(Qt::LeftToRight, Qt::AlignCenter, size(), qApp->desktop()->availableGeometry()));
