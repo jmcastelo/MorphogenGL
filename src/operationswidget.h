@@ -1,5 +1,5 @@
 /*
-*  Copyright 2020 José María Castelo Ares
+*  Copyright 2020 Jose Maria Castelo Ares
 *
 *  Contact: <jose.maria.castelo@gmail.com>
 *  Repository: <https://github.com/jmcastelo/MorphogenGL>
@@ -76,7 +76,7 @@ public:
         int index = 0;
         for (size_t i = 0; i < optionsParameter->values.size(); i++)
             if (optionsParameter->value == optionsParameter->values[i])
-                index = i;
+                index = static_cast<int>(i);
 
         comboBox = new QComboBox;
         comboBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
@@ -497,7 +497,7 @@ public:
                     polarKernelParameter->polarKernels.push_back(new PolarKernel(*polarKernelParameter->polarKernels.back()));
                     polarKernelParameter->setValues();
                     
-                    kernelIndex = polarKernelParameter->polarKernels.size() - 1;
+                    kernelIndex = static_cast<int>(polarKernelParameter->polarKernels.size()) - 1;
                     
                     selectKernelComboBox->addItem(QString::number(kernelIndex + 1));
                     selectKernelComboBox->setCurrentIndex(kernelIndex);

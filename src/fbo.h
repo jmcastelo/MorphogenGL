@@ -1,5 +1,5 @@
 /*
-*  Copyright 2020 José María Castelo Ares
+*  Copyright 2020 Jose Maria Castelo Ares
 *
 *  Contact: <jose.maria.castelo@gmail.com>
 *  Repository: <https://github.com/jmcastelo/MorphogenGL>
@@ -41,7 +41,7 @@ public:
     QOpenGLShaderProgram* program;
     
     FBO(QString vertexShader, QString fragmentShader, QOpenGLContext* mainContext);
-    ~FBO();
+    virtual ~FBO();
     
     GLuint getTextureID() { return textureID; }
     void setInputTextureID(GLuint id) { inputTextureID = id; }

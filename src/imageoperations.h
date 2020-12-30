@@ -1,5 +1,5 @@
 /*
-*  Copyright 2020 José María Castelo Ares
+*  Copyright 2020 Jose Maria Castelo Ares
 *
 *  Contact: <jose.maria.castelo@gmail.com>
 *  Repository: <https://github.com/jmcastelo/MorphogenGL>
@@ -39,7 +39,7 @@ template <class T>
 class OptionsParameter;
 class KernelParameter;
 class MatrixParameter;
-class PolarKernel;
+struct PolarKernel;
 class PolarKernelParameter;
 
 // Base image operation class
@@ -67,11 +67,11 @@ public:
     virtual KernelParameter* getKernelParameter() { return nullptr; }
     virtual PolarKernelParameter* getPolarKernelParameter() { return nullptr; }
     
-    virtual void setFloatParameter(int index, float value) {}
-    virtual void setOptionsParameter(int index, GLenum value) {}
-    virtual void setOptionsParameter(int index, int value) {}
-    virtual void setMatrixParameter(GLfloat* elements) {}
-    virtual void setKernelParameter(GLfloat* elements) {}
+    virtual void setFloatParameter(int, float) {}
+    virtual void setOptionsParameter(int, GLenum) {}
+    virtual void setOptionsParameter(int, int) {}
+    virtual void setMatrixParameter(GLfloat*) {}
+    virtual void setKernelParameter(GLfloat*) {}
     virtual void setPolarKernelParameter() {}
 
     void adjustMinMax(float value, float minValue, float maxValue, float& min, float& max);

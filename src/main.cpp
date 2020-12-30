@@ -1,5 +1,5 @@
 /*
-*  Copyright 2020 José María Castelo Ares
+*  Copyright 2020 Jose Maria Castelo Ares
 *
 *  Contact: <jose.maria.castelo@gmail.com>
 *  Repository: <https://github.com/jmcastelo/MorphogenGL>
@@ -19,9 +19,6 @@
 *  You should have received a copy of the GNU General Public License
 *  along with MorphogenGL.  If not, see <https://www.gnu.org/licenses/>.
 */
-
-// Note: shaders and icons as internal resources compiled into the executable
-// C:\Qt\5.15.2\msvc2019_64\bin\rcc.exe -name "shaderResources" -no-compress .\resource.qrc -o .\src\resource.cpp
 
 #include "morphowidget.h"
 #include <QApplication>

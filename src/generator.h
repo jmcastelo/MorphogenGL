@@ -1,5 +1,5 @@
 /*
-*  Copyright 2020 José María Castelo Ares
+*  Copyright 2020 Jose Maria Castelo Ares
 *
 *  Contact: <jose.maria.castelo@gmail.com>
 *  Repository: <https://github.com/jmcastelo/MorphogenGL>
@@ -59,7 +59,7 @@ public:
     void addPipeline();
     void removePipeline(int pipelineIndex);
     void loadPipeline(float blendFactor);
-    int getPipelinesSize() { return pipelines.size(); };
+    int getPipelinesSize() { return static_cast<int>(pipelines.size()); };
 
     void setPipelineBlendFactor(int pipelineIndex, float factor);
     double getPipelineBlendFactor(int pipelineIndex) { return pipelines[pipelineIndex]->blendFactor; }

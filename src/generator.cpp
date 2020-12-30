@@ -1,5 +1,5 @@
 /*
-*  Copyright 2020 José María Castelo Ares
+*  Copyright 2020 Jose Maria Castelo Ares
 *
 *  Contact: <jose.maria.castelo@gmail.com>
 *  Repository: <https://github.com/jmcastelo/MorphogenGL>
@@ -151,7 +151,7 @@ void GeneratorGL::setPipelineBlendFactor(int pipelineIndex, float factor)
     {
         for (int i = 0; i < static_cast<int>(pipelines.size()); i++)
             if (i != pipelineIndex)
-                pipelines[i]->blendFactor = 1.0e-6;
+                pipelines[i]->blendFactor = 1.0e-6f;
 
         sumBlendFactors = 0.0;
 

@@ -53,7 +53,7 @@
       <AdditionalIncludeDirectories>.\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>opengl32.lib;avcodec.lib;avformat.lib;swscale.lib;avutil.lib;swresample.lib;libx264.lib;bcrypt.lib;ws2_32.lib;secur32.lib;qcustomplotd2.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>avcodec.lib;avformat.lib;swscale.lib;avutil.lib;swresample.lib;libx264.lib;bcrypt.lib;ws2_32.lib;secur32.lib;qcustomplotd2.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>C:\Development\libs;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -63,7 +63,7 @@
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>C:\Development\libs;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>opengl32.lib;avcodec.lib;avformat.lib;swscale.lib;avutil.lib;swresample.lib;libx264.lib;bcrypt.lib;ws2_32.lib;secur32.lib;qcustomplot.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>avcodec.lib;avformat.lib;swscale.lib;avutil.lib;swresample.lib;libx264.lib;bcrypt.lib;ws2_32.lib;secur32.lib;qcustomplot.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'" Label="QtSettings">
@@ -124,7 +124,6 @@
     <ClCompile Include="src\seed.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="resource.h" />
     <ClInclude Include="src\blender.h" />
     <QtMoc Include="src\configparser.h" />
     <ClInclude Include="src\fbo.h" />
@@ -141,12 +140,6 @@
   </ItemGroup>
   <ItemGroup>
     <QtRcc Include="resource.qrc" />
-  </ItemGroup>
-  <ItemGroup>
-    <ResourceCompile Include="resource.rc" />
-  </ItemGroup>
-  <ItemGroup>
-    <Image Include="icons\morphogengl.ico" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Condition="Exists('$(QtMsBuild)\qt.targets')">
