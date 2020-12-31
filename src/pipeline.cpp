@@ -161,7 +161,8 @@ void Pipeline::loadImageOperation(
     std::vector<float> floatParameters,
     std::vector<int> interpolationParameters,
     std::vector<float> kernelElements,
-    std::vector<float> matrixElements)
+    std::vector<float> matrixElements,
+    std::vector<PolarKernel*> polarKernels)
 {
     ImageOperation* operation = nullptr;
 
@@ -196,6 +197,10 @@ void Pipeline::loadImageOperation(
     else if (operationName == MorphologicalGradient::name)
     {
         operation = new MorphologicalGradient(enabled, ":/shaders/screen.vert", ":/shaders/morphogradient.frag", sharedContext, floatParameters[0], floatParameters[1]);
+    }
+    else if (operationName == PolarConvolution::name)
+    {
+        operation = new PolarConvolution(enabled, ":/shaders/screen.vert", ":/shaders/polar-convolution.frag", sharedContext, polarKernels, floatParameters[0]);
     }
     else if (operationName == Rotation::name)
     {

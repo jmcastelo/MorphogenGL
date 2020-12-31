@@ -370,7 +370,7 @@ QString PolarConvolution::name = "Polar convolution";
 
 PolarConvolution::PolarConvolution(bool on, QString vertexShader, QString fragmentShader, QOpenGLContext* mainContext, std::vector<PolarKernel*> thePolarKernels, float theCenterElement) : ImageOperation(on, vertexShader, fragmentShader, mainContext)
 {
-    polarKernelParameter = new PolarKernelParameter(this, thePolarKernels, theCenterElement);
+    polarKernelParameter = new PolarKernelParameter("Polar kernels", this, thePolarKernels, theCenterElement);
     setPolarKernelParameter();
 }
 

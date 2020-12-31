@@ -171,10 +171,12 @@ struct PolarKernel
 class PolarKernelParameter
 {
 public:
+    QString name;
     std::vector<PolarKernel*> polarKernels;
     float centerElement;
 
-    PolarKernelParameter(ImageOperation* theOperation, std::vector<PolarKernel*> thePolarKernels, float theCenterElement) :
+    PolarKernelParameter(QString theName, ImageOperation* theOperation, std::vector<PolarKernel*> thePolarKernels, float theCenterElement) :
+        name { theName },
         operation { theOperation },
         polarKernels { thePolarKernels },
         centerElement { theCenterElement }

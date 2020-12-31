@@ -173,6 +173,54 @@ void ConfigurationParser::writeImageOperations(Pipeline *pipeline)
             stream.writeEndElement();
         }
 
+        if (operation->getPolarKernelParameter())
+        {
+            stream.writeStartElement("parameter");
+            stream.writeAttribute("name", operation->getPolarKernelParameter()->name);
+            stream.writeAttribute("type", "polarkernel");
+
+            stream.writeStartElement("centerelement");
+            stream.writeCharacters(QString::number(operation->getPolarKernelParameter()->centerElement));
+            stream.writeEndElement();
+
+            for (auto polarKernel : operation->getPolarKernelParameter()->polarKernels)
+            {
+                stream.writeStartElement("polarkernel");
+
+                stream.writeStartElement("numelements");
+                stream.writeCharacters(QString::number(polarKernel->numElements));
+                stream.writeEndElement();
+
+                stream.writeStartElement("radius");
+                stream.writeCharacters(QString::number(polarKernel->radius));
+                stream.writeEndElement();
+
+                stream.writeStartElement("initialangle");
+                stream.writeCharacters(QString::number(polarKernel->initialAngle));
+                stream.writeEndElement();
+
+                stream.writeStartElement("frequency");
+                stream.writeCharacters(QString::number(polarKernel->frequency));
+                stream.writeEndElement();
+
+                stream.writeStartElement("phase");
+                stream.writeCharacters(QString::number(polarKernel->phase));
+                stream.writeEndElement();
+
+                stream.writeStartElement("minimum");
+                stream.writeCharacters(QString::number(polarKernel->minimum));
+                stream.writeEndElement();
+
+                stream.writeStartElement("maximum");
+                stream.writeCharacters(QString::number(polarKernel->maximum));
+                stream.writeEndElement();
+
+                stream.writeEndElement();
+            }
+
+            stream.writeEndElement();
+        }
+
         stream.writeEndElement();
     }
 }
@@ -285,6 +333,7 @@ void ConfigurationParser::readImageOperations(Pipeline *pipeline)
             std::vector<int> interpolationFlagParameters;
             std::vector<float> kernelElements;
             std::vector<float> matrixElements;
+            std::vector<PolarKernel*> polarKernels;
 
             while (xml.readNextStartElement())
             {
@@ -320,6 +369,46 @@ void ConfigurationParser::readImageOperations(Pipeline *pipeline)
                                 xml.skipCurrentElement();
                         }
                     }
+                    else if (parameterType == "polarkernel")
+                    {
+                        while (xml.readNextStartElement())
+                        {
+                            if (xml.name() == "centerelement")
+                            {
+                                floatParameters.push_back(xml.readElementText().toFloat());
+                            }
+                            else if (xml.name() == "polarkernel")
+                            {
+                                PolarKernel* polarKernel = new PolarKernel(8, 0.01f, 0.0f, 1.0f, 0.0f, -1.0f, 1.0f);
+
+                                while (xml.readNextStartElement())
+                                {
+                                    if (xml.name() == "numelements")
+                                        polarKernel->numElements = xml.readElementText().toInt();
+                                    else if (xml.name() == "radius")
+                                        polarKernel->radius = xml.readElementText().toFloat();
+                                    else if (xml.name() == "initialangle")
+                                        polarKernel->initialAngle = xml.readElementText().toFloat();
+                                    else if (xml.name() == "frequency")
+                                        polarKernel->frequency = xml.readElementText().toFloat();
+                                    else if (xml.name() == "phase")
+                                        polarKernel->phase = xml.readElementText().toFloat();
+                                    else if (xml.name() == "minimum")
+                                        polarKernel->minimum = xml.readElementText().toFloat();
+                                    else if (xml.name() == "maximum")
+                                        polarKernel->maximum = xml.readElementText().toFloat();
+                                    else
+                                        xml.skipCurrentElement();
+                                }
+
+                                polarKernels.push_back(polarKernel);
+                            }
+                            else
+                            {
+                                xml.skipCurrentElement();
+                            }
+                        }
+                    }
                 }
                 else
                 {
@@ -335,7 +424,8 @@ void ConfigurationParser::readImageOperations(Pipeline *pipeline)
                         floatParameters,
                         interpolationFlagParameters,
                         kernelElements,
-                        matrixElements);
+                        matrixElements,
+                        polarKernels);
         }
         else
         {

@@ -51,6 +51,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <AdditionalIncludeDirectories>.\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <WarningLevel>Level4</WarningLevel>
     </ClCompile>
     <Link>
       <AdditionalDependencies>avcodec.lib;avformat.lib;swscale.lib;avutil.lib;swresample.lib;libx264.lib;bcrypt.lib;ws2_32.lib;secur32.lib;qcustomplotd2.lib;%(AdditionalDependencies)</AdditionalDependencies>
@@ -60,6 +61,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
       <AdditionalIncludeDirectories>.\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <WarningLevel>Level4</WarningLevel>
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>C:\Development\libs;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>

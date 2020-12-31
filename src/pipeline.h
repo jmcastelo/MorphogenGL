@@ -54,7 +54,8 @@ public:
         std::vector<float> floatParameters,
         std::vector<int> interpolationParameters,
         std::vector<float> kernelElements,
-        std::vector<float> matrixElements);
+        std::vector<float> matrixElements,
+        std::vector<PolarKernel*> polarKernels);
 
     QString getImageOperationName(int operationIndex) { return imageOperations[operationIndex]->getName(); };
     int getImageOperationsSize() { return static_cast<int>(imageOperations.size()); };
