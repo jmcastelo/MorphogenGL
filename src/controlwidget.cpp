@@ -169,7 +169,7 @@ void ControlWidget::takeScreenshot()
     QRect rectangle = QRect(QPoint(0, 0), QSize(-1, -1));
     QPixmap screenshot = morphoWidget->grab(rectangle);
     
-    QString filename = QFileDialog::getSaveFileName(this, "Save image", "", "Images (*.bmp *.cur *.gif *.icns *.ico *.jpeg *.jpg *.pbm *.pgm *.png *.ppm *.tga *.tif *.tiff *.wbmp *.webp *.xbm *.xpm)");
+    QString filename = QFileDialog::getSaveFileName(this, "Save image", "", "Images (*.bmp *.ico *.jpeg *.jpg *.png *.tif *.tiff)");
     if (!filename.isEmpty())
     {
         screenshot.save(filename);
@@ -767,7 +767,7 @@ void ControlWidget::initPipelineControls(int selectedPipelineIndex)
     if (generator->getPipelinesSize() > 0)
         initImageOperationsListWidget(selectedPipelineIndex);
     else
-        initImageOperationsListWidget(0);
+        initImageOperationsListWidget(-2);
 
     resizeMainTabs(mainTabWidget->currentIndex());
 }
