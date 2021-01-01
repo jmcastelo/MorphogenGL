@@ -221,6 +221,25 @@ private:
     FloatParameter* gammaBlue;
 };
 
+// Hue shift
+
+class HueShift : public ImageOperation
+{
+public:
+    HueShift(bool on, QString vertexShader, QString fragmentShader, QOpenGLContext* mainContext, float theShift);
+    ~HueShift();
+
+    static QString name;
+    QString getName() { return name; };
+
+    void setFloatParameter(int index, float value);
+
+    std::vector<FloatParameter*> getFloatParameters() { std::vector<FloatParameter*> parameters = { shift }; return parameters; };
+
+private:
+    FloatParameter* shift;
+};
+
 // Morphological gradient
 
 class MorphologicalGradient : public ImageOperation

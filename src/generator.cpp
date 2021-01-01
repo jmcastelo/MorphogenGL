@@ -35,6 +35,7 @@ GeneratorGL::GeneratorGL()
         Dilation::name,
         Erosion::name,
         GammaCorrection::name,
+        HueShift::name,
         MorphologicalGradient::name,
         PolarConvolution::name,
         Rotation::name,
@@ -61,9 +62,11 @@ void GeneratorGL::init(QOpenGLContext* mainContext)
     outputFBO[0] = new FBO(":/shaders/screen.vert", ":/shaders/screen.frag", mainContext);
     outputFBO[1] = new FBO(":/shaders/screen.vert", ":/shaders/mask.frag", mainContext);
 
+    outputFBO[1]->makeCurrent();
     outputFBO[1]->program->bind();
     outputFBO[1]->program->setUniformValue("apply", applyMask);
     outputFBO[1]->program->release();
+    outputFBO[1]->doneCurrent();
 
     sharedContext = mainContext;
 }

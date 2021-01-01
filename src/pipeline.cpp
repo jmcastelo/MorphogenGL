@@ -35,6 +35,7 @@ Pipeline::Pipeline(GLuint id, float blend, QOpenGLContext* mainContext) : textur
         Dilation::name,
         Erosion::name,
         GammaCorrection::name,
+        HueShift::name,
         MorphologicalGradient::name,
         PolarConvolution::name,
         Rotation::name,
@@ -128,6 +129,10 @@ void Pipeline::insertImageOperation(int newOperationIndex, int currentOperationI
     {
         operation = new GammaCorrection(false, ":/shaders/screen.vert", ":/shaders/gamma.frag", sharedContext, 1.0f, 1.0f, 1.0f);
     }
+    else if (operationName == HueShift::name)
+    {
+        operation = new HueShift(false, ":/shaders/screen.vert", ":/shaders/hueshift.frag", sharedContext, 0.0f);
+    }
     else if (operationName == MorphologicalGradient::name)
     {
         operation = new MorphologicalGradient(false, ":/shaders/screen.vert", ":/shaders/morphogradient.frag", sharedContext, 0.01f, 0.01f);
@@ -193,6 +198,10 @@ void Pipeline::loadImageOperation(
     else if (operationName == GammaCorrection::name)
     {
         operation = new GammaCorrection(enabled, ":/shaders/screen.vert", ":/shaders/gamma.frag", sharedContext, floatParameters[0], floatParameters[1], floatParameters[2]);
+    }
+    else if (operationName == HueShift::name)
+    {
+        operation = new HueShift(enabled, ":/shaders/screen.vert", ":/shaders/hueshift.frag", sharedContext, floatParameters[0]);
     }
     else if (operationName == MorphologicalGradient::name)
     {

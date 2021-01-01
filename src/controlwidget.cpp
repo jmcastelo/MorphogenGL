@@ -178,7 +178,7 @@ void ControlWidget::takeScreenshot()
 
 void ControlWidget::loadConfig()
 {
-    QString filename = QFileDialog::getOpenFileName(this, "Load configuration", "", "MorphogenCV configurations (*.morph)");
+    QString filename = QFileDialog::getOpenFileName(this, "Load configuration", "", "MorphogenGL configurations (*.morph)");
 
     if (!filename.isEmpty())
     {
@@ -199,7 +199,7 @@ void ControlWidget::loadConfig()
 
 void ControlWidget::saveConfig()
 {
-    QString filename = QFileDialog::getSaveFileName(this, "Save configuration", "", "MorphogenCV configurations (*.morph)");
+    QString filename = QFileDialog::getSaveFileName(this, "Save configuration", "", "MorphogenGL configurations (*.morph)");
 
     if (!filename.isEmpty())
     {

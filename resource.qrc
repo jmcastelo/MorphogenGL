@@ -25,5 +25,6 @@
         <file>shaders/morphogradient.frag</file>
         <file>shaders/polar-convolution.frag</file>
         <file>icons/morphogengl.png</file>
+        <file>shaders/hueshift.frag</file>
     </qresource>
 </RCC>

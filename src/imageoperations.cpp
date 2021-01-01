@@ -268,7 +268,6 @@ void Erosion::setFloatParameter(int index, float value)
     }
 }
 
-
 // Gamma correction
 
 QString GammaCorrection::name = "Gamma correction";
@@ -306,6 +305,36 @@ void GammaCorrection::setFloatParameter(int index, float)
         fbo->makeCurrent();
         fbo->program->bind();
         fbo->program->setUniformValue("gamma", gamma);
+        fbo->program->release();
+        fbo->doneCurrent();
+    }
+}
+
+// Hue shift
+
+QString HueShift::name = "Hue shift";
+
+HueShift::HueShift(bool on, QString vertexShader, QString fragmentShader, QOpenGLContext* mainContext, float theShift) : ImageOperation(on, vertexShader, fragmentShader, mainContext)
+{
+    float min, max;
+    adjustMinMax(theShift, -1.0f, 1.0f, min, max);
+    shift = new FloatParameter("Shift", 0, this, theShift, min, max, -1.0f, 1.0f);
+
+    setFloatParameter(0, theShift);
+}
+
+HueShift::~HueShift()
+{
+    delete shift;
+}
+
+void HueShift::setFloatParameter(int index, float value)
+{
+    if (index == 0)
+    {
+        fbo->makeCurrent();
+        fbo->program->bind();
+        fbo->program->setUniformValue("shift", value);
         fbo->program->release();
         fbo->doneCurrent();
     }
