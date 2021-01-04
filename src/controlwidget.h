@@ -69,6 +69,9 @@ public:
     ControlWidget(MorphoWidget* theMorphoWidget, QWidget *parent = nullptr);
     ~ControlWidget();
 
+signals:
+    void imageSizeChanged();
+
 protected:
     void closeEvent(QCloseEvent* event) override;
 

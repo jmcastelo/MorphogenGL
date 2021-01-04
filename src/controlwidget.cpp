@@ -27,6 +27,8 @@ ControlWidget::ControlWidget(MorphoWidget* theMorphoWidget, QWidget *parent) :
     QWidget(parent),
     morphoWidget{ theMorphoWidget }
 {
+    // Generator
+
     generator = new GeneratorGL();
 
     // Configuration parser
@@ -390,9 +392,17 @@ void ControlWidget::constructGeneralControls()
     connect(fpsLineEdit, &FocusLineEdit::returnPressed, [=]() { morphoWidget->timer->setInterval(static_cast<int>(1000.0 / fpsLineEdit->text().toInt())); });
     connect(fpsLineEdit, &FocusLineEdit::focusOut, [=]() { fpsLineEdit->setText(QString::number(static_cast<int>(1000.0 / morphoWidget->timer->interval()))); });
 
-    connect(imageWidthLineEdit, &FocusLineEdit::returnPressed, [=]() { generator->resize(imageWidthLineEdit->text().toInt(), generator->getHeight()); });
+    connect(imageWidthLineEdit, &FocusLineEdit::returnPressed, [=]()
+    {
+        generator->resize(imageWidthLineEdit->text().toInt(), generator->getHeight());
+        emit imageSizeChanged();
+    });
     connect(imageWidthLineEdit, &FocusLineEdit::focusOut, [=]() { imageWidthLineEdit->setText(QString::number(generator->getWidth())); });
-    connect(imageHeightLineEdit, &FocusLineEdit::returnPressed, [=]() { generator->resize(generator->getWidth(), imageHeightLineEdit->text().toInt()); });
+    connect(imageHeightLineEdit, &FocusLineEdit::returnPressed, [=]()
+    {
+        generator->resize(generator->getWidth(), imageHeightLineEdit->text().toInt());
+        emit imageSizeChanged();
+    });
     connect(imageHeightLineEdit, &FocusLineEdit::focusOut, [=]() { imageHeightLineEdit->setText(QString::number(generator->getHeight())); });
 
     connect(windowWidthLineEdit, &FocusLineEdit::returnPressed, [=]() { morphoWidget->resize(windowWidthLineEdit->text().toInt(), windowHeightLineEdit->text().toInt()); });
@@ -401,10 +411,10 @@ void ControlWidget::constructGeneralControls()
     connect(windowHeightLineEdit, &FocusLineEdit::focusOut, [=]() { windowHeightLineEdit->setText(QString::number(morphoWidget->height())); });
 
     connect(morphoWidget, &MorphoWidget::screenSizeChanged, [=](int width, int height)
-        {
-            windowWidthLineEdit->setText(QString::number(width));
-            windowHeightLineEdit->setText(QString::number(height));
-        });
+    {
+        windowWidthLineEdit->setText(QString::number(width));
+        windowHeightLineEdit->setText(QString::number(height));
+    });
 
     connect(applyCircularMaskCheckBox, &QCheckBox::clicked, [=](bool checked) { generator->setMask(checked); });
     
@@ -641,31 +651,31 @@ void ControlWidget::constructPipelineControls()
     connect(drawRandomSeedPushButton, &QPushButton::clicked, [=]() { generator->drawRandomSeed(bwSeedCheckBox->isChecked()); });
     connect(drawSeedImagePushButton, &QPushButton::clicked, [=]() { generator->drawSeedImage(); });
     connect(loadSeedImagePushButton, &QPushButton::clicked, [=]()
+    {
+        QString filename = QFileDialog::getOpenFileName(this, "Load image", "", "Images (*.bmp *.jpeg *.jpg *.png *.tif *.tiff)");
+        if (!filename.isEmpty())
         {
-            QString filename = QFileDialog::getOpenFileName(this, "Load image", "", "Images (*.bmp *.cur *.gif *.icns *.ico *.jpeg *.jpg *.pbm *.pgm *.png *.ppm *.tga *.tif *.tiff *.wbmp *.webp *.xbm *.xpm)");
-            if (!filename.isEmpty())
-            {
-                generator->loadSeedImage(filename);
-                drawSeedImagePushButton->setEnabled(true);
-            }                
-        });
+            generator->loadSeedImage(filename);
+            drawSeedImagePushButton->setEnabled(true);
+        }
+    });
     connect(outputPipelinePushButton, &QPushButton::clicked, [=](bool checked) { if (checked) initImageOperationsListWidget(pipelinesButtonGroup->checkedId()); });
     connect(addPipelinePushButton, &QPushButton::clicked, [=]()
-        {
-            generator->addPipeline();
-            initPipelineControls(generator->getPipelinesSize() - 1);
-        });
+    {
+        generator->addPipeline();
+        initPipelineControls(generator->getPipelinesSize() - 1);
+    });
     connect(removePipelinePushButton, &QPushButton::clicked, [=]()
-        {
-            generator->removePipeline(pipelinesButtonGroup->checkedId());
-            initPipelineControls(pipelinesButtonGroup->checkedId());
-        });
+    {
+        generator->removePipeline(pipelinesButtonGroup->checkedId());
+        initPipelineControls(pipelinesButtonGroup->checkedId());
+    });
     connect(equalizeBlendFactorsPushButton, &QPushButton::clicked, [=]()
-        {
-            generator->equalizePipelineBlendFactors();
-            for (int i = 0; i < generator->getPipelinesSize(); i++)
-                pipelineBlendFactorLineEdit[i]->setText(QString::number(generator->getPipelineBlendFactor(i)));
-        });
+    {
+        generator->equalizePipelineBlendFactors();
+        for (int i = 0; i < generator->getPipelinesSize(); i++)
+            pipelineBlendFactorLineEdit[i]->setText(QString::number(generator->getPipelineBlendFactor(i)));
+    });
     connect(imageOperationsListWidget, &QListWidget::currentRowChanged, this, &ControlWidget::onImageOperationsListWidgetCurrentRowChanged);
     connect(imageOperationsListWidget->model(), &QAbstractItemModel::rowsMoved, this, &ControlWidget::onRowsMoved);
     connect(insertImageOperationPushButton, &QPushButton::clicked, this, &ControlWidget::insertImageOperation);

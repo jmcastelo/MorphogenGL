@@ -29,6 +29,8 @@
 #include <QOpenGLExtraFunctions>
 #include <QSurfaceFormat>
 #include <QCloseEvent>
+#include <QWheelEvent>
+#include <QMouseEvent>
 #include <QTimer>
 #include <QStyle>
 #include <QDesktopWidget>
@@ -55,12 +57,26 @@ public:
 
 protected:
     void closeEvent(QCloseEvent* event) override;
+    void wheelEvent(QWheelEvent* event) override;
+    void mouseMoveEvent(QMouseEvent* event) override;
+    void mousePressEvent(QMouseEvent* event) override;
 
 private:
     GLuint fbo = 0;
+
     ControlWidget* controlWidget = nullptr;
+
     std::chrono::time_point<std::chrono::steady_clock> start;
     std::chrono::time_point<std::chrono::steady_clock> end;
+
+    GLint srcX0 = 0;
+    GLint srcY0 = 0;
+    GLint srcX1 = FBO::width;
+    GLint srcY1 = FBO::height;
+    int xPrev = -1;
+    int yPrev = -1;
+    float deltaX = 0.0f;
+    float deltaY = 0.0f;
 
 signals:
     void screenSizeChanged(int width, int height);
