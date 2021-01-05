@@ -39,6 +39,7 @@ Pipeline::Pipeline(GLuint id, float blend, QOpenGLContext* mainContext) : textur
         MorphologicalGradient::name,
         PolarConvolution::name,
         Rotation::name,
+        Saturation::name,
         Scale::name
     };
 }
@@ -146,6 +147,10 @@ void Pipeline::insertImageOperation(int newOperationIndex, int currentOperationI
     {
         operation = new Rotation(false, ":/shaders/transform.vert", ":/shaders/screen.frag", sharedContext, 0.0f, GL_NEAREST);
     }
+    else if (operationName == Saturation::name)
+    {
+        operation = new Saturation(false, ":/shaders/screen.vert", ":/shaders/saturation.frag", sharedContext, 0.5f);
+    }
     else if (operationName == Scale::name)
     {
         operation = new Scale(false, ":/shaders/transform.vert", ":/shaders/screen.frag", sharedContext, 1.0f, GL_NEAREST);
@@ -214,6 +219,10 @@ void Pipeline::loadImageOperation(
     else if (operationName == Rotation::name)
     {
         operation = new Rotation(enabled, ":/shaders/transform.vert", ":/shaders/screen.frag", sharedContext, floatParameters[0], interpolationParameters[0]);
+    }
+    else if (operationName == Saturation::name)
+    {
+        operation = new Saturation(enabled, ":/shaders/screen.vert", ":/shaders/saturation.frag", sharedContext, floatParameters[0]);
     }
     else if (operationName == Scale::name)
     {

@@ -132,15 +132,15 @@ public:
         lineEdit->setText(QString::number(intParameter->value));
 
         connect(lineEdit, &FocusLineEdit::returnPressed, [=]()
+        {
+            int value = lineEdit->text().toInt();
+            if (value > 0 && value % 2 == 0)
             {
-                int value = lineEdit->text().toInt();
-                if (value > 0 && value % 2 == 0)
-                {
-                    value--;
-                    lineEdit->setText(QString::number(value));
-                }
-                intParameter->value = value;
-            });
+                value--;
+                lineEdit->setText(QString::number(value));
+            }
+            intParameter->value = value;
+        });
         connect(lineEdit, &FocusLineEdit::focusOut, [=]() { lineEdit->setText(QString::number(intParameter->value)); });
     }
 
@@ -175,11 +175,11 @@ public:
         lineEdit->setText(QString::number(floatParameter->value));
 
         connect(lineEdit, &FocusLineEdit::returnPressed, [=]()
-            {
-                floatParameter->setValue(lineEdit->text().toFloat());
-                emit currentValueChanged(floatParameter->value);
-                setIndex();
-            });
+        {
+            floatParameter->setValue(lineEdit->text().toFloat());
+            emit currentValueChanged(floatParameter->value);
+            setIndex();
+        });
         connect(lineEdit, &FocusLineEdit::focusOut, [=]() { lineEdit->setText(QString::number(floatParameter->value)); });
         connect(lineEdit, &FocusLineEdit::focusIn, [=]() { emit focusIn(); });
     }
@@ -323,13 +323,13 @@ public:
         presetsComboBox->setCurrentIndex(0);
 
         connect(presetsComboBox, QOverload<int>::of(&QComboBox::activated), [&](int index)
-            {
-                for (size_t i = 0; i < presets[index].size(); i++)
-                    lineEdits[i]->setText(QString::number(presets[index][i]));
+        {
+            for (size_t i = 0; i < presets[index].size(); i++)
+                lineEdits[i]->setText(QString::number(presets[index][i]));
 
-                kernelParameter->values = presets[index];
-                kernelParameter->setValues();
-            });
+            kernelParameter->values = presets[index];
+            kernelParameter->setValues();
+        });
     }
 
 private:
@@ -367,13 +367,13 @@ public:
         presetsComboBox->addItem("RGB to GBR");
 
         connect(presetsComboBox, QOverload<int>::of(&QComboBox::activated), [&](int index)
-            {
-                for (size_t i = 0; i < presets[index].size(); i++)
-                    lineEdits[i]->setText(QString::number(presets[index][i]));
+        {
+            for (size_t i = 0; i < presets[index].size(); i++)
+                lineEdits[i]->setText(QString::number(presets[index][i]));
 
-                matrixParameter->values = presets[index];
-                matrixParameter->setValues();
-            });
+            matrixParameter->values = presets[index];
+            matrixParameter->setValues();
+        });
     }
 
 private:
@@ -389,7 +389,6 @@ class PolarKernelParameterWidget : public QWidget
 
 public:
     QVBoxLayout* vBoxLayout;
-    //QWidget* plotWidget;
 
     PolarKernelParameterWidget(PolarKernelParameter* thePolarKernelParameter, QWidget* parent = nullptr) : QWidget(parent), polarKernelParameter{ thePolarKernelParameter }
     {
@@ -491,40 +490,40 @@ public:
         connect(selectKernelComboBox, QOverload<int>::of(&QComboBox::activated), [=](int index) { kernelIndex = index;  setLineEditTexts(); setKernelValuesPlotData(); });
 
         connect(addKernelPushButton, &QPushButton::pressed, [=]()
+        {
+            if (polarKernelParameter->polarKernels.size() < 5)
             {
-                if (polarKernelParameter->polarKernels.size() < 5)
-                {
-                    polarKernelParameter->polarKernels.push_back(new PolarKernel(*polarKernelParameter->polarKernels.back()));
-                    polarKernelParameter->setValues();
-                    
-                    kernelIndex = static_cast<int>(polarKernelParameter->polarKernels.size()) - 1;
-                    
-                    selectKernelComboBox->addItem(QString::number(kernelIndex + 1));
-                    selectKernelComboBox->setCurrentIndex(kernelIndex);
+                polarKernelParameter->polarKernels.push_back(new PolarKernel(*polarKernelParameter->polarKernels.back()));
+                polarKernelParameter->setValues();
 
-                    setLineEditTexts();
-                }
-            });
+                kernelIndex = static_cast<int>(polarKernelParameter->polarKernels.size()) - 1;
+
+                selectKernelComboBox->addItem(QString::number(kernelIndex + 1));
+                selectKernelComboBox->setCurrentIndex(kernelIndex);
+
+                setLineEditTexts();
+            }
+        });
         connect(removeKernelPushButton, &QPushButton::pressed, [=]()
+        {
+            if (polarKernelParameter->polarKernels.size() > 1)
             {
-                if (polarKernelParameter->polarKernels.size() > 1)
-                {
-                    polarKernelParameter->polarKernels.erase(polarKernelParameter->polarKernels.begin() + kernelIndex);
-                    polarKernelParameter->setValues();
+                polarKernelParameter->polarKernels.erase(polarKernelParameter->polarKernels.begin() + kernelIndex);
+                polarKernelParameter->setValues();
 
-                    selectKernelComboBox->removeItem(0);
+                selectKernelComboBox->removeItem(0);
 
-                    for (int i = 0; i < selectKernelComboBox->count(); i++)
-                        selectKernelComboBox->setItemText(i, QString::number(i + 1));
-                    
-                    kernelIndex--;
-                    kernelIndex = kernelIndex < 0 ? 0 : kernelIndex;
+                for (int i = 0; i < selectKernelComboBox->count(); i++)
+                    selectKernelComboBox->setItemText(i, QString::number(i + 1));
 
-                    selectKernelComboBox->setCurrentIndex(kernelIndex);
+                kernelIndex--;
+                kernelIndex = kernelIndex < 0 ? 0 : kernelIndex;
 
-                    setLineEditTexts();
-                }
-            });
+                selectKernelComboBox->setCurrentIndex(kernelIndex);
+
+                setLineEditTexts();
+            }
+        });
 
         connect(numElementsLineEdit, &FocusLineEdit::returnPressed, [=]() { polarKernelParameter->polarKernels[kernelIndex]->numElements = numElementsLineEdit->text().toInt(); polarKernelParameter->setValues(); setGeometryPlotData(); setKernelValuesPlotData(); });
         connect(numElementsLineEdit, &FocusLineEdit::focusOut, [=]() { numElementsLineEdit->setText(QString::number(polarKernelParameter->polarKernels[kernelIndex]->numElements)); });
@@ -682,10 +681,4 @@ public:
         for (auto& widget : polarKernelParameterWidget)
             delete widget;
     }
-
-    /*void closeEvent(QCloseEvent* event) override
-    {
-        for (auto& widget : polarKernelParameterWidget)
-            widget->plotWidget->close();
-    }*/
 };

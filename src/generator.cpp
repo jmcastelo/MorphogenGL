@@ -39,6 +39,7 @@ GeneratorGL::GeneratorGL()
         MorphologicalGradient::name,
         PolarConvolution::name,
         Rotation::name,
+        Saturation::name,
         Scale::name
     };
 }

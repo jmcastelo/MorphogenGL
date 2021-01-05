@@ -463,9 +463,9 @@ QString Rotation::name = "Rotation";
 
 Rotation::Rotation(bool on, QString vertexShader, QString fragmentShader, QOpenGLContext* mainContext, float theAngle, GLenum theMinMagFilter) : ImageOperation(on, vertexShader, fragmentShader, mainContext)
 {
-    float minAngle, maxAngle;
-    adjustMinMax(theAngle, -360.0f, 360.0f, minAngle, maxAngle);
-    angle = new FloatParameter("Angle", 0, this, theAngle, minAngle, maxAngle, -1.0e6, 1.0e6);
+    float min, max;
+    adjustMinMax(theAngle, -360.0f, 360.0f, min, max);
+    angle = new FloatParameter("Angle", 0, this, theAngle, min, max, -1.0e6, 1.0e6);
     setFloatParameter(0, theAngle);
 
     std::vector<QString> valueNames = { "Nearest neighbor", "Linear" };
@@ -510,15 +510,46 @@ void Rotation::setOptionsParameter(int index, GLenum value)
     }
 }
 
+// Saturation
+
+QString Saturation::name = "Saturation";
+
+Saturation::Saturation(bool on, QString vertexShader, QString fragmentShader, QOpenGLContext* mainContext, float theSaturation) : ImageOperation(on, vertexShader, fragmentShader, mainContext)
+{
+    float min, max;
+    adjustMinMax(theSaturation, 0.0f, 1.0f, min, max);
+    saturation = new FloatParameter("Saturation", 0, this, theSaturation, min, max, 0.0f, 1.0f);
+    setFloatParameter(0, theSaturation);
+}
+
+Saturation::~Saturation()
+{
+    delete saturation;
+}
+
+void Saturation::setFloatParameter(int index, float value)
+{
+    if (index == 0)
+    {
+        // Set shader uniform
+
+        fbo->makeCurrent();
+        fbo->program->bind();
+        fbo->program->setUniformValue("saturation", value);
+        fbo->program->release();
+        fbo->doneCurrent();
+    }
+}
+
 // Scale
 
 QString Scale::name = "Scale";
 
 Scale::Scale(bool on, QString vertexShader, QString fragmentShader, QOpenGLContext* mainContext, float theScaleFactor, GLenum theMinMagFilter) : ImageOperation(on, vertexShader, fragmentShader, mainContext)
 {
-    float minScaleFactor, maxScaleFactor;
-    adjustMinMax(theScaleFactor, 0.0f, 2.0f, minScaleFactor, maxScaleFactor);
-    scaleFactor = new FloatParameter("Scale factor", 0, this, theScaleFactor, minScaleFactor, maxScaleFactor, -1.0e6, 1.0e6);
+    float min, max;
+    adjustMinMax(theScaleFactor, 0.0f, 2.0f, min, max);
+    scaleFactor = new FloatParameter("Scale factor", 0, this, theScaleFactor, min, max, -1.0e6, 1.0e6);
     setFloatParameter(0, theScaleFactor);
 
     std::vector<QString> valueNames = { "Nearest neighbor", "Linear" };

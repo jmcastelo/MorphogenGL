@@ -26,5 +26,6 @@
         <file>shaders/polar-convolution.frag</file>
         <file>icons/morphogengl.png</file>
         <file>shaders/hueshift.frag</file>
+        <file>shaders/saturation.frag</file>
     </qresource>
 </RCC>

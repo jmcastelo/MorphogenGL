@@ -301,6 +301,25 @@ private:
     OptionsParameter<GLenum>* minMagFilter;
 };
 
+// Saturation
+
+class Saturation: public ImageOperation
+{
+public:
+    Saturation(bool on, QString vertexShader, QString fragmentShader, QOpenGLContext* mainContext, float theSaturation);
+    ~Saturation();
+
+    static QString name;
+    QString getName() { return name; };
+
+    void setFloatParameter(int index, float value);
+
+    std::vector<FloatParameter*> getFloatParameters() { std::vector<FloatParameter*> parameters = { saturation }; return parameters; };
+
+private:
+    FloatParameter* saturation;
+};
+
 // Scale
 
 class Scale : public ImageOperation
