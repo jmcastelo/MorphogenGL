@@ -73,7 +73,6 @@ ControlWidget::ControlWidget(MorphoWidget* theMorphoWidget, QWidget *parent) :
     // Status bar
 
     statusBar = new QStatusBar;
-    statusBar->setFont(QFont("sans", 8));
     statusBar->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Maximum);
     statusBar->setSizeGripEnabled(false);
 
@@ -106,7 +105,13 @@ ControlWidget::ControlWidget(MorphoWidget* theMorphoWidget, QWidget *parent) :
 
     connect(morphoWidget, &MorphoWidget::iterationPerformed, this, &ControlWidget::updateIterationNumberLabel);
     connect(morphoWidget, &MorphoWidget::iterationTimeMeasured, this, &ControlWidget::updateMetricsLabels);
-    connect(parser, &ConfigurationParser::updateImageSize, [=](int width, int height) { generator->resize(width, height); imageWidthLineEdit->setText(QString::number(width)); imageHeightLineEdit->setText(QString::number(height)); });
+    connect(parser, &ConfigurationParser::updateImageSize, [=](int width, int height)
+    {
+        generator->resize(width, height);
+        imageWidthLineEdit->setText(QString::number(width));
+        imageHeightLineEdit->setText(QString::number(height));
+        emit imageSizeChanged();
+    });
     connect(parser, &ConfigurationParser::updateMask, [=](bool applyMask) { generator->setMask(applyMask); applyCircularMaskCheckBox->setChecked(applyMask); });
 }
 
