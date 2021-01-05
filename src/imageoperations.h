@@ -341,3 +341,22 @@ private:
     FloatParameter* scaleFactor;
     OptionsParameter<GLenum>* minMagFilter;
 };
+
+// Value
+
+class Value: public ImageOperation
+{
+public:
+    Value(bool on, QString vertexShader, QString fragmentShader, QOpenGLContext* mainContext, float theValue);
+    ~Value();
+
+    static QString name;
+    QString getName() { return name; };
+
+    void setFloatParameter(int index, float value);
+
+    std::vector<FloatParameter*> getFloatParameters() { std::vector<FloatParameter*> parameters = { value }; return parameters; };
+
+private:
+    FloatParameter* value;
+};

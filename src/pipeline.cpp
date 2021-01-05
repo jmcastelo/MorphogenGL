@@ -40,7 +40,8 @@ Pipeline::Pipeline(GLuint id, float blend, QOpenGLContext* mainContext) : textur
         PolarConvolution::name,
         Rotation::name,
         Saturation::name,
-        Scale::name
+        Scale::name,
+        Value::name
     };
 }
 
@@ -155,6 +156,10 @@ void Pipeline::insertImageOperation(int newOperationIndex, int currentOperationI
     {
         operation = new Scale(false, ":/shaders/transform.vert", ":/shaders/screen.frag", sharedContext, 1.0f, GL_NEAREST);
     }
+    else if (operationName == Value::name)
+    {
+        operation = new Value(false, ":/shaders/screen.vert", ":/shaders/value.frag", sharedContext, 0.5f);
+    }
 
     if (operation)
     {
@@ -227,6 +232,10 @@ void Pipeline::loadImageOperation(
     else if (operationName == Scale::name)
     {
         operation = new Scale(enabled, ":/shaders/transform.vert", ":/shaders/screen.frag", sharedContext, floatParameters[0], interpolationParameters[0]);
+    }
+    else if (operationName == Value::name)
+    {
+        operation = new Value(enabled, ":/shaders/screen.vert", ":/shaders/value.frag", sharedContext, floatParameters[0]);
     }
 
     if (operation) imageOperations.push_back(operation);

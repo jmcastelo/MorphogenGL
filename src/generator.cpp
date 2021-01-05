@@ -40,7 +40,8 @@ GeneratorGL::GeneratorGL()
         PolarConvolution::name,
         Rotation::name,
         Saturation::name,
-        Scale::name
+        Scale::name,
+        Value::name
     };
 }
 

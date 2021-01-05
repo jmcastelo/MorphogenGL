@@ -593,3 +593,34 @@ void Scale::setOptionsParameter(int index, GLenum value)
         fbo->setMinMagFilter(value);
     }
 }
+
+// Value
+
+QString Value::name = "Value";
+
+Value::Value(bool on, QString vertexShader, QString fragmentShader, QOpenGLContext* mainContext, float theValue) : ImageOperation(on, vertexShader, fragmentShader, mainContext)
+{
+    float min, max;
+    adjustMinMax(theValue, 0.0f, 1.0f, min, max);
+    value = new FloatParameter("Value", 0, this, theValue, min, max, 0.0f, 1.0f);
+    setFloatParameter(0, theValue);
+}
+
+Value::~Value()
+{
+    delete value;
+}
+
+void Value::setFloatParameter(int index, float value)
+{
+    if (index == 0)
+    {
+        // Set shader uniform
+
+        fbo->makeCurrent();
+        fbo->program->bind();
+        fbo->program->setUniformValue("value", value);
+        fbo->program->release();
+        fbo->doneCurrent();
+    }
+}
