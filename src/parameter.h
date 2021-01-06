@@ -32,9 +32,10 @@ struct BoolParameter
 {
     QString name;
     bool value;
+
     BoolParameter(QString theName, bool theValue) :
-        name{ theName },
-        value{ theValue }
+        name { theName },
+        value { theValue }
     {}
 };
 
@@ -46,13 +47,14 @@ public:
     std::vector<QString> valueNames;
     std::vector<T> values;
     T value;
+
     OptionsParameter(QString theName, int theIndex, ImageOperation* theOperation, std::vector<QString> theValueNames, std::vector<T> theValues, T theValue) :
-        name{ theName },
-        index{ theIndex },
-        operation{ theOperation },
-        valueNames{ theValueNames },
-        values{ theValues },
-        value{ theValue }
+        name { theName },
+        valueNames { theValueNames },
+        values { theValues },
+        value { theValue },
+        index { theIndex },
+        operation { theOperation }
     {}
 
     void setValue(int valueIndex)
@@ -66,18 +68,28 @@ private:
     ImageOperation* operation;
 };
 
-struct IntParameter
+class IntParameter
 {
+public:
     QString name;
     int value, min, max;
     bool isOdd;
-    IntParameter(QString theName, int theValue, int theMin, int theMax, bool odd) :
-        name{ theName },
-        value{ theValue },
-        min{ theMin },
-        max{ theMax },
-        isOdd{ odd }
+
+    IntParameter(QString theName, int theIndex, ImageOperation* theOperation, int theValue, int theMin, int theMax, bool odd) :
+        name { theName },
+        value { theValue },
+        min { theMin },
+        max { theMax },
+        isOdd { odd },
+        index { theIndex },
+        operation { theOperation }
     {}
+
+    void setValue(int theValue);
+
+private:
+    int index;
+    ImageOperation* operation;
 };
 
 class FloatParameter
@@ -87,14 +99,14 @@ public:
     float value, min, max, inf, sup;
     
     FloatParameter(QString theName, int theIndex, ImageOperation* theOperation, float theValue, float theMin, float theMax, float theInf, float theSup) :
-        name{ theName },
-        index{ theIndex },
-        operation{ theOperation },
-        value{ theValue },
-        min{ theMin },
-        max{ theMax },
-        inf{ theInf },
-        sup{ theSup }
+        name { theName },
+        value { theValue },
+        min { theMin },
+        max { theMax },
+        inf { theInf },
+        sup { theSup },
+        index { theIndex },
+        operation { theOperation }
     {}
 
     void setValue(float theValue);
@@ -111,11 +123,11 @@ public:
     std::vector<float> values;
     float min, max;
     ArrayParameter(QString theName, ImageOperation* theOperation, std::vector<float> theValues, float theMin, float theMax) :
-        name{ theName },
-        operation{ theOperation },
-        values{ theValues },
-        min{ theMin },
-        max{ theMax }
+        name { theName },
+        values { theValues },
+        min { theMin },
+        max { theMax },
+        operation { theOperation }
     {}
     virtual ~ArrayParameter(){}
 
@@ -131,7 +143,7 @@ public:
     bool normalize;
     KernelParameter(QString theName, ImageOperation* theOperation, std::vector<float> theValues, float theMin, float theMax, bool norm) :
         ArrayParameter(theName, theOperation, theValues, theMin, theMax),
-        normalize{ norm }
+        normalize { norm }
     {}
 
     void setValues();
@@ -177,9 +189,9 @@ public:
 
     PolarKernelParameter(QString theName, ImageOperation* theOperation, std::vector<PolarKernel*> thePolarKernels, float theCenterElement) :
         name { theName },
-        operation { theOperation },
         polarKernels { thePolarKernels },
-        centerElement { theCenterElement }
+        centerElement { theCenterElement },
+        operation { theOperation }
     {}
     ~PolarKernelParameter();
 

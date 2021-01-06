@@ -22,6 +22,12 @@
 
 #include "parameter.h"
 
+void IntParameter::setValue(int theValue)
+{
+    value = theValue;
+    operation->setIntParameter(index, value);
+}
+
 void FloatParameter::setValue(float theValue)
 {
     value = theValue;

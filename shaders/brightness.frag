@@ -10,5 +10,5 @@ uniform float brightness;
 
 void main()
 {
-	fragColor = vec4(brightness + texture(inTexture, texCoords).rgb, 1.0);
+    fragColor = vec4(brightness + texture(inTexture, texCoords).rgb, 1.0);
 }

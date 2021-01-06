@@ -33,7 +33,6 @@
 #include <QMouseEvent>
 #include <QTimer>
 #include <QStyle>
-#include <QDesktopWidget>
 
 class ControlWidget;
 

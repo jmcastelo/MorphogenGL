@@ -33,7 +33,7 @@
 #include <QDebug>
 
 struct BoolParameter;
-struct IntParameter;
+class IntParameter;
 class FloatParameter;
 template <class T>
 class OptionsParameter;
@@ -67,6 +67,7 @@ public:
     virtual KernelParameter* getKernelParameter() { return nullptr; }
     virtual PolarKernelParameter* getPolarKernelParameter() { return nullptr; }
     
+    virtual void setIntParameter(int, int) {}
     virtual void setFloatParameter(int, float) {}
     virtual void setOptionsParameter(int, GLenum) {}
     virtual void setOptionsParameter(int, int) {}
@@ -81,6 +82,33 @@ public:
 protected:
     bool enabled;
     FBO* fbo;
+};
+
+// Bilateral filter
+
+class BilateralFilter : public ImageOperation
+{
+public:
+    BilateralFilter(bool on, QString vertexShader, QString fragmentShader, QOpenGLContext* mainContext, int theNumSideElements, float theSize, float theSpatialSigma, float theRangeSigma);
+    ~BilateralFilter();
+
+    static QString name;
+    QString getName() { return name; };
+
+    void setIntParameter(int index, int value);
+    void setFloatParameter(int index, float value);
+
+    std::vector<IntParameter*> getIntParameters() { std::vector<IntParameter*> parameters = { numSideElements }; return parameters; };
+    std::vector<FloatParameter*> getFloatParameters() { std::vector<FloatParameter*> parameters = { size, spatialSigma, rangeSigma }; return parameters; }
+
+private:
+    IntParameter* numSideElements;
+    FloatParameter* size;
+    FloatParameter* spatialSigma;
+    FloatParameter* rangeSigma;
+
+    void computeOffsets();
+    void computeSpatialKernel();
 };
 
 // Brightness

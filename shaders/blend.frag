@@ -12,5 +12,5 @@ uniform float outFactor;
 
 void main()
 {
-	fragColor = vec4(outFactor * texture(outTexture, texCoords).rgb + blendFactor * texture(inTexture, texCoords).rgb, 1.0);
+    fragColor = vec4(outFactor * texture(outTexture, texCoords).rgb + blendFactor * texture(inTexture, texCoords).rgb, 1.0);
 }

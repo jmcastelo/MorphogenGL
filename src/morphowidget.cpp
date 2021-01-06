@@ -45,7 +45,7 @@ MorphoWidget::MorphoWidget()
 
     resize(512, 512);
 
-    setGeometry(QStyle::alignedRect(Qt::LeftToRight, Qt::AlignCenter, size(), qApp->desktop()->availableGeometry()));
+    setGeometry(QStyle::alignedRect(Qt::LeftToRight, Qt::AlignCenter, size(), QGuiApplication::screens().first()->geometry()));
     setGeometry(geometry().x() - controlWidget->width() / 2, geometry().y(), width(), height());
     controlWidget->setGeometry(geometry().x() + width(), geometry().y(), controlWidget->width(), controlWidget->height());
     controlWidget->show();
@@ -178,6 +178,8 @@ void MorphoWidget::mousePressEvent(QMouseEvent* event)
 void MorphoWidget::initializeGL()
 {
     initializeOpenGLFunctions();
+
+    //qDebug () << (const char*)context()->functions()->glGetString(GL_VERSION);
 
     // Setup
 

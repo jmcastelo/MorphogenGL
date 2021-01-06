@@ -28,6 +28,7 @@ Pipeline::Pipeline(GLuint id, float blend, QOpenGLContext* mainContext) : textur
     // Duplicate of GeneratorGL's
 
     availableImageOperations = {
+        BilateralFilter::name,
         Brightness::name,
         ColorMix::name,
         Contrast::name,
@@ -101,7 +102,11 @@ void Pipeline::insertImageOperation(int newOperationIndex, int currentOperationI
 
     QString operationName = availableImageOperations[newOperationIndex];
 
-    if (operationName == Brightness::name)
+    if (operationName == BilateralFilter::name)
+    {
+        operation = new BilateralFilter(false, ":/shaders/screen.vert", ":/shaders/bilateral.frag", sharedContext, 3, 0.01f, 10.0f, 0.1f);
+    }
+    else if (operationName == Brightness::name)
     {
         operation = new Brightness(false, ":/shaders/screen.vert", ":/shaders/brightness.frag", sharedContext, 0.0f);
     }
@@ -181,7 +186,11 @@ void Pipeline::loadImageOperation(
 {
     ImageOperation* operation = nullptr;
 
-    if (operationName == Brightness::name)
+    if (operationName == BilateralFilter::name)
+    {
+        operation = new BilateralFilter(enabled, ":/shaders/screen.vert", ":/shaders/brightness.frag", sharedContext, intParameters[0], floatParameters[0], floatParameters[1], floatParameters[2]);
+    }
+    else if (operationName == Brightness::name)
     {
         operation = new Brightness(enabled, ":/shaders/screen.vert", ":/shaders/brightness.frag", sharedContext, floatParameters[0]);
     }

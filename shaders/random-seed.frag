@@ -1,9 +1,9 @@
 #version 330 core
 
+out vec4 fragColor;
+
 uniform bool grayscale;
 uniform float randomNumber;
-
-out vec4 fragment;
 
 // A single iteration of Bob Jenkins' One-At-A-Time hashing algorithm.
 uint hash(uint x)
@@ -46,13 +46,13 @@ void main()
     if (grayscale)
     {
         float rand = random(vec3(gl_FragCoord.xy, randomNumber));
-        fragment = vec4(vec3(rand), 1.0);
+        fragColor = vec4(vec3(rand), 1.0);
     }
     else
     {
         float red = random(vec3(gl_FragCoord.xy, randomNumber));
         float green = random(vec3(gl_FragCoord.yx, randomNumber));
         float blue = random(vec3(red, green, randomNumber));
-        fragment = vec4(red, green, blue, 1.0);
+        fragColor = vec4(red, green, blue, 1.0);
     }
 }

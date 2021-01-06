@@ -50,15 +50,131 @@ void ImageOperation::adjustMinMax(float value, float minValue, float maxValue, f
     else max = maxValue;
 }
 
+// Bilateral filter
+
+QString BilateralFilter::name = "Bilateral filter";
+
+BilateralFilter::BilateralFilter(bool on, QString vertexShader, QString fragmentShader, QOpenGLContext* mainContext, int theNumSideElements, float theSize, float theSpatialSigma, float theRangeSigma) : ImageOperation(on, vertexShader, fragmentShader, mainContext)
+{
+    numSideElements = new IntParameter("Side elements", 0, this, theNumSideElements, 2, 7, false);
+
+    float min, max;
+    adjustMinMax(theSize, 0.0f, 1.0f, min, max);
+    size = new FloatParameter("Kernel size", 0, this, theSize, min, max, 0.0f, 1.0f);
+
+    adjustMinMax(theSpatialSigma, 1.0e-6f, 100.0f, min, max);
+    spatialSigma = new FloatParameter("Spatial sigma", 1, this, theSpatialSigma, min, max, 1.0e-6f, 1.0e6f);
+
+    adjustMinMax(theRangeSigma, 1.0e-6f, 1.0f, min, max);
+    rangeSigma = new FloatParameter("Range sigma", 2, this, theRangeSigma, min, max, 1.0e-6f, 1.0e6f);
+
+    setIntParameter(0, theNumSideElements);
+    setFloatParameter(2, theRangeSigma);
+}
+
+BilateralFilter::~BilateralFilter()
+{
+    delete numSideElements;
+    delete size;
+    delete spatialSigma;
+    delete rangeSigma;
+}
+
+void BilateralFilter::computeOffsets()
+{
+    QVector2D *offset = new QVector2D[numSideElements->value * numSideElements->value];
+
+    for (int i = 0; i < numSideElements->value; i++)
+    {
+        float x = size->value * (-0.5f + i / (numSideElements->value - 1.0f));
+
+        for (int j = 0; j < numSideElements->value; j++)
+        {
+            float y = size->value * (-0.5f + j / (numSideElements->value - 1.0f));
+
+            offset[i * numSideElements->value + j] = QVector2D(x, y);
+        }
+    }
+
+    fbo->makeCurrent();
+    fbo->program->bind();
+    fbo->program->setUniformValueArray("offset", offset, numSideElements->value * numSideElements->value);
+    fbo->program->release();
+    fbo->doneCurrent();
+
+    delete [] offset;
+}
+
+void BilateralFilter::computeSpatialKernel()
+{
+    float* spatialKernel = new float[numSideElements->value * numSideElements->value];
+
+    for (int i = 0; i < numSideElements->value; i++)
+    {
+        float x = size->value * (-0.5f + i / (numSideElements->value - 1.0f));
+
+        for (int j = 0; j < numSideElements->value; j++)
+        {
+            float y = size->value * (-0.5f + j / (numSideElements->value - 1.0f));
+
+            spatialKernel[i * numSideElements->value + j] = exp(-0.5f * (x * x + y * y) / (spatialSigma->value * spatialSigma->value));
+        }
+    }
+
+    fbo->makeCurrent();
+    fbo->program->bind();
+    fbo->program->setUniformValueArray("spatialKernel", spatialKernel, numSideElements->value * numSideElements->value, 1);
+    fbo->program->release();
+    fbo->doneCurrent();
+
+    delete [] spatialKernel;
+}
+
+void BilateralFilter::setIntParameter(int index, int value)
+{
+    if (index == 0)
+    {
+        fbo->makeCurrent();
+        fbo->program->bind();
+        fbo->program->setUniformValue("numElements", value * value);
+        fbo->program->release();
+        fbo->doneCurrent();
+
+        computeOffsets();
+        computeSpatialKernel();
+    }
+}
+
+void BilateralFilter::setFloatParameter(int index, float value)
+{
+    if (index == 0)
+    {
+        computeOffsets();
+        computeSpatialKernel();
+    }
+    else if (index == 1)
+    {
+        computeSpatialKernel();
+    }
+    else if (index == 2)
+    {
+        fbo->makeCurrent();
+        fbo->program->bind();
+        fbo->program->setUniformValue("rangeSigma", value);
+        fbo->program->release();
+        fbo->doneCurrent();
+    }
+}
+
 // Brightness
 
 QString Brightness::name = "Brightness";
 
 Brightness::Brightness(bool on, QString vertexShader, QString fragmentShader, QOpenGLContext* mainContext, float theBrightness) : ImageOperation(on, vertexShader, fragmentShader, mainContext)
 {
-    float minBrightness, maxBrightness;
-    adjustMinMax(theBrightness, -1.0f, 1.0f, minBrightness, maxBrightness);
-    brightness = new FloatParameter("Brightness", 0, this, theBrightness, minBrightness, maxBrightness, -10.0f, 10.0f);
+    float min, max;
+    adjustMinMax(theBrightness, -1.0f, 1.0f, min, max);
+    brightness = new FloatParameter("Brightness", 0, this, theBrightness, min, max, -10.0f, 10.0f);
     setFloatParameter(0, theBrightness);
 }
 
@@ -611,7 +727,7 @@ Value::~Value()
     delete value;
 }
 
-void Value::setFloatParameter(int index, float value)
+void Value::setFloatParameter(int index, float theValue)
 {
     if (index == 0)
     {
@@ -619,7 +735,7 @@ void Value::setFloatParameter(int index, float value)
 
         fbo->makeCurrent();
         fbo->program->bind();
-        fbo->program->setUniformValue("value", value);
+        fbo->program->setUniformValue("value", theValue);
         fbo->program->release();
         fbo->doneCurrent();
     }

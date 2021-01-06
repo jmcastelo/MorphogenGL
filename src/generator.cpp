@@ -28,6 +28,7 @@ GeneratorGL::GeneratorGL()
     // Duplicate of Pipeline's
 
     availableImageOperations = {
+        BilateralFilter::name,
         Brightness::name,
         ColorMix::name,
         Contrast::name,
@@ -103,7 +104,7 @@ void GeneratorGL::addPipeline()
 
 void GeneratorGL::removePipeline(int pipelineIndex)
 {
-    if (!pipelines.empty() && pipelineIndex >= 0 && pipelineIndex < pipelines.size())
+    if (!pipelines.empty() && pipelineIndex >= 0 && pipelineIndex < static_cast<int>(pipelines.size()))
     {
         pipelines.erase(pipelines.begin() + pipelineIndex);
 

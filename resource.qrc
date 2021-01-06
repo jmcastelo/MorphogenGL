@@ -28,5 +28,6 @@
         <file>shaders/hueshift.frag</file>
         <file>shaders/saturation.frag</file>
         <file>shaders/value.frag</file>
+        <file>shaders/bilateral.frag</file>
     </qresource>
 </RCC>

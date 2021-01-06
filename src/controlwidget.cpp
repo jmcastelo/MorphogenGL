@@ -200,7 +200,8 @@ void ControlWidget::loadConfig()
         generator->resetIterationNumer();
 
         updateIterationNumberLabel();
-        updateMetricsLabels(0);
+        timePerIterationLabel->setText(QString("mSPF: 0"));
+        fpsLabel->setText(QString("FPS: 0"));
     }
 }
 
