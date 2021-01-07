@@ -1,5 +1,5 @@
 /*
-*  Copyright 2020 Jose Maria Castelo Ares
+*  Copyright 2021 Jose Maria Castelo Ares
 *
 *  Contact: <jose.maria.castelo@gmail.com>
 *  Repository: <https://github.com/jmcastelo/MorphogenGL>
@@ -20,53 +20,31 @@
 *  along with MorphogenGL.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+#include "heart.h"
 #include "morphowidget.h"
 
-MorphoWidget::MorphoWidget()
+MorphoWidget::MorphoWidget(Heart* theHeart, QWidget* parent) : QOpenGLWidget(parent), heart { theHeart }
 {
-    // Timer for render update
-
-    timer = new QTimer(this);
-    timer->setTimerType(Qt::PreciseTimer);
-    timer->setInterval(20);
-
-    connect(timer, &QTimer::timeout, this, QOverload<>::of(&MorphoWidget::update));
-
-    // Construct control widget an pass this MorphoWidget to it
-
-    controlWidget = new ControlWidget(this);
-
-    // Set icons
-
     setWindowIcon(QIcon(":/icons/morphogengl.png"));
-    controlWidget->setWindowIcon(QIcon(":/icons/morphogengl.png"));
-
-    // Arrange both widgets side by side and centered on the screen
-
+    
     resize(512, 512);
 
+    // Set widget on screen center
+
     setGeometry(QStyle::alignedRect(Qt::LeftToRight, Qt::AlignCenter, size(), QGuiApplication::screens().first()->geometry()));
-    setGeometry(geometry().x() - controlWidget->width() / 2, geometry().y(), width(), height());
-    controlWidget->setGeometry(geometry().x() + width(), geometry().y(), controlWidget->width(), controlWidget->height());
-    controlWidget->show();
-
-    // Signals + Slots
-
-    connect(controlWidget, &ControlWidget::imageSizeChanged, [=](){ srcX0 = 0; srcY0 = 0; srcX1 = FBO::width; srcY1 = FBO::height; });
 }
 
 MorphoWidget::~MorphoWidget()
 {
     makeCurrent();
     glDeleteFramebuffers(1, &fbo);
-    delete controlWidget;
     doneCurrent();
 }
 
 void MorphoWidget::closeEvent(QCloseEvent* event)
 {
-    timer->stop();
-    controlWidget->close();
+    emit stopHeartBeat();
+    emit closing();
     event->accept();
 }
 
@@ -175,6 +153,14 @@ void MorphoWidget::mousePressEvent(QMouseEvent* event)
     }
 }
 
+void MorphoWidget::resetZoom()
+{
+    srcX0 = 0;
+    srcY0 = 0;
+    srcX1 = FBO::width;
+    srcY1 = FBO::height;
+}
+
 void MorphoWidget::initializeGL()
 {
     initializeOpenGLFunctions();
@@ -187,11 +173,9 @@ void MorphoWidget::initializeGL()
     
     glGenFramebuffers(1, &fbo);
 
-    controlWidget->generator->init(context());
+    emit initGenerator();
 
-    // Start timer
-
-    timer->start();
+    emit initHeartBeat();
 }
 
 void MorphoWidget::paintGL()
@@ -203,41 +187,14 @@ void MorphoWidget::paintGL()
 
     // Set generator's output texture as fbo's texture
 
-    glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, controlWidget->generator->getOutputTextureID(), 0);
+    glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, heart->getGeneratorOutputTextureID(), 0);
 
     // Render to default frame buffer (screen) from fbo
 
     glBlitFramebuffer(srcX0, srcY0, srcX1, srcY1, 0, 0, width(), height(), GL_COLOR_BUFFER_BIT, GL_NEAREST);
-
-    controlWidget->generator->iterate();
-
-    if (controlWidget->generator->isRecording())
-    {
-        controlWidget->generator->record();
-        emit frameRecorded();
-    }
-
-    // Compute iteration time
-
-    if (controlWidget->generator->active && controlWidget->generator->getIterationNumber() % 10 == 0)
-    {
-        end = std::chrono::steady_clock::now();
-        auto iterationTime = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-        start = std::chrono::steady_clock::now();
-
-        emit iterationTimeMeasured(iterationTime);
-    }
-
-    if (controlWidget->generator->active)
-        emit iterationPerformed();
 }
 
 void MorphoWidget::resizeGL(int width, int height)
 {
     emit screenSizeChanged(width, height);
-}
-
-void MorphoWidget::setStartTime()
-{
-    start = std::chrono::steady_clock::now();
 }

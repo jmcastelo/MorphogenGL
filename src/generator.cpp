@@ -1,5 +1,5 @@
 /*
-*  Copyright 2020 Jose Maria Castelo Ares
+*  Copyright 2021 Jose Maria Castelo Ares
 *
 *  Contact: <jose.maria.castelo@gmail.com>
 *  Repository: <https://github.com/jmcastelo/MorphogenGL>
@@ -21,7 +21,6 @@
 */
 
 #include "generator.h"
-#include "morphowidget.h"
 
 GeneratorGL::GeneratorGL()
 {
@@ -60,7 +59,7 @@ void GeneratorGL::init(QOpenGLContext* mainContext)
 
     outputPipeline = new Pipeline(outputTextureID, 1.0f, mainContext);
 
-    // Output FBO
+    // Output FBOs
 
     outputFBO[0] = new FBO(":/shaders/screen.vert", ":/shaders/screen.frag", mainContext);
     outputFBO[1] = new FBO(":/shaders/screen.vert", ":/shaders/mask.frag", mainContext);
@@ -88,8 +87,6 @@ GeneratorGL::~GeneratorGL()
 
     delete outputFBO[0];
     delete outputFBO[1];
-
-    if (encoder) delete encoder;
 }
 
 void GeneratorGL::addPipeline()
@@ -324,24 +321,6 @@ void GeneratorGL::resize(GLuint width, GLuint height)
     // Reset output texture ID because resize resets texture IDs
 
     outputTextureID = outputFBO[1]->getTextureID();
-}
-
-void GeneratorGL::startRecording(int width, int height, QOpenGLContext* mainContext)
-{
-    recording = true;
-    encoder = new FFmpegEncoder(recordFilename.toStdString().c_str(), width, height, framesPerSecond, preset.toStdString().c_str(), QString::number(crf).toStdString().c_str(), mainContext);
-}
-
-void GeneratorGL::stopRecording()
-{
-    recording = false;
-    delete encoder;
-    encoder = nullptr;
-}
-
-void GeneratorGL::record()
-{
-    encoder->recordFrame();
 }
 
 void GeneratorGL::setMask(bool apply)

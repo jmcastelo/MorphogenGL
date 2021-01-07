@@ -1,5 +1,5 @@
 /*
-*  Copyright 2020 Jose Maria Castelo Ares
+*  Copyright 2021 Jose Maria Castelo Ares
 *
 *  Contact: <jose.maria.castelo@gmail.com>
 *  Repository: <https://github.com/jmcastelo/MorphogenGL>
@@ -22,19 +22,20 @@
 
 #pragma once
 
+
 #include "fbo.h"
-#include "controlwidget.h"
-#include <chrono>
+#include <cmath>
 #include <QOpenGLWidget>
 #include <QOpenGLExtraFunctions>
 #include <QSurfaceFormat>
+#include <QGuiApplication>
+#include <QScreen>
 #include <QCloseEvent>
 #include <QWheelEvent>
 #include <QMouseEvent>
-#include <QTimer>
 #include <QStyle>
 
-class ControlWidget;
+class Heart;
 
 // MorphoWidget: OpenGL widget displaying MorphogenGL's output
 
@@ -43,16 +44,22 @@ class MorphoWidget : public QOpenGLWidget, protected QOpenGLExtraFunctions
     Q_OBJECT
 
 public:
-    QTimer* timer;
-
-    MorphoWidget();
+    MorphoWidget(Heart* theHeart, QWidget* parent = nullptr);
     virtual ~MorphoWidget() override;
 
     void initializeGL() override;
     void paintGL() override;
     void resizeGL(int width, int height) override;
 
-    void setStartTime();
+signals:
+    void initGenerator();
+    void initHeartBeat();
+    void stopHeartBeat();
+    void screenSizeChanged(int width, int height);
+    void closing();
+
+public slots:
+    void resetZoom();
 
 protected:
     void closeEvent(QCloseEvent* event) override;
@@ -61,12 +68,9 @@ protected:
     void mousePressEvent(QMouseEvent* event) override;
 
 private:
+    Heart* heart;
+
     GLuint fbo = 0;
-
-    ControlWidget* controlWidget = nullptr;
-
-    std::chrono::time_point<std::chrono::steady_clock> start;
-    std::chrono::time_point<std::chrono::steady_clock> end;
 
     GLint srcX0 = 0;
     GLint srcY0 = 0;
@@ -76,10 +80,4 @@ private:
     int yPrev = -1;
     float deltaX = 0.0f;
     float deltaY = 0.0f;
-
-signals:
-    void screenSizeChanged(int width, int height);
-    void iterationPerformed();
-    void iterationTimeMeasured(long int iterationTime);
-    void frameRecorded();
 };

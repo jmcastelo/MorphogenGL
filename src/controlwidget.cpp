@@ -1,5 +1,5 @@
 /*
-*  Copyright 2020 Jose Maria Castelo Ares
+*  Copyright 2021 Jose Maria Castelo Ares
 *
 *  Contact: <jose.maria.castelo@gmail.com>
 *  Repository: <https://github.com/jmcastelo/MorphogenGL>
@@ -20,20 +20,19 @@
 *  along with MorphogenGL.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+#include "heart.h"
+#include "configparser.h"
 #include "controlwidget.h"
-#include "morphowidget.h"
 
-ControlWidget::ControlWidget(MorphoWidget* theMorphoWidget, QWidget *parent) :
-    QWidget(parent),
-    morphoWidget{ theMorphoWidget }
+ControlWidget::ControlWidget(Heart* theHeart, QWidget *parent) : QWidget(parent), heart { theHeart }
 {
     // Generator
 
     generator = new GeneratorGL();
 
-    // Configuration parser
+    // Parser
 
-    parser = new ConfigurationParser(generator, morphoWidget);
+    parser = new ConfigurationParser(generator, heart);
 
     // Actions toolbar
 
@@ -101,10 +100,14 @@ ControlWidget::ControlWidget(MorphoWidget* theMorphoWidget, QWidget *parent) :
 
     resizeMainTabs(0);
 
+    // Window icon
+
+    setWindowIcon(QIcon(":/icons/morphogengl.png"));
+
     // Signals + Slots
 
-    connect(morphoWidget, &MorphoWidget::iterationPerformed, this, &ControlWidget::updateIterationNumberLabel);
-    connect(morphoWidget, &MorphoWidget::iterationTimeMeasured, this, &ControlWidget::updateMetricsLabels);
+    connect(heart, &Heart::iterationPerformed, this, &ControlWidget::updateIterationNumberLabel);
+    connect(heart, &Heart::iterationTimeMeasured, this, &ControlWidget::updateMetricsLabels);
     connect(parser, &ConfigurationParser::updateImageSize, [=](int width, int height)
     {
         generator->resize(width, height);
@@ -125,7 +128,7 @@ ControlWidget::~ControlWidget()
 
 void ControlWidget::closeEvent(QCloseEvent* event)
 {
-    morphoWidget->close();
+    emit closing();
     event->accept();
 }
 
@@ -134,7 +137,7 @@ void ControlWidget::iterate()
     if (iterateAction->isChecked())
     {
         iterateAction->setIcon(QIcon(QPixmap(":/icons/media-playback-pause.png")));
-        morphoWidget->setStartTime();
+        heart->setStartTime();
         generator->active = true;
     }
     else
@@ -148,7 +151,7 @@ void ControlWidget::record()
 {
     if (recordAction->isChecked())
     {
-        if (generator->recordFilename.isEmpty())
+        if (recordFilename.isEmpty())
         {
             QMessageBox messageBox;
             messageBox.setText("Please select output file.");
@@ -160,21 +163,20 @@ void ControlWidget::record()
         {
             recordAction->setIcon(QIcon(QPixmap(":/icons/media-playback-stop.png")));
             videoCaptureElapsedTimeLabel->setText("00:00:00.000");
-            generator->startRecording(morphoWidget->width(), morphoWidget->height(), morphoWidget->context());
+            heart->startRecording(recordFilename, framesPerSecond, preset, crf);
         }
     }
     else
     {
         recordAction->setIcon(QIcon(QPixmap(":/icons/media-record.png")));
-        generator->stopRecording();
-        generator->recordFilename.clear();
+        heart->stopRecording();
+        recordFilename.clear();
     }
 }
 
 void ControlWidget::takeScreenshot()
 {   
-    QRect rectangle = QRect(QPoint(0, 0), QSize(-1, -1));
-    QPixmap screenshot = morphoWidget->grab(rectangle);
+    QImage screenshot = heart->grabMorphoWidgetFramebuffer();
     
     QString filename = QFileDialog::getSaveFileName(this, "Save image", "", "Images (*.bmp *.ico *.jpeg *.jpg *.png *.tif *.tiff)");
     if (!filename.isEmpty())
@@ -225,7 +227,7 @@ void ControlWidget::about()
     aboutBox->setWindowTitle("About");
 
     QStringList lines;
-    lines.append("<h2>MorphogenGL 1.0</h2>");
+    lines.append("<h2>MorphogenGL 1.0 beta</h2>");
     lines.append("<h4>Videofeedback simulation software.</h4>");
     lines.append("<h5>Let the pixels come alive!</h5><br>");
     lines.append("Looking for help? Please visit:<br>");
@@ -278,7 +280,7 @@ void ControlWidget::constructGeneralControls()
     QIntValidator* fpsIntValidator = new QIntValidator(1, 1000, fpsLineEdit);
     fpsIntValidator->setLocale(QLocale::English);
     fpsLineEdit->setValidator(fpsIntValidator);
-    fpsLineEdit->setText(QString::number(static_cast<int>(1000.0 / morphoWidget->timer->interval())));
+    fpsLineEdit->setText(QString::number(static_cast<int>(1000.0 / heart->getTimerInterval())));
 
     QFormLayout* fpsFormLayout = new QFormLayout;
     fpsFormLayout->addRow("FPS:", fpsLineEdit);
@@ -302,14 +304,14 @@ void ControlWidget::constructGeneralControls()
     QIntValidator* windowWidthIntValidator = new QIntValidator(0, 8192, windowWidthLineEdit);
     windowWidthIntValidator->setLocale(QLocale::English);
     windowWidthLineEdit->setValidator(windowWidthIntValidator);
-    windowWidthLineEdit->setText(QString::number(morphoWidget->width()));
+    windowWidthLineEdit->setText(QString::number(heart->getMorphoWidgetWidth()));
 
     windowHeightLineEdit = new FocusLineEdit;
     windowHeightLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
     QIntValidator* windowHeightIntValidator = new QIntValidator(0, 8192, windowHeightLineEdit);
     windowHeightIntValidator->setLocale(QLocale::English);
     windowHeightLineEdit->setValidator(windowHeightIntValidator);
-    windowHeightLineEdit->setText(QString::number(morphoWidget->height()));
+    windowHeightLineEdit->setText(QString::number(heart->getMorphoWidgetHeight()));
 
     QFormLayout* geometryFormLayout = new QFormLayout;
     geometryFormLayout->addRow("Image width (px):", imageWidthLineEdit);
@@ -352,14 +354,14 @@ void ControlWidget::constructGeneralControls()
     QIntValidator* crfVideoValidator = new QIntValidator(0, 51, crfVideoLineEdit);
     crfVideoValidator->setLocale(QLocale::English);
     crfVideoLineEdit->setValidator(crfVideoValidator);
-    crfVideoLineEdit->setText(QString::number(generator->crf));
+    crfVideoLineEdit->setText(QString::number(crf));
 
     FocusLineEdit* fpsVideoLineEdit = new FocusLineEdit;
     fpsVideoLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
     QIntValidator* fpsVideoValidator = new QIntValidator(1, 1000, fpsVideoLineEdit);
     fpsVideoValidator->setLocale(QLocale::English);
     fpsVideoLineEdit->setValidator(fpsVideoValidator);
-    fpsVideoLineEdit->setText(QString::number(generator->framesPerSecond));
+    fpsVideoLineEdit->setText(QString::number(framesPerSecond));
 
     videoCaptureElapsedTimeLabel = new QLabel("00:00:00.000");
     videoCaptureElapsedTimeLabel->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
@@ -395,8 +397,8 @@ void ControlWidget::constructGeneralControls()
 
     // Signals + Slots
     
-    connect(fpsLineEdit, &FocusLineEdit::returnPressed, [=]() { morphoWidget->timer->setInterval(static_cast<int>(1000.0 / fpsLineEdit->text().toInt())); });
-    connect(fpsLineEdit, &FocusLineEdit::focusOut, [=]() { fpsLineEdit->setText(QString::number(static_cast<int>(1000.0 / morphoWidget->timer->interval()))); });
+    connect(fpsLineEdit, &FocusLineEdit::returnPressed, [=]() { heart->setTimerInterval(static_cast<int>(1000.0 / fpsLineEdit->text().toInt())); });
+    connect(fpsLineEdit, &FocusLineEdit::focusOut, [=]() { fpsLineEdit->setText(QString::number(static_cast<int>(1000.0 / heart->getTimerInterval()))); });
 
     connect(imageWidthLineEdit, &FocusLineEdit::returnPressed, [=]()
     {
@@ -411,26 +413,20 @@ void ControlWidget::constructGeneralControls()
     });
     connect(imageHeightLineEdit, &FocusLineEdit::focusOut, [=]() { imageHeightLineEdit->setText(QString::number(generator->getHeight())); });
 
-    connect(windowWidthLineEdit, &FocusLineEdit::returnPressed, [=]() { morphoWidget->resize(windowWidthLineEdit->text().toInt(), windowHeightLineEdit->text().toInt()); });
-    connect(windowWidthLineEdit, &FocusLineEdit::focusOut, [=]() { windowWidthLineEdit->setText(QString::number(morphoWidget->width())); });
-    connect(windowHeightLineEdit, &FocusLineEdit::returnPressed, [=]() { morphoWidget->resize(windowWidthLineEdit->text().toInt(), windowHeightLineEdit->text().toInt()); });
-    connect(windowHeightLineEdit, &FocusLineEdit::focusOut, [=]() { windowHeightLineEdit->setText(QString::number(morphoWidget->height())); });
-
-    connect(morphoWidget, &MorphoWidget::screenSizeChanged, [=](int width, int height)
-    {
-        windowWidthLineEdit->setText(QString::number(width));
-        windowHeightLineEdit->setText(QString::number(height));
-    });
+    connect(windowWidthLineEdit, &FocusLineEdit::returnPressed, [=]() { heart->resizeMorphoWidget(windowWidthLineEdit->text().toInt(), windowHeightLineEdit->text().toInt()); });
+    connect(windowWidthLineEdit, &FocusLineEdit::focusOut, [=]() { windowWidthLineEdit->setText(QString::number(heart->getMorphoWidgetWidth())); });
+    connect(windowHeightLineEdit, &FocusLineEdit::returnPressed, [=]() { heart->resizeMorphoWidget(windowWidthLineEdit->text().toInt(), windowHeightLineEdit->text().toInt()); });
+    connect(windowHeightLineEdit, &FocusLineEdit::focusOut, [=]() { windowHeightLineEdit->setText(QString::number(heart->getMorphoWidgetHeight())); });
 
     connect(applyCircularMaskCheckBox, &QCheckBox::clicked, [=](bool checked) { generator->setMask(checked); });
     
     connect(videoFilenamePushButton, &QPushButton::clicked, this, &ControlWidget::setVideoFilename);
-    connect(presetsVideoComboBox, &QComboBox::currentTextChanged, [=](QString preset) { generator->preset = preset; });
-    connect(crfVideoLineEdit, &FocusLineEdit::returnPressed, [=]() { generator->crf = crfVideoLineEdit->text().toInt(); });
-    connect(crfVideoLineEdit, &FocusLineEdit::focusOut, [=]() { crfVideoLineEdit->setText(QString::number(generator->crf)); });
-    connect(fpsVideoLineEdit, &FocusLineEdit::returnPressed, [=]() { generator->framesPerSecond = fpsVideoLineEdit->text().toInt(); });
-    connect(fpsVideoLineEdit, &FocusLineEdit::focusOut, [=]() { fpsVideoLineEdit->setText(QString::number(generator->framesPerSecond)); });
-    connect(morphoWidget, &MorphoWidget::frameRecorded, this, &ControlWidget::setVideoCaptureElapsedTimeLabel);
+    connect(presetsVideoComboBox, &QComboBox::currentTextChanged, [=](QString preset) { preset = preset; });
+    connect(crfVideoLineEdit, &FocusLineEdit::returnPressed, [=]() { crf = crfVideoLineEdit->text().toInt(); });
+    connect(crfVideoLineEdit, &FocusLineEdit::focusOut, [=]() { crfVideoLineEdit->setText(QString::number(crf)); });
+    connect(fpsVideoLineEdit, &FocusLineEdit::returnPressed, [=]() { framesPerSecond = fpsVideoLineEdit->text().toInt(); });
+    connect(fpsVideoLineEdit, &FocusLineEdit::focusOut, [=]() { fpsVideoLineEdit->setText(QString::number(framesPerSecond)); });
+    connect(heart, &Heart::frameRecorded, this, &ControlWidget::setVideoCaptureElapsedTimeLabel);
 }
 
 void ControlWidget::setVideoFilename()
@@ -439,18 +435,24 @@ void ControlWidget::setVideoFilename()
 
     if (!videoPath.isEmpty())
     {
-        generator->recordFilename = videoPath;
+        recordFilename = videoPath;
         videoCaptureFilenameLabel->setText(videoPath.section('/', -1));
     }
 }
 
 void ControlWidget::setVideoCaptureElapsedTimeLabel()
 {
-    int milliseconds = static_cast<int>(1000.0 * generator->getFrameCount() / generator->framesPerSecond);
+    int milliseconds = static_cast<int>(1000.0 * heart->getFrameCount() / framesPerSecond);
 
     QTime start(0, 0, 0, 0);
 
     videoCaptureElapsedTimeLabel->setText(start.addMSecs(milliseconds).toString("hh:mm:ss.zzz"));
+}
+
+void ControlWidget::updateWindowSizeLineEdits(int width, int height)
+{
+    windowWidthLineEdit->setText(QString::number(width));
+    windowHeightLineEdit->setText(QString::number(height));
 }
 
 void ControlWidget::constructPipelineControls()

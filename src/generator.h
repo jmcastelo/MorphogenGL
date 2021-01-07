@@ -1,5 +1,5 @@
 /*
-*  Copyright 2020 Jose Maria Castelo Ares
+*  Copyright 2021 Jose Maria Castelo Ares
 *
 *  Contact: <jose.maria.castelo@gmail.com>
 *  Repository: <https://github.com/jmcastelo/MorphogenGL>
@@ -26,7 +26,6 @@
 #include "seed.h"
 #include "blender.h"
 #include "fbo.h"
-#include "ffmpegencoder.h"
 #include <vector>
 #include <QString>
 #include <QImage>
@@ -41,14 +40,7 @@ public:
     Pipeline* outputPipeline;
 
     bool active = false;
-
-    bool recording = false;
     
-    int framesPerSecond = 50;
-    QString recordFilename;
-    QString preset = "ultrafast";
-    int crf = 17;
-
     bool applyMask = false;
 
     GeneratorGL();
@@ -87,12 +79,6 @@ public:
     int getWidth() { return FBO::width; }
     int getHeight() { return FBO::height; }
 
-    void startRecording(int width, int height, QOpenGLContext* mainContext);
-    void stopRecording();
-    void record();
-    bool isRecording() { return recording; }
-    int getFrameCount() { return encoder ? encoder->frameNumber : 0; }
-
     void setMask(bool apply);
 
 private:
@@ -103,8 +89,6 @@ private:
     Seed* seed = nullptr;
     Blender* blender = nullptr;
     FBO* outputFBO[2] = { nullptr, nullptr };
-
-    FFmpegEncoder* encoder = nullptr;
-    
+        
     void setBlendData();
 };

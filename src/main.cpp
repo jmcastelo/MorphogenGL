@@ -1,5 +1,5 @@
 /*
-*  Copyright 2020 Jose Maria Castelo Ares
+*  Copyright 2021 Jose Maria Castelo Ares
 *
 *  Contact: <jose.maria.castelo@gmail.com>
 *  Repository: <https://github.com/jmcastelo/MorphogenGL>
@@ -20,7 +20,7 @@
 *  along with MorphogenGL.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include "morphowidget.h"
+#include "heart.h"
 #include <QApplication>
 
 int main(int argc, char* argv[])
@@ -33,8 +33,7 @@ int main(int argc, char* argv[])
 
     QApplication app(argc, argv);
     
-    MorphoWidget morphoWidget;
-    morphoWidget.show();
+    Heart heart;
 
     return app.exec();
 }

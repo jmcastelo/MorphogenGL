@@ -1,5 +1,5 @@
 /*
-*  Copyright 2020 Jose Maria Castelo Ares
+*  Copyright 2021 Jose Maria Castelo Ares
 *
 *  Contact: <jose.maria.castelo@gmail.com>
 *  Repository: <https://github.com/jmcastelo/MorphogenGL>
@@ -23,6 +23,7 @@
 #pragma once
 
 #include "generator.h"
+#include "heart.h"
 #include "parameter.h"
 #include <vector>
 #include <QObject>
@@ -31,14 +32,12 @@
 #include <QXmlStreamWriter>
 #include <QXmlStreamReader>
 
-class MorphoWidget;
-
 class ConfigurationParser : public QObject
 {
     Q_OBJECT
 
 public:
-    ConfigurationParser(GeneratorGL* theGenerator, MorphoWidget* theMorphoWidget) : generator{ theGenerator }, morphoWidget{ theMorphoWidget } {}
+    ConfigurationParser(GeneratorGL* theGenerator, Heart* theHeart) : generator { theGenerator }, heart { theHeart } {}
 
     void setFilename(QString theFilename) { filename = theFilename; }
     void write();
@@ -46,7 +45,7 @@ public:
 
 private:
     GeneratorGL* generator;
-    MorphoWidget* morphoWidget;
+    Heart* heart;
     QString filename;
     QXmlStreamWriter stream;
     QXmlStreamReader xml;

@@ -1,5 +1,5 @@
 /*
-*  Copyright 2020 Jose Maria Castelo Ares
+*  Copyright 2021 Jose Maria Castelo Ares
 *
 *  Contact: <jose.maria.castelo@gmail.com>
 *  Repository: <https://github.com/jmcastelo/MorphogenGL>
@@ -22,9 +22,14 @@
 
 #include "ffmpegencoder.h"
 
-FFmpegEncoder::FFmpegEncoder(const char* filename, int theWidth, int theHeight, int fps, const char* preset, const char* crf, QOpenGLContext* mainContext) : width { theWidth }, height { theHeight }, context { mainContext }
+FFmpegEncoder::FFmpegEncoder(const char* filename, int theWidth, int theHeight, int fps, const char* preset, const char* crf, QOpenGLContext* mainContext) :
+    width { theWidth },
+    height { theHeight },
+    context { mainContext }
 {
+    context->makeCurrent(context->surface());
     initializeOpenGLFunctions();
+    context->doneCurrent();
 
     av_register_all();
 

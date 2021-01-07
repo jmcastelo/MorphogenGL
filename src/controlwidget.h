@@ -1,5 +1,5 @@
 /*
-*  Copyright 2020 Jose Maria Castelo Ares
+*  Copyright 2021 Jose Maria Castelo Ares
 *
 *  Contact: <jose.maria.castelo@gmail.com>
 *  Repository: <https://github.com/jmcastelo/MorphogenGL>
@@ -25,7 +25,6 @@
 #include "generator.h"
 #include "focuslineedit.h"
 #include "operationswidget.h"
-#include "configparser.h"
 #include <QWidget>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -33,6 +32,7 @@
 #include <QAction>
 #include <QIcon>
 #include <QPixmap>
+#include <QImage>
 #include <QTabWidget>
 #include <QStatusBar>
 #include <QApplication>
@@ -55,7 +55,8 @@
 #include <QPoint>
 #include <QSize>
 
-class MorphoWidget;
+class Heart;
+class ConfigurationParser;
 
 // ControlWidget: contains MorphogenGL's controls
 
@@ -66,19 +67,24 @@ class ControlWidget : public QWidget
 public:
     GeneratorGL* generator;
 
-    ControlWidget(MorphoWidget* theMorphoWidget, QWidget *parent = nullptr);
+    ControlWidget(Heart* theHeart, QWidget *parent = nullptr);
     ~ControlWidget();
 
 signals:
     void imageSizeChanged();
+    void closing();
+
+public slots:
+    void updateWindowSizeLineEdits(int width, int height);
 
 protected:
     void closeEvent(QCloseEvent* event) override;
 
 private:
-    MorphoWidget* morphoWidget;
+    Heart* heart;
+
     ConfigurationParser* parser;
-    
+
     OperationsWidget* operationsWidget = nullptr;
 
     QAction* iterateAction;
@@ -86,6 +92,11 @@ private:
     QAction* screenshotAction;
     QAction* saveConfigAction;
     QAction* loadConfigAction;
+
+    int framesPerSecond = 50;
+    QString recordFilename;
+    QString preset = "ultrafast";
+    int crf = 17;
 
     QWidget* generalControlsWidget;
     QWidget* pipelineControlsWidget;

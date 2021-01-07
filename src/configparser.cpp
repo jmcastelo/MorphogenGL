@@ -1,5 +1,5 @@
 /*
-*  Copyright 2020 Jose Maria Castelo Ares
+*  Copyright 2021 Jose Maria Castelo Ares
 *
 *  Contact: <jose.maria.castelo@gmail.com>
 *  Repository: <https://github.com/jmcastelo/MorphogenGL>
@@ -21,7 +21,6 @@
 */
 
 #include "configparser.h"
-#include "morphowidget.h"
 
 void ConfigurationParser::write()
 {
@@ -68,10 +67,10 @@ void ConfigurationParser::write()
 
     stream.writeStartElement("window");
     stream.writeStartElement("width");
-    stream.writeCharacters(QString::number(morphoWidget->width()));
+    stream.writeCharacters(QString::number(heart->getMorphoWidgetWidth()));
     stream.writeEndElement();
     stream.writeStartElement("height");
-    stream.writeCharacters(QString::number(morphoWidget->height()));
+    stream.writeCharacters(QString::number(heart->getMorphoWidgetHeight()));
     stream.writeEndElement();
     stream.writeEndElement();
 
@@ -279,15 +278,15 @@ void ConfigurationParser::read()
 
                 if (xml.readNextStartElement() && xml.name() == "window")
                 {
-                    int windowWidth = morphoWidget->width();
-                    int windowHeight = morphoWidget->height();
+                    int windowWidth = heart->getMorphoWidgetWidth();
+                    int windowHeight = heart->getMorphoWidgetHeight();
 
                     if (xml.readNextStartElement() && xml.name() == "width")
                         windowWidth = xml.readElementText().toInt();
                     if (xml.readNextStartElement() && xml.name() == "height")
                         windowHeight = xml.readElementText().toInt();
 
-                   morphoWidget->resize(windowWidth, windowHeight);
+                   heart->resizeMorphoWidget(windowWidth, windowHeight);
 
                    xml.skipCurrentElement();
                 }

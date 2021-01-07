@@ -117,6 +117,7 @@
     <ClCompile Include="src\fbo.cpp" />
     <ClCompile Include="src\ffmpegencoder.cpp" />
     <ClCompile Include="src\generator.cpp" />
+    <ClCompile Include="src\heart.cpp" />
     <ClCompile Include="src\imageoperations.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\morphowidget.cpp" />
@@ -132,6 +133,7 @@
     <QtMoc Include="src\focuslineedit.h" />
     <ClInclude Include="src\ffmpegencoder.h" />
     <ClInclude Include="src\generator.h" />
+    <QtMoc Include="src\heart.h" />
     <ClInclude Include="src\imageoperations.h" />
     <QtMoc Include="src\morphowidget.h" />
     <ClInclude Include="src\parameter.h" />
