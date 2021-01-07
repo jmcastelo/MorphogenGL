@@ -63,34 +63,36 @@ CONFIG(release, debug|release) {
     LIBS += -lqcustomplot
 }
 
-HEADERS += ./src/blender.h \
-    ./src/fbo.h \
-    ./src/ffmpegencoder.h \
-    ./src/generator.h \
-    ./src/imageoperations.h \
-    ./src/parameter.h \
-    ./src/pipeline.h \
-    ./src/seed.h \
-    ./src/controlwidget.h \
-    ./src/configparser.h \
-    ./src/focuslineedit.h \
-    ./src/morphowidget.h \
-    ./src/operationswidget.h \
-    ./src/polarkernelplot.h
+HEADERS += src/blender.h \
+    src/fbo.h \
+    src/ffmpegencoder.h \
+    src/generator.h \
+    src/imageoperations.h \
+    src/parameter.h \
+    src/pipeline.h \
+    src/seed.h \
+    src/controlwidget.h \
+    src/configparser.h \
+    src/focuslineedit.h \
+    src/morphowidget.h \
+    src/operationswidget.h \
+    src/polarkernelplot.h \
+    src/heart.h
 
-SOURCES += ./src/blender.cpp \
-    ./src/configparser.cpp \
-    ./src/controlwidget.cpp \
-    ./src/fbo.cpp \
-    ./src/ffmpegencoder.cpp \
-    ./src/generator.cpp \
-    ./src/imageoperations.cpp \
-    ./src/main.cpp \
-    ./src/morphowidget.cpp \
-    ./src/parameter.cpp \
-    ./src/pipeline.cpp \
-    ./src/polarkernelplot.cpp \
-    ./src/seed.cpp
+SOURCES += src/blender.cpp \
+    src/configparser.cpp \
+    src/controlwidget.cpp \
+    src/fbo.cpp \
+    src/ffmpegencoder.cpp \
+    src/generator.cpp \
+    src/imageoperations.cpp \
+    src/main.cpp \
+    src/morphowidget.cpp \
+    src/parameter.cpp \
+    src/pipeline.cpp \
+    src/polarkernelplot.cpp \
+    src/seed.cpp \
+    src/heart.cpp
 
 RESOURCES += resource.qrc
 
