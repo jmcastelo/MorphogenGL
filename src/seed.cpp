@@ -129,10 +129,14 @@ Seed::~Seed()
 
 void Seed::loadImage(QString filename)
 {
+    context->makeCurrent(surface);
+
     seedTex->destroy();
     seedTex->setSize(FBO::width, FBO::height);
     if (!filename.isEmpty())
         seedTex->setData(QImage(filename).mirrored());
+
+    context->doneCurrent();
 
     fboTex->setInputTextureID(seedTex->textureId());
 

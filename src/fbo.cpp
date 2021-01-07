@@ -140,6 +140,7 @@ FBO::~FBO()
     vbo_tex->destroy();
 
     glDeleteFramebuffers(1, &fbo);
+    glDeleteTextures(1, &textureID);
     delete vao;
     delete vbo_pos;
     delete vbo_tex;

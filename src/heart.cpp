@@ -48,14 +48,14 @@ Heart::Heart()
     connect(timer, &QTimer::timeout, morphoWidget, QOverload<>::of(&MorphoWidget::update));
     connect(timer, &QTimer::timeout, this, &Heart::beat);
 
-    connect(morphoWidget, &MorphoWidget::initGenerator, [=](){ controlWidget->generator->init(morphoWidget->context()); });
-    connect(morphoWidget, &MorphoWidget::initHeartBeat, [=]() { timer->start(); });
-    connect(morphoWidget, &MorphoWidget::stopHeartBeat, [=]() { timer->stop(); });
+    connect(morphoWidget, &MorphoWidget::initGenerator, [&controlWidget = this->controlWidget, &morphoWidget = this->morphoWidget](){ controlWidget->generator->init(morphoWidget->context()); });
+    connect(morphoWidget, &MorphoWidget::initHeartBeat, [&timer = this->timer]() { timer->start(); });
+    connect(morphoWidget, &MorphoWidget::stopHeartBeat, [&timer = this->timer]() { timer->stop(); });
     connect(morphoWidget, &MorphoWidget::screenSizeChanged, controlWidget, &ControlWidget::updateWindowSizeLineEdits);
-    connect(morphoWidget, &MorphoWidget::closing, [=]() { controlWidget->close(); });
+    connect(morphoWidget, &MorphoWidget::closing, [&controlWidget = this->controlWidget]() { controlWidget->close(); });
 
     connect(controlWidget, &ControlWidget::imageSizeChanged, morphoWidget, &MorphoWidget::resetZoom);
-    connect(controlWidget, &ControlWidget::closing, [=]() { morphoWidget->close(); });
+    connect(controlWidget, &ControlWidget::closing, [&morphoWidget = this->morphoWidget]() { morphoWidget->close(); });
 
     // Show widgets
 

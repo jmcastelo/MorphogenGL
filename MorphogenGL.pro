@@ -22,7 +22,7 @@ TARGET = MorphogenGL
 
 TEMPLATE = app
 
-CONFIG += qt c++11
+CONFIG += qt c++14
 
 QMAKE_CXXFLAGS_RELEASE += /MT
 

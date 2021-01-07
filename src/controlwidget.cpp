@@ -108,14 +108,18 @@ ControlWidget::ControlWidget(Heart* theHeart, QWidget *parent) : QWidget(parent)
 
     connect(heart, &Heart::iterationPerformed, this, &ControlWidget::updateIterationNumberLabel);
     connect(heart, &Heart::iterationTimeMeasured, this, &ControlWidget::updateMetricsLabels);
-    connect(parser, &ConfigurationParser::updateImageSize, [=](int width, int height)
+    connect(parser, &ConfigurationParser::updateImageSize, [&](int width, int height)
     {
         generator->resize(width, height);
         imageWidthLineEdit->setText(QString::number(width));
         imageHeightLineEdit->setText(QString::number(height));
         emit imageSizeChanged();
     });
-    connect(parser, &ConfigurationParser::updateMask, [=](bool applyMask) { generator->setMask(applyMask); applyCircularMaskCheckBox->setChecked(applyMask); });
+    connect(parser, &ConfigurationParser::updateMask, [&generator = this->generator, &applyCircularMaskCheckBox = this->applyCircularMaskCheckBox](bool applyMask)
+    {
+        generator->setMask(applyMask);
+        applyCircularMaskCheckBox->setChecked(applyMask);
+    });
 }
 
 ControlWidget::~ControlWidget()
@@ -397,35 +401,77 @@ void ControlWidget::constructGeneralControls()
 
     // Signals + Slots
     
-    connect(fpsLineEdit, &FocusLineEdit::returnPressed, [=]() { heart->setTimerInterval(static_cast<int>(1000.0 / fpsLineEdit->text().toInt())); });
-    connect(fpsLineEdit, &FocusLineEdit::focusOut, [=]() { fpsLineEdit->setText(QString::number(static_cast<int>(1000.0 / heart->getTimerInterval()))); });
+    connect(fpsLineEdit, &FocusLineEdit::returnPressed, [&heart = this->heart, fpsLineEdit]()
+    {
+        heart->setTimerInterval(static_cast<int>(1000.0 / fpsLineEdit->text().toInt()));
+    });
+    connect(fpsLineEdit, &FocusLineEdit::focusOut, [&heart = this->heart, fpsLineEdit]()
+    {
+        fpsLineEdit->setText(QString::number(static_cast<int>(1000.0 / heart->getTimerInterval())));
+    });
 
-    connect(imageWidthLineEdit, &FocusLineEdit::returnPressed, [=]()
+    connect(imageWidthLineEdit, &FocusLineEdit::returnPressed, [&]()
     {
         generator->resize(imageWidthLineEdit->text().toInt(), generator->getHeight());
         emit imageSizeChanged();
     });
-    connect(imageWidthLineEdit, &FocusLineEdit::focusOut, [=]() { imageWidthLineEdit->setText(QString::number(generator->getWidth())); });
-    connect(imageHeightLineEdit, &FocusLineEdit::returnPressed, [=]()
+    connect(imageWidthLineEdit, &FocusLineEdit::focusOut, [&generator = this->generator, &imageWidthLineEdit = this->imageWidthLineEdit]()
+    {
+        imageWidthLineEdit->setText(QString::number(generator->getWidth()));
+    });
+    connect(imageHeightLineEdit, &FocusLineEdit::returnPressed, [&]()
     {
         generator->resize(generator->getWidth(), imageHeightLineEdit->text().toInt());
         emit imageSizeChanged();
     });
-    connect(imageHeightLineEdit, &FocusLineEdit::focusOut, [=]() { imageHeightLineEdit->setText(QString::number(generator->getHeight())); });
+    connect(imageHeightLineEdit, &FocusLineEdit::focusOut, [&generator = this->generator, &imageHeightLineEdit = this->imageHeightLineEdit]()
+    {
+        imageHeightLineEdit->setText(QString::number(generator->getHeight()));
+    });
 
-    connect(windowWidthLineEdit, &FocusLineEdit::returnPressed, [=]() { heart->resizeMorphoWidget(windowWidthLineEdit->text().toInt(), windowHeightLineEdit->text().toInt()); });
-    connect(windowWidthLineEdit, &FocusLineEdit::focusOut, [=]() { windowWidthLineEdit->setText(QString::number(heart->getMorphoWidgetWidth())); });
-    connect(windowHeightLineEdit, &FocusLineEdit::returnPressed, [=]() { heart->resizeMorphoWidget(windowWidthLineEdit->text().toInt(), windowHeightLineEdit->text().toInt()); });
-    connect(windowHeightLineEdit, &FocusLineEdit::focusOut, [=]() { windowHeightLineEdit->setText(QString::number(heart->getMorphoWidgetHeight())); });
+    connect(windowWidthLineEdit, &FocusLineEdit::returnPressed, [&heart = this->heart, &windowWidthLineEdit = this->windowWidthLineEdit, &windowHeightLineEdit = this->windowHeightLineEdit]()
+    {
+        heart->resizeMorphoWidget(windowWidthLineEdit->text().toInt(), windowHeightLineEdit->text().toInt());
+    });
+    connect(windowWidthLineEdit, &FocusLineEdit::focusOut, [&heart = this->heart, &windowWidthLineEdit = this->windowWidthLineEdit]()
+    {
+        windowWidthLineEdit->setText(QString::number(heart->getMorphoWidgetWidth()));
+    });
+    connect(windowHeightLineEdit, &FocusLineEdit::returnPressed, [&heart = this->heart, &windowWidthLineEdit = this->windowWidthLineEdit, &windowHeightLineEdit = this->windowHeightLineEdit]()
+    {
+        heart->resizeMorphoWidget(windowWidthLineEdit->text().toInt(), windowHeightLineEdit->text().toInt());
+    });
+    connect(windowHeightLineEdit, &FocusLineEdit::focusOut, [&heart = this->heart, &windowHeightLineEdit = this->windowHeightLineEdit]()
+    {
+        windowHeightLineEdit->setText(QString::number(heart->getMorphoWidgetHeight()));
+    });
 
-    connect(applyCircularMaskCheckBox, &QCheckBox::clicked, [=](bool checked) { generator->setMask(checked); });
+    connect(applyCircularMaskCheckBox, &QCheckBox::clicked, [&generator = this->generator](bool checked)
+    {
+        generator->setMask(checked);
+    });
     
     connect(videoFilenamePushButton, &QPushButton::clicked, this, &ControlWidget::setVideoFilename);
-    connect(presetsVideoComboBox, &QComboBox::currentTextChanged, [=](QString preset) { preset = preset; });
-    connect(crfVideoLineEdit, &FocusLineEdit::returnPressed, [=]() { crf = crfVideoLineEdit->text().toInt(); });
-    connect(crfVideoLineEdit, &FocusLineEdit::focusOut, [=]() { crfVideoLineEdit->setText(QString::number(crf)); });
-    connect(fpsVideoLineEdit, &FocusLineEdit::returnPressed, [=]() { framesPerSecond = fpsVideoLineEdit->text().toInt(); });
-    connect(fpsVideoLineEdit, &FocusLineEdit::focusOut, [=]() { fpsVideoLineEdit->setText(QString::number(framesPerSecond)); });
+    connect(presetsVideoComboBox, &QComboBox::currentTextChanged, [&preset = this->preset](QString thePreset)
+    {
+        preset = thePreset;
+    });
+    connect(crfVideoLineEdit, &FocusLineEdit::returnPressed, [&crf = this->crf, crfVideoLineEdit]()
+    {
+        crf = crfVideoLineEdit->text().toInt();
+    });
+    connect(crfVideoLineEdit, &FocusLineEdit::focusOut, [&crf = this->crf, crfVideoLineEdit]()
+    {
+        crfVideoLineEdit->setText(QString::number(crf));
+    });
+    connect(fpsVideoLineEdit, &FocusLineEdit::returnPressed, [&framesPerSecond = this->framesPerSecond, fpsVideoLineEdit]()
+    {
+        framesPerSecond = fpsVideoLineEdit->text().toInt();
+    });
+    connect(fpsVideoLineEdit, &FocusLineEdit::focusOut, [&framesPerSecond = this->framesPerSecond, fpsVideoLineEdit]()
+    {
+        fpsVideoLineEdit->setText(QString::number(framesPerSecond));
+    });
     connect(heart, &Heart::frameRecorded, this, &ControlWidget::setVideoCaptureElapsedTimeLabel);
 }
 
@@ -656,8 +702,14 @@ void ControlWidget::constructPipelineControls()
 
     // Signals + Slots
 
-    connect(drawRandomSeedPushButton, &QPushButton::clicked, [=]() { generator->drawRandomSeed(bwSeedCheckBox->isChecked()); });
-    connect(drawSeedImagePushButton, &QPushButton::clicked, [=]() { generator->drawSeedImage(); });
+    connect(drawRandomSeedPushButton, &QPushButton::clicked, [&generator = this->generator, bwSeedCheckBox]()
+    {
+        generator->drawRandomSeed(bwSeedCheckBox->isChecked());
+    });
+    connect(drawSeedImagePushButton, &QPushButton::clicked, [&generator = this->generator]()
+    {
+        generator->drawSeedImage();
+    });
     connect(loadSeedImagePushButton, &QPushButton::clicked, [=]()
     {
         QString filename = QFileDialog::getOpenFileName(this, "Load image", "", "Images (*.bmp *.jpeg *.jpg *.png *.tif *.tiff)");
@@ -667,18 +719,21 @@ void ControlWidget::constructPipelineControls()
             drawSeedImagePushButton->setEnabled(true);
         }
     });
-    connect(outputPipelinePushButton, &QPushButton::clicked, [=](bool checked) { if (checked) initImageOperationsListWidget(pipelinesButtonGroup->checkedId()); });
-    connect(addPipelinePushButton, &QPushButton::clicked, [=]()
+    connect(outputPipelinePushButton, &QPushButton::clicked, [&](bool checked)
+    {
+        if (checked) initImageOperationsListWidget(pipelinesButtonGroup->checkedId());
+    });
+    connect(addPipelinePushButton, &QPushButton::clicked, [&]()
     {
         generator->addPipeline();
         initPipelineControls(generator->getPipelinesSize() - 1);
     });
-    connect(removePipelinePushButton, &QPushButton::clicked, [=]()
+    connect(removePipelinePushButton, &QPushButton::clicked, [&]()
     {
         generator->removePipeline(pipelinesButtonGroup->checkedId());
         initPipelineControls(pipelinesButtonGroup->checkedId());
     });
-    connect(equalizeBlendFactorsPushButton, &QPushButton::clicked, [=]()
+    connect(equalizeBlendFactorsPushButton, &QPushButton::clicked, [&generator = this->generator, &pipelineBlendFactorLineEdit = this->pipelineBlendFactorLineEdit]()
     {
         generator->equalizePipelineBlendFactors();
         for (int i = 0; i < generator->getPipelinesSize(); i++)
@@ -735,11 +790,11 @@ void ControlWidget::initPipelineControls(int selectedPipelineIndex)
         pipelinesButtonGroup->addButton(pushButton);
         pipelinesButtonGroup->setId(pushButton, pipelineIndex);
 
-        connect(pushButton, &QPushButton::clicked, [=](bool checked)
-            {
-                if (checked)
-                    initImageOperationsListWidget(pipelinesButtonGroup->checkedId());
-            });
+        connect(pushButton, &QPushButton::clicked, [&](bool checked)
+        {
+            if (checked)
+                initImageOperationsListWidget(pipelinesButtonGroup->checkedId());
+        });
 
         pipelinePushButton.push_back(pushButton);
 
@@ -752,8 +807,14 @@ void ControlWidget::initPipelineControls(int selectedPipelineIndex)
         blendFactorLineEdit->setValidator(blendFactorValidator);
         blendFactorLineEdit->setText(QString::number(generator->getPipelineBlendFactor(pipelineIndex)));
 
-        connect(blendFactorLineEdit, &FocusLineEdit::returnPressed, [=]() { setPipelineBlendFactorLineEditText(pipelineIndex); });
-        connect(blendFactorLineEdit, &FocusLineEdit::focusOut, [=]() { blendFactorLineEdit->setText(QString::number(generator->getPipelineBlendFactor(pipelineIndex))); });
+        connect(blendFactorLineEdit, &FocusLineEdit::returnPressed, [=]()
+        {
+            setPipelineBlendFactorLineEditText(pipelineIndex);
+        });
+        connect(blendFactorLineEdit, &FocusLineEdit::focusOut, [&generator = this->generator, blendFactorLineEdit, pipelineIndex]()
+        {
+            blendFactorLineEdit->setText(QString::number(generator->getPipelineBlendFactor(pipelineIndex)));
+        });
 
         pipelineBlendFactorLineEdit.push_back(blendFactorLineEdit);
 
@@ -881,7 +942,10 @@ void ControlWidget::onImageOperationsListWidgetCurrentRowChanged(int currentRow)
         operationsWidget->show();
 
         for (auto widget : operationsWidget->floatParameterWidget)
-            connect(widget, &FloatParameterWidget::focusIn, [=]() { onFloatParameterWidgetFocusIn(widget); });
+            connect(widget, &FloatParameterWidget::focusIn, [=]()
+            {
+                onFloatParameterWidgetFocusIn(widget);
+            });
 
         currentImageOperationIndex[pipelineIndex] = currentRow;
     }
@@ -900,61 +964,67 @@ void ControlWidget::onFloatParameterWidgetFocusIn(FloatParameterWidget* widget)
     connect(selectedParameterSlider, &QAbstractSlider::valueChanged, widget, &FloatParameterWidget::setValue);
 
     connect(widget, &FloatParameterWidget::currentIndexChanged, [=](int currentIndex)
-        {
-            disconnect(selectedParameterSlider, &QAbstractSlider::valueChanged, nullptr, nullptr);
-            selectedParameterSlider->setValue(currentIndex);
-            connect(selectedParameterSlider, &QAbstractSlider::valueChanged, widget, &FloatParameterWidget::setValue);
-        });
+    {
+        disconnect(selectedParameterSlider, &QAbstractSlider::valueChanged, nullptr, nullptr);
+        selectedParameterSlider->setValue(currentIndex);
+        connect(selectedParameterSlider, &QAbstractSlider::valueChanged, widget, &FloatParameterWidget::setValue);
+    });
 
     // Value changed: check if within min/max range and adjust controls
 
     connect(widget, &FloatParameterWidget::currentValueChanged, [=](double currentValue)
+    {
+        if (currentValue < widget->getMin())
         {
-            if (currentValue < widget->getMin())
-            {
-                widget->setMin(currentValue);
+            widget->setMin(currentValue);
 
-                selectedParameterMinLineEdit->setText(QString::number(currentValue));
+            selectedParameterMinLineEdit->setText(QString::number(currentValue));
 
-                disconnect(selectedParameterSlider, &QAbstractSlider::valueChanged, nullptr, nullptr);
-                selectedParameterSlider->setValue(widget->getIndex());
-                connect(selectedParameterSlider, &QAbstractSlider::valueChanged, widget, &FloatParameterWidget::setValue);
-            }
-            else if (currentValue > widget->getMax())
-            {
-                widget->setMax(currentValue);
+            disconnect(selectedParameterSlider, &QAbstractSlider::valueChanged, nullptr, nullptr);
+            selectedParameterSlider->setValue(widget->getIndex());
+            connect(selectedParameterSlider, &QAbstractSlider::valueChanged, widget, &FloatParameterWidget::setValue);
+        }
+        else if (currentValue > widget->getMax())
+        {
+            widget->setMax(currentValue);
 
-                selectedParameterMaxLineEdit->setText(QString::number(currentValue));
+            selectedParameterMaxLineEdit->setText(QString::number(currentValue));
 
-                disconnect(selectedParameterSlider, &QAbstractSlider::valueChanged, nullptr, nullptr);
-                selectedParameterSlider->setValue(widget->getIndex());
-                connect(selectedParameterSlider, &QAbstractSlider::valueChanged, widget, &FloatParameterWidget::setValue);
-            }
-        });
+            disconnect(selectedParameterSlider, &QAbstractSlider::valueChanged, nullptr, nullptr);
+            selectedParameterSlider->setValue(widget->getIndex());
+            connect(selectedParameterSlider, &QAbstractSlider::valueChanged, widget, &FloatParameterWidget::setValue);
+        }
+    });
 
     // Minimum
 
     selectedParameterMinLineEdit->disconnect();
     selectedParameterMinLineEdit->setText(QString::number(widget->getMin()));
 
-    connect(selectedParameterMinLineEdit, &FocusLineEdit::returnPressed, [=]()
-        {
-            widget->setMin(selectedParameterMinLineEdit->text().toDouble());
-            widget->setIndex();
-        });
-    connect(selectedParameterMinLineEdit, &FocusLineEdit::focusOut, [=]() { selectedParameterMinLineEdit->setText(QString::number(widget->getMin())); });
+    connect(selectedParameterMinLineEdit, &FocusLineEdit::returnPressed, [&selectedParameterMinLineEdit = this->selectedParameterMinLineEdit, widget]()
+    {
+        widget->setMin(selectedParameterMinLineEdit->text().toDouble());
+        widget->setIndex();
+    });
+    connect(selectedParameterMinLineEdit, &FocusLineEdit::focusOut, [&selectedParameterMinLineEdit = this->selectedParameterMinLineEdit, widget]()
+    {
+        selectedParameterMinLineEdit->setText(QString::number(widget->getMin()));
+    });
 
     // Maximum
 
     selectedParameterMaxLineEdit->disconnect();
     selectedParameterMaxLineEdit->setText(QString::number(widget->getMax()));
 
-    connect(selectedParameterMaxLineEdit, &FocusLineEdit::returnPressed, [=]()
-        {
-            widget->setMax(selectedParameterMaxLineEdit->text().toDouble());
-            widget->setIndex();
-        });
-    connect(selectedParameterMaxLineEdit, &FocusLineEdit::focusOut, [=]() { selectedParameterMaxLineEdit->setText(QString::number(widget->getMax())); });
+    connect(selectedParameterMaxLineEdit, &FocusLineEdit::returnPressed, [&selectedParameterMaxLineEdit = this->selectedParameterMaxLineEdit, widget]()
+    {
+        widget->setMax(selectedParameterMaxLineEdit->text().toDouble());
+        widget->setIndex();
+    });
+    connect(selectedParameterMaxLineEdit, &FocusLineEdit::focusOut, [&selectedParameterMaxLineEdit = this->selectedParameterMaxLineEdit, widget]()
+    {
+        selectedParameterMaxLineEdit->setText(QString::number(widget->getMax()));
+    });
 
     // Validators
 

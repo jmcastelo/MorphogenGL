@@ -84,7 +84,10 @@ public:
             comboBox->addItem(valueName);
         comboBox->setCurrentIndex(index);
 
-        connect(comboBox, QOverload<int>::of(&QComboBox::activated), [&](int index) { optionsParameter->setValue(index); });
+        connect(comboBox, QOverload<int>::of(&QComboBox::activated), [&optionsParameter = this->optionsParameter](int index)
+        {
+            optionsParameter->setValue(index);
+        });
     }
 
 private:
@@ -107,8 +110,14 @@ public:
         lineEdit->setValidator(validator);
         lineEdit->setText(QString::number(intParameter->value));
 
-        connect(lineEdit, &FocusLineEdit::returnPressed, [=]() { intParameter->value = lineEdit->text().toInt(); });
-        connect(lineEdit, &FocusLineEdit::focusOut, [=]() { lineEdit->setText(QString::number(intParameter->value)); });
+        connect(lineEdit, &FocusLineEdit::returnPressed, [&intParameter = this->intParameter, &lineEdit = this->lineEdit]()
+        {
+            intParameter->value = lineEdit->text().toInt();
+        });
+        connect(lineEdit, &FocusLineEdit::focusOut, [&intParameter = this->intParameter, &lineEdit = this->lineEdit]()
+        {
+            lineEdit->setText(QString::number(intParameter->value));
+        });
     }
 
 private:
@@ -131,7 +140,7 @@ public:
         lineEdit->setValidator(validator);
         lineEdit->setText(QString::number(intParameter->value));
 
-        connect(lineEdit, &FocusLineEdit::returnPressed, [=]()
+        connect(lineEdit, &FocusLineEdit::returnPressed, [&intParameter = this->intParameter, &lineEdit = this->lineEdit]()
         {
             int value = lineEdit->text().toInt();
             if (value > 0 && value % 2 == 0)
@@ -141,7 +150,10 @@ public:
             }
             intParameter->value = value;
         });
-        connect(lineEdit, &FocusLineEdit::focusOut, [=]() { lineEdit->setText(QString::number(intParameter->value)); });
+        connect(lineEdit, &FocusLineEdit::focusOut, [&intParameter = this->intParameter, &lineEdit = this->lineEdit]()
+        {
+            lineEdit->setText(QString::number(intParameter->value));
+        });
     }
 
 private:
@@ -174,14 +186,20 @@ public:
         lineEdit->setValidator(validator);
         lineEdit->setText(QString::number(floatParameter->value));
 
-        connect(lineEdit, &FocusLineEdit::returnPressed, [=]()
+        connect(lineEdit, &FocusLineEdit::returnPressed, [&]()
         {
             floatParameter->setValue(lineEdit->text().toFloat());
             emit currentValueChanged(floatParameter->value);
             setIndex();
         });
-        connect(lineEdit, &FocusLineEdit::focusOut, [=]() { lineEdit->setText(QString::number(floatParameter->value)); });
-        connect(lineEdit, &FocusLineEdit::focusIn, [=]() { emit focusIn(); });
+        connect(lineEdit, &FocusLineEdit::focusOut, [&floatParameter = this->floatParameter, &lineEdit = this->lineEdit]()
+        {
+            lineEdit->setText(QString::number(floatParameter->value));
+        });
+        connect(lineEdit, &FocusLineEdit::focusIn, [&]()
+        {
+            emit focusIn();
+        });
     }
 
     QString getName() { return floatParameter->name; }
@@ -260,8 +278,14 @@ public:
         }
         for (size_t i = 0; i < arrayParameter->values.size(); i++)
         {
-            connect(lineEdits[i], &FocusLineEdit::returnPressed, [=]() { arrayParameter->values[i] = lineEdits[i]->text().toFloat(); arrayParameter->setValues(); });
-            connect(lineEdits[i], &FocusLineEdit::focusOut, [=]() { lineEdits[i]->setText(QString::number(arrayParameter->values[i])); });
+            connect(lineEdits[i], &FocusLineEdit::returnPressed, [&arrayParameter = this->arrayParameter, &lineEdits = this->lineEdits, i]()
+            {
+                arrayParameter->values[i] = lineEdits[i]->text().toFloat(); arrayParameter->setValues();
+            });
+            connect(lineEdits[i], &FocusLineEdit::focusOut, [&arrayParameter = this->arrayParameter, &lineEdits = this->lineEdits, i]()
+            {
+                lineEdits[i]->setText(QString::number(arrayParameter->values[i]));
+            });
         }
     }
 
@@ -322,7 +346,7 @@ public:
         presetsComboBox->addItem("Gaussian blur");
         presetsComboBox->setCurrentIndex(0);
 
-        connect(presetsComboBox, QOverload<int>::of(&QComboBox::activated), [&](int index)
+        connect(presetsComboBox, QOverload<int>::of(&QComboBox::activated), [&kernelParameter = this->kernelParameter, &lineEdits = this->lineEdits, &presets = this->presets](int index)
         {
             for (size_t i = 0; i < presets[index].size(); i++)
                 lineEdits[i]->setText(QString::number(presets[index][i]));
@@ -366,7 +390,7 @@ public:
         presetsComboBox->addItem("RGB to BRG");
         presetsComboBox->addItem("RGB to GBR");
 
-        connect(presetsComboBox, QOverload<int>::of(&QComboBox::activated), [&](int index)
+        connect(presetsComboBox, QOverload<int>::of(&QComboBox::activated), [&matrixParameter = this->matrixParameter, &lineEdits = this->lineEdits, &presets = this->presets](int index)
         {
             for (size_t i = 0; i < presets[index].size(); i++)
                 lineEdits[i]->setText(QString::number(presets[index][i]));
@@ -487,7 +511,12 @@ public:
 
         // Signals + Slots
 
-        connect(selectKernelComboBox, QOverload<int>::of(&QComboBox::activated), [=](int index) { kernelIndex = index;  setLineEditTexts(); setKernelValuesPlotData(); });
+        connect(selectKernelComboBox, QOverload<int>::of(&QComboBox::activated), [&](int index)
+        {
+            kernelIndex = index;
+            setLineEditTexts();
+            setKernelValuesPlotData();
+        });
 
         connect(addKernelPushButton, &QPushButton::pressed, [=]()
         {
@@ -502,6 +531,8 @@ public:
                 selectKernelComboBox->setCurrentIndex(kernelIndex);
 
                 setLineEditTexts();
+                setGeometryPlotData();
+                setKernelValuesPlotData();
             }
         });
         connect(removeKernelPushButton, &QPushButton::pressed, [=]()
@@ -522,32 +553,98 @@ public:
                 selectKernelComboBox->setCurrentIndex(kernelIndex);
 
                 setLineEditTexts();
+                setGeometryPlotData();
+                setKernelValuesPlotData();
             }
         });
 
-        connect(numElementsLineEdit, &FocusLineEdit::returnPressed, [=]() { polarKernelParameter->polarKernels[kernelIndex]->numElements = numElementsLineEdit->text().toInt(); polarKernelParameter->setValues(); setGeometryPlotData(); setKernelValuesPlotData(); });
-        connect(numElementsLineEdit, &FocusLineEdit::focusOut, [=]() { numElementsLineEdit->setText(QString::number(polarKernelParameter->polarKernels[kernelIndex]->numElements)); });
+        connect(numElementsLineEdit, &FocusLineEdit::returnPressed, [&]()
+        {
+            polarKernelParameter->polarKernels[kernelIndex]->numElements = numElementsLineEdit->text().toInt();
+            polarKernelParameter->setValues();
+            setGeometryPlotData();
+            setKernelValuesPlotData();
+        });
+        connect(numElementsLineEdit, &FocusLineEdit::focusOut, [&polarKernelParameter = this->polarKernelParameter, &kernelIndex = this->kernelIndex, &numElementsLineEdit = this->numElementsLineEdit]()
+        {
+            numElementsLineEdit->setText(QString::number(polarKernelParameter->polarKernels[kernelIndex]->numElements));
+        });
 
-        connect(centerElementLineEdit, &FocusLineEdit::returnPressed, [=]() { polarKernelParameter->centerElement = centerElementLineEdit->text().toFloat(); polarKernelParameter->setValues(); });
-        connect(centerElementLineEdit, &FocusLineEdit::focusOut, [=]() { centerElementLineEdit->setText(QString::number(polarKernelParameter->centerElement)); });
+        connect(centerElementLineEdit, &FocusLineEdit::returnPressed, [&polarKernelParameter = this->polarKernelParameter, &centerElementLineEdit = this->centerElementLineEdit]()
+        {
+            polarKernelParameter->centerElement = centerElementLineEdit->text().toFloat();
+            polarKernelParameter->setValues();
+        });
+        connect(centerElementLineEdit, &FocusLineEdit::focusOut, [&polarKernelParameter = this->polarKernelParameter, &centerElementLineEdit = this->centerElementLineEdit]()
+        {
+            centerElementLineEdit->setText(QString::number(polarKernelParameter->centerElement));
+        });
 
-        connect(radiusLineEdit, &FocusLineEdit::returnPressed, [=]() { polarKernelParameter->polarKernels[kernelIndex]->radius = radiusLineEdit->text().toFloat(); polarKernelParameter->setValues(); setGeometryPlotData(); });
-        connect(radiusLineEdit, &FocusLineEdit::focusOut, [=]() { radiusLineEdit->setText(QString::number(polarKernelParameter->polarKernels[kernelIndex]->radius)); });
+        connect(radiusLineEdit, &FocusLineEdit::returnPressed, [&]()
+        {
+            polarKernelParameter->polarKernels[kernelIndex]->radius = radiusLineEdit->text().toFloat();
+            polarKernelParameter->setValues();
+            setGeometryPlotData();
+        });
+        connect(radiusLineEdit, &FocusLineEdit::focusOut, [&polarKernelParameter = this->polarKernelParameter, &kernelIndex = this->kernelIndex, &radiusLineEdit = this->radiusLineEdit]()
+        {
+            radiusLineEdit->setText(QString::number(polarKernelParameter->polarKernels[kernelIndex]->radius));
+        });
 
-        connect(initialAngleLineEdit, &FocusLineEdit::returnPressed, [=]() { polarKernelParameter->polarKernels[kernelIndex]->initialAngle = initialAngleLineEdit->text().toFloat(); polarKernelParameter->setValues(); setGeometryPlotData(); });
-        connect(initialAngleLineEdit, &FocusLineEdit::focusOut, [=]() { initialAngleLineEdit->setText(QString::number(polarKernelParameter->polarKernels[kernelIndex]->initialAngle)); });
+        connect(initialAngleLineEdit, &FocusLineEdit::returnPressed, [&]()
+        {
+            polarKernelParameter->polarKernels[kernelIndex]->initialAngle = initialAngleLineEdit->text().toFloat();
+            polarKernelParameter->setValues();
+            setGeometryPlotData();
+        });
+        connect(initialAngleLineEdit, &FocusLineEdit::focusOut, [&polarKernelParameter = this->polarKernelParameter, &kernelIndex = this->kernelIndex, &initialAngleLineEdit = this->initialAngleLineEdit]()
+        {
+            initialAngleLineEdit->setText(QString::number(polarKernelParameter->polarKernels[kernelIndex]->initialAngle));
+        });
 
-        connect(frequencyLineEdit, &FocusLineEdit::returnPressed, [=]() { polarKernelParameter->polarKernels[kernelIndex]->frequency = frequencyLineEdit->text().toFloat(); polarKernelParameter->setValues(); setKernelValuesPlotData(); });
-        connect(frequencyLineEdit, &FocusLineEdit::focusOut, [=]() { frequencyLineEdit->setText(QString::number(polarKernelParameter->polarKernels[kernelIndex]->frequency)); });
+        connect(frequencyLineEdit, &FocusLineEdit::returnPressed, [&]()
+        {
+            polarKernelParameter->polarKernels[kernelIndex]->frequency = frequencyLineEdit->text().toFloat();
+            polarKernelParameter->setValues();
+            setKernelValuesPlotData();
+        });
+        connect(frequencyLineEdit, &FocusLineEdit::focusOut, [&polarKernelParameter = this->polarKernelParameter, &kernelIndex = this->kernelIndex, &frequencyLineEdit = this->frequencyLineEdit]()
+        {
+            frequencyLineEdit->setText(QString::number(polarKernelParameter->polarKernels[kernelIndex]->frequency));
+        });
 
-        connect(phaseLineEdit, &FocusLineEdit::returnPressed, [=]() { polarKernelParameter->polarKernels[kernelIndex]->phase = phaseLineEdit->text().toFloat(); polarKernelParameter->setValues(); setKernelValuesPlotData(); });
-        connect(phaseLineEdit, &FocusLineEdit::focusOut, [=]() { phaseLineEdit->setText(QString::number(polarKernelParameter->polarKernels[kernelIndex]->phase)); });
+        connect(phaseLineEdit, &FocusLineEdit::returnPressed, [&]()
+        {
+            polarKernelParameter->polarKernels[kernelIndex]->phase = phaseLineEdit->text().toFloat();
+            polarKernelParameter->setValues();
+            setKernelValuesPlotData();
+        });
+        connect(phaseLineEdit, &FocusLineEdit::focusOut, [&polarKernelParameter = this->polarKernelParameter, &kernelIndex = this->kernelIndex, &phaseLineEdit = this->phaseLineEdit]()
+        {
+            phaseLineEdit->setText(QString::number(polarKernelParameter->polarKernels[kernelIndex]->phase));
+        });
 
-        connect(minimumLineEdit, &FocusLineEdit::returnPressed, [=]() { polarKernelParameter->polarKernels[kernelIndex]->minimum = minimumLineEdit->text().toFloat(); polarKernelParameter->setValues(); setKernelValuesPlotData(); });
-        connect(minimumLineEdit, &FocusLineEdit::focusOut, [=]() { minimumLineEdit->setText(QString::number(polarKernelParameter->polarKernels[kernelIndex]->minimum)); });
+        connect(minimumLineEdit, &FocusLineEdit::returnPressed, [&]()
+        {
+            polarKernelParameter->polarKernels[kernelIndex]->minimum = minimumLineEdit->text().toFloat();
+            polarKernelParameter->setValues();
+            setKernelValuesPlotData();
+        });
+        connect(minimumLineEdit, &FocusLineEdit::focusOut, [&polarKernelParameter = this->polarKernelParameter, &kernelIndex = this->kernelIndex, &minimumLineEdit = this->minimumLineEdit]()
+        {
+            minimumLineEdit->setText(QString::number(polarKernelParameter->polarKernels[kernelIndex]->minimum));
+        });
 
-        connect(maximumLineEdit, &FocusLineEdit::returnPressed, [=]() { polarKernelParameter->polarKernels[kernelIndex]->maximum = maximumLineEdit->text().toFloat(); polarKernelParameter->setValues(); setKernelValuesPlotData(); });
-        connect(maximumLineEdit, &FocusLineEdit::focusOut, [=]() { maximumLineEdit->setText(QString::number(polarKernelParameter->polarKernels[kernelIndex]->maximum)); });
+        connect(maximumLineEdit, &FocusLineEdit::returnPressed, [&]()
+        {
+            polarKernelParameter->polarKernels[kernelIndex]->maximum = maximumLineEdit->text().toFloat();
+            polarKernelParameter->setValues();
+            setKernelValuesPlotData();
+        });
+        connect(maximumLineEdit, &FocusLineEdit::focusOut, [&polarKernelParameter = this->polarKernelParameter, &kernelIndex = this->kernelIndex, &maximumLineEdit = this->maximumLineEdit]()
+        {
+            maximumLineEdit->setText(QString::number(polarKernelParameter->polarKernels[kernelIndex]->maximum));
+        });
     }
 
     ~PolarKernelParameterWidget()
@@ -673,7 +770,10 @@ public:
 
         setLayout(vBoxLayout);
 
-        connect(enabledCheckBox, &QCheckBox::stateChanged, [=](int state) { operation->enable(state == Qt::Checked); });
+        connect(enabledCheckBox, &QCheckBox::stateChanged, [=](int state)
+        {
+            operation->enable(state == Qt::Checked);
+        });
     }
 
     ~OperationsWidget()
