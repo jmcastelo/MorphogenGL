@@ -29,5 +29,8 @@
         <file>shaders/saturation.frag</file>
         <file>shaders/value.frag</file>
         <file>shaders/bilateral.frag</file>
+        <file>shaders/rgb.frag</file>
+        <file>shaders/rgb.vert</file>
+        <file>icons/office-chart-scatter.png</file>
     </qresource>
 </RCC>

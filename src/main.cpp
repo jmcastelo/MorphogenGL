@@ -22,6 +22,7 @@
 
 #include "heart.h"
 #include <QApplication>
+#include <QSurfaceFormat>
 
 int main(int argc, char* argv[])
 {
@@ -30,6 +31,10 @@ int main(int argc, char* argv[])
     format.setProfile(QSurfaceFormat::CoreProfile);
     format.setVersion(3, 3);
     QSurfaceFormat::setDefaultFormat(format);
+
+    // MorphoWidget and RGBWidget must share OpenGL contexts
+
+    QCoreApplication::setAttribute(Qt::AA_ShareOpenGLContexts);
 
     QApplication app(argc, argv);
     

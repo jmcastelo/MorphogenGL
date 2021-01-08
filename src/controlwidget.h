@@ -72,9 +72,11 @@ public:
 
 signals:
     void imageSizeChanged();
+    void seedDrawn();
     void closing();
 
 public slots:
+    void uncheckRGBGraphAction();
     void updateWindowSizeLineEdits(int width, int height);
 
 protected:
@@ -90,6 +92,7 @@ private:
     QAction* iterateAction;
     QAction* recordAction;
     QAction* screenshotAction;
+    QAction* rgbAction;
     QAction* saveConfigAction;
     QAction* loadConfigAction;
 
@@ -148,6 +151,7 @@ private:
     void iterate();
     void record();
     void takeScreenshot();
+    void toggleRGBGraph();
     void loadConfig();
     void saveConfig();
     void about();

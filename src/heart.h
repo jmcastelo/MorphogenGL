@@ -24,6 +24,7 @@
 
 #include "morphowidget.h"
 #include "controlwidget.h"
+#include "rgbwidget.h"
 #include "ffmpegencoder.h"
 #include <chrono>
 #include <QObject>
@@ -56,6 +57,8 @@ public:
     void stopRecording();
     int getFrameCount();
 
+    void setRGBWidgetVisibility(bool visible);
+
 signals:
     void iterationPerformed();
     void iterationTimeMeasured(long int iterationTime);
@@ -67,6 +70,7 @@ signals:
 private:
     MorphoWidget* morphoWidget;
     ControlWidget* controlWidget;
+    RGBWidget* rgbWidget;
     FFmpegEncoder* encoder = nullptr;
 
     QTimer* timer;

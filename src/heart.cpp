@@ -43,6 +43,10 @@ Heart::Heart()
     morphoWidget->setGeometry(morphoWidget->geometry().x() - controlWidget->width() / 2, morphoWidget->geometry().y(), morphoWidget->width(), morphoWidget->height());
     controlWidget->setGeometry(morphoWidget->geometry().x() + morphoWidget->width(), morphoWidget->geometry().y(), controlWidget->width(), controlWidget->height());
 
+    // RGBWidget
+
+    rgbWidget = new RGBWidget(this);
+
     // Signals + Slots
 
     connect(timer, &QTimer::timeout, morphoWidget, QOverload<>::of(&MorphoWidget::update));
@@ -52,10 +56,29 @@ Heart::Heart()
     connect(morphoWidget, &MorphoWidget::initHeartBeat, [&timer = this->timer]() { timer->start(); });
     connect(morphoWidget, &MorphoWidget::stopHeartBeat, [&timer = this->timer]() { timer->stop(); });
     connect(morphoWidget, &MorphoWidget::screenSizeChanged, controlWidget, &ControlWidget::updateWindowSizeLineEdits);
-    connect(morphoWidget, &MorphoWidget::closing, [&controlWidget = this->controlWidget]() { controlWidget->close(); });
+    connect(morphoWidget, &MorphoWidget::closing, [&controlWidget = this->controlWidget, &rgbWidget = this->rgbWidget]()
+    {
+        controlWidget->close();
+        rgbWidget->close();
+    });
 
     connect(controlWidget, &ControlWidget::imageSizeChanged, morphoWidget, &MorphoWidget::resetZoom);
-    connect(controlWidget, &ControlWidget::closing, [&morphoWidget = this->morphoWidget]() { morphoWidget->close(); });
+    connect(controlWidget, &ControlWidget::imageSizeChanged, rgbWidget, &RGBWidget::allocatePixelsArray);
+    connect(controlWidget, &ControlWidget::seedDrawn, rgbWidget, [&rgbWidget = this->rgbWidget]()
+    {
+        if (rgbWidget->isVisible())
+        {
+            rgbWidget->getPixels();
+            rgbWidget->update();
+        }
+    });
+    connect(controlWidget, &ControlWidget::closing, [&morphoWidget = this->morphoWidget, &rgbWidget = this->rgbWidget]()
+    {
+        morphoWidget->close();
+        rgbWidget->close();
+    });
+
+    connect(rgbWidget, &RGBWidget::closing, controlWidget, &ControlWidget::uncheckRGBGraphAction);
 
     // Show widgets
 
@@ -65,6 +88,7 @@ Heart::Heart()
 
 Heart::~Heart()
 {
+    delete rgbWidget;
     delete morphoWidget;
     delete controlWidget;
     if (encoder) delete encoder;
@@ -102,6 +126,16 @@ void Heart::beat()
 
     if (controlWidget->generator->active)
         emit iterationPerformed();
+    
+    // Update rgbWidget (making all its pixel computations) only if visible
+
+    if (rgbWidget->isVisible())
+    {
+        if (controlWidget->generator->active)
+            rgbWidget->getPixels();
+        
+        rgbWidget->update();
+    }
 }
 
 void Heart::setStartTime()
@@ -160,4 +194,16 @@ void Heart::stopRecording()
 int Heart::getFrameCount()
 {
     return encoder ? encoder->frameNumber : 0;
+}
+
+void Heart::setRGBWidgetVisibility(bool visible)
+{
+    if (visible)
+    {
+        rgbWidget->show();
+        rgbWidget->getPixels();
+        rgbWidget->update();
+    }
+    else
+        rgbWidget->hide();
 }

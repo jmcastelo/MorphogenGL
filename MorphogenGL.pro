@@ -70,6 +70,7 @@ HEADERS += src/blender.h \
     src/imageoperations.h \
     src/parameter.h \
     src/pipeline.h \
+    src/rgbwidget.h \
     src/seed.h \
     src/controlwidget.h \
     src/configparser.h \
@@ -91,6 +92,7 @@ SOURCES += src/blender.cpp \
     src/parameter.cpp \
     src/pipeline.cpp \
     src/polarkernelplot.cpp \
+    src/rgbwidget.cpp \
     src/seed.cpp \
     src/heart.cpp
 

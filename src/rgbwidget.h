@@ -22,44 +22,43 @@
 
 #pragma once
 
-
 #include "fbo.h"
 #include <cmath>
 #include <QOpenGLWidget>
 #include <QOpenGLExtraFunctions>
+#include <QOpenGLShaderProgram>
+#include <QOpenGlVertexArrayObject>
+#include <QOpenGLBuffer>
 #include <QIcon>
-#include <QGuiApplication>
-#include <QScreen>
+#include <QMatrix4x4>
+#include <QVector3D>
+#include <QQuaternion>
+#include <QPoint>
 #include <QCloseEvent>
 #include <QWheelEvent>
 #include <QMouseEvent>
-#include <QStyle>
 
 class Heart;
 
-// MorphoWidget: OpenGL widget displaying MorphogenGL's output
-
-class MorphoWidget : public QOpenGLWidget, protected QOpenGLExtraFunctions
+class RGBWidget : public QOpenGLWidget, protected QOpenGLExtraFunctions
 {
     Q_OBJECT
 
 public:
-    MorphoWidget(Heart* theHeart, QWidget* parent = nullptr);
-    virtual ~MorphoWidget() override;
+    RGBWidget(Heart* theHeart, QWidget* parent = nullptr);
+    virtual ~RGBWidget() override;
 
     void initializeGL() override;
     void paintGL() override;
     void resizeGL(int width, int height) override;
 
+    void getPixels();
+
 signals:
-    void initGenerator();
-    void initHeartBeat();
-    void stopHeartBeat();
-    void screenSizeChanged(int width, int height);
     void closing();
 
 public slots:
-    void resetZoom();
+    void allocatePixelsArray();
 
 protected:
     void closeEvent(QCloseEvent* event) override;
@@ -70,14 +69,18 @@ protected:
 private:
     Heart* heart;
 
-    GLuint fbo = 0;
+    QOpenGLShaderProgram* program = nullptr;
+    QOpenGLVertexArrayObject* vao = nullptr;
+    QOpenGLBuffer* vbo = nullptr;
+    GLfloat* pixels = nullptr;
 
-    GLint srcX0 = 0;
-    GLint srcY0 = 0;
-    GLint srcX1 = FBO::width;
-    GLint srcY1 = FBO::height;
-    int xPrev = -1;
-    int yPrev = -1;
-    float deltaX = 0.0f;
-    float deltaY = 0.0f;
+    float scale = 1.0f;
+    QMatrix4x4 rotation;
+    QMatrix4x4 model;
+    QMatrix4x4 projection;
+    QQuaternion rotationQuaternion;
+    QPoint prevPos;
+
+    void computeTransformMatrix();
+    QVector3D getArcBallVector(const QPoint& point);
 };

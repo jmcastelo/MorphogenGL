@@ -43,6 +43,9 @@ ControlWidget::ControlWidget(Heart* theHeart, QWidget *parent) : QWidget(parent)
     recordAction->setCheckable(true);
     screenshotAction = toolbar->addAction(QIcon(QPixmap(":/icons/digikam.png")), "Take screenshot");
     toolbar->addSeparator();
+    rgbAction = toolbar->addAction(QIcon(QPixmap(":/icons/office-chart-scatter.png")), "Show RGB graph");
+    rgbAction->setCheckable(true);
+    toolbar->addSeparator();
     loadConfigAction = toolbar->addAction(QIcon(QPixmap(":/icons/document-open.png")), "Load configuration");
     saveConfigAction = toolbar->addAction(QIcon(QPixmap(":/icons/document-save.png")), "Save configuration");
     toolbar->addSeparator();
@@ -51,6 +54,7 @@ ControlWidget::ControlWidget(Heart* theHeart, QWidget *parent) : QWidget(parent)
     connect(iterateAction, &QAction::triggered, this, &ControlWidget::iterate);
     connect(recordAction, &QAction::triggered, this, &ControlWidget::record);
     connect(screenshotAction, &QAction::triggered, this, &ControlWidget::takeScreenshot);
+    connect(rgbAction, &QAction::triggered, this, &ControlWidget::toggleRGBGraph);
     connect(loadConfigAction, &QAction::triggered, this, &ControlWidget::loadConfig);
     connect(saveConfigAction, &QAction::triggered, this, &ControlWidget::saveConfig);
     connect(aboutAction, &QAction::triggered, this, &ControlWidget::about);
@@ -187,6 +191,16 @@ void ControlWidget::takeScreenshot()
     {
         screenshot.save(filename);
     }
+}
+
+void ControlWidget::toggleRGBGraph()
+{
+    heart->setRGBWidgetVisibility(rgbAction->isChecked());
+}
+
+void ControlWidget::uncheckRGBGraphAction()
+{
+    rgbAction->setChecked(false);
 }
 
 void ControlWidget::loadConfig()
@@ -702,13 +716,15 @@ void ControlWidget::constructPipelineControls()
 
     // Signals + Slots
 
-    connect(drawRandomSeedPushButton, &QPushButton::clicked, [&generator = this->generator, bwSeedCheckBox]()
+    connect(drawRandomSeedPushButton, &QPushButton::clicked, [=]()
     {
         generator->drawRandomSeed(bwSeedCheckBox->isChecked());
+        emit seedDrawn();
     });
-    connect(drawSeedImagePushButton, &QPushButton::clicked, [&generator = this->generator]()
+    connect(drawSeedImagePushButton, &QPushButton::clicked, [=]()
     {
         generator->drawSeedImage();
+        emit seedDrawn();
     });
     connect(loadSeedImagePushButton, &QPushButton::clicked, [=]()
     {

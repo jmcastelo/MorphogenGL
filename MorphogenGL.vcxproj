@@ -54,7 +54,7 @@
       <WarningLevel>Level4</WarningLevel>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>avcodec.lib;avformat.lib;swscale.lib;avutil.lib;swresample.lib;libx264.lib;bcrypt.lib;ws2_32.lib;secur32.lib;qcustomplotd2.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>opengl32.lib;avcodec.lib;avformat.lib;swscale.lib;avutil.lib;swresample.lib;libx264.lib;bcrypt.lib;ws2_32.lib;secur32.lib;qcustomplotd2.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>C:\Development\libs;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -124,6 +124,7 @@
     <ClCompile Include="src\parameter.cpp" />
     <ClCompile Include="src\pipeline.cpp" />
     <ClCompile Include="src\polarkernelplot.cpp" />
+    <ClCompile Include="src\rgbwidget.cpp" />
     <ClCompile Include="src\seed.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -140,6 +141,7 @@
     <QtMoc Include="src\operationswidget.h" />
     <ClInclude Include="src\pipeline.h" />
     <QtMoc Include="src\polarkernelplot.h" />
+    <QtMoc Include="src\rgbwidget.h" />
     <ClInclude Include="src\seed.h" />
   </ItemGroup>
   <ItemGroup>
