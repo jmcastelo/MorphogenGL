@@ -21,6 +21,9 @@
 */
 
 #include "configparser.h"
+#include "parameter.h"
+#include <vector>
+#include <QFile>
 
 void ConfigurationParser::write()
 {
@@ -34,21 +37,23 @@ void ConfigurationParser::write()
 
     stream.writeStartElement("morphogengl");
 
-    // Pipelines
+    stream.writeAttribute("version", generator->version);
 
-    stream.writeStartElement("pipelines");
+    // Nodes: seeds and operation nodes
 
-    for (auto pipeline: generator->pipelines)
+    stream.writeStartElement("nodes");
+
+    QMap<QUuid, Seed*>::const_iterator i = generator->getSeeds().constBegin();
+    while (i != generator->getSeeds().constEnd())
     {
-        stream.writeStartElement("pipeline");
-        stream.writeAttribute("blendfactor", QString::number(pipeline->blendFactor));
-        writeImageOperations(pipeline);
-        stream.writeEndElement();
+        writeSeedNode(i.key(), i.value());
+        i++;
     }
 
-    stream.writeStartElement("outputpipeline");
-    writeImageOperations(generator->outputPipeline);
-    stream.writeEndElement();
+    foreach (ImageOperationNode* node, generator->getOperationNodes())
+    {
+        writeOperationNode(node);
+    }
 
     stream.writeEndElement();
 
@@ -74,8 +79,8 @@ void ConfigurationParser::write()
     stream.writeEndElement();
     stream.writeEndElement();
 
-    stream.writeStartElement("mask");
-    stream.writeCharacters(QString::number(generator->applyMask));
+    stream.writeStartElement("outputnode");
+    stream.writeCharacters(generator->getOutput().toString());
     stream.writeEndElement();
 
     stream.writeEndElement();
@@ -83,145 +88,215 @@ void ConfigurationParser::write()
     stream.writeEndElement();
 
     stream.writeEndDocument();
-
-    outFile.close();
 }
 
-void ConfigurationParser::writeImageOperations(Pipeline *pipeline)
+void ConfigurationParser::writeSeedNode(QUuid id, Seed* seed)
 {
-    for (auto operation: pipeline->imageOperations)
+    stream.writeStartElement("seednode");
+
+    stream.writeAttribute("id", id.toString());
+
+    stream.writeStartElement("type");
+    stream.writeCharacters(QString::number(seed->getType()));
+    stream.writeEndElement();
+
+    stream.writeStartElement("fixed");
+    stream.writeCharacters(QString::number(seed->isFixed()));
+    stream.writeEndElement();
+
+    QPointF position = graphWidget->nodePosition(id);
+
+    stream.writeStartElement("position");
+
+    stream.writeStartElement("x");
+    stream.writeCharacters(QString::number(position.x()));
+    stream.writeEndElement();
+
+    stream.writeStartElement("y");
+    stream.writeCharacters(QString::number(position.y()));
+    stream.writeEndElement();
+
+    stream.writeEndElement();
+
+    stream.writeEndElement();
+}
+
+void ConfigurationParser::writeOperationNode(ImageOperationNode* node)
+{
+    stream.writeStartElement("operationnode");
+
+    stream.writeAttribute("id", node->id.toString());
+
+    stream.writeStartElement("operation");
+
+    stream.writeAttribute("name", node->operation->getName());
+    stream.writeAttribute("enabled", QString::number(node->operation->isEnabled()));
+
+    for (auto parameter: node->operation->getBoolParameters())
     {
-        stream.writeStartElement("operation");
-        stream.writeAttribute("name", operation->getName());
-        stream.writeAttribute("enabled", QString::number(operation->isEnabled()));
+        stream.writeStartElement("parameter");
+        stream.writeAttribute("name", parameter->name);
+        stream.writeAttribute("type", "bool");
+        stream.writeCharacters(QString::number(parameter->value));
+        stream.writeEndElement();
+    }
 
-        for (auto parameter: operation->getBoolParameters())
+    for (auto parameter: node->operation->getIntParameters())
+    {
+        stream.writeStartElement("parameter");
+        stream.writeAttribute("name", parameter->name);
+        stream.writeAttribute("type", "int");
+        stream.writeCharacters(QString::number(parameter->value));
+        stream.writeEndElement();
+    }
+
+    for (auto parameter: node->operation->getFloatParameters())
+    {
+        stream.writeStartElement("parameter");
+        stream.writeAttribute("name", parameter->name);
+        stream.writeAttribute("type", "float");
+        stream.writeCharacters(QString::number(parameter->value));
+        stream.writeEndElement();
+    }
+
+    for (auto parameter: node->operation->getOptionsIntParameters())
+    {
+        stream.writeStartElement("parameter");
+        stream.writeAttribute("name", parameter->name);
+        stream.writeAttribute("type", "int");
+        stream.writeCharacters(QString::number(parameter->value));
+        stream.writeEndElement();
+    }
+
+    for (auto parameter: node->operation->getOptionsGLenumParameters())
+    {
+        stream.writeStartElement("parameter");
+        stream.writeAttribute("name", parameter->name);
+        stream.writeAttribute("type", "interpolationflag");
+        stream.writeCharacters(QString::number(parameter->value));
+        stream.writeEndElement();
+    }
+
+    if (node->operation->getKernelParameter())
+    {
+        stream.writeStartElement("parameter");
+        stream.writeAttribute("name", node->operation->getKernelParameter()->name);
+        stream.writeAttribute("type", "kernel");
+
+        for (auto element: node->operation->getKernelParameter()->values)
         {
-            stream.writeStartElement("parameter");
-            stream.writeAttribute("name", parameter->name);
-            stream.writeAttribute("type", "bool");
-            stream.writeCharacters(QString::number(parameter->value));
+            stream.writeStartElement("element");
+            stream.writeCharacters(QString::number(element));
             stream.writeEndElement();
         }
 
-        for (auto parameter: operation->getIntParameters())
+        stream.writeEndElement();
+    }
+
+    if (node->operation->getMatrixParameter())
+    {
+        stream.writeStartElement("parameter");
+        stream.writeAttribute("name", node->operation->getMatrixParameter()->name);
+        stream.writeAttribute("type", "matrix");
+
+        for (auto element : node->operation->getMatrixParameter()->values)
         {
-            stream.writeStartElement("parameter");
-            stream.writeAttribute("name", parameter->name);
-            stream.writeAttribute("type", "int");
-            stream.writeCharacters(QString::number(parameter->value));
+            stream.writeStartElement("element");
+            stream.writeCharacters(QString::number(element));
             stream.writeEndElement();
         }
 
-        for (auto parameter: operation->getFloatParameters())
+        stream.writeEndElement();
+    }
+
+    if (node->operation->getPolarKernelParameter())
+    {
+        stream.writeStartElement("parameter");
+        stream.writeAttribute("name", node->operation->getPolarKernelParameter()->name);
+        stream.writeAttribute("type", "polarkernel");
+
+        stream.writeStartElement("centerelement");
+        stream.writeCharacters(QString::number(node->operation->getPolarKernelParameter()->centerElement));
+        stream.writeEndElement();
+
+        for (auto polarKernel : node->operation->getPolarKernelParameter()->polarKernels)
         {
-            stream.writeStartElement("parameter");
-            stream.writeAttribute("name", parameter->name);
-            stream.writeAttribute("type", "float");
-            stream.writeCharacters(QString::number(parameter->value));
-            stream.writeEndElement();
-        }
+            stream.writeStartElement("polarkernel");
 
-        for (auto parameter: operation->getOptionsIntParameters())
-        {
-            stream.writeStartElement("parameter");
-            stream.writeAttribute("name", parameter->name);
-            stream.writeAttribute("type", "int");
-            stream.writeCharacters(QString::number(parameter->value));
-            stream.writeEndElement();
-        }
-
-        for (auto parameter: operation->getOptionsGLenumParameters())
-        {
-            stream.writeStartElement("parameter");
-            stream.writeAttribute("name", parameter->name);
-            stream.writeAttribute("type", "interpolationflag");
-            stream.writeCharacters(QString::number(parameter->value));
-            stream.writeEndElement();
-        }
-
-        if (operation->getKernelParameter())
-        {
-            stream.writeStartElement("parameter");
-            stream.writeAttribute("name", operation->getKernelParameter()->name);
-            stream.writeAttribute("type", "kernel");
-
-            for (auto element: operation->getKernelParameter()->values)
-            {
-                stream.writeStartElement("element");
-                stream.writeCharacters(QString::number(element));
-                stream.writeEndElement();
-            }
-
-            stream.writeEndElement();
-        }
-
-        if (operation->getMatrixParameter())
-        {
-            stream.writeStartElement("parameter");
-            stream.writeAttribute("name", operation->getMatrixParameter()->name);
-            stream.writeAttribute("type", "matrix");
-
-            for (auto element : operation->getMatrixParameter()->values)
-            {
-                stream.writeStartElement("element");
-                stream.writeCharacters(QString::number(element));
-                stream.writeEndElement();
-            }
-
-            stream.writeEndElement();
-        }
-
-        if (operation->getPolarKernelParameter())
-        {
-            stream.writeStartElement("parameter");
-            stream.writeAttribute("name", operation->getPolarKernelParameter()->name);
-            stream.writeAttribute("type", "polarkernel");
-
-            stream.writeStartElement("centerelement");
-            stream.writeCharacters(QString::number(operation->getPolarKernelParameter()->centerElement));
+            stream.writeStartElement("numelements");
+            stream.writeCharacters(QString::number(polarKernel->numElements));
             stream.writeEndElement();
 
-            for (auto polarKernel : operation->getPolarKernelParameter()->polarKernels)
-            {
-                stream.writeStartElement("polarkernel");
+            stream.writeStartElement("radius");
+            stream.writeCharacters(QString::number(polarKernel->radius));
+            stream.writeEndElement();
 
-                stream.writeStartElement("numelements");
-                stream.writeCharacters(QString::number(polarKernel->numElements));
-                stream.writeEndElement();
+            stream.writeStartElement("initialangle");
+            stream.writeCharacters(QString::number(polarKernel->initialAngle));
+            stream.writeEndElement();
 
-                stream.writeStartElement("radius");
-                stream.writeCharacters(QString::number(polarKernel->radius));
-                stream.writeEndElement();
+            stream.writeStartElement("frequency");
+            stream.writeCharacters(QString::number(polarKernel->frequency));
+            stream.writeEndElement();
 
-                stream.writeStartElement("initialangle");
-                stream.writeCharacters(QString::number(polarKernel->initialAngle));
-                stream.writeEndElement();
+            stream.writeStartElement("phase");
+            stream.writeCharacters(QString::number(polarKernel->phase));
+            stream.writeEndElement();
 
-                stream.writeStartElement("frequency");
-                stream.writeCharacters(QString::number(polarKernel->frequency));
-                stream.writeEndElement();
+            stream.writeStartElement("minimum");
+            stream.writeCharacters(QString::number(polarKernel->minimum));
+            stream.writeEndElement();
 
-                stream.writeStartElement("phase");
-                stream.writeCharacters(QString::number(polarKernel->phase));
-                stream.writeEndElement();
-
-                stream.writeStartElement("minimum");
-                stream.writeCharacters(QString::number(polarKernel->minimum));
-                stream.writeEndElement();
-
-                stream.writeStartElement("maximum");
-                stream.writeCharacters(QString::number(polarKernel->maximum));
-                stream.writeEndElement();
-
-                stream.writeEndElement();
-            }
+            stream.writeStartElement("maximum");
+            stream.writeCharacters(QString::number(polarKernel->maximum));
+            stream.writeEndElement();
 
             stream.writeEndElement();
         }
 
         stream.writeEndElement();
     }
+
+    stream.writeEndElement();
+
+    stream.writeStartElement("inputs");
+
+    QMap<QUuid, InputData*>::const_iterator i = node->inputs.constBegin();
+    while (i != node->inputs.constEnd())
+    {
+        stream.writeStartElement("input");
+
+        stream.writeAttribute("id", i.key().toString());
+
+        stream.writeStartElement("type");
+        stream.writeCharacters(QString::number(static_cast<int>(i.value()->type)));
+        stream.writeEndElement();
+
+        stream.writeStartElement("blendfactor");
+        stream.writeCharacters(QString::number(i.value()->blendFactor));
+        stream.writeEndElement();
+
+        stream.writeEndElement();
+        i++;
+    }
+
+    stream.writeEndElement();
+
+    QPointF position = graphWidget->nodePosition(node->id);
+
+    stream.writeStartElement("position");
+
+    stream.writeStartElement("x");
+    stream.writeCharacters(QString::number(position.x()));
+    stream.writeEndElement();
+
+    stream.writeStartElement("y");
+    stream.writeCharacters(QString::number(position.y()));
+    stream.writeEndElement();
+
+    stream.writeEndElement();
+
+    stream.writeEndElement();
 }
 
 void ConfigurationParser::read()
@@ -233,24 +308,199 @@ void ConfigurationParser::read()
 
     if (xml.readNextStartElement() && xml.name() == "morphogengl")
     {
+        QUuid outputNodeId;
+
         while (xml.readNextStartElement())
         {
-            if (xml.name() == "pipelines")
+            if (xml.name() == "nodes")
             {
-                generator->pipelines.clear();
-                generator->outputPipeline->imageOperations.clear();
+                generator->clearLoadedSeeds();
+                generator->clearLoadedOperations();
+
+                QMap<QUuid, QPointF> seedNodePositions;
+                QMap<QUuid, QPair<QString, QPointF>> operationNodeData;
+                QMap<QUuid, QMap<QUuid, InputData*>> connections;
 
                 while (xml.readNextStartElement())
                 {
-                    if (xml.name() == "pipeline")
+                    if (xml.name() == "seednode")
                     {
-                        float blendFactor = xml.attributes().value("blendfactor").toFloat();
-                        generator->loadPipeline(blendFactor);
-                        readImageOperations(generator->pipelines.back());
+                        QUuid id = QUuid(xml.attributes().value("id").toString());
+                        int type = 0;
+                        bool fixed = false;
+                        QPointF position(0.0, 0.0);
+
+                        while (xml.readNextStartElement())
+                        {
+                            if (xml.name() == "type")
+                            {
+                                type = xml.readElementText().toInt();
+                            }
+                            else if (xml.name() == "fixed")
+                            {
+                                fixed = xml.readElementText().toInt();
+                            }
+                            else if (xml.name() == "position")
+                            {
+                                while (xml.readNextStartElement())
+                                {
+                                    if (xml.name() == "x")
+                                    {
+                                        position.setX(xml.readElementText().toFloat());
+                                    }
+                                    else if (xml.name() == "y")
+                                    {
+                                        position.setY(xml.readElementText().toFloat());
+                                    }
+                                    else
+                                    {
+                                        xml.skipCurrentElement();
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                xml.skipCurrentElement();
+                            }
+                        }
+
+                        generator->loadSeed(id, type, fixed);
+                        seedNodePositions.insert(id, position);
                     }
-                    else if (xml.name() == "outputpipeline")
+                    else if (xml.name() == "operationnode")
                     {
-                        readImageOperations(generator->outputPipeline);
+                        QUuid id = QUuid(xml.attributes().value("id").toString());
+                        ImageOperation* operation = nullptr;
+                        QMap<QUuid, InputData*> inputs;
+                        QPointF position(0.0, 0.0);
+
+                        while (xml.readNextStartElement())
+                        {
+                            if (xml.name() == "operation")
+                            {
+                                operation = readImageOperation();
+                            }
+                            else if (xml.name() == "inputs")
+                            {
+                                while (xml.readNextStartElement())
+                                {
+                                    if (xml.name() == "input")
+                                    {
+                                        QUuid srcId = QUuid(xml.attributes().value("id").toString());
+                                        InputType type = InputType::Normal;
+                                        float blendFactor = 1.0;
+
+                                        while (xml.readNextStartElement())
+                                        {
+                                            if (xml.name() == "type")
+                                            {
+                                                type = static_cast<InputType>(xml.readElementText().toInt());
+                                            }
+                                            else if (xml.name() == "blendfactor")
+                                            {
+                                                blendFactor = xml.readElementText().toFloat();
+                                            }
+                                            else
+                                            {
+                                                xml.skipCurrentElement();
+                                            }
+                                        }
+
+                                        inputs.insert(srcId, new InputData(type, 0, blendFactor));
+                                    }
+                                }
+                            }
+                            else if (xml.name() == "position")
+                            {
+                                while (xml.readNextStartElement())
+                                {
+                                    if (xml.name() == "x")
+                                    {
+                                        position.setX(xml.readElementText().toFloat());
+                                    }
+                                    else if (xml.name() == "y")
+                                    {
+                                        position.setY(xml.readElementText().toFloat());
+                                    }
+                                    else
+                                    {
+                                        xml.skipCurrentElement();
+                                    }
+                                }
+                            }
+                        }
+
+                        generator->loadOperation(id, operation);
+                        connections.insert(id, inputs);
+                        operationNodeData.insert(id, QPair<QString, QPointF>(operation->getName(), position));
+                    }
+                    else
+                    {
+                        xml.skipCurrentElement();
+                    }
+                }
+
+                generator->connectLoadedOperations(connections);
+
+                graphWidget->clearScene();
+
+                QMap<QUuid, QPointF>::const_iterator i = seedNodePositions.constBegin();
+                while (i != seedNodePositions.constEnd())
+                {
+                    graphWidget->loadSeedNode(i.key(), i.value());
+                    i++;
+                }
+
+                QMap<QUuid, QPair<QString, QPointF>>::const_iterator j = operationNodeData.constBegin();
+                while (j != operationNodeData.constEnd())
+                {
+                    graphWidget->loadOperationNode(j.key(), j.value().first, j.value().second);
+                    j++;
+                }
+
+                graphWidget->connectNodes(connections);
+            }
+            else if (xml.name() == "display")
+            {
+                while (xml.readNextStartElement())
+                {
+                    if (xml.name() == "image")
+                    {
+                        int imageWidth = generator->getWidth();
+                        int imageHeight = generator->getHeight();
+
+                        while (xml.readNextStartElement())
+                        {
+                            if (xml.name() == "width")
+                                imageWidth = xml.readElementText().toInt();
+                            else if (xml.name() == "height")
+                                imageHeight = xml.readElementText().toInt();
+                            else
+                                xml.skipCurrentElement();
+                        }
+
+                        emit updateImageSize(imageWidth, imageHeight);
+                    }
+                    else if (xml.name() == "window")
+                    {
+                        int windowWidth = heart->getMorphoWidgetWidth();
+                        int windowHeight = heart->getMorphoWidgetHeight();
+
+                        while (xml.readNextStartElement())
+                        {
+                            if (xml.name() == "width")
+                                windowWidth = xml.readElementText().toInt();
+                            else if (xml.name() == "height")
+                                windowHeight = xml.readElementText().toInt();
+                            else
+                                xml.skipCurrentElement();
+                        }
+
+                        heart->resizeMorphoWidget(windowWidth, windowHeight);
+                    }
+                    else if (xml.name() == "outputnode")
+                    {
+                        outputNodeId = QUuid(xml.readElementText());
                     }
                     else
                     {
@@ -258,53 +508,19 @@ void ConfigurationParser::read()
                     }
                 }
             }
-            else if (xml.name() == "display")
-            {
-
-                if (xml.readNextStartElement() && xml.name() == "image")
-                {
-                    int imageWidth = generator->getWidth();
-                    int imageHeight = generator->getHeight();
-
-                    if (xml.readNextStartElement() && xml.name() == "width")
-                        imageWidth = xml.readElementText().toInt();
-                    if (xml.readNextStartElement() && xml.name() == "height")
-                        imageHeight = xml.readElementText().toInt();
-
-                    emit updateImageSize(imageWidth, imageHeight);
-
-                    xml.skipCurrentElement();
-                }
-
-                if (xml.readNextStartElement() && xml.name() == "window")
-                {
-                    int windowWidth = heart->getMorphoWidgetWidth();
-                    int windowHeight = heart->getMorphoWidgetHeight();
-
-                    if (xml.readNextStartElement() && xml.name() == "width")
-                        windowWidth = xml.readElementText().toInt();
-                    if (xml.readNextStartElement() && xml.name() == "height")
-                        windowHeight = xml.readElementText().toInt();
-
-                   heart->resizeMorphoWidget(windowWidth, windowHeight);
-
-                   xml.skipCurrentElement();
-                }
-
-                if (xml.readNextStartElement() && xml.name() == "mask")
-                {
-                    bool applyMask = xml.readElementText().toInt();
-                    
-                    emit updateMask(applyMask);
-
-                    xml.skipCurrentElement();
-                }
-            }
             else
             {
                 xml.skipCurrentElement();
             }   
         }
+
+        generator->swapLoadedSeeds();
+        generator->swapLoadedOperations();
+
+        generator->sortOperations();
+
+        if (!outputNodeId.isNull())
+            generator->setOutput(outputNodeId);
     }
 
     if (xml.tokenType() == QXmlStreamReader::Invalid)
@@ -316,119 +532,109 @@ void ConfigurationParser::read()
     inFile.close();
 }
 
-void ConfigurationParser::readImageOperations(Pipeline *pipeline)
+ImageOperation* ConfigurationParser::readImageOperation()
 {
+    QString operationName = xml.attributes().value("name").toString();
+
+    bool enabled = xml.attributes().value("enabled").toInt();
+
+    std::vector<bool> boolParameters;
+    std::vector<int> intParameters;
+    std::vector<float> floatParameters;
+    std::vector<int> interpolationFlagParameters;
+    std::vector<float> kernelElements;
+    std::vector<float> matrixElements;
+    std::vector<PolarKernel*> polarKernels;
+
     while (xml.readNextStartElement())
     {
-        if (xml.name() == "operation")
+        if (xml.name() == "parameter")
         {
-            QString operationName = xml.attributes().value("name").toString();
+            QString parameterType = xml.attributes().value("type").toString();
 
-            bool enabled = xml.attributes().value("enabled").toInt();
-
-            std::vector<bool> boolParameters;
-            std::vector<int> intParameters;
-            std::vector<float> floatParameters;
-            std::vector<int> interpolationFlagParameters;
-            std::vector<float> kernelElements;
-            std::vector<float> matrixElements;
-            std::vector<PolarKernel*> polarKernels;
-
-            while (xml.readNextStartElement())
+            if (parameterType == "bool")
+                boolParameters.push_back(xml.readElementText().toInt());
+            else if (parameterType == "int")
+                intParameters.push_back(xml.readElementText().toInt());
+            else if (parameterType == "float")
+                floatParameters.push_back(xml.readElementText().toFloat());
+            else if (parameterType == "interpolationflag")
+                interpolationFlagParameters.push_back(xml.readElementText().toInt());
+            else if (parameterType == "kernel")
             {
-                if (xml.name() == "parameter")
+                while (xml.readNextStartElement())
                 {
-                    QString parameterType = xml.attributes().value("type").toString();
-
-                    if (parameterType == "bool")
-                        boolParameters.push_back(xml.readElementText().toInt());
-                    else if (parameterType == "int")
-                        intParameters.push_back(xml.readElementText().toInt());
-                    else if (parameterType == "float")
-                        floatParameters.push_back(xml.readElementText().toFloat());
-                    else if (parameterType == "interpolationflag")
-                        interpolationFlagParameters.push_back(xml.readElementText().toInt());
-                    else if (parameterType == "kernel")
-                    {
-                        while (xml.readNextStartElement())
-                        {
-                            if (xml.name() == "element")
-                                kernelElements.push_back(xml.readElementText().toFloat());
-                             else
-                                xml.skipCurrentElement();
-                        }
-                    }
-                    else if (parameterType == "matrix")
-                    {
-                        while (xml.readNextStartElement())
-                        {
-                            if (xml.name() == "element")
-                                matrixElements.push_back(xml.readElementText().toFloat());
-                            else
-                                xml.skipCurrentElement();
-                        }
-                    }
-                    else if (parameterType == "polarkernel")
-                    {
-                        while (xml.readNextStartElement())
-                        {
-                            if (xml.name() == "centerelement")
-                            {
-                                floatParameters.push_back(xml.readElementText().toFloat());
-                            }
-                            else if (xml.name() == "polarkernel")
-                            {
-                                PolarKernel* polarKernel = new PolarKernel(8, 0.01f, 0.0f, 1.0f, 0.0f, -1.0f, 1.0f);
-
-                                while (xml.readNextStartElement())
-                                {
-                                    if (xml.name() == "numelements")
-                                        polarKernel->numElements = xml.readElementText().toInt();
-                                    else if (xml.name() == "radius")
-                                        polarKernel->radius = xml.readElementText().toFloat();
-                                    else if (xml.name() == "initialangle")
-                                        polarKernel->initialAngle = xml.readElementText().toFloat();
-                                    else if (xml.name() == "frequency")
-                                        polarKernel->frequency = xml.readElementText().toFloat();
-                                    else if (xml.name() == "phase")
-                                        polarKernel->phase = xml.readElementText().toFloat();
-                                    else if (xml.name() == "minimum")
-                                        polarKernel->minimum = xml.readElementText().toFloat();
-                                    else if (xml.name() == "maximum")
-                                        polarKernel->maximum = xml.readElementText().toFloat();
-                                    else
-                                        xml.skipCurrentElement();
-                                }
-
-                                polarKernels.push_back(polarKernel);
-                            }
-                            else
-                            {
-                                xml.skipCurrentElement();
-                            }
-                        }
-                    }
-                }
-                else
-                {
-                    xml.skipCurrentElement();
+                    if (xml.name() == "element")
+                        kernelElements.push_back(xml.readElementText().toFloat());
+                     else
+                        xml.skipCurrentElement();
                 }
             }
+            else if (parameterType == "matrix")
+            {
+                while (xml.readNextStartElement())
+                {
+                    if (xml.name() == "element")
+                        matrixElements.push_back(xml.readElementText().toFloat());
+                    else
+                        xml.skipCurrentElement();
+                }
+            }
+            else if (parameterType == "polarkernel")
+            {
+                while (xml.readNextStartElement())
+                {
+                    if (xml.name() == "centerelement")
+                    {
+                        floatParameters.push_back(xml.readElementText().toFloat());
+                    }
+                    else if (xml.name() == "polarkernel")
+                    {
+                        PolarKernel* polarKernel = new PolarKernel(8, 0.01f, 0.0f, 1.0f, 0.0f, -1.0f, 1.0f);
 
-            pipeline->loadImageOperation(
-                        operationName,
-                        enabled,
-                        boolParameters,
-                        intParameters,
-                        floatParameters,
-                        interpolationFlagParameters,
-                        kernelElements,
-                        matrixElements,
-                        polarKernels);
+                        while (xml.readNextStartElement())
+                        {
+                            if (xml.name() == "numelements")
+                                polarKernel->numElements = xml.readElementText().toInt();
+                            else if (xml.name() == "radius")
+                                polarKernel->radius = xml.readElementText().toFloat();
+                            else if (xml.name() == "initialangle")
+                                polarKernel->initialAngle = xml.readElementText().toFloat();
+                            else if (xml.name() == "frequency")
+                                polarKernel->frequency = xml.readElementText().toFloat();
+                            else if (xml.name() == "phase")
+                                polarKernel->phase = xml.readElementText().toFloat();
+                            else if (xml.name() == "minimum")
+                                polarKernel->minimum = xml.readElementText().toFloat();
+                            else if (xml.name() == "maximum")
+                                polarKernel->maximum = xml.readElementText().toFloat();
+                            else
+                                xml.skipCurrentElement();
+                        }
+
+                        polarKernels.push_back(polarKernel);
+                    }
+                    else
+                    {
+                        xml.skipCurrentElement();
+                    }
+                }
+            }
         }
         else
         {
             xml.skipCurrentElement();
         }
     }
+
+    return generator->loadImageOperation(
+                operationName,
+                enabled,
+                boolParameters,
+                intParameters,
+                floatParameters,
+                interpolationFlagParameters,
+                kernelElements,
+                matrixElements,
+                polarKernels);
 }

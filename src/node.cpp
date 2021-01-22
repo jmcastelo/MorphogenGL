@@ -1,0 +1,461 @@
+/*
+*  Copyright 2021 Jose Maria Castelo Ares
+*
+*  Contact: <jose.maria.castelo@gmail.com>
+*  Repository: <https://github.com/jmcastelo/MorphogenGL>
+*
+*  This file is part of MorphogenGL.
+*
+*  MorphogenGL is free software: you can redistribute it and/or modify
+*  it under the terms of the GNU General Public License as published by
+*  the Free Software Foundation, either version 3 of the License, or
+*  (at your option) any later version.
+*
+*  MorphogenGL is distributed in the hope that it will be useful,
+*  but WITHOUT ANY WARRANTY; without even the implied warranty of
+*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*  GNU General Public License for more details.
+*
+*  You should have received a copy of the GNU General Public License
+*  along with MorphogenGL.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+#include "edge.h"
+#include "node.h"
+#include "graphwidget.h"
+#include "generator.h"
+
+#include <QGraphicsScene>
+#include <QGraphicsSceneMouseEvent>
+#include <QPainter>
+#include <QStyleOption>
+#include <QFileDialog>
+
+Node::Node(GraphWidget* graphWidget, QString text) :
+    name { text },
+    graph { graphWidget }
+{
+    setFlags(ItemIsMovable | ItemIsSelectable | ItemSendsGeometryChanges);
+    setCacheMode(DeviceCoordinateCache);
+    setZValue(-1);
+}
+
+Node::~Node(){}
+
+void Node::copy()
+{
+    graph->copyNode(this);
+}
+
+void Node::remove()
+{
+    graph->removeNode(this);
+}
+
+void Node::copySelected()
+{
+    graph->makeNodeSnapshot();
+}
+
+void Node::removeSelected()
+{
+    graph->removeSelectedNodes();
+}
+
+void Node::selectToConnect()
+{
+    graph->selectNodeToConnect(this);
+}
+
+void Node::addEdge(Edge *edge)
+{
+    edgeList << edge;
+    //edge->adjust();
+}
+
+void Node::removeEdge(Edge *edge)
+{
+    edgeList.removeOne(edge);
+}
+
+QVector<Edge *> Node::edges() const
+{
+    return edgeList;
+}
+
+bool Node::connectedTo(Node *node)
+{
+    for (Edge *edge : edgeList)
+        if (edge->destNode() == node)
+            return true;
+
+    return false;
+}
+
+void Node::setAsOutput()
+{
+    graph->generator->setOutput(id);
+    graph->updateNodes();
+}
+
+QRectF Node::textBoundingRect() const
+{
+    if (scene())
+    {
+        QFontMetricsF fontMetrics(scene()->font());
+        return fontMetrics.boundingRect(name);
+    }
+    else
+        return QRectF();
+}
+
+QRectF Node::boundingRect() const
+{
+    return textBoundingRect().adjusted(-(ellipseMargin + penSize), -(ellipseMargin + penSize), ellipseMargin + penSize, ellipseMargin + penSize);
+}
+
+QPainterPath Node::shape() const
+{
+    QPainterPath path;
+    path.addEllipse(textBoundingRect().adjusted(-(ellipseMargin + penSize), -(ellipseMargin + penSize), ellipseMargin + penSize, ellipseMargin + penSize));
+    return path;
+}
+
+void Node::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *)
+{
+    QRectF textRect = textBoundingRect();
+
+    QLinearGradient gradient(textRect.topLeft(), textRect.bottomRight());
+    if (graph->generator->isOutput(id))
+    {
+        if (option->state & QStyle::State_Sunken || option->state & QStyle::State_Selected) {
+            gradient.setColorAt(0, QColor(Qt::yellow));
+            gradient.setColorAt(1, QColor(Qt::red));
+        } else {
+            gradient.setColorAt(0, Qt::darkYellow);
+            gradient.setColorAt(1, Qt::darkRed);
+        }
+    }
+    else
+    {
+        if (option->state & QStyle::State_Sunken || option->state & QStyle::State_Selected) {
+            gradient.setColorAt(0, QColor(Qt::cyan));
+            gradient.setColorAt(1, QColor(Qt::blue));
+        } else {
+            gradient.setColorAt(0, Qt::darkCyan);
+            gradient.setColorAt(1, Qt::darkBlue);
+        }
+    }
+    painter->setBrush(gradient);
+
+    painter->setPen(QPen(Qt::black, penSize));
+    painter->drawEllipse(textRect.adjusted(-ellipseMargin, -ellipseMargin, ellipseMargin, ellipseMargin));
+
+    painter->setFont(scene()->font());
+    painter->setPen(QPen(Qt::white, 0));
+    painter->drawText(textRect, Qt::AlignCenter, name);
+}
+
+QVariant Node::itemChange(GraphicsItemChange change, const QVariant &value)
+{
+    if(change == ItemPositionChange && scene())
+    {
+        QPointF newPos = value.toPointF();
+
+        // Keep within scene
+
+        QRectF rect = graph->scene()->sceneRect();
+        if (!rect.contains(newPos))
+        {
+            newPos.setX(qMin(rect.right(), qMax(newPos.x(), rect.left())));
+            newPos.setY(qMin(rect.bottom(), qMax(newPos.y(), rect.top())));
+            return newPos;
+        }
+    }
+    else if(change == ItemPositionHasChanged)
+    {
+        for (Edge *edge : qAsConst(edgeList))
+            edge->adjust();
+
+        // Draw graph's background
+
+        graph->resetCachedContent();
+    }
+    else if (change == ItemSelectedChange)
+    {
+        if (value == true)
+            setZValue(0);
+        else
+            setZValue(-1);
+    }
+
+    return QGraphicsObject::itemChange(change, value);
+}
+
+void Node::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
+{
+    update();
+    QGraphicsObject::mouseReleaseEvent(event);
+}
+
+// Operation node
+
+OperationNode::OperationNode(GraphWidget* graphWidget, QString name) : Node(graphWidget, name)
+{
+    id = graph->generator->addOperation(name);
+}
+
+OperationNode::OperationNode(GraphWidget* graphWidget, QString name, QUuid uuid, QPointF pos) : Node(graphWidget, name)
+{
+    id = uuid;
+    setPos(pos);
+}
+
+OperationNode::OperationNode(const OperationNode& node) : Node(node.graph, node.name)
+{
+    id = graph->generator->copyOperation(node.id);
+}
+
+OperationNode::~OperationNode()
+{
+     graph->onDestroyOperationNode(id);
+}
+
+bool OperationNode::hasInputs()
+{
+    for (Edge* edge : edgeList)
+        if (edge->destNode() == this)
+            return true;
+
+    return false;
+}
+
+void OperationNode::setOperation(QAction *action)
+{
+    graph->generator->setOperation(id, action->text());
+
+    name = action->text();
+
+    for (Edge *edge : qAsConst(edgeList))
+        edge->adjust();
+
+    update();
+    scene()->update();
+
+    graph->updateOperation(id);
+}
+
+void OperationNode::setParameters()
+{
+    graph->setOperationParameters(id);
+}
+
+void OperationNode::enableOperation(bool checked)
+{
+    graph->generator->enableOperation(id, checked);
+}
+
+void OperationNode::equalizeBlendFactors()
+{
+    graph->generator->equalizeBlendFactors(id);
+
+    for (Edge* edge : edgeList)
+        edge->update();
+}
+
+void OperationNode::mousePressEvent(QGraphicsSceneMouseEvent *event)
+{
+    if (event->buttons() == Qt::LeftButton)
+    {
+        if (graph->nodeSelectedToConnect())
+            graph->connectNodes(this);
+        else
+            graph->deselectNodeToConnect();
+    }
+
+    update();
+    QGraphicsObject::mousePressEvent(event);
+}
+
+void OperationNode::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
+{
+    QMenu menu;
+
+    QMenu *operationsMenu = menu.addMenu("Set operation");
+
+    for (QString opName : graph->generator->availableOperations)
+        operationsMenu->addAction(opName);
+
+    connect(operationsMenu, &QMenu::triggered, this, &OperationNode::setOperation);
+
+    if (graph->generator->hasOperationParamaters(id))
+        menu.addAction("Set parameters", this, &OperationNode::setParameters);
+
+    QAction* enableAction = menu.addAction("Enabled", this, &OperationNode::enableOperation);
+    enableAction->setCheckable(true);
+    enableAction->setChecked(graph->generator->isOperationEnabled(id));
+
+    if (hasInputs())
+        menu.addAction("Equalize blend factors", this, &OperationNode::equalizeBlendFactors);
+
+    menu.addSeparator();
+
+    menu.addAction("Set as output", this, &OperationNode::setAsOutput);
+
+    if (graph->moreThanOneNode())
+        menu.addAction("Connect to", this, &OperationNode::selectToConnect);
+
+    menu.addSeparator();
+
+    menu.addAction("Copy", this, &OperationNode::copy);
+    menu.addAction("Remove", this, &OperationNode::remove);
+
+    if (isSelected() && graph->nodesSelected())
+    {
+        menu.addSeparator();
+        menu.addAction("Copy selection", this, &OperationNode::copySelected);
+        menu.addAction("Remove selection", this, &OperationNode::removeSelected);
+    }
+
+    menu.exec(event->screenPos());
+}
+
+QVariant OperationNode::itemChange(GraphicsItemChange change, const QVariant &value)
+{
+    if ((change == ItemSelectedChange && value.toBool() == true) || change == ItemPositionChange)
+    {
+        for (Edge* edge : edgeList)
+        {
+            if (edge->destNode() == this)
+            {
+                edge->drawBlendFactor(true);
+                edge->update();
+            }
+        }
+    }
+    else if (change == ItemSelectedChange && value.toBool() == false)
+    {
+        graph->drawBlendFactors(false);
+    }
+
+    return Node::itemChange(change, value);
+}
+
+// Seed node
+
+SeedNode::SeedNode(GraphWidget* graphWidget, QString name) : Node(graphWidget, name)
+{
+    id = graph->generator->addSeed();
+}
+
+SeedNode::SeedNode(GraphWidget* graphWidget, QUuid uuid, QPointF pos, QString name) : Node(graphWidget, name)
+{
+    id = uuid;
+    setPos(pos);
+}
+
+SeedNode::SeedNode(const SeedNode& node) : Node(node.graph, node.name)
+{
+    id = graph->generator->copySeed(node.id);
+}
+
+SeedNode::~SeedNode()
+{
+    graph->onDestroySeedNode(id);
+}
+
+void SeedNode::draw()
+{
+    graph->generator->drawSeed(id);
+}
+
+void SeedNode::setType(QAction* action)
+{
+    graph->generator->setSeedType(id, action->data().toInt());
+}
+
+void SeedNode::loadImage()
+{
+    QString filename = QFileDialog::getOpenFileName(graph, "Load image", "", "Images (*.bmp *.jpeg *.jpg *.png *.tif *.tiff)");
+
+    if (!filename.isEmpty())
+    {
+        graph->generator->loadSeedImage(id, filename);
+    }
+}
+
+void SeedNode::setFixed(bool fixed)
+{
+    graph->generator->setSeedFixed(id, fixed);
+}
+
+void SeedNode::mousePressEvent(QGraphicsSceneMouseEvent *event)
+{
+    graph->deselectNodeToConnect();
+
+    update();
+    QGraphicsObject::mousePressEvent(event);
+}
+
+void SeedNode::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
+{
+    QMenu menu;
+
+    menu.addAction("Draw", this, &SeedNode::draw);
+
+    QMenu *typeMenu = menu.addMenu("Type");
+
+    QAction* colorAction = new QAction("Random: color");
+    colorAction->setCheckable(true);
+    colorAction->setData(QVariant(0));
+
+    QAction* grayscaleAction = new QAction("Random: grayscale");
+    grayscaleAction->setCheckable(true);
+    grayscaleAction->setData(QVariant(1));
+
+    QAction* imageAction = new QAction("Image");
+    imageAction->setCheckable(true);
+    imageAction->setData(QVariant(2));
+
+    QActionGroup* type = new QActionGroup(this);
+    type->addAction(colorAction);
+    type->addAction(grayscaleAction);
+    type->addAction(imageAction);
+
+    typeMenu->addAction(colorAction);
+    typeMenu->addAction(grayscaleAction);
+    typeMenu->addAction(imageAction);
+
+    connect(typeMenu, &QMenu::triggered, this, &SeedNode::setType);
+
+    colorAction->setChecked(graph->generator->getSeedType(id) == 0);
+    grayscaleAction->setChecked(graph->generator->getSeedType(id) == 1);
+    imageAction->setChecked(graph->generator->getSeedType(id) == 2);
+
+    menu.addAction("Load image", this, &SeedNode::loadImage);
+
+    QAction* fixedAction = menu.addAction("Fixed", this, &SeedNode::setFixed);
+    fixedAction->setCheckable(true);
+    fixedAction->setChecked(graph->generator->isSeedFixed(id));
+
+    menu.addSeparator();
+
+    menu.addAction("Set as output", this, &SeedNode::setAsOutput);
+
+    if (graph->moreThanOneNode())
+        menu.addAction("Connect to", this, &SeedNode::selectToConnect);
+
+    menu.addSeparator();
+
+    menu.addAction("Copy", this, &SeedNode::copy);
+    menu.addAction("Remove", this, &SeedNode::remove);
+
+    if (isSelected() && graph->nodesSelected())
+    {
+        menu.addSeparator();
+        menu.addAction("Copy selection", this, &SeedNode::copySelected);
+        menu.addAction("Remove selection", this, &SeedNode::removeSelected);
+    }
+
+    menu.exec(event->screenPos());
+}

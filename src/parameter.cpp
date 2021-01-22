@@ -46,6 +46,14 @@ void KernelParameter::setValues()
     operation->setKernelParameter(elements);
 }
 
+PolarKernelParameter::PolarKernelParameter(const PolarKernelParameter& parameter) :
+    name { parameter.name },
+    centerElement { parameter.centerElement }
+{
+    for (PolarKernel* kernel : parameter.polarKernels)
+        polarKernels.push_back(new PolarKernel(*kernel));
+}
+
 PolarKernelParameter::~PolarKernelParameter()
 {
     for (auto& kernel : polarKernels)

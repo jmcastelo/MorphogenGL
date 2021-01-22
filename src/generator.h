@@ -22,73 +22,157 @@
 
 #pragma once
 
-#include "pipeline.h"
+#include "imageoperations.h"
+#include "parameter.h"
 #include "seed.h"
 #include "blender.h"
 #include "fbo.h"
-#include <vector>
+#include <QVector>
 #include <QString>
 #include <QImage>
 #include <QOpenGLContext>
+#include <QUuid>
+#include <QMap>
+
+struct ImageOperationNode
+{
+    QUuid id;
+
+    ImageOperation* operation;
+
+    QMap<QUuid, ImageOperationNode*> inputNodes;
+    QMap<QUuid, ImageOperationNode*> outputNodes;
+
+    QMap<QUuid, InputData*> inputs;
+
+    bool computed = false;
+
+    ImageOperationNode(QUuid uuid) : id { uuid } {};
+    ~ImageOperationNode();
+
+    void addSeedInput(QUuid id, InputData* data);
+    void removeSeedInput(QUuid id);
+
+    void addInput(ImageOperationNode* node, InputData* data);
+    void removeInput(ImageOperationNode* node);
+    void setInputType(QUuid id, InputType type);
+
+    int numInputs();
+    int numNonNormalInputs();
+    int numOutputs();
+
+    void addOutput(ImageOperationNode* node);
+    void removeOutput(ImageOperationNode* node);
+
+    void setComputed(bool done);
+    bool allInputsComputed();
+
+    float blendFactor(QUuid id);
+    void setBlendFactor(QUuid id, float factor);
+    void equalizeBlendFactors();
+
+    QVector<InputData*> inputsVector();
+};
 
 class GeneratorGL
 {
 public:
-    std::vector<QString> availableImageOperations;
-
-    std::vector<Pipeline*> pipelines;
-    Pipeline* outputPipeline;
+    QVector<QString> availableOperations;
 
     bool active = false;
-    
-    bool applyMask = false;
 
     GeneratorGL();
     ~GeneratorGL();
 
     void init(QOpenGLContext* mainContext);
 
-    void addPipeline();
-    void removePipeline(int pipelineIndex);
-    void loadPipeline(float blendFactor);
-    int getPipelinesSize() { return static_cast<int>(pipelines.size()); };
+    void connectOperations(QUuid srcId, QUuid dstId, float factor);
+    void connectCopiedOperationsA(QUuid srcId0, QUuid dstId0, QUuid srcId1, QUuid dstId1);
+    void connectCopiedOperationsB(QUuid srcId0, QUuid dstId0, QUuid srcId1, QUuid dstId1);
+    void disconnectOperations(QUuid srcId, QUuid dstId);
 
-    void setPipelineBlendFactor(int pipelineIndex, float factor);
-    double getPipelineBlendFactor(int pipelineIndex) { return pipelines[pipelineIndex]->blendFactor; }
-    void equalizePipelineBlendFactors();
+    void setOperationInputType(QUuid srcId, QUuid dstId, InputType type);
 
-    void insertImageOperation(int pipelineIndex, int newOperationIndex, int currentOperationIndex);
-    void swapImageOperations(int pipelineIndex, int operationIndex0, int operationIndex1);
-    void removeImageOperation(int pipelineIndex, int operationIndex);
-    
-    QString getImageOperationName(int pipelineIndex, int operationIndex);
-    int getImageOperationsSize(int pipelineIndex);
+    float blendFactor(QUuid srcId, QUuid dstId);
+    void setBlendFactor(QUuid srcId, QUuid dstId, float factor);
+    void equalizeBlendFactors(QUuid id);
 
+    ImageOperation* getOperation(QUuid id);
+    ImageOperation* newOperation(QString operationName);
+    QUuid addOperation(QString operationName);
+    QUuid copyOperation(QUuid srcId);
+    void setOperation(QUuid id, QString operationName);
+    void removeOperation(QUuid id);
+    void enableOperation(QUuid id, bool enabled);
+    bool isOperationEnabled(QUuid id);
+    bool hasOperationParamaters(QUuid id);
+
+    void clearLoadedOperations() { loadedOperationNodes.clear(); }
+    void loadOperation(QUuid id, ImageOperation* operation);
+    void connectLoadedOperations(QMap<QUuid, QMap<QUuid, InputData*>> conections);
+    ImageOperation* loadImageOperation(
+        QString operationName,
+        bool enabled,
+        std::vector<bool> boolParameters,
+        std::vector<int> intParameters,
+        std::vector<float> floatParameters,
+        std::vector<int> interpolationParameters,
+        std::vector<float> kernelElements,
+        std::vector<float> matrixElements,
+        std::vector<PolarKernel*> polarKernels);
+
+    QUuid addSeed();
+    QUuid copySeed(QUuid srcId);
+    void removeSeed(QUuid id);
+    void loadSeedImage(QUuid id, QString filename);
+    int getSeedType(QUuid id);
+    void setSeedType(QUuid id, int set);
+    bool isSeedFixed(QUuid id);
+    void setSeedFixed(QUuid id, bool fixed);
+    void drawSeed(QUuid id);
+
+    void clearLoadedSeeds() { loadedSeeds.clear(); }
+    void loadSeed(QUuid id, int type, bool fixed);
+
+    bool isOutput(QUuid id) { return id == outputID; }
+    void setOutput(QUuid id);
+    QUuid getOutput() { return outputID; }
+
+    GLuint** getOutputTextureID() { return outputTextureID; };
+
+    void pasteOperations();
+
+    void swapLoadedOperations() { operationNodes = loadedOperationNodes; }
+    void swapLoadedSeeds() { seeds = loadedSeeds; }
+
+    void sortOperations();
     void iterate();
 
     void resetIterationNumer() { iteration = 0; }
     int getIterationNumber() { return iteration; }
 
-    void drawRandomSeed(bool grayscale);
-    void drawSeedImage();
-    void loadSeedImage(QString filename);
-
-    GLuint getOutputTextureID() { return outputTextureID; };
-
     void resize(GLuint width, GLuint height);
     int getWidth() { return FBO::width; }
     int getHeight() { return FBO::height; }
 
-    void setMask(bool apply);
+    QMap<QUuid, ImageOperationNode*> getOperationNodes() { return operationNodes; }
+    QMap<QUuid, Seed*> getSeeds() { return seeds; }
+
+    QString version = "1.0 beta";
 
 private:
-    QOpenGLContext* sharedContext;
-    GLuint outputTextureID = 0;
-    unsigned int iteration = 0;
+    QMap<QUuid, ImageOperationNode*> operationNodes;
+    QMap<QUuid, ImageOperationNode*> copiedOperationNodes[2];
+    QMap<QUuid, ImageOperationNode*> loadedOperationNodes;
 
-    Seed* seed = nullptr;
-    Blender* blender = nullptr;
-    FBO* outputFBO[2] = { nullptr, nullptr };
-        
-    void setBlendData();
+    QMap<QUuid, Seed*> seeds;
+    QMap<QUuid, Seed*> copiedSeeds[2];
+    QMap<QUuid, Seed*> loadedSeeds;
+
+    QVector<ImageOperation*> sortedOperations;
+
+    QOpenGLContext* sharedContext;
+    QUuid outputID;
+    GLuint** outputTextureID = nullptr;
+    unsigned int iteration = 0;
 };

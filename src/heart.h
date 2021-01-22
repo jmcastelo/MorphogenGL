@@ -40,7 +40,7 @@ public:
     Heart();
     ~Heart();
 
-    GLuint getGeneratorOutputTextureID();
+    GLuint getOutputTextureID();
 
     void setStartTime();
     

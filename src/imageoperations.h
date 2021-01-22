@@ -23,13 +23,17 @@
 #pragma once
 
 #include "fbo.h"
+#include "blender.h"
 #include <vector>
 #include <cmath>
 #include <QVector2D>
 #include <QVector3D>
 #include <QMatrix4x4>
 #include <QString>
+#include <QMap>
+#include <QUuid>
 #include <QOpenGLContext>
+#include <QOffscreenSurface>
 #include <QDebug>
 
 struct BoolParameter;
@@ -47,16 +51,25 @@ class PolarKernelParameter;
 class ImageOperation
 {
 public:
-    ImageOperation(bool on, QString vertexShader, QString fragmentShader, QOpenGLContext* mainContext);
+    ImageOperation(bool on, QOpenGLContext* mainContext);
+    ImageOperation(const ImageOperation& operation);
     virtual ~ImageOperation();
 
+    virtual ImageOperation* clone() = 0;
+
     bool isEnabled() { return enabled; }
-    void enable(bool on) { enabled = on; };
+    void enable(bool on) { enabled = on; }
+
+    bool hasParameters() { return !noParameters; }
 
     virtual QString getName() = 0;
 
-    GLuint getTextureID() { return fbo->getTextureID(); }
-    void resize() { fbo->resize(); };
+    GLuint** getTextureBlit() { return fbo->getTextureBlit(); }
+    GLuint** getTextureID() { return fbo->getTextureID(); }
+
+    void setInputData(QVector<InputData*> data);
+
+    void resize() { blender->resize(); fbo->resize(); }
 
     virtual std::vector<BoolParameter*> getBoolParameters() { std::vector<BoolParameter*> parameters; return parameters; };
     virtual std::vector<IntParameter*> getIntParameters() { std::vector<IntParameter*> parameters; return parameters; };
@@ -77,11 +90,15 @@ public:
 
     void adjustMinMax(float value, float minValue, float maxValue, float& min, float& max);
 
-    void applyOperation(GLuint inTextureID);
+    void applyOperation();
+    void blit();
 
 protected:
     bool enabled;
+    bool noParameters = false;
+    QOpenGLContext* context;
     FBO* fbo;
+    Blender* blender;
 };
 
 // Bilateral filter
@@ -89,8 +106,11 @@ protected:
 class BilateralFilter : public ImageOperation
 {
 public:
-    BilateralFilter(bool on, QString vertexShader, QString fragmentShader, QOpenGLContext* mainContext, int theNumSideElements, float theSize, float theSpatialSigma, float theRangeSigma);
+    BilateralFilter(bool on, QOpenGLContext* mainContext, int theNumSideElements, float theSize, float theSpatialSigma, float theRangeSigma);
+    BilateralFilter(const BilateralFilter& operation);
     ~BilateralFilter();
+
+    ImageOperation* clone() { return new BilateralFilter(*this); }
 
     static QString name;
     QString getName() { return name; };
@@ -109,6 +129,8 @@ private:
 
     void computeOffsets();
     void computeSpatialKernel();
+
+    void setParametersOperation(BilateralFilter* operation);
 };
 
 // Brightness
@@ -116,8 +138,11 @@ private:
 class Brightness : public ImageOperation
 {
 public:
-    Brightness(bool on, QString vertexShader, QString fragmentShader, QOpenGLContext* mainContext, float theBrightness);
+    Brightness(bool on, QOpenGLContext* mainContext, float theBrightness);
+    Brightness(const Brightness& operation);
     ~Brightness();
+
+    ImageOperation* clone() { return new Brightness(*this); }
 
     static QString name;
     QString getName() { return name; };
@@ -135,8 +160,11 @@ private:
 class ColorMix : public ImageOperation
 {
 public:
-    ColorMix(bool on, QString vertexShader, QString fragmentShader, QOpenGLContext* mainContext, std::vector<float> theMatrix);
+    ColorMix(bool on, QOpenGLContext* mainContext, std::vector<float> theMatrix);
+    ColorMix(const ColorMix& operation);
     ~ColorMix();
+
+    ImageOperation* clone() { return new ColorMix(*this); }
 
     static QString name;
     QString getName() { return name; };
@@ -154,8 +182,11 @@ private:
 class Contrast : public ImageOperation
 {
 public:
-    Contrast(bool on, QString vertexShader, QString fragmentShader, QOpenGLContext* mainContext, float theContrast);
+    Contrast(bool on, QOpenGLContext* mainContext, float theContrast);
+    Contrast(const Contrast& operation);
     ~Contrast();
+
+    ImageOperation* clone() { return new Contrast(*this); }
 
     static QString name;
     QString getName() { return name; };
@@ -173,8 +204,11 @@ private:
 class Convolution : public ImageOperation
 {
 public:
-    Convolution(bool on, QString vertexShader, QString fragmentShader, QOpenGLContext* mainContext, std::vector<float> theKernel, float theSize);
+    Convolution(bool on, QOpenGLContext* mainContext, std::vector<float> theKernel, float theSize);
+    Convolution(const Convolution& operation);
     ~Convolution();
+
+    ImageOperation* clone() { return new Convolution(*this); }
 
     static QString name;
     QString getName() { return name; };
@@ -195,8 +229,11 @@ private:
 class Dilation : public ImageOperation
 {
 public:
-    Dilation(bool on, QString vertexShader, QString fragmentShader, QOpenGLContext* mainContext, float theSize);
+    Dilation(bool on, QOpenGLContext* mainContext, float theSize);
+    Dilation(const Dilation& operation);
     ~Dilation();
+
+    ImageOperation* clone() { return new Dilation(*this); }
 
     static QString name;
     QString getName() { return name; };
@@ -214,8 +251,11 @@ private:
 class Erosion : public ImageOperation
 {
 public:
-    Erosion(bool on, QString vertexShader, QString fragmentShader, QOpenGLContext* mainContext, float theSize);
+    Erosion(bool on, QOpenGLContext* mainContext, float theSize);
+    Erosion(const Erosion& operation);
     ~Erosion();
+
+    ImageOperation* clone() { return new Erosion(*this); }
 
     static QString name;
     QString getName() { return name; };
@@ -233,8 +273,11 @@ private:
 class GammaCorrection : public ImageOperation
 {
 public:
-    GammaCorrection(bool on, QString vertexShader, QString fragmentShader, QOpenGLContext* mainContext, float theGammaRed, float theGammaGreen, float theGammaBlue);
+    GammaCorrection(bool on, QOpenGLContext* mainContext, float theGammaRed, float theGammaGreen, float theGammaBlue);
+    GammaCorrection(const GammaCorrection& operation);
     ~GammaCorrection();
+
+    ImageOperation* clone() { return new GammaCorrection(*this); }
 
     static QString name;
     QString getName() { return name; };
@@ -254,8 +297,11 @@ private:
 class HueShift : public ImageOperation
 {
 public:
-    HueShift(bool on, QString vertexShader, QString fragmentShader, QOpenGLContext* mainContext, float theShift);
+    HueShift(bool on, QOpenGLContext* mainContext, float theShift);
+    HueShift(const HueShift& operation);
     ~HueShift();
+
+    ImageOperation* clone() { return new HueShift(*this); }
 
     static QString name;
     QString getName() { return name; };
@@ -268,13 +314,32 @@ private:
     FloatParameter* shift;
 };
 
+// Mask
+
+class Mask : public ImageOperation
+{
+public:
+    Mask(bool on, QOpenGLContext* mainContext);
+    Mask(const Mask& operation);
+    ~Mask();
+
+    ImageOperation* clone() { return new Mask(*this); }
+
+    static QString name;
+    QString getName() { return name; };
+};
+
+
 // Morphological gradient
 
 class MorphologicalGradient : public ImageOperation
 {
 public:
-    MorphologicalGradient(bool on, QString vertexShader, QString fragmentShader, QOpenGLContext* mainContext, float theDilationSize, float theErosionSize);
+    MorphologicalGradient(bool on, QOpenGLContext* mainContext, float theDilationSize, float theErosionSize);
+    MorphologicalGradient(const MorphologicalGradient& operation);
     ~MorphologicalGradient();
+
+    ImageOperation* clone() { return new MorphologicalGradient(*this); }
 
     static QString name;
     QString getName() { return name; };
@@ -293,8 +358,11 @@ private:
 class PolarConvolution : public ImageOperation
 {
 public:
-    PolarConvolution(bool on, QString vertexShader, QString fragmentShader, QOpenGLContext* mainContext, std::vector<PolarKernel*> thePolarKernels, float theCenterElement);
+    PolarConvolution(bool on, QOpenGLContext* mainContext, std::vector<PolarKernel*> thePolarKernels, float theCenterElement);
+    PolarConvolution(const PolarConvolution& operation);
     ~PolarConvolution();
+
+    ImageOperation* clone() { return new PolarConvolution(*this); }
 
     static QString name;
     QString getName() { return name; }
@@ -312,8 +380,11 @@ private:
 class Rotation: public ImageOperation
 {
 public:
-    Rotation(bool on, QString vertexShader, QString fragmentShader, QOpenGLContext* mainContext, float theAngle, GLenum theMinMagFilter);
+    Rotation(bool on, QOpenGLContext* mainContext, float theAngle, GLenum theMinMagFilter);
+    Rotation(const Rotation& operation);
     ~Rotation();
+
+    ImageOperation* clone() { return new Rotation(*this); }
 
     static QString name;
     QString getName() { return name; };
@@ -334,8 +405,11 @@ private:
 class Saturation: public ImageOperation
 {
 public:
-    Saturation(bool on, QString vertexShader, QString fragmentShader, QOpenGLContext* mainContext, float theSaturation);
+    Saturation(bool on, QOpenGLContext* mainContext, float theSaturation);
+    Saturation(const Saturation& operation);
     ~Saturation();
+
+    ImageOperation* clone() { return new Saturation(*this); }
 
     static QString name;
     QString getName() { return name; };
@@ -353,8 +427,11 @@ private:
 class Scale : public ImageOperation
 {
 public:
-    Scale(bool on, QString vertexShader, QString fragmentShader, QOpenGLContext* mainContext, float theScaleFactor, GLenum theMinMagFilter);
+    Scale(bool on, QOpenGLContext* mainContext, float theScaleFactor, GLenum theMinMagFilter);
+    Scale(const Scale& operation);
     ~Scale();
+
+    ImageOperation* clone() { return new Scale(*this); }
 
     static QString name;
     QString getName() { return name; };
@@ -375,8 +452,11 @@ private:
 class Value: public ImageOperation
 {
 public:
-    Value(bool on, QString vertexShader, QString fragmentShader, QOpenGLContext* mainContext, float theValue);
+    Value(bool on, QOpenGLContext* mainContext, float theValue);
+    Value(const Value& operation);
     ~Value();
+
+    ImageOperation* clone() { return new Value(*this); }
 
     static QString name;
     QString getName() { return name; };

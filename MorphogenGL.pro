@@ -33,6 +33,7 @@ QT += widgets printsupport
 INCLUDEPATH += C:/Development/include
 
 LIBS += -LC:/Development/libs \
+    -lopengl32 \
     -lavcodec \
     -lavformat \
     -lswscale \
@@ -64,12 +65,16 @@ CONFIG(release, debug|release) {
 }
 
 HEADERS += src/blender.h \
+    src/cycle.h \
+    src/cyclesearch.h \
+    src/edge.h \
     src/fbo.h \
     src/ffmpegencoder.h \
     src/generator.h \
+    src/graphwidget.h \
     src/imageoperations.h \
+    src/node.h \
     src/parameter.h \
-    src/pipeline.h \
     src/rgbwidget.h \
     src/seed.h \
     src/controlwidget.h \
@@ -83,14 +88,18 @@ HEADERS += src/blender.h \
 SOURCES += src/blender.cpp \
     src/configparser.cpp \
     src/controlwidget.cpp \
+    src/cycle.cpp \
+    src/cyclesearch.cpp \
+    src/edge.cpp \
     src/fbo.cpp \
     src/ffmpegencoder.cpp \
     src/generator.cpp \
+    src/graphwidget.cpp \
     src/imageoperations.cpp \
     src/main.cpp \
     src/morphowidget.cpp \
+    src/node.cpp \
     src/parameter.cpp \
-    src/pipeline.cpp \
     src/polarkernelplot.cpp \
     src/rgbwidget.cpp \
     src/seed.cpp \

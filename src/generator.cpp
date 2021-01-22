@@ -22,11 +22,142 @@
 
 #include "generator.h"
 
+// Image operation node
+
+ImageOperationNode::~ImageOperationNode()
+{
+    foreach (ImageOperationNode* input, inputNodes)
+        input->removeOutput(this);
+
+    foreach (ImageOperationNode* output, outputNodes)
+        output->removeInput(this);
+
+    delete operation;
+
+    foreach (InputData* data, inputs)
+        delete data;
+}
+
+void ImageOperationNode::addSeedInput(QUuid id, InputData* data)
+{
+    inputs.insert(id, data);
+    operation->setInputData(inputsVector());
+}
+
+void ImageOperationNode::removeSeedInput(QUuid id)
+{
+    delete inputs.value(id);
+    inputs.remove(id);
+
+    operation->setInputData(inputsVector());
+}
+
+void ImageOperationNode::addInput(ImageOperationNode *node, InputData* data)
+{
+    inputNodes.insert(node->id, node);
+    inputs.insert(node->id, data);
+
+    operation->setInputData(inputsVector());
+}
+
+void ImageOperationNode::removeInput(ImageOperationNode *node)
+{
+    inputNodes.remove(node->id);
+
+    delete inputs.value(node->id);
+    inputs.remove(node->id);
+
+    operation->setInputData(inputsVector());
+}
+
+int ImageOperationNode::numInputs()
+{
+    return inputs.size();
+}
+
+int ImageOperationNode::numNonNormalInputs()
+{
+    int count = 0;
+
+    foreach (InputData* data, inputs)
+        if (data->type != InputType::Normal)
+            count++;
+
+    return count;
+}
+
+int ImageOperationNode::numOutputs()
+{
+    return outputNodes.size();
+}
+
+void ImageOperationNode::addOutput(ImageOperationNode *node)
+{
+    outputNodes.insert(node->id, node);
+}
+
+void ImageOperationNode::removeOutput(ImageOperationNode *node)
+{
+    outputNodes.remove(node->id);
+}
+
+void ImageOperationNode::setInputType(QUuid id, InputType type)
+{
+    inputs[id]->type = type;
+
+    if (type == InputType::Normal)
+        inputs[id]->textureID = inputNodes.value(id)->operation->getTextureID();
+    else if (type == InputType::Blit)
+        inputs[id]->textureID = inputNodes.value(id)->operation->getTextureBlit();
+}
+
+bool ImageOperationNode::allInputsComputed()
+{
+    foreach (ImageOperationNode* node, inputNodes)
+        if(!node->computed && inputs.value(node->id)->type == InputType::Normal)
+            return false;
+
+    return true;
+}
+
+void ImageOperationNode::setComputed(bool done)
+{
+    computed = done;
+}
+
+float ImageOperationNode::blendFactor(QUuid id)
+{
+    return inputs.value(id)->blendFactor;
+}
+
+void ImageOperationNode::setBlendFactor(QUuid id, float factor)
+{
+    inputs[id]->blendFactor = factor;
+}
+
+void ImageOperationNode::equalizeBlendFactors()
+{
+    int numInputs = inputs.size();
+
+    foreach (InputData* data, inputs)
+        data->blendFactor = 1.0 / numInputs;
+}
+
+QVector<InputData*> ImageOperationNode::inputsVector()
+{
+    QVector<InputData*> inputData;
+
+    foreach(InputData* inData, inputs)
+        inputData.push_back(inData);
+
+    return inputData;
+}
+
+// GeneratorGL
+
 GeneratorGL::GeneratorGL()
 {
-    // Duplicate of Pipeline's
-
-    availableImageOperations = {
+    availableOperations = {
         BilateralFilter::name,
         Brightness::name,
         ColorMix::name,
@@ -36,6 +167,7 @@ GeneratorGL::GeneratorGL()
         Erosion::name,
         GammaCorrection::name,
         HueShift::name,
+        Mask::name,
         MorphologicalGradient::name,
         PolarConvolution::name,
         Rotation::name,
@@ -47,257 +179,543 @@ GeneratorGL::GeneratorGL()
 
 void GeneratorGL::init(QOpenGLContext* mainContext)
 {
-    // Seed
-
-    seed = new Seed(":/shaders/random-seed.vert", ":/shaders/random-seed.frag", mainContext);
-
-    // Blender
-
-    blender = new Blender(":/shaders/screen.vert", ":/shaders/blend.frag", mainContext);
-
-    // Output pipeline
-
-    outputPipeline = new Pipeline(outputTextureID, 1.0f, mainContext);
-
-    // Output FBOs
-
-    outputFBO[0] = new FBO(":/shaders/screen.vert", ":/shaders/screen.frag", mainContext);
-    outputFBO[1] = new FBO(":/shaders/screen.vert", ":/shaders/mask.frag", mainContext);
-
-    outputFBO[1]->makeCurrent();
-    outputFBO[1]->program->bind();
-    outputFBO[1]->program->setUniformValue("apply", applyMask);
-    outputFBO[1]->program->release();
-    outputFBO[1]->doneCurrent();
-
     sharedContext = mainContext;
 }
 
 GeneratorGL::~GeneratorGL()
 {
-    for (auto pipeline : pipelines)
-        delete pipeline;
+    foreach(Seed* seed, seeds)
+        delete seed;
 
-    pipelines.clear();
-
-    delete outputPipeline;
-
-    delete seed;
-    delete blender;
-
-    delete outputFBO[0];
-    delete outputFBO[1];
+    foreach(ImageOperationNode* node, operationNodes)
+        delete node;
 }
 
-void GeneratorGL::addPipeline()
+void GeneratorGL::sortOperations()
 {
-    // Set first pipeline's blend factor to unity, later pipeline's to zero
-    
-    if (pipelines.empty())
-        pipelines.push_back(new Pipeline(outputTextureID, 1.0f, sharedContext));
-    else
-        pipelines.push_back(new Pipeline(outputTextureID, 0.0f, sharedContext));
-}
+    sortedOperations.clear();
 
-void GeneratorGL::removePipeline(int pipelineIndex)
-{
-    if (!pipelines.empty() && pipelineIndex >= 0 && pipelineIndex < static_cast<int>(pipelines.size()))
+    QMap<QUuid, ImageOperationNode*> pendingNodes = operationNodes;
+
+    // Set operations as non-computed (pending)
+
+    foreach (ImageOperationNode* node, operationNodes)
+        node->setComputed(false);
+
+    // First operations are those whose inputs are all blit or seed, they do not depend on pending operations
+    // Also operations with no inputs but with some outputs, sorting algorithm depends on operations having inputs
+    // Discard isolated nodes, with no inputs nor outputs
+
+    foreach (ImageOperationNode* node, operationNodes)
     {
-        pipelines.erase(pipelines.begin() + pipelineIndex);
-
-        // Recompute blend factors (their sum = 1)
-
-        float sumBlendFactors = 0.0f;
-
-        for (auto pipeline : pipelines)
-            sumBlendFactors += pipeline->blendFactor;
-
-        if (sumBlendFactors == 0.0f)
+        if (node->numInputs() == 0 && node->numOutputs() == 0)
         {
-            for (auto& pipeline : pipelines)
-                pipeline->blendFactor = 1.0f / pipelines.size();
+            pendingNodes.remove(node->id);
         }
-        else
+        else if ((node->numInputs() == 0 && node->numOutputs() > 0) ||
+                 (node->numInputs() > 0 && node->numNonNormalInputs() == node->numInputs()))
         {
-            for (auto& pipeline : pipelines)
-                pipeline->blendFactor /= sumBlendFactors;
+            sortedOperations.push_back(node->operation);
+            pendingNodes.remove(node->id);
+            node->setComputed(true);
         }
     }
-}
 
-void GeneratorGL::loadPipeline(float blendFactor)
-{
-    // Load pipeline with given blend factor
+    // Sorting algorithm
 
-    pipelines.push_back(new Pipeline(outputTextureID, blendFactor, sharedContext));
-}
-
-void GeneratorGL::setPipelineBlendFactor(int pipelineIndex, float factor)
-{
-    // Keep within range
-
-    if (factor < 0.0f)
-        factor = 0.0f;
-    if (factor > 1.0f)
-        factor = 1.0f;
-
-    if (pipelines.size() == 1)
-        factor = 1.0f;
-
-    float sumBlendFactors = 0.0f;
-
-    for (int i = 0; i < static_cast<int>(pipelines.size()); i++)
-        if (i != pipelineIndex)
-            sumBlendFactors += pipelines[i]->blendFactor;
-
-    if (sumBlendFactors == 0.0f)
+    while (!pendingNodes.empty())
     {
-        for (int i = 0; i < static_cast<int>(pipelines.size()); i++)
-            if (i != pipelineIndex)
-                pipelines[i]->blendFactor = 1.0e-6f;
+        QVector<ImageOperationNode*> computedNodes;
 
-        sumBlendFactors = 0.0;
+        foreach (ImageOperationNode* node, pendingNodes)
+        {
+            if (node->allInputsComputed())
+            {
+                sortedOperations.push_back(node->operation);
+                computedNodes.push_back(node);
+                node->setComputed(true);
+            }
+        }
 
-        for (int i = 0; i < static_cast<int>(pipelines.size()); i++)
-            if (i != pipelineIndex)
-                sumBlendFactors += pipelines[i]->blendFactor;
+        for (ImageOperationNode* node : computedNodes)
+            pendingNodes.remove(node->id);
+
+        if (computedNodes.empty())
+            break;
     }
 
-    // Scaling the blend factors like this ensures that its sum is unity
-
-    float scale = (1.0f - factor) / sumBlendFactors;
-
-    for (int i = 0; i < static_cast<int>(pipelines.size()); i++)
-        if (i != pipelineIndex)
-            pipelines[i]->blendFactor *= scale;
-
-    pipelines[pipelineIndex]->blendFactor = factor;
-}
-
-void GeneratorGL::equalizePipelineBlendFactors()
-{
-    // Make all blend factors equal
-
-    for (auto& pipeline : pipelines)
-        pipeline->blendFactor = 1.0f / pipelines.size();
-}
-
-void GeneratorGL::insertImageOperation(int pipelineIndex, int newOperationIndex, int currentOperationIndex)
-{
-    if (pipelineIndex >= 0)
-    {
-        pipelines[pipelineIndex]->insertImageOperation(newOperationIndex, currentOperationIndex);
-    }        
-    else
-        outputPipeline->insertImageOperation(newOperationIndex, currentOperationIndex);
-}
-
-void GeneratorGL::swapImageOperations(int pipelineIndex, int operationIndex0, int operationIndex1)
-{
-    if (pipelineIndex >= 0)
-    {
-        pipelines[pipelineIndex]->swapImageOperations(operationIndex0, operationIndex1);
-    }        
-    else
-        outputPipeline->swapImageOperations(operationIndex0, operationIndex1);
-}
-
-void GeneratorGL::removeImageOperation(int pipelineIndex, int operationIndex)
-{
-    if (pipelineIndex >= 0)
-    {
-        pipelines[pipelineIndex]->removeImageOperation(operationIndex);
-    }        
-    else
-        outputPipeline->removeImageOperation(operationIndex);
-}
-
-QString GeneratorGL::getImageOperationName(int pipelineIndex, int operationIndex)
-{
-    if (pipelineIndex >= 0)
-        return pipelines[pipelineIndex]->getImageOperationName(operationIndex);
-    else
-        return outputPipeline->getImageOperationName(operationIndex);
-}
-
-int GeneratorGL::getImageOperationsSize(int pipelineIndex)
-{
-    if (pipelineIndex >= 0)
-        return pipelines.empty() ? 0 : pipelines[pipelineIndex]->getImageOperationsSize();
-    else
-        return outputPipeline->getImageOperationsSize();
-}
-
-void GeneratorGL::setBlendData()
-{
-    blender->clearInputData();
-
-    for (auto& pipeline : pipelines)
-        blender->addInputData(pipeline->getTextureID(), pipeline->blendFactor);
+    /*qDebug() << "---";
+    for (ImageOperation* operation : sortedOperations)
+        qDebug() << operation->getName();*/
 }
 
 void GeneratorGL::iterate()
 {
     if (active)
     {
-        // Iterate parallel pipelines
+        foreach(ImageOperation* operation, sortedOperations)
+            operation->applyOperation();
 
-        for (auto& pipeline : pipelines)
-            pipeline->iterate(outputTextureID);
-
-        // Blend parallel pipelines output images
-
-        if (!pipelines.empty())
-        {
-            setBlendData();
-            blender->blend();
-            outputTextureID = blender->getTextureID();
-        }
-
-        // Iterate output pipeline
-
-        outputPipeline->iterate(outputTextureID);
-
-        // Last two FBOs useful when no parallel pipelines present and output pipeline empty
-
-        outputFBO[0]->setInputTextureID(outputPipeline->getTextureID());
-        outputFBO[0]->draw();
-        outputFBO[1]->setInputTextureID(outputFBO[0]->getTextureID());
-        outputFBO[1]->draw();
-
-        outputTextureID = outputFBO[1]->getTextureID();
+        foreach(ImageOperation* operation, sortedOperations)
+            operation->blit();
 
         iteration++;
     }
+
+    foreach (Seed* seed, seeds)
+        if (!seed->isFixed())
+            seed->clear();
 }
 
-void GeneratorGL::drawRandomSeed(bool grayscale)
+void GeneratorGL::setOutput(QUuid id)
 {
-    seed->drawRandom(grayscale);
-    
-    // Draw last output FBO with seed texture as input to allow for resize when iterations inactive
-
-    outputFBO[1]->setInputTextureID(seed->getTextureID());
-    outputFBO[1]->draw();
-
-    outputTextureID = outputFBO[1]->getTextureID();
+    if (operationNodes.contains(id))
+    {
+        outputID = id;
+        outputTextureID = operationNodes.value(id)->operation->getTextureBlit();
+    }
+    else if (seeds.contains(id))
+    {
+        outputID = id;
+        outputTextureID = seeds.value(id)->getTextureID();
+    }
 }
 
-void GeneratorGL::drawSeedImage()
+void GeneratorGL::connectOperations(QUuid srcId, QUuid dstId, float factor)
 {
-    seed->drawImage();
-    
-    // Draw last output FBO with seed texture as input to allow for resize when iterations inactive
+    if (operationNodes.contains(srcId) && operationNodes.contains(dstId))
+    {
+        operationNodes.value(dstId)->addInput(operationNodes.value(srcId), new InputData(InputType::Normal, operationNodes.value(srcId)->operation->getTextureID(), factor));
+        operationNodes.value(srcId)->addOutput(operationNodes.value(dstId));
+    }
+    else if (seeds.contains(srcId) && operationNodes.contains(dstId))
+    {
+        operationNodes.value(dstId)->addSeedInput(srcId, new InputData(InputType::Seed, seeds.value(srcId)->getTextureID(), factor));
+    }
 
-    outputFBO[1]->setInputTextureID(seed->getTextureID());
-    outputFBO[1]->draw();
-
-    outputTextureID = outputFBO[1]->getTextureID();
+    sortOperations();
 }
 
-void GeneratorGL::loadSeedImage(QString filename)
+void GeneratorGL::connectCopiedOperationsA(QUuid srcId0, QUuid dstId0, QUuid srcId1, QUuid dstId1)
 {
-    seed->loadImage(filename);
+    if (operationNodes.contains(srcId0))
+    {
+        float factor = operationNodes.value(dstId0)->inputs.value(srcId0)->blendFactor;
+
+        copiedOperationNodes[0].value(dstId1)->addInput(copiedOperationNodes[0].value(srcId1), new InputData(InputType::Normal, copiedOperationNodes[0].value(srcId1)->operation->getTextureID(), factor));
+        copiedOperationNodes[0].value(srcId1)->addOutput(copiedOperationNodes[0].value(dstId1));
+    }
+    else if (seeds.contains(srcId0))
+    {
+        float factor = operationNodes.value(dstId0)->inputs.value(srcId0)->blendFactor;
+        copiedOperationNodes[0].value(dstId1)->addSeedInput(srcId1, new InputData(InputType::Seed, seeds.value(srcId0)->getTextureID(), factor));
+    }
+}
+
+void GeneratorGL::connectCopiedOperationsB(QUuid srcId0, QUuid dstId0, QUuid srcId1, QUuid dstId1)
+{
+    if (copiedOperationNodes[1].contains(srcId0))
+    {
+        float factor = copiedOperationNodes[1].value(dstId0)->inputs.value(srcId0)->blendFactor;
+
+        copiedOperationNodes[0].value(dstId1)->addInput(copiedOperationNodes[0].value(srcId1), new InputData(InputType::Normal, copiedOperationNodes[0].value(srcId1)->operation->getTextureID(), factor));
+        copiedOperationNodes[0].value(srcId1)->addOutput(copiedOperationNodes[0].value(dstId1));
+    }
+    else if (copiedSeeds[1].contains(srcId0))
+    {
+        float factor = copiedOperationNodes[1].value(dstId0)->inputs.value(srcId0)->blendFactor;
+        copiedOperationNodes[0].value(dstId1)->addSeedInput(srcId1, new InputData(InputType::Seed, copiedSeeds[0].value(srcId1)->getTextureID(), factor));
+    }
+}
+
+void GeneratorGL::disconnectOperations(QUuid srcId, QUuid dstId)
+{
+    if (operationNodes.contains(srcId))
+    {
+        operationNodes.value(dstId)->removeInput(operationNodes.value(srcId));
+        operationNodes.value(srcId)->removeOutput(operationNodes.value(dstId));
+    }
+    else if (seeds.contains(srcId))
+    {
+        operationNodes.value(dstId)->removeSeedInput(srcId);
+    }
+
+    sortOperations();
+}
+
+void GeneratorGL::setOperationInputType(QUuid srcId, QUuid dstId, InputType type)
+{
+    if (operationNodes.contains(srcId))
+    {
+        operationNodes.value(dstId)->setInputType(srcId, type);
+        sortOperations();
+    }
+    else if (copiedOperationNodes[0].contains(srcId))
+    {
+        copiedOperationNodes[0].value(dstId)->setInputType(srcId, type);
+    }
+}
+
+void GeneratorGL::pasteOperations()
+{
+    operationNodes.insert(copiedOperationNodes[0]);
+    seeds.insert(copiedSeeds[0]);
+
+    copiedOperationNodes[1] = copiedOperationNodes[0];
+    copiedSeeds[1] = copiedSeeds[0];
+
+    copiedOperationNodes[0].clear();
+    copiedSeeds[0].clear();
+
+    sortOperations();
+}
+
+float GeneratorGL::blendFactor(QUuid srcId, QUuid dstId)
+{
+    return operationNodes.value(dstId)->blendFactor(srcId);
+}
+
+void GeneratorGL::setBlendFactor(QUuid srcId, QUuid dstId, float factor)
+{
+    operationNodes.value(dstId)->setBlendFactor(srcId, factor);
+}
+
+void GeneratorGL::equalizeBlendFactors(QUuid id)
+{
+    operationNodes.value(id)->equalizeBlendFactors();
+}
+
+ImageOperation* GeneratorGL::getOperation(QUuid id)
+{
+    return operationNodes.value(id)->operation;
+}
+
+QUuid GeneratorGL::addOperation(QString operationName)
+{
+    ImageOperation* operation = newOperation(operationName);
+
+    QUuid id = QUuid::createUuid();
+
+    ImageOperationNode *node = new ImageOperationNode(id);
+    node->operation = operation;
+    operationNodes.insert(id, node);
+
+    return id;
+}
+
+QUuid GeneratorGL::copyOperation(QUuid srcId)
+{
+    ImageOperation* operation = operationNodes.value(srcId)->operation->clone();
+
+    QUuid id = QUuid::createUuid();
+
+    ImageOperationNode *node = new ImageOperationNode(id);
+    node->operation = operation;
+    copiedOperationNodes[0].insert(id, node);
+
+    return id;
+}
+
+void GeneratorGL::setOperation(QUuid id, QString operationName)
+{
+    ImageOperation* operation = newOperation(operationName);
+
+    delete operationNodes.value(id)->operation;
+
+    operationNodes.value(id)->operation = operation;
+}
+
+void GeneratorGL::removeOperation(QUuid id)
+{
+    delete operationNodes.value(id);
+    operationNodes.remove(id);
+
+    if (id == outputID)
+        outputTextureID = nullptr;
+
+    sortOperations();
+}
+
+void GeneratorGL::enableOperation(QUuid id, bool enabled)
+{
+    operationNodes.value(id)->operation->enable(enabled);
+}
+
+bool GeneratorGL::isOperationEnabled(QUuid id)
+{
+    return operationNodes.value(id)->operation->isEnabled();
+}
+
+bool GeneratorGL::hasOperationParamaters(QUuid id)
+{
+    return operationNodes.value(id)->operation->hasParameters();
+}
+
+void GeneratorGL::loadOperation(QUuid id, ImageOperation* operation)
+{
+    ImageOperationNode *node = new ImageOperationNode(id);
+    node->operation = operation;
+
+    loadedOperationNodes.insert(id, node);
+}
+
+void GeneratorGL::connectLoadedOperations(QMap<QUuid, QMap<QUuid, InputData*>> connections)
+{
+    QMap<QUuid, QMap<QUuid, InputData*>>::iterator dst = connections.begin();
+
+    while (dst != connections.end())
+    {
+        QMap<QUuid, InputData*>::iterator src = dst.value().begin();
+
+        while (src != dst.value().constEnd())
+        {
+           if (loadedOperationNodes.contains(src.key()))
+           {
+               InputData* inputData = src.value();
+
+               if (inputData->type == InputType::Normal)
+                   inputData->textureID = loadedOperationNodes.value(src.key())->operation->getTextureID();
+               else if (inputData->type == InputType::Blit)
+                   inputData->textureID = loadedOperationNodes.value(src.key())->operation->getTextureBlit();
+
+               loadedOperationNodes.value(dst.key())->addInput(loadedOperationNodes.value(src.key()), inputData);
+               loadedOperationNodes.value(src.key())->addOutput(loadedOperationNodes.value(dst.key()));
+           }
+           else if (loadedSeeds.contains(src.key()))
+           {
+               InputData* inputData = src.value();
+               inputData->textureID = loadedSeeds.value(src.key())->getTextureID();
+
+               loadedOperationNodes.value(dst.key())->addSeedInput(src.key(), inputData);
+           }
+
+            src++;
+        }
+
+        dst++;
+    }
+}
+
+ImageOperation* GeneratorGL::newOperation(QString operationName)
+{
+    ImageOperation* operation = nullptr;
+
+    if (operationName == BilateralFilter::name)
+    {
+        operation = new BilateralFilter(false, sharedContext, 3, 0.01f, 10.0f, 0.1f);
+    }
+    else if (operationName == Brightness::name)
+    {
+        operation = new Brightness(false, sharedContext, 0.0f);
+    }
+    else if (operationName == ColorMix::name)
+    {
+        std::vector<float> rgbMatrix = { 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f };
+        operation = new ColorMix(false, sharedContext, rgbMatrix);
+    }
+    else if (operationName == Contrast::name)
+    {
+        operation = new Contrast(false, sharedContext, 1.0f);
+    }
+    else if (operationName == Convolution::name)
+    {
+        std::vector<float> kernel = { 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f };
+        operation = new Convolution(false, sharedContext, kernel, 0.01f);
+    }
+    else if (operationName == Dilation::name)
+    {
+        operation = new Dilation(false, sharedContext, 0.01f);
+    }
+    else if (operationName == Erosion::name)
+    {
+        operation = new Erosion(false, sharedContext, 0.01f);
+    }
+    else if (operationName == GammaCorrection::name)
+    {
+        operation = new GammaCorrection(false, sharedContext, 1.0f, 1.0f, 1.0f);
+    }
+    else if (operationName == HueShift::name)
+    {
+        operation = new HueShift(false, sharedContext, 0.0f);
+    }
+    else if (operationName == Mask::name)
+    {
+        operation = new Mask(false, sharedContext);
+    }
+    else if (operationName == MorphologicalGradient::name)
+    {
+        operation = new MorphologicalGradient(false, sharedContext, 0.01f, 0.01f);
+    }
+    else if (operationName == PolarConvolution::name)
+    {
+        std::vector<PolarKernel*> polarKernels = { new PolarKernel(8, 0.01f, 0.0f, 1.0f, 0.0f, -1.0f, 1.0f) };
+        operation = new PolarConvolution(false, sharedContext, polarKernels, 1.0f);
+    }
+    else if (operationName == Rotation::name)
+    {
+        operation = new Rotation(false, sharedContext, 0.0f, GL_NEAREST);
+    }
+    else if (operationName == Saturation::name)
+    {
+        operation = new Saturation(false, sharedContext, 0.5f);
+    }
+    else if (operationName == Scale::name)
+    {
+        operation = new Scale(false, sharedContext, 1.0f, GL_NEAREST);
+    }
+    else if (operationName == Value::name)
+    {
+        operation = new Value(false, sharedContext, 0.5f);
+    }
+
+    return operation;
+}
+
+ImageOperation* GeneratorGL::loadImageOperation(
+    QString operationName,
+    bool enabled,
+    std::vector<bool> boolParameters,
+    std::vector<int> intParameters,
+    std::vector<float> floatParameters,
+    std::vector<int> interpolationParameters,
+    std::vector<float> kernelElements,
+    std::vector<float> matrixElements,
+    std::vector<PolarKernel*> polarKernels)
+{
+    ImageOperation* operation = nullptr;
+
+    if (operationName == BilateralFilter::name)
+    {
+        operation = new BilateralFilter(enabled, sharedContext, intParameters[0], floatParameters[0], floatParameters[1], floatParameters[2]);
+    }
+    else if (operationName == Brightness::name)
+    {
+        operation = new Brightness(enabled, sharedContext, floatParameters[0]);
+    }
+    else if (operationName == ColorMix::name)
+    {
+        operation = new ColorMix(enabled, sharedContext, matrixElements);
+    }
+    else if (operationName == Contrast::name)
+    {
+        operation = new Contrast(enabled, sharedContext, floatParameters[0]);
+    }
+    else if (operationName == Convolution::name)
+    {
+        operation = new Convolution(enabled, sharedContext, kernelElements, floatParameters[0]);
+    }
+    else if (operationName == Dilation::name)
+    {
+        operation = new Dilation(enabled, sharedContext, floatParameters[0]);
+    }
+    else if (operationName == Erosion::name)
+    {
+        operation = new Erosion(enabled, sharedContext, floatParameters[0]);
+    }
+    else if (operationName == GammaCorrection::name)
+    {
+        operation = new GammaCorrection(enabled, sharedContext, floatParameters[0], floatParameters[1], floatParameters[2]);
+    }
+    else if (operationName == HueShift::name)
+    {
+        operation = new HueShift(enabled, sharedContext, floatParameters[0]);
+    }
+    else if (operationName == Mask::name)
+    {
+        operation = new Mask(enabled, sharedContext);
+    }
+    else if (operationName == MorphologicalGradient::name)
+    {
+        operation = new MorphologicalGradient(enabled, sharedContext, floatParameters[0], floatParameters[1]);
+    }
+    else if (operationName == PolarConvolution::name)
+    {
+        operation = new PolarConvolution(enabled, sharedContext, polarKernels, floatParameters[0]);
+    }
+    else if (operationName == Rotation::name)
+    {
+        operation = new Rotation(enabled, sharedContext, floatParameters[0], interpolationParameters[0]);
+    }
+    else if (operationName == Saturation::name)
+    {
+        operation = new Saturation(enabled, sharedContext, floatParameters[0]);
+    }
+    else if (operationName == Scale::name)
+    {
+        operation = new Scale(enabled, sharedContext, floatParameters[0], interpolationParameters[0]);
+    }
+    else if (operationName == Value::name)
+    {
+        operation = new Value(enabled, sharedContext, floatParameters[0]);
+    }
+
+    return operation;
+}
+
+QUuid GeneratorGL::addSeed()
+{
+    Seed* seed = new Seed(sharedContext);
+
+    QUuid id = QUuid::createUuid();
+    seeds.insert(id, seed);
+
+    return id;
+}
+
+QUuid GeneratorGL::copySeed(QUuid srcId)
+{
+    Seed* seed = new Seed(*seeds.value(srcId));
+
+    QUuid id = QUuid::createUuid();
+    copiedSeeds[0].insert(id, seed);
+
+    return id;
+}
+
+void GeneratorGL::removeSeed(QUuid id)
+{
+    delete seeds.value(id);
+    seeds.remove(id);
+}
+
+void GeneratorGL::loadSeed(QUuid id, int type, bool fixed)
+{
+    Seed* seed = new Seed(sharedContext);
+
+    seed->setType(type);
+    seed->setFixed(fixed);
+
+    loadedSeeds.insert(id, seed);
+}
+
+void GeneratorGL::loadSeedImage(QUuid id, QString filename)
+{
+    seeds.value(id)->loadImage(filename);
+}
+
+int GeneratorGL::getSeedType(QUuid id)
+{
+    return seeds.value(id)->getType();
+}
+
+void GeneratorGL::setSeedType(QUuid id, int set)
+{
+    seeds.value(id)->setType(set);
+}
+
+bool GeneratorGL::isSeedFixed(QUuid id)
+{
+    return seeds.value(id)->isFixed();
+}
+
+void GeneratorGL::setSeedFixed(QUuid id, bool fixed)
+{
+    seeds.value(id)->setFixed(fixed);
+}
+
+void GeneratorGL::drawSeed(QUuid id)
+{
+    seeds.value(id)->draw();
 }
 
 void GeneratorGL::resize(GLuint width, GLuint height)
@@ -305,31 +723,11 @@ void GeneratorGL::resize(GLuint width, GLuint height)
     FBO::width = width;
     FBO::height = height;
 
-    seed->resize();
+    foreach (Seed* seed, seeds)
+        seed->resize();
 
-    for (auto& pipeline : pipelines)
-        pipeline->resize();
+    foreach (ImageOperationNode* node, operationNodes)
+        node->operation->resize();
 
-    blender->resize();
-    blender->resizeOutputFBO();
-
-    outputPipeline->resize();
-
-    outputFBO[0]->resize();
-    outputFBO[1]->resize();
-
-    // Reset output texture ID because resize resets texture IDs
-
-    outputTextureID = outputFBO[1]->getTextureID();
-}
-
-void GeneratorGL::setMask(bool apply)
-{
-    applyMask = apply;
-
-    outputFBO[1]->makeCurrent();
-    outputFBO[1]->program->bind();
-    outputFBO[1]->program->setUniformValue("apply", apply);
-    outputFBO[1]->program->release();
-    outputFBO[1]->doneCurrent();
+    setOutput(outputID);
 }

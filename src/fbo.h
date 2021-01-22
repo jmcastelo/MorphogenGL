@@ -42,10 +42,11 @@ public:
     
     FBO(QString vertexShader, QString fragmentShader, QOpenGLContext* mainContext);
     virtual ~FBO();
-    
-    GLuint getTextureID() { return textureID; }
-    void setInputTextureID(GLuint id) { inputTextureID = id; }
-        
+
+    GLuint** getTextureID() { return &texID; }
+    GLuint** getTextureBlit() { return &texBlit; }
+    void setInputTextureID(GLuint* id) { inputTextureID = id; }
+
     void generateFramebuffer(GLuint& framebuffer, GLuint& texture);
 
     void setMinMagFilter(GLenum filter);
@@ -56,18 +57,25 @@ public:
     virtual void resize();
 
     void draw();
+    void blit();
+    void identity();
 
 protected:
     QOpenGLContext* context;
     QOffscreenSurface* surface;
+    GLuint fbo;
+    GLuint *texID;
     GLuint textureID = 0;
     GLenum minMagFilter = GL_NEAREST;
-    GLuint inputTextureID = 0;
+    GLuint* inputTextureID;
     GLuint samplerID = 0;
-    GLuint fbo = 0;
+    GLuint fboBlit;
+    GLuint *texBlit;
+    GLuint textureBlit;
     QOpenGLVertexArrayObject* vao;
-    QOpenGLBuffer* vbo_pos;
-    QOpenGLBuffer* vbo_tex;
+    QOpenGLBuffer* vboPos;
+    QOpenGLBuffer* vboTex;
+    QOpenGLShaderProgram* identityProgram;
     GLuint widthOld;
     GLuint heightOld;
 };

@@ -23,12 +23,10 @@
 #pragma once
 
 #include "generator.h"
+#include "graphwidget.h"
 #include "heart.h"
-#include "parameter.h"
-#include <vector>
 #include <QObject>
 #include <QString>
-#include <QFile>
 #include <QXmlStreamWriter>
 #include <QXmlStreamReader>
 
@@ -37,7 +35,11 @@ class ConfigurationParser : public QObject
     Q_OBJECT
 
 public:
-    ConfigurationParser(GeneratorGL* theGenerator, Heart* theHeart) : generator { theGenerator }, heart { theHeart } {}
+    ConfigurationParser(GeneratorGL* theGenerator, GraphWidget* graph, Heart* theHeart) :
+        generator { theGenerator },
+        graphWidget { graph },
+        heart { theHeart }
+    {}
 
     void setFilename(QString theFilename) { filename = theFilename; }
     void write();
@@ -45,15 +47,16 @@ public:
 
 private:
     GeneratorGL* generator;
+    GraphWidget* graphWidget;
     Heart* heart;
     QString filename;
     QXmlStreamWriter stream;
     QXmlStreamReader xml;
 
-    void writeImageOperations(Pipeline *pipeline);
-    void readImageOperations(Pipeline *pipeline);
+    void writeSeedNode(QUuid id, Seed* seed);
+    void writeOperationNode(ImageOperationNode* node);
+    ImageOperation* readImageOperation();
 
 signals:
     void updateImageSize(int width, int height);
-    void updateMask(bool applyMask);
 };

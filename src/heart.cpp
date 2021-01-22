@@ -94,9 +94,12 @@ Heart::~Heart()
     if (encoder) delete encoder;
 }
 
-GLuint Heart::getGeneratorOutputTextureID()
+GLuint Heart::getOutputTextureID()
 {
-    return controlWidget->generator->getOutputTextureID();
+    if (controlWidget->generator->getOutputTextureID())
+        return **(controlWidget->generator->getOutputTextureID());
+    else
+        return 0;
 }
 
 void Heart::beat()

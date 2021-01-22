@@ -36,7 +36,7 @@ Blender::Blender(QString vertexShader, QString fragmentShader, QOpenGLContext* m
     context->doneCurrent();
 
     fboOut = new FBO(":/shaders/screen.vert", ":/shaders/screen.frag", mainContext);
-    fboOut->setInputTextureID(textureID);
+    fboOut->setInputTextureID(texID);
 }
 
 Blender::~Blender()
@@ -44,17 +44,17 @@ Blender::~Blender()
     delete fboOut;
 }
 
-void Blender::resizeOutputFBO()
+void Blender::resize()
 {
-    fboOut->setInputTextureID(textureID);
     fboOut->resize();
+    FBO::resize();
 }
 
 void Blender::blend()
 {
     float outFactor = 0.0f;
 
-    for (auto& inData : inputData)
+    for (InputData* inData : inputs)
     {
         context->makeCurrent(surface);
 
@@ -65,16 +65,16 @@ void Blender::blend()
 
         program->bind();
 
-        program->setUniformValue("blendFactor", inData.blendFactor);
+        program->setUniformValue("blendFactor", inData->blendFactor);
         program->setUniformValue("outFactor", outFactor);
 
         vao->bind();
 
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, inData.textureID);
+        glBindTexture(GL_TEXTURE_2D, **inData->textureID);
 
         glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, fboOut->getTextureID());
+        glBindTexture(GL_TEXTURE_2D, **fboOut->getTextureID());
 
         glDrawArrays(GL_TRIANGLES, 0, 6);
 

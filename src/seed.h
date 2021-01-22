@@ -38,10 +38,11 @@
 class Seed : protected QOpenGLExtraFunctions
 {
 public:
-    Seed(QString vertexShader, QString fragmentShader, QOpenGLContext* theContext);
+    Seed(QOpenGLContext* theContext);
+    Seed(const Seed& seed);
     ~Seed();
 
-    GLuint getTextureID() { return textureID; }
+    GLuint** getTextureID() { return &textureID; }
 
     void loadImage(QString filename);
 
@@ -49,22 +50,48 @@ public:
 
     void resize();
 
+    void draw();
     void drawRandom(bool grayscale);
-
     void drawImage();
+    void clear();
+
+    int getType() { return type; }
+    void setType(int set) { type = set; }
+
+    bool isFixed() { return fixed; }
+    void setFixed(bool set) { fixed = set; }
+
+    QString getImageFilename() { return imageFilename; }
 
 private:
+    int type = 0;
+    bool fixed = false;
+    QString imageFilename;
+
     QOpenGLContext* context;
     QOffscreenSurface* surface;
-    GLuint textureID;
-    GLuint randomTex;
-    GLuint fbo;
-    QOpenGLVertexArrayObject* vao;
-    QOpenGLBuffer* vbo;
-    QOpenGLShaderProgram* program;
-    std::default_random_engine generator;
-    FBO* fboTex;
-    QOpenGLTexture* seedTex;
+
     GLuint widthOld, heightOld;
-    QString textureFilename;
+
+    GLuint* textureID;
+
+    GLuint fboRandom = 0;
+    GLuint texRandom = 0;
+    QOpenGLVertexArrayObject* vaoRandom;
+    QOpenGLBuffer* vboRandom;
+    QOpenGLShaderProgram* randomProgram;
+
+    GLuint fboImage = 0;
+    GLuint texImage = 0;
+    QOpenGLTexture* image;
+    QOpenGLVertexArrayObject* vaoImage;
+    QOpenGLBuffer* vboPosImage;
+    QOpenGLBuffer* vboTexImage;
+    QOpenGLShaderProgram* imageProgram;
+
+    QOpenGLShaderProgram* clearProgram;
+
+    std::default_random_engine generator;
+
+    void resizeFBO(GLuint &fbo, GLuint &texture);
 };

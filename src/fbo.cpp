@@ -33,7 +33,7 @@ FBO::FBO(QString vertexShader, QString fragmentShader, QOpenGLContext* mainConte
     context->create();
 
     surface = new QOffscreenSurface();
-    surface->setFormat(context->format());
+    surface->setFormat(mainContext->format());
     surface->create();
 
     context->makeCurrent(surface);
@@ -45,9 +45,15 @@ FBO::FBO(QString vertexShader, QString fragmentShader, QOpenGLContext* mainConte
     widthOld = width;
     heightOld = height;
 
-    // Frame buffer object
+    // Frame buffer objects
 
     generateFramebuffer(fbo, textureID);
+    generateFramebuffer(fboBlit, textureBlit);
+
+    // Set texture pointers
+
+    texID = &textureID;
+    texBlit = &textureBlit;
 
     // Initialize shader program
 
@@ -58,8 +64,6 @@ FBO::FBO(QString vertexShader, QString fragmentShader, QOpenGLContext* mainConte
         qDebug() << "Fragment shader error:\n" << program->log();
     if (!program->link())
         qDebug() << "Shader link error:\n" << program->log();
-
-    program->bind();
 
     // Input quad vertices and texture data
 
@@ -89,44 +93,57 @@ FBO::FBO(QString vertexShader, QString fragmentShader, QOpenGLContext* mainConte
 
     // Vertex buffer object: vertices
 
-    vbo_pos = new QOpenGLBuffer(QOpenGLBuffer::VertexBuffer);
-    vbo_pos->create();
-    vbo_pos->setUsagePattern(QOpenGLBuffer::StaticDraw);
-    vbo_pos->bind();
-    vbo_pos->allocate(vertices, 12 * sizeof(GLfloat));
+    vboPos = new QOpenGLBuffer(QOpenGLBuffer::VertexBuffer);
+    vboPos->create();
+    vboPos->setUsagePattern(QOpenGLBuffer::StaticDraw);
+    vboPos->bind();
+    vboPos->allocate(vertices, 12 * sizeof(GLfloat));
 
     // Map vbo data to shader attribute location
 
+    program->bind();
     int posLocation = program->attributeLocation("pos");
     program->setAttributeBuffer(posLocation, GL_FLOAT, 0, 2);
     program->enableAttributeArray(posLocation);
+    program->release();
 
     // Vertex buffer object: texture coordinates
 
-    vbo_tex = new QOpenGLBuffer(QOpenGLBuffer::VertexBuffer);
-    vbo_tex->create();
-    vbo_tex->setUsagePattern(QOpenGLBuffer::StaticDraw);
-    vbo_tex->bind();
-    vbo_tex->allocate(texcoords, 12 * sizeof(GLfloat));
+    vboTex = new QOpenGLBuffer(QOpenGLBuffer::VertexBuffer);
+    vboTex->create();
+    vboTex->setUsagePattern(QOpenGLBuffer::StaticDraw);
+    vboTex->bind();
+    vboTex->allocate(texcoords, 12 * sizeof(GLfloat));
 
     // Map vbo data to shader attribute location
 
+    program->bind();
     int texcoordLocation = program->attributeLocation("tex");
     program->setAttributeBuffer(texcoordLocation, GL_FLOAT, 0, 2);
     program->enableAttributeArray(texcoordLocation);
+    program->release();
 
     // Unbind all
 
     vao->release();
-    vbo_pos->release();
-    vbo_tex->release();
-    program->release();
+    vboPos->release();
+    vboTex->release();
 
     // Sampler
 
     glGenSamplers(1, &samplerID);
     glSamplerParameteri(samplerID, GL_TEXTURE_MIN_FILTER, minMagFilter);
     glSamplerParameteri(samplerID, GL_TEXTURE_MAG_FILTER, minMagFilter);
+
+    // Initialize identity shader program
+
+    identityProgram = new QOpenGLShaderProgram();
+    if (!identityProgram->addShaderFromSourceFile(QOpenGLShader::Vertex, ":/shaders/screen.vert"))
+        qDebug() << "Vertex shader error:\n" << identityProgram->log();
+    if (!identityProgram->addShaderFromSourceFile(QOpenGLShader::Fragment, ":/shaders/screen.frag"))
+        qDebug() << "Fragment shader error:\n" << identityProgram->log();
+    if (!identityProgram->link())
+        qDebug() << "Shader link error:\n" << identityProgram->log();
 
     context->doneCurrent();
 }
@@ -136,39 +153,25 @@ FBO::~FBO()
     context->makeCurrent(surface);
 
     vao->destroy();
-    vbo_pos->destroy();
-    vbo_tex->destroy();
+    vboPos->destroy();
+    vboTex->destroy();
 
     glDeleteFramebuffers(1, &fbo);
     glDeleteTextures(1, &textureID);
+
+    glDeleteFramebuffers(1, &fboBlit);
+    glDeleteTextures(1, &textureBlit);
+
     delete vao;
-    delete vbo_pos;
-    delete vbo_tex;
+    delete vboPos;
+    delete vboTex;
     delete program;
+    delete identityProgram;
 
     context->doneCurrent();
 
     delete context;
     delete surface;
-}
-
-void FBO::generateFramebuffer(GLuint& framebuffer, GLuint& texture)
-{
-    glGenFramebuffers(1, &framebuffer);
-    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
-
-    glGenTextures(1, &texture);
-    glBindTexture(GL_TEXTURE_2D, texture);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, minMagFilter);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, minMagFilter);
-    glBindTexture(GL_TEXTURE_2D, 0);
-
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture, 0);
-
-    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-        qDebug() << "Framebuffer is not complete.\n";
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 void FBO::setMinMagFilter(GLenum filter)
@@ -179,6 +182,25 @@ void FBO::setMinMagFilter(GLenum filter)
     glSamplerParameteri(samplerID, GL_TEXTURE_MIN_FILTER, minMagFilter);
     glSamplerParameteri(samplerID, GL_TEXTURE_MAG_FILTER, minMagFilter);
     context->doneCurrent();
+}
+
+void FBO::generateFramebuffer(GLuint& framebuffer, GLuint& texture)
+{
+    glGenFramebuffers(1, &framebuffer);
+    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+
+    glGenTextures(1, &texture);
+    glBindTexture(GL_TEXTURE_2D, texture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture, 0);
+
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+        qDebug() << "Framebuffer is not complete.\n";
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 void FBO::makeCurrent()
@@ -195,6 +217,8 @@ void FBO::resize()
 {
     context->makeCurrent(surface);
 
+    // FBO
+
     GLuint fbo2;
     GLuint textureID2;
     generateFramebuffer(fbo2, textureID2);
@@ -202,7 +226,7 @@ void FBO::resize()
     glBindFramebuffer(GL_READ_FRAMEBUFFER, fbo);
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo2);
 
-    glBlitFramebuffer(0, 0, widthOld, heightOld, 0, 0, width, height, GL_COLOR_BUFFER_BIT, minMagFilter);
+    glBlitFramebuffer(0, 0, widthOld, heightOld, 0, 0, width, height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -212,10 +236,31 @@ void FBO::resize()
     textureID = textureID2;
     fbo = fbo2;
 
-    widthOld = width;
-    heightOld = height;
+    // Blit FBO
+
+    GLuint fboBlit2;
+    GLuint textureBlit2;
+    generateFramebuffer(fboBlit2, textureBlit2);
+
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, fboBlit);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fboBlit2);
+
+    glBlitFramebuffer(0, 0, widthOld, heightOld, 0, 0, width, height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    glDeleteFramebuffers(1, &fboBlit);
+    glDeleteTextures(1, &textureBlit);
+
+    textureBlit = textureBlit2;
+    fboBlit = fboBlit2;
 
     context->doneCurrent();
+
+    // Keep size
+
+    widthOld = width;
+    heightOld = height;
 }
 
 void FBO::draw()
@@ -223,15 +268,15 @@ void FBO::draw()
     context->makeCurrent(surface);
 
     glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-    
+
     glViewport(0, 0, width, height);
     glClear(GL_COLOR_BUFFER_BIT);
 
     program->bind();
     vao->bind();
-    
+
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, inputTextureID);
+    glBindTexture(GL_TEXTURE_2D, *inputTextureID);
     glBindSampler(0, samplerID);
 
     glDrawArrays(GL_TRIANGLES, 0, 6);
@@ -240,6 +285,47 @@ void FBO::draw()
     glBindTexture(GL_TEXTURE_2D, 0);
     vao->release();
     program->release();
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    context->doneCurrent();
+}
+
+void FBO::blit()
+{
+    context->makeCurrent(surface);
+
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, fbo);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fboBlit);
+
+    glBlitFramebuffer(0, 0, FBO::width, FBO::height, 0, 0, FBO::width, FBO::height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    context->doneCurrent();
+}
+
+void FBO::identity()
+{
+    context->makeCurrent(surface);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+
+    glViewport(0, 0, width, height);
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    identityProgram->bind();
+    vao->bind();
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, *inputTextureID);
+    glBindSampler(0, samplerID);
+
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+
+    glBindSampler(0, 0);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    vao->release();
+    identityProgram->release();
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     context->doneCurrent();

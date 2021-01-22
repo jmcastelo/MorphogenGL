@@ -83,6 +83,9 @@ void RGBWidget::paintGL()
 
 void RGBWidget::resizeGL(int width, int height)
 {
+    Q_UNUSED(width)
+    Q_UNUSED(height)
+
     computeTransformMatrix();
 }
 
@@ -96,7 +99,7 @@ void RGBWidget::getPixels()
 {
     makeCurrent();
 
-    glBindTexture(GL_TEXTURE_2D, heart->getGeneratorOutputTextureID());
+    glBindTexture(GL_TEXTURE_2D, heart->getOutputTextureID());
     glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_FLOAT, pixels);
 
     vao->bind();

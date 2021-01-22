@@ -22,41 +22,30 @@
 
 #pragma once
 
-#include "fbo.h"
-#include <vector>
-#include <QUuid>
-#include <QOpenGLContext>
+#include <QGraphicsObject>
 
-enum class InputType { Normal, Blit, Seed };
+class GraphWidget;
+class Edge;
+class Node;
 
-// Input for image operation, corresponding to edges
-
-struct InputData
+class Cycle : public QGraphicsObject
 {
-    InputType type;
-    GLuint** textureID;
-    float blendFactor;
+    Q_OBJECT
 
-    InputData(InputType inputType, GLuint** ID, float factor) :
-        type { inputType },
-        textureID { ID },
-        blendFactor { factor }
-    {}
-};
-
-class Blender : public FBO
-{
 public:
-    Blender(QString vertexShader, QString fragmentShader, QOpenGLContext* mainContext);
-    ~Blender();
+    Cycle(GraphWidget* graphWidget, QVector<Node*> nodes);
 
-    void setInputData(QVector<InputData*> data) { inputs = data; }
+    enum { Type = UserType + 4 };
+    int type() const override { return Type; }
 
-    void resize() override;
+    int numPredges();
 
-    void blend();
+protected:
+    QRectF boundingRect() const override;
+    QPainterPath shape() const override;
+    void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) override;
 
 private:
-    QVector<InputData*> inputs;
-    FBO* fboOut;
+    GraphWidget* graph;
+    QVector<Edge*> edges;
 };

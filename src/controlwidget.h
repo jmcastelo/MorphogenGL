@@ -25,6 +25,7 @@
 #include "generator.h"
 #include "focuslineedit.h"
 #include "operationswidget.h"
+#include "graphwidget.h"
 #include <QWidget>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -87,11 +88,16 @@ private:
 
     ConfigurationParser* parser;
 
-    OperationsWidget* operationsWidget = nullptr;
+    GraphWidget* graphWidget;
+
+    QWidget* displayOptionsWidget;
+    QWidget* recordingOptionsWidget;
 
     QAction* iterateAction;
     QAction* recordAction;
     QAction* screenshotAction;
+    QAction* displayOptionsAction;
+    QAction* recordingOptionsAction;
     QAction* rgbAction;
     QAction* saveConfigAction;
     QAction* loadConfigAction;
@@ -100,11 +106,6 @@ private:
     QString recordFilename;
     QString preset = "ultrafast";
     int crf = 17;
-
-    QWidget* generalControlsWidget;
-    QWidget* pipelineControlsWidget;
-
-    QTabWidget* mainTabWidget;
 
     QStatusBar* statusBar;
 
@@ -117,49 +118,13 @@ private:
     FocusLineEdit* windowWidthLineEdit;
     FocusLineEdit* windowHeightLineEdit;
 
-    QCheckBox* applyCircularMaskCheckBox;
-
     QLabel* videoCaptureElapsedTimeLabel;
     QLabel* videoCaptureFilenameLabel;
 
-    QComboBox* newImageOperationComboBox;
-    QPushButton* insertImageOperationPushButton;
-    QPushButton* removeImageOperationPushButton;
+    QMap<QUuid, OperationsWidget*> operationsWidgets;
 
-    QPushButton* outputPipelinePushButton;
-    QGridLayout* pipelinesGridLayout;
-    QLabel* pipelinesLabel;
-    QLabel* blendFactorsLabel;
-    QButtonGroup* pipelinesButtonGroup;
-    std::vector<QPushButton*> pipelinePushButton;
-    std::vector<QLineEdit*> pipelineBlendFactorLineEdit;
-    QPushButton* equalizeBlendFactorsPushButton;
-
-    QListWidget* imageOperationsListWidget;
-    int rowSize;
-    std::map<int, int> currentImageOperationIndex;
-
-    QSlider* selectedParameterSlider;
-    FocusLineEdit* selectedParameterMinLineEdit;
-    FocusLineEdit* selectedParameterMaxLineEdit;
-    QDoubleValidator* selectedParameterMinValidator;
-    QDoubleValidator* selectedParameterMaxValidator;
-    QGroupBox* selectedParameterGroupBox;
-
-    QVBoxLayout* parametersLayout;
-
-    void iterate();
-    void record();
-    void takeScreenshot();
-    void toggleRGBGraph();
-    void loadConfig();
-    void saveConfig();
-    void about();
-
-    void constructGeneralControls();
-    void constructPipelineControls();
-    
-    void resizeMainTabs(int index);
+    void constructDisplayOptionsWidget();
+    void constructRecordingOptionsWidget();
 
     void updateIterationNumberLabel();
     void updateMetricsLabels(long int time);
@@ -167,13 +132,18 @@ private:
     void setVideoCaptureElapsedTimeLabel();
     void setVideoFilename();
 
-    void initPipelineControls(int selectedPipelineIndex);
-    void setPipelineBlendFactorLineEditText(int pipelineIndex);
-    void initNewImageOperationComboBox();
-    void initImageOperationsListWidget(int pipelineIndex);
-    void onImageOperationsListWidgetCurrentRowChanged(int currentRow);
-    void onFloatParameterWidgetFocusIn(FloatParameterWidget* widget);
-    void onRowsMoved(QModelIndex parent, int start, int end, QModelIndex destination, int row);
-    void insertImageOperation();
-    void removeImageOperation();
+private slots:
+    void iterate();
+    void record();
+    void takeScreenshot();
+    void toggleDisplayOptionsWidget();
+    void toggleRecordingOptionsWidget();
+    void toggleRGBGraph();
+    void loadConfig();
+    void saveConfig();
+    void about();
+
+    void showParametersWidget(QUuid id);
+    void removeParametersWidget(QUuid id);
+    void updateParametersWidget(QUuid id);
 };

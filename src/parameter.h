@@ -63,6 +63,8 @@ public:
         operation->setOptionsParameter(index, value);
     }
 
+    void setOperation(ImageOperation* op) { operation = op; }
+
 private:
     int index;
     ImageOperation* operation;
@@ -86,6 +88,7 @@ public:
     {}
 
     void setValue(int theValue);
+    void setOperation(ImageOperation* theOperation) { operation = theOperation; }
 
 private:
     int index;
@@ -110,6 +113,7 @@ public:
     {}
 
     void setValue(float theValue);
+    void setOperation(ImageOperation* op) { operation = op; }
 
 private:
     int index;
@@ -147,6 +151,7 @@ public:
     {}
 
     void setValues();
+    void setOperation(ImageOperation* op) { operation = op; }
 };
 
 class MatrixParameter : public ArrayParameter
@@ -157,6 +162,7 @@ public:
     {}
 
     void setValues();
+    void setOperation(ImageOperation* op) { operation = op; }
 };
 
 struct PolarKernel
@@ -193,9 +199,11 @@ public:
         centerElement { theCenterElement },
         operation { theOperation }
     {}
+    PolarKernelParameter(const PolarKernelParameter& parameter);
     ~PolarKernelParameter();
 
     void setValues();
+    void setOperation(ImageOperation* op) { operation = op; }
 
 private:
     ImageOperation* operation;

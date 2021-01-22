@@ -48,6 +48,18 @@
     <QtMoc Include="src\rgbwidget.h">
       <Filter>Header Files</Filter>
     </QtMoc>
+    <QtMoc Include="src\cycle.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+    <QtMoc Include="src\edge.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+    <QtMoc Include="src\graphwidget.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+    <QtMoc Include="src\node.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\controlwidget.cpp">
@@ -57,9 +69,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\imageoperations.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\pipeline.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\generator.cpp">
@@ -95,15 +104,27 @@
     <ClCompile Include="src\rgbwidget.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\cycle.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\cyclesearch.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\edge.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\graphwidget.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\node.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\parameter.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\imageoperations.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\pipeline.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\generator.h">
@@ -119,6 +140,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\ffmpegencoder.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\cyclesearch.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

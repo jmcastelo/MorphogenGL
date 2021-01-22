@@ -170,11 +170,10 @@ void MorphoWidget::initializeGL()
     // Setup
 
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-    
+
     glGenFramebuffers(1, &fbo);
 
     emit initGenerator();
-
     emit initHeartBeat();
 }
 
@@ -187,7 +186,7 @@ void MorphoWidget::paintGL()
 
     // Set generator's output texture as fbo's texture
 
-    glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, heart->getGeneratorOutputTextureID(), 0);
+    glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, heart->getOutputTextureID(), 0);
 
     // Render to default frame buffer (screen) from fbo
 

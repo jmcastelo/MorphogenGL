@@ -27,7 +27,7 @@
 #include <QOpenGLWidget>
 #include <QOpenGLExtraFunctions>
 #include <QOpenGLShaderProgram>
-#include <QOpenGlVertexArrayObject>
+#include <QOpenGLVertexArrayObject>
 #include <QOpenGLBuffer>
 #include <QIcon>
 #include <QMatrix4x4>

@@ -647,11 +647,6 @@ public:
         });
     }
 
-    ~PolarKernelParameterWidget()
-    {
-        delete plot;
-    }
-
 private:
     PolarKernelParameter* polarKernelParameter;
     FocusLineEdit* numElementsLineEdit;
@@ -695,13 +690,22 @@ class OperationsWidget : public QWidget
     Q_OBJECT
 
 public:
-    std::vector<FloatParameterWidget*> floatParameterWidget;
-    std::vector<PolarKernelParameterWidget*> polarKernelParameterWidget;
-
     OperationsWidget(ImageOperation* operation)
     {
-        QVBoxLayout* vBoxLayout = new QVBoxLayout;
-        vBoxLayout->setAlignment(Qt::AlignCenter);
+        mainLayout = new QVBoxLayout;
+        mainLayout->setAlignment(Qt::AlignCenter);
+        mainLayout->setSizeConstraint(QLayout::SetFixedSize);
+
+        setup(operation);
+
+        setWindowFlags(Qt::WindowStaysOnTopHint);
+    }
+
+    void setup(ImageOperation* operation)
+    {
+        QVBoxLayout* parametersLayout = new QVBoxLayout;
+        parametersLayout->setAlignment(Qt::AlignCenter);
+
         QFormLayout* formLayout = new QFormLayout;
 
         for (auto parameter : operation->getIntParameters())
@@ -720,7 +724,7 @@ public:
         for (auto parameter : operation->getFloatParameters())
         {
             FloatParameterWidget* widget = new FloatParameterWidget(parameter, 100000, this);
-            floatParameterWidget.push_back(widget);
+            floatParameterWidgets.push_back(widget);
             formLayout->addRow(parameter->name + ":", widget->lineEdit);
         }
         for (auto parameter : operation->getBoolParameters())
@@ -741,44 +745,191 @@ public:
         if (operation->getKernelParameter())
         {
             KernelParameterWidget* widget = new KernelParameterWidget(operation->getKernelParameter(), this);
-            vBoxLayout->addWidget(new QLabel(operation->getKernelParameter()->name + ":"));
-            vBoxLayout->addLayout(widget->gridLayout);
-            vBoxLayout->addWidget(widget->normalizePushButton);
+            parametersLayout->addWidget(new QLabel(operation->getKernelParameter()->name + ":"));
+            parametersLayout->addLayout(widget->gridLayout);
+            parametersLayout->addWidget(widget->normalizePushButton);
             formLayout->addRow("Presets:", widget->presetsComboBox);
         }
         if (operation->getMatrixParameter())
         {
             MatrixParameterWidget* widget = new MatrixParameterWidget(operation->getMatrixParameter(), this);
-            vBoxLayout->addWidget(new QLabel(operation->getMatrixParameter()->name + ":"));
-            vBoxLayout->addLayout(widget->gridLayout);
+            parametersLayout->addWidget(new QLabel(operation->getMatrixParameter()->name + ":"));
+            parametersLayout->addLayout(widget->gridLayout);
             formLayout->addRow("Presets:", widget->presetsComboBox);
         }
         if (operation->getPolarKernelParameter())
         {
             PolarKernelParameterWidget* widget = new PolarKernelParameterWidget(operation->getPolarKernelParameter(), this);
-            polarKernelParameterWidget.push_back(widget);
-            vBoxLayout->addLayout(widget->vBoxLayout);
+            parametersLayout->addLayout(widget->vBoxLayout);
         }
 
-        QCheckBox* enabledCheckBox = new QCheckBox("Enabled");
-        enabledCheckBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
-        enabledCheckBox->setChecked(operation->isEnabled());
+        parametersLayout->addLayout(formLayout);
 
-        formLayout->addWidget(enabledCheckBox);
+        QGroupBox* parametersGroupBox = new QGroupBox(operation->getName());
+        parametersGroupBox->setLayout(parametersLayout);
 
-        vBoxLayout->addLayout(formLayout);
+        mainLayout->addWidget(parametersGroupBox);
 
-        setLayout(vBoxLayout);
+        // Selected real parameter
 
-        connect(enabledCheckBox, &QCheckBox::stateChanged, [=](int state)
+        if (!floatParameterWidgets.empty())
         {
-            operation->enable(state == Qt::Checked);
-        });
+            QSlider* selectedParameterSlider = new QSlider(Qt::Horizontal);
+            selectedParameterSlider->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
+            selectedParameterSlider->setRange(0, 10000);
+
+            FocusLineEdit* selectedParameterMinLineEdit = new FocusLineEdit;
+            selectedParameterMinLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+            selectedParameterMinLineEdit->setPlaceholderText("Minimum");
+
+            QDoubleValidator* selectedParameterMinValidator = new QDoubleValidator(selectedParameterMinLineEdit);
+            selectedParameterMinValidator->setDecimals(10);
+            selectedParameterMinLineEdit->setValidator(selectedParameterMinValidator);
+
+            FocusLineEdit* selectedParameterMaxLineEdit = new FocusLineEdit;
+            selectedParameterMaxLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+            selectedParameterMaxLineEdit->setPlaceholderText("Maximum");
+
+            QDoubleValidator* selectedParameterMaxValidator = new QDoubleValidator(selectedParameterMaxLineEdit);
+            selectedParameterMaxValidator->setDecimals(10);
+            selectedParameterMaxLineEdit->setValidator(selectedParameterMaxValidator);
+
+            QHBoxLayout* minMaxHBoxLayout = new QHBoxLayout;
+            minMaxHBoxLayout->setAlignment(Qt::AlignJustify);
+            minMaxHBoxLayout->addWidget(selectedParameterMinLineEdit);
+            minMaxHBoxLayout->addWidget(selectedParameterMaxLineEdit);
+
+            QVBoxLayout* selectedParameterVBoxLayout = new QVBoxLayout;
+            selectedParameterVBoxLayout->addWidget(selectedParameterSlider);
+            selectedParameterVBoxLayout->addLayout(minMaxHBoxLayout);
+
+            QGroupBox* selectedParameterGroupBox = new QGroupBox("No parameter selected");
+            selectedParameterGroupBox->setLayout(selectedParameterVBoxLayout);
+
+            mainLayout->addWidget(selectedParameterGroupBox);
+
+            setLayout(mainLayout);
+
+            for (auto widget : floatParameterWidgets)
+            {
+                connect(widget, &FloatParameterWidget::focusIn, [=]()
+                {
+                    updateFloatParameterControls(
+                            widget,
+                            selectedParameterSlider,
+                            selectedParameterMinLineEdit,
+                            selectedParameterMinValidator,
+                            selectedParameterMaxLineEdit,
+                            selectedParameterMaxValidator,
+                            selectedParameterGroupBox);
+                });
+            }
+        }
     }
 
-    ~OperationsWidget()
+    void recreate(ImageOperation* operation)
     {
-        for (auto& widget : polarKernelParameterWidget)
-            delete widget;
+        qDeleteAll(findChildren<QWidget*>(QString(), Qt::FindDirectChildrenOnly));
+
+        floatParameterWidgets.clear();
+
+        setup(operation);
+    }
+
+private:
+    QVBoxLayout* mainLayout;
+    QVector<FloatParameterWidget*> floatParameterWidgets;
+
+    void updateFloatParameterControls(
+            FloatParameterWidget* widget,
+            QSlider* selectedParameterSlider,
+            FocusLineEdit* selectedParameterMinLineEdit,
+            QDoubleValidator* selectedParameterMinValidator,
+            FocusLineEdit* selectedParameterMaxLineEdit,
+            QDoubleValidator* selectedParameterMaxValidator,
+            QGroupBox* selectedParameterGroupBox)
+    {
+        // Slider
+
+        selectedParameterSlider->disconnect();
+        selectedParameterSlider->setRange(0, widget->indexMax);
+        selectedParameterSlider->setValue(widget->getIndex());
+
+        connect(selectedParameterSlider, &QAbstractSlider::valueChanged, widget, &FloatParameterWidget::setValue);
+
+        connect(widget, &FloatParameterWidget::currentIndexChanged, [=](int currentIndex)
+        {
+            disconnect(selectedParameterSlider, &QAbstractSlider::valueChanged, nullptr, nullptr);
+            selectedParameterSlider->setValue(currentIndex);
+            connect(selectedParameterSlider, &QAbstractSlider::valueChanged, widget, &FloatParameterWidget::setValue);
+        });
+
+        // Value changed: check if within min/max range and adjust controls
+
+        connect(widget, &FloatParameterWidget::currentValueChanged, [=](double currentValue)
+        {
+            if (currentValue < widget->getMin())
+            {
+                widget->setMin(currentValue);
+
+                selectedParameterMinLineEdit->setText(QString::number(currentValue));
+
+                disconnect(selectedParameterSlider, &QAbstractSlider::valueChanged, nullptr, nullptr);
+                selectedParameterSlider->setValue(widget->getIndex());
+                connect(selectedParameterSlider, &QAbstractSlider::valueChanged, widget, &FloatParameterWidget::setValue);
+            }
+            else if (currentValue > widget->getMax())
+            {
+                widget->setMax(currentValue);
+
+                selectedParameterMaxLineEdit->setText(QString::number(currentValue));
+
+                disconnect(selectedParameterSlider, &QAbstractSlider::valueChanged, nullptr, nullptr);
+                selectedParameterSlider->setValue(widget->getIndex());
+                connect(selectedParameterSlider, &QAbstractSlider::valueChanged, widget, &FloatParameterWidget::setValue);
+            }
+        });
+
+        // Minimum
+
+        selectedParameterMinLineEdit->disconnect();
+        selectedParameterMinLineEdit->setText(QString::number(widget->getMin()));
+
+        connect(selectedParameterMinLineEdit, &FocusLineEdit::returnPressed, [=]()
+        {
+            widget->setMin(selectedParameterMinLineEdit->text().toDouble());
+            widget->setIndex();
+        });
+        connect(selectedParameterMinLineEdit, &FocusLineEdit::focusOut, [=]()
+        {
+            selectedParameterMinLineEdit->setText(QString::number(widget->getMin()));
+        });
+
+        // Maximum
+
+        selectedParameterMaxLineEdit->disconnect();
+        selectedParameterMaxLineEdit->setText(QString::number(widget->getMax()));
+
+        connect(selectedParameterMaxLineEdit, &FocusLineEdit::returnPressed, [=]()
+        {
+            widget->setMax(selectedParameterMaxLineEdit->text().toDouble());
+            widget->setIndex();
+        });
+        connect(selectedParameterMaxLineEdit, &FocusLineEdit::focusOut, [=]()
+        {
+            selectedParameterMaxLineEdit->setText(QString::number(widget->getMax()));
+        });
+
+        // Validators
+
+        selectedParameterMinValidator->setBottom(widget->getInf());
+        selectedParameterMinValidator->setTop(widget->getMax());
+
+        selectedParameterMaxValidator->setBottom(widget->getMin());
+        selectedParameterMaxValidator->setTop(widget->getSup());
+
+        // Title
+
+        selectedParameterGroupBox->setTitle("Selected parameter: " + widget->getName());
     }
 };

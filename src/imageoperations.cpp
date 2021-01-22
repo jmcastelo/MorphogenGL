@@ -25,20 +25,44 @@
 
 // Image operation base class
 
-ImageOperation::ImageOperation(bool on, QString vertexShader, QString fragmentShader, QOpenGLContext* mainContext) : enabled { on }
+ImageOperation::ImageOperation(bool on, QOpenGLContext* mainContext) : enabled { on }
 {
-    fbo = new FBO(vertexShader, fragmentShader, mainContext);
+    context = mainContext;
+    blender = new Blender(":/shaders/screen.vert", ":/shaders/blend.frag", mainContext);
+}
+
+ImageOperation::ImageOperation(const ImageOperation& operation) :
+    enabled { operation.enabled },
+    noParameters { operation.noParameters },
+    context { operation.context }
+{
+    blender = new Blender(":/shaders/screen.vert", ":/shaders/blend.frag", context);
 }
 
 ImageOperation::~ImageOperation()
 {
+    delete blender;
     delete fbo;
 }
 
-void ImageOperation::applyOperation(GLuint inTextureID)
+void ImageOperation::applyOperation()
 {
-    fbo->setInputTextureID(inTextureID);
-    fbo->draw();
+    blender->blend();
+
+    if (enabled)
+        fbo->draw();
+    else
+        fbo->identity();
+}
+
+void ImageOperation::blit()
+{
+    fbo->blit();
+}
+
+void ImageOperation::setInputData(QVector<InputData *> data)
+{
+    blender->setInputData(data);
 }
 
 void ImageOperation::adjustMinMax(float value, float minValue, float maxValue, float& min, float& max)
@@ -54,8 +78,11 @@ void ImageOperation::adjustMinMax(float value, float minValue, float maxValue, f
 
 QString BilateralFilter::name = "Bilateral filter";
 
-BilateralFilter::BilateralFilter(bool on, QString vertexShader, QString fragmentShader, QOpenGLContext* mainContext, int theNumSideElements, float theSize, float theSpatialSigma, float theRangeSigma) : ImageOperation(on, vertexShader, fragmentShader, mainContext)
+BilateralFilter::BilateralFilter(bool on, QOpenGLContext* mainContext, int theNumSideElements, float theSize, float theSpatialSigma, float theRangeSigma) : ImageOperation(on, mainContext)
 {
+    fbo = new FBO(":/shaders/screen.vert", ":/shaders/bilateral.frag", mainContext);
+    fbo->setInputTextureID(*blender->getTextureID());
+
     numSideElements = new IntParameter("Side elements", 0, this, theNumSideElements, 2, 7, false);
 
     float min, max;
@@ -70,6 +97,27 @@ BilateralFilter::BilateralFilter(bool on, QString vertexShader, QString fragment
 
     setIntParameter(0, theNumSideElements);
     setFloatParameter(2, theRangeSigma);
+}
+
+BilateralFilter::BilateralFilter(const BilateralFilter& operation) : ImageOperation(operation)
+{
+    fbo = new FBO(":/shaders/screen.vert", ":/shaders/bilateral.frag", context);
+    fbo->setInputTextureID(*blender->getTextureID());
+
+    numSideElements = new IntParameter(*operation.numSideElements);
+    numSideElements->setOperation(this);
+
+    size = new FloatParameter(*operation.size);
+    size->setOperation(this);
+
+    spatialSigma = new FloatParameter(*operation.spatialSigma);
+    spatialSigma->setOperation(this);
+
+    rangeSigma = new FloatParameter(*operation.rangeSigma);
+    rangeSigma->setOperation(this);
+
+    setIntParameter(0, numSideElements->value);
+    setFloatParameter(2, rangeSigma->value);
 }
 
 BilateralFilter::~BilateralFilter()
@@ -170,12 +218,27 @@ void BilateralFilter::setFloatParameter(int index, float value)
 
 QString Brightness::name = "Brightness";
 
-Brightness::Brightness(bool on, QString vertexShader, QString fragmentShader, QOpenGLContext* mainContext, float theBrightness) : ImageOperation(on, vertexShader, fragmentShader, mainContext)
+Brightness::Brightness(bool on, QOpenGLContext* mainContext, float theBrightness) : ImageOperation(on, mainContext)
 {
+    fbo = new FBO(":/shaders/screen.vert", ":/shaders/brightness.frag", mainContext);
+    fbo->setInputTextureID(*blender->getTextureID());
+
     float min, max;
     adjustMinMax(theBrightness, -1.0f, 1.0f, min, max);
     brightness = new FloatParameter("Brightness", 0, this, theBrightness, min, max, -10.0f, 10.0f);
+
     setFloatParameter(0, theBrightness);
+}
+
+Brightness::Brightness(const Brightness& operation) : ImageOperation(operation)
+{
+    fbo = new FBO(":/shaders/screen.vert", ":/shaders/brightness.frag", context);
+    fbo->setInputTextureID(*blender->getTextureID());
+
+    brightness = new FloatParameter(*operation.brightness);
+    brightness->setOperation(this);
+
+    setFloatParameter(0, brightness->value);
 }
 
 Brightness::~Brightness()
@@ -199,10 +262,25 @@ void Brightness::setFloatParameter(int index, float value)
 
 QString ColorMix::name = "Color mix";
 
-ColorMix::ColorMix(bool on, QString vertexShader, QString fragmentShader, QOpenGLContext* mainContext, std::vector<float> theMatrix) : ImageOperation(on, vertexShader, fragmentShader, mainContext)
+ColorMix::ColorMix(bool on, QOpenGLContext* mainContext, std::vector<float> theMatrix) : ImageOperation(on, mainContext)
 {
+    fbo = new FBO(":/shaders/screen.vert", ":/shaders/colormix.frag", mainContext);
+    fbo->setInputTextureID(*blender->getTextureID());
+
     rgbMatrix = new MatrixParameter("RGB Matrix", this, theMatrix, -1000.0f, 1000.0f);
+
     setMatrixParameter(&theMatrix[0]);
+}
+
+ColorMix::ColorMix(const ColorMix& operation) : ImageOperation(operation)
+{
+    fbo = new FBO(":/shaders/screen.vert", ":/shaders/colormix.frag", context);
+    fbo->setInputTextureID(*blender->getTextureID());
+
+    rgbMatrix = new MatrixParameter(*operation.rgbMatrix);
+    rgbMatrix->setOperation(this);
+
+    setMatrixParameter(&rgbMatrix->values[0]);
 }
 
 ColorMix::~ColorMix()
@@ -225,12 +303,27 @@ void ColorMix::setMatrixParameter(GLfloat* values)
 
 QString Contrast::name = "Contrast";
 
-Contrast::Contrast(bool on, QString vertexShader, QString fragmentShader, QOpenGLContext* mainContext, float theContrast) : ImageOperation(on, vertexShader, fragmentShader, mainContext)
+Contrast::Contrast(bool on, QOpenGLContext* mainContext, float theContrast) : ImageOperation(on, mainContext)
 {
+    fbo = new FBO(":/shaders/screen.vert", ":/shaders/contrast.frag", mainContext);
+    fbo->setInputTextureID(*blender->getTextureID());
+
     float min, max;
     adjustMinMax(theContrast, -1.0f, 2.0f, min, max);
     contrast = new FloatParameter("Contrast", 0, this, theContrast, min, max, -10.0f, 10.0f);
+
     setFloatParameter(0, theContrast);
+}
+
+Contrast::Contrast(const Contrast& operation) : ImageOperation(operation)
+{
+    fbo = new FBO(":/shaders/screen.vert", ":/shaders/contrast.frag", context);
+    fbo->setInputTextureID(*blender->getTextureID());
+
+    contrast = new FloatParameter(*operation.contrast);
+    contrast->setOperation(this);
+
+    setFloatParameter(0, contrast->value);
 }
 
 Contrast::~Contrast()
@@ -254,15 +347,36 @@ void Contrast::setFloatParameter(int index, float value)
 
 QString Convolution::name = "Convolution";
 
-Convolution::Convolution(bool on, QString vertexShader, QString fragmentShader, QOpenGLContext* mainContext, std::vector<float> theKernel, float theSize) : ImageOperation(on, vertexShader, fragmentShader, mainContext)
+Convolution::Convolution(bool on, QOpenGLContext* mainContext, std::vector<float> theKernel, float theSize) : ImageOperation(on, mainContext)
 {
+    fbo = new FBO(":/shaders/screen.vert", ":/shaders/convolution.frag", mainContext);
+    fbo->setInputTextureID(*blender->getTextureID());
+
     kernel = new KernelParameter("Kernel", this, theKernel, -1000.0f, 1000.0f, true);
+
     setKernelParameter(&theKernel[0]);
 
     float min, max;
     adjustMinMax(theSize, 0.0f, 1.0f, min, max);
     size = new FloatParameter("Size", 0, this, theSize, min, max, 0.0f, 1.0f);
+
     setFloatParameter(0, theSize);
+}
+
+Convolution::Convolution(const Convolution &operation) : ImageOperation(operation)
+{
+    fbo = new FBO(":/shaders/screen.vert", ":/shaders/convolution.frag", context);
+    fbo->setInputTextureID(*blender->getTextureID());
+
+    kernel = new KernelParameter(*operation.kernel);
+    kernel->setOperation(this);
+
+    setKernelParameter(&kernel->values[0]);
+
+    size = new FloatParameter(*operation.size);
+    size->setOperation(this);
+
+    setFloatParameter(0, size->value);
 }
 
 Convolution::~Convolution()
@@ -308,12 +422,27 @@ void Convolution::setFloatParameter(int index, float value)
 
 QString Dilation::name = "Dilation";
 
-Dilation::Dilation(bool on, QString vertexShader, QString fragmentShader, QOpenGLContext* mainContext, float theSize) : ImageOperation(on, vertexShader, fragmentShader, mainContext)
+Dilation::Dilation(bool on, QOpenGLContext* mainContext, float theSize) : ImageOperation(on, mainContext)
 {
+    fbo = new FBO(":/shaders/screen.vert", ":/shaders/dilation.frag", mainContext);
+    fbo->setInputTextureID(*blender->getTextureID());
+
     float min, max;
     adjustMinMax(theSize, 0.0f, 1.0f, min, max);
     size = new FloatParameter("Size", 0, this, theSize, min, max, 0.0f, 1.0f);
+
     setFloatParameter(0, theSize);
+}
+
+Dilation::Dilation(const Dilation& operation) : ImageOperation(operation)
+{
+    fbo = new FBO(":/shaders/screen.vert", ":/shaders/dilation.frag", context);
+    fbo->setInputTextureID(*blender->getTextureID());
+
+    size = new FloatParameter(*operation.size);
+    size->setOperation(this);
+
+    setFloatParameter(0, size->value);
 }
 
 Dilation::~Dilation()
@@ -348,12 +477,27 @@ void Dilation::setFloatParameter(int index, float value)
 
 QString Erosion::name = "Erosion";
 
-Erosion::Erosion(bool on, QString vertexShader, QString fragmentShader, QOpenGLContext* mainContext, float theSize) : ImageOperation(on, vertexShader, fragmentShader, mainContext)
+Erosion::Erosion(bool on, QOpenGLContext* mainContext, float theSize) : ImageOperation(on, mainContext)
 {
+    fbo = new FBO(":/shaders/screen.vert", ":/shaders/erosion.frag", mainContext);
+    fbo->setInputTextureID(*blender->getTextureID());
+
     float min, max;
     adjustMinMax(theSize, 0.0f, 1.0f, min, max);
     size = new FloatParameter("Size", 0, this, theSize, min, max, 0.0f, 1.0f);
+
     setFloatParameter(0, theSize);
+}
+
+Erosion::Erosion(const Erosion& operation) : ImageOperation(operation)
+{
+    fbo = new FBO(":/shaders/screen.vert", ":/shaders/erosion.frag", context);
+    fbo->setInputTextureID(*blender->getTextureID());
+
+    size = new FloatParameter(*operation.size);
+    size->setOperation(this);
+
+    setFloatParameter(0, size->value);
 }
 
 Erosion::~Erosion()
@@ -388,8 +532,11 @@ void Erosion::setFloatParameter(int index, float value)
 
 QString GammaCorrection::name = "Gamma correction";
 
-GammaCorrection::GammaCorrection(bool on, QString vertexShader, QString fragmentShader, QOpenGLContext* mainContext, float theGammaRed, float theGammaGreen, float theGammaBlue) : ImageOperation(on, vertexShader, fragmentShader, mainContext)
+GammaCorrection::GammaCorrection(bool on, QOpenGLContext* mainContext, float theGammaRed, float theGammaGreen, float theGammaBlue) : ImageOperation(on, mainContext)
 {
+    fbo = new FBO(":/shaders/screen.vert", ":/shaders/gamma.frag", mainContext);
+    fbo->setInputTextureID(*blender->getTextureID());
+
     float min, max;
     adjustMinMax(theGammaRed, 0.0f, 100.0f, min, max);
     gammaRed = new FloatParameter("Red", 0, this, theGammaRed, min, max, 0.0f, 1000.0f);
@@ -403,6 +550,25 @@ GammaCorrection::GammaCorrection(bool on, QString vertexShader, QString fragment
     setFloatParameter(0, theGammaRed);
     setFloatParameter(1, theGammaGreen);
     setFloatParameter(2, theGammaBlue);
+}
+
+GammaCorrection::GammaCorrection(const GammaCorrection& operation) : ImageOperation(operation)
+{
+    fbo = new FBO(":/shaders/screen.vert", ":/shaders/gamma.frag", context);
+    fbo->setInputTextureID(*blender->getTextureID());
+
+    gammaRed = new FloatParameter(*operation.gammaRed);
+    gammaRed->setOperation(this);
+
+    gammaGreen = new FloatParameter(*operation.gammaGreen);
+    gammaGreen->setOperation(this);
+
+    gammaBlue = new FloatParameter(*operation.gammaBlue);
+    gammaBlue->setOperation(this);
+
+    setFloatParameter(0, gammaRed->value);
+    setFloatParameter(1, gammaGreen->value);
+    setFloatParameter(2, gammaBlue->value);
 }
 
 GammaCorrection::~GammaCorrection()
@@ -430,13 +596,27 @@ void GammaCorrection::setFloatParameter(int index, float)
 
 QString HueShift::name = "Hue shift";
 
-HueShift::HueShift(bool on, QString vertexShader, QString fragmentShader, QOpenGLContext* mainContext, float theShift) : ImageOperation(on, vertexShader, fragmentShader, mainContext)
+HueShift::HueShift(bool on, QOpenGLContext* mainContext, float theShift) : ImageOperation(on, mainContext)
 {
+    fbo = new FBO(":/shaders/screen.vert", ":/shaders/hueshift.frag", mainContext);
+    fbo->setInputTextureID(*blender->getTextureID());
+
     float min, max;
     adjustMinMax(theShift, -1.0f, 1.0f, min, max);
     shift = new FloatParameter("Shift", 0, this, theShift, min, max, -1.0f, 1.0f);
 
     setFloatParameter(0, theShift);
+}
+
+HueShift::HueShift(const HueShift& operation) : ImageOperation(operation)
+{
+    fbo = new FBO(":/shaders/screen.vert", ":/shaders/hueshift.frag",context);
+    fbo->setInputTextureID(*blender->getTextureID());
+
+    shift = new FloatParameter(*operation.shift);
+    shift->setOperation(this);
+
+    setFloatParameter(0, shift->value);
 }
 
 HueShift::~HueShift()
@@ -456,20 +636,61 @@ void HueShift::setFloatParameter(int index, float value)
     }
 }
 
+// Mask
+
+QString Mask::name = "Mask";
+
+Mask::Mask(bool on, QOpenGLContext* mainContext) : ImageOperation(on, mainContext)
+{
+    fbo = new FBO(":/shaders/screen.vert", ":/shaders/mask.frag", mainContext);
+    fbo->setInputTextureID(*blender->getTextureID());
+
+    noParameters = true;
+}
+
+Mask::Mask(const Mask& operation) : ImageOperation(operation)
+{
+    fbo = new FBO(":/shaders/screen.vert", ":/shaders/mask.frag", context);
+    fbo->setInputTextureID(*blender->getTextureID());
+}
+
+Mask::~Mask(){}
+
 // Morphological gradient
 
 QString MorphologicalGradient::name = "Morphological gradient";
 
-MorphologicalGradient::MorphologicalGradient(bool on, QString vertexShader, QString fragmentShader, QOpenGLContext* mainContext, float theDilationSize, float theErosionSize) : ImageOperation(on, vertexShader, fragmentShader, mainContext)
+MorphologicalGradient::MorphologicalGradient(bool on, QOpenGLContext* mainContext, float theDilationSize, float theErosionSize) : ImageOperation(on, mainContext)
 {
+    fbo = new FBO(":/shaders/screen.vert", ":/shaders/morphogradient.frag", mainContext);
+    fbo->setInputTextureID(*blender->getTextureID());
+
     float min, max;
     adjustMinMax(theDilationSize, 0.0f, 1.0f, min, max);
     dilationSize = new FloatParameter("Dilation size", 0, this, theDilationSize, min, max, 0.0f, 1.0f);
+
     setFloatParameter(0, theDilationSize);
 
     adjustMinMax(theDilationSize, 0.0f, 1.0f, min, max);
     erosionSize = new FloatParameter("Erosion size", 1, this, theErosionSize, min, max, 0.0f, 1.0f);
+
     setFloatParameter(1, theErosionSize);
+}
+
+MorphologicalGradient::MorphologicalGradient(const MorphologicalGradient& operation) : ImageOperation(operation)
+{
+    fbo = new FBO(":/shaders/screen.vert", ":/shaders/morphogradient.frag", context);
+    fbo->setInputTextureID(*blender->getTextureID());
+
+    dilationSize = new FloatParameter(*operation.dilationSize);
+    dilationSize->setOperation(this);
+
+    setFloatParameter(0, dilationSize->value);
+
+    erosionSize = new FloatParameter(*operation.erosionSize);
+    erosionSize->setOperation(this);
+
+    setFloatParameter(1, erosionSize->value);
 }
 
 MorphologicalGradient::~MorphologicalGradient()
@@ -513,9 +734,24 @@ void MorphologicalGradient::setFloatParameter(int index, float value)
 
 QString PolarConvolution::name = "Polar convolution";
 
-PolarConvolution::PolarConvolution(bool on, QString vertexShader, QString fragmentShader, QOpenGLContext* mainContext, std::vector<PolarKernel*> thePolarKernels, float theCenterElement) : ImageOperation(on, vertexShader, fragmentShader, mainContext)
+PolarConvolution::PolarConvolution(bool on, QOpenGLContext* mainContext, std::vector<PolarKernel*> thePolarKernels, float theCenterElement) : ImageOperation(on, mainContext)
 {
+    fbo = new FBO(":/shaders/screen.vert", ":/shaders/polar-convolution.frag", mainContext);
+    fbo->setInputTextureID(*blender->getTextureID());
+
     polarKernelParameter = new PolarKernelParameter("Polar kernels", this, thePolarKernels, theCenterElement);
+
+    setPolarKernelParameter();
+}
+
+PolarConvolution::PolarConvolution(const PolarConvolution& operation) : ImageOperation(operation)
+{
+    fbo = new FBO(":/shaders/screen.vert", ":/shaders/polar-convolution.frag", context);
+    fbo->setInputTextureID(*blender->getTextureID());
+
+    polarKernelParameter = new PolarKernelParameter(*operation.polarKernelParameter);
+    polarKernelParameter->setOperation(this);
+
     setPolarKernelParameter();
 }
 
@@ -577,17 +813,38 @@ void PolarConvolution::setPolarKernelParameter()
 
 QString Rotation::name = "Rotation";
 
-Rotation::Rotation(bool on, QString vertexShader, QString fragmentShader, QOpenGLContext* mainContext, float theAngle, GLenum theMinMagFilter) : ImageOperation(on, vertexShader, fragmentShader, mainContext)
+Rotation::Rotation(bool on, QOpenGLContext* mainContext, float theAngle, GLenum theMinMagFilter) : ImageOperation(on, mainContext)
 {
+    fbo = new FBO(":/shaders/transform.vert", ":/shaders/screen.frag", mainContext);
+    fbo->setInputTextureID(*blender->getTextureID());
+
     float min, max;
     adjustMinMax(theAngle, -360.0f, 360.0f, min, max);
     angle = new FloatParameter("Angle", 0, this, theAngle, min, max, -1.0e6, 1.0e6);
+
     setFloatParameter(0, theAngle);
 
     std::vector<QString> valueNames = { "Nearest neighbor", "Linear" };
     std::vector<GLenum> values = { GL_NEAREST, GL_LINEAR };
     minMagFilter = new OptionsParameter<GLenum>("Interpolation", 0, this, valueNames, values, theMinMagFilter);
+
     setOptionsParameter(0, theMinMagFilter);
+}
+
+Rotation::Rotation(const Rotation& operation) : ImageOperation(operation)
+{
+    fbo = new FBO(":/shaders/transform.vert", ":/shaders/screen.frag", context);
+    fbo->setInputTextureID(*blender->getTextureID());
+
+    angle = new FloatParameter(*operation.angle);
+    angle->setOperation(this);
+
+    setFloatParameter(0, angle->value);
+
+    minMagFilter = new OptionsParameter<GLenum>(*operation.minMagFilter);
+    minMagFilter->setOperation(this);
+
+    setOptionsParameter(0, minMagFilter->value);
 }
 
 Rotation::~Rotation()
@@ -630,12 +887,27 @@ void Rotation::setOptionsParameter(int index, GLenum value)
 
 QString Saturation::name = "Saturation";
 
-Saturation::Saturation(bool on, QString vertexShader, QString fragmentShader, QOpenGLContext* mainContext, float theSaturation) : ImageOperation(on, vertexShader, fragmentShader, mainContext)
+Saturation::Saturation(bool on, QOpenGLContext* mainContext, float theSaturation) : ImageOperation(on, mainContext)
 {
+    fbo = new FBO(":/shaders/screen.vert", ":/shaders/saturation.frag", mainContext);
+    fbo->setInputTextureID(*blender->getTextureID());
+
     float min, max;
     adjustMinMax(theSaturation, 0.0f, 1.0f, min, max);
     saturation = new FloatParameter("Saturation", 0, this, theSaturation, min, max, 0.0f, 1.0f);
+
     setFloatParameter(0, theSaturation);
+}
+
+Saturation::Saturation(const Saturation& operation) : ImageOperation(operation)
+{
+    fbo = new FBO(":/shaders/screen.vert", ":/shaders/saturation.frag", context);
+    fbo->setInputTextureID(*blender->getTextureID());
+
+    saturation = new FloatParameter(*operation.saturation);
+    saturation->setOperation(this);
+
+    setFloatParameter(0, saturation->value);
 }
 
 Saturation::~Saturation()
@@ -661,17 +933,38 @@ void Saturation::setFloatParameter(int index, float value)
 
 QString Scale::name = "Scale";
 
-Scale::Scale(bool on, QString vertexShader, QString fragmentShader, QOpenGLContext* mainContext, float theScaleFactor, GLenum theMinMagFilter) : ImageOperation(on, vertexShader, fragmentShader, mainContext)
+Scale::Scale(bool on, QOpenGLContext* mainContext, float theScaleFactor, GLenum theMinMagFilter) : ImageOperation(on, mainContext)
 {
+    fbo = new FBO(":/shaders/transform.vert", ":/shaders/screen.frag", mainContext);
+    fbo->setInputTextureID(*blender->getTextureID());
+
     float min, max;
     adjustMinMax(theScaleFactor, 0.0f, 2.0f, min, max);
     scaleFactor = new FloatParameter("Scale factor", 0, this, theScaleFactor, min, max, -1.0e6, 1.0e6);
+
     setFloatParameter(0, theScaleFactor);
 
     std::vector<QString> valueNames = { "Nearest neighbor", "Linear" };
     std::vector<GLenum> values = { GL_NEAREST, GL_LINEAR };
     minMagFilter = new OptionsParameter<GLenum>("Interpolation", 0, this, valueNames, values, theMinMagFilter);
+
     setOptionsParameter(0, theMinMagFilter);
+}
+
+Scale::Scale(const Scale& operation) : ImageOperation(operation)
+{
+    fbo = new FBO(":/shaders/transform.vert", ":/shaders/screen.frag", context);
+    fbo->setInputTextureID(*blender->getTextureID());
+
+    scaleFactor = new FloatParameter(*operation.scaleFactor);
+    scaleFactor->setOperation(this);
+
+    setFloatParameter(0, scaleFactor->value);
+
+    minMagFilter = new OptionsParameter<GLenum>(*operation.minMagFilter);
+    minMagFilter->setOperation(this);
+
+    setOptionsParameter(0, minMagFilter->value);
 }
 
 Scale::~Scale()
@@ -714,12 +1007,27 @@ void Scale::setOptionsParameter(int index, GLenum value)
 
 QString Value::name = "Value";
 
-Value::Value(bool on, QString vertexShader, QString fragmentShader, QOpenGLContext* mainContext, float theValue) : ImageOperation(on, vertexShader, fragmentShader, mainContext)
+Value::Value(bool on, QOpenGLContext* mainContext, float theValue) : ImageOperation(on, mainContext)
 {
+    fbo = new FBO(":/shaders/screen.vert", ":/shaders/value.frag", mainContext);
+    fbo->setInputTextureID(*blender->getTextureID());
+
     float min, max;
     adjustMinMax(theValue, 0.0f, 1.0f, min, max);
     value = new FloatParameter("Value", 0, this, theValue, min, max, 0.0f, 1.0f);
+
     setFloatParameter(0, theValue);
+}
+
+Value::Value(const Value& operation) : ImageOperation(operation)
+{
+    fbo = new FBO(":/shaders/screen.vert", ":/shaders/value.frag", context);
+    fbo->setInputTextureID(*blender->getTextureID());
+
+    value = new FloatParameter(*operation.value);
+    value->setOperation(this);
+
+    setFloatParameter(0, value->value);
 }
 
 Value::~Value()
