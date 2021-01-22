@@ -195,6 +195,8 @@ void GeneratorGL::sortOperations()
 {
     sortedOperations.clear();
 
+    QVector<QPair<QUuid, QString>> sortedOperationsData;
+
     QMap<QUuid, ImageOperationNode*> pendingNodes = operationNodes;
 
     // Set operations as non-computed (pending)
@@ -216,6 +218,7 @@ void GeneratorGL::sortOperations()
                  (node->numInputs() > 0 && node->numNonNormalInputs() == node->numInputs()))
         {
             sortedOperations.push_back(node->operation);
+            sortedOperationsData.push_back(QPair<QUuid, QString>(node->id, node->operation->getName()));
             pendingNodes.remove(node->id);
             node->setComputed(true);
         }
@@ -232,6 +235,7 @@ void GeneratorGL::sortOperations()
             if (node->allInputsComputed())
             {
                 sortedOperations.push_back(node->operation);
+                sortedOperationsData.push_back(QPair<QUuid, QString>(node->id, node->operation->getName()));
                 computedNodes.push_back(node);
                 node->setComputed(true);
             }
@@ -244,9 +248,7 @@ void GeneratorGL::sortOperations()
             break;
     }
 
-    /*qDebug() << "---";
-    for (ImageOperation* operation : sortedOperations)
-        qDebug() << operation->getName();*/
+    emit sortedOperationsChanged(sortedOperationsData);
 }
 
 void GeneratorGL::iterate()

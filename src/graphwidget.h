@@ -74,6 +74,8 @@ public:
     void loadOperationNode(QUuid id, QString name, QPointF position);
     void connectNodes(QMap<QUuid, QMap<QUuid, InputData*>> connections);
 
+    void markNodes(QVector<QUuid> ids);
+
 signals:
     void showOperationParameters(QUuid id);
     void removeOperationParameters(QUuid id);

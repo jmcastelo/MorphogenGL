@@ -40,7 +40,9 @@ ControlWidget::ControlWidget(Heart* theHeart, QWidget *parent) : QWidget(parent)
     screenshotAction = toolbar->addAction(QIcon(QPixmap(":/icons/digikam.png")), "Take screenshot");
     toolbar->addSeparator();
     displayOptionsAction = toolbar->addAction(QIcon(QPixmap(":/icons/video-display.png")), "Display options");
-    recordingOptionsAction = toolbar->addAction(QIcon(QPixmap(":/icons/folder-video.png")), "Recording options");
+    recordingOptionsAction = toolbar->addAction(QIcon(QPixmap(":/icons/video-x-generic.png")), "Recording options");
+    toolbar->addSeparator();
+    sortedOperationsAction = toolbar->addAction(QIcon(QPixmap(":/icons/format-list-ordered.png")), "List sorted operations");
     toolbar->addSeparator();
     rgbAction = toolbar->addAction(QIcon(QPixmap(":/icons/office-chart-scatter.png")), "Show RGB graph");
     rgbAction->setCheckable(true);
@@ -55,6 +57,7 @@ ControlWidget::ControlWidget(Heart* theHeart, QWidget *parent) : QWidget(parent)
     connect(screenshotAction, &QAction::triggered, this, &ControlWidget::takeScreenshot);
     connect(displayOptionsAction, &QAction::triggered, this, &ControlWidget::toggleDisplayOptionsWidget);
     connect(recordingOptionsAction, &QAction::triggered, this, &ControlWidget::toggleRecordingOptionsWidget);
+    connect(sortedOperationsAction, &QAction::triggered, this, &ControlWidget::toggleSortedOperationsWidget);
     connect(rgbAction, &QAction::triggered, this, &ControlWidget::toggleRGBGraph);
     connect(loadConfigAction, &QAction::triggered, this, &ControlWidget::loadConfig);
     connect(saveConfigAction, &QAction::triggered, this, &ControlWidget::saveConfig);
@@ -64,6 +67,7 @@ ControlWidget::ControlWidget(Heart* theHeart, QWidget *parent) : QWidget(parent)
 
     constructDisplayOptionsWidget();
     constructRecordingOptionsWidget();
+    constructSortedOperationsWidget();
 
     // Graph widget
 
@@ -127,6 +131,7 @@ ControlWidget::~ControlWidget()
 {
     delete displayOptionsWidget;
     delete recordingOptionsWidget;
+    delete sortedOperationsWidget;
     delete parser;
     delete graphWidget;
     delete generator;
@@ -137,6 +142,9 @@ void ControlWidget::closeEvent(QCloseEvent* event)
 {
     displayOptionsWidget->close();
     recordingOptionsWidget->close();
+
+    disconnect(generator, &GeneratorGL::sortedOperationsChanged, this, &ControlWidget::populateSortedOperationsTable);
+    sortedOperationsWidget->close();
 
     foreach(OperationsWidget* opWidget, operationsWidgets)
         opWidget->close();
@@ -206,6 +214,11 @@ void ControlWidget::toggleDisplayOptionsWidget()
 void ControlWidget::toggleRecordingOptionsWidget()
 {
     recordingOptionsWidget->setVisible(!recordingOptionsWidget->isVisible());
+}
+
+void ControlWidget::toggleSortedOperationsWidget()
+{
+    sortedOperationsWidget->setVisible(!sortedOperationsWidget->isVisible());
 }
 
 void ControlWidget::toggleRGBGraph()
@@ -302,9 +315,6 @@ void ControlWidget::constructDisplayOptionsWidget()
     fpsLineEdit->setValidator(fpsIntValidator);
     fpsLineEdit->setText(QString::number(static_cast<int>(1000.0 / heart->getTimerInterval())));
 
-    QFormLayout* fpsFormLayout = new QFormLayout;
-    fpsFormLayout->addRow("FPS:", fpsLineEdit);
-
     imageWidthLineEdit = new FocusLineEdit;
     imageWidthLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
     QIntValidator* imageWidthIntValidator = new QIntValidator(0, 8192, imageWidthLineEdit);
@@ -333,18 +343,16 @@ void ControlWidget::constructDisplayOptionsWidget()
     windowHeightLineEdit->setValidator(windowHeightIntValidator);
     windowHeightLineEdit->setText(QString::number(heart->getMorphoWidgetHeight()));
 
-    QFormLayout* geometryFormLayout = new QFormLayout;
-    geometryFormLayout->addRow("Image width (px):", imageWidthLineEdit);
-    geometryFormLayout->addRow("Image height (px):", imageHeightLineEdit);
-    geometryFormLayout->addRow("Window width (px):", windowWidthLineEdit);
-    geometryFormLayout->addRow("Window height (px):", windowHeightLineEdit);
-
-    QVBoxLayout* displayControlsVBoxLayout = new QVBoxLayout;
-    displayControlsVBoxLayout->addLayout(fpsFormLayout);
-    displayControlsVBoxLayout->addLayout(geometryFormLayout);
+    QFormLayout* formLayout = new QFormLayout;
+    formLayout->addRow("FPS:", fpsLineEdit);
+    formLayout->addRow("Image width (px):", imageWidthLineEdit);
+    formLayout->addRow("Image height (px):", imageHeightLineEdit);
+    formLayout->addRow("Window width (px):", windowWidthLineEdit);
+    formLayout->addRow("Window height (px):", windowHeightLineEdit);
 
     displayOptionsWidget = new QWidget;
-    displayOptionsWidget->setLayout(displayControlsVBoxLayout);
+    displayOptionsWidget->setLayout(formLayout);
+    displayOptionsWidget->setWindowTitle("Display options");
 
     // Signals + Slots
 
@@ -445,6 +453,7 @@ void ControlWidget::constructRecordingOptionsWidget()
 
     recordingOptionsWidget = new QWidget;
     recordingOptionsWidget->setLayout(videoVBoxLayout);
+    recordingOptionsWidget->setWindowTitle("Recording options");
 
     // Signals + Slot
 
@@ -490,6 +499,54 @@ void ControlWidget::setVideoCaptureElapsedTimeLabel()
     QTime start(0, 0, 0, 0);
 
     videoCaptureElapsedTimeLabel->setText(start.addMSecs(milliseconds).toString("hh:mm:ss.zzz"));
+}
+
+void ControlWidget::constructSortedOperationsWidget()
+{
+     sortedOperationsTable = new QTableWidget;
+     sortedOperationsTable->setColumnCount(1);
+     sortedOperationsTable->setHorizontalHeaderLabels(QStringList("Operation"));
+     sortedOperationsTable->horizontalHeader()->setStretchLastSection(true);
+     sortedOperationsTable->resizeColumnsToContents();
+     sortedOperationsTable->setSelectionMode(QAbstractItemView::MultiSelection);
+
+     QVBoxLayout *layout = new QVBoxLayout;
+     layout->setAlignment(Qt::AlignCenter);
+     layout->addWidget(sortedOperationsTable);
+
+     sortedOperationsWidget = new QWidget;
+     sortedOperationsWidget->setLayout(layout);
+     sortedOperationsWidget->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+     sortedOperationsWidget->setWindowTitle("Sorted operations");
+     sortedOperationsWidget->setWindowFlags(Qt::WindowStaysOnTopHint);
+
+     connect(generator, &GeneratorGL::sortedOperationsChanged, this, &ControlWidget::populateSortedOperationsTable);
+     connect(sortedOperationsTable, &QTableWidget::itemSelectionChanged, this, &ControlWidget::selectNodesToMark);
+}
+
+void ControlWidget::populateSortedOperationsTable(QVector<QPair<QUuid, QString>> data)
+{
+    sortedOperationsTable->clearContents();
+    sortedOperationsTable->setRowCount(data.size());
+
+    for (int row = 0; row < data.size(); row++)
+    {
+        QTableWidgetItem* item = new QTableWidgetItem(data[row].second);
+        item->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEnabled);
+        sortedOperationsTable->setItem(row, 0, item);
+    }
+
+    sortedOperationsData = data;
+}
+
+void ControlWidget::selectNodesToMark()
+{
+    QVector<QUuid> nodeIds;
+
+    for (QTableWidgetItem* item : sortedOperationsTable->selectedItems())
+        nodeIds.push_back(sortedOperationsData[item->row()].first);
+
+    graphWidget->markNodes(nodeIds);
 }
 
 void ControlWidget::showParametersWidget(QUuid id)

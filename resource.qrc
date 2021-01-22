@@ -33,7 +33,8 @@
         <file>shaders/rgb.vert</file>
         <file>icons/office-chart-scatter.png</file>
         <file>icons/video-display.png</file>
-        <file>icons/folder-video.png</file>
         <file>shaders/clear.frag</file>
+        <file>icons/format-list-ordered.png</file>
+        <file>icons/video-x-generic.png</file>
     </qresource>
 </RCC>

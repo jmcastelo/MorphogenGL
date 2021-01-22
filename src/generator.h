@@ -27,6 +27,7 @@
 #include "seed.h"
 #include "blender.h"
 #include "fbo.h"
+#include <QObject>
 #include <QVector>
 #include <QString>
 #include <QImage>
@@ -74,8 +75,10 @@ struct ImageOperationNode
     QVector<InputData*> inputsVector();
 };
 
-class GeneratorGL
+class GeneratorGL : public QObject
 {
+    Q_OBJECT
+
 public:
     QVector<QString> availableOperations;
 
@@ -159,6 +162,9 @@ public:
     QMap<QUuid, Seed*> getSeeds() { return seeds; }
 
     QString version = "1.0 beta";
+
+signals:
+    void sortedOperationsChanged(QVector<QPair<QUuid, QString>> data);
 
 private:
     QMap<QUuid, ImageOperationNode*> operationNodes;

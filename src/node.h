@@ -41,6 +41,8 @@ class Node : public QGraphicsObject
 public:
     QUuid id;
 
+    bool marked = false;
+
     Node(GraphWidget* graphWidget, QString name);
     ~Node();
 

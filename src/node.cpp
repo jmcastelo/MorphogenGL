@@ -148,7 +148,10 @@ void Node::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
     }
     painter->setBrush(gradient);
 
-    painter->setPen(QPen(Qt::black, penSize));
+    if (marked)
+        painter->setPen(QPen(Qt::cyan, penSize));
+    else
+        painter->setPen(QPen(Qt::black, penSize));
     painter->drawEllipse(textRect.adjusted(-ellipseMargin, -ellipseMargin, ellipseMargin, ellipseMargin));
 
     painter->setFont(scene()->font());
@@ -158,7 +161,7 @@ void Node::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
 
 QVariant Node::itemChange(GraphicsItemChange change, const QVariant &value)
 {
-    if(change == ItemPositionChange && scene())
+    if (change == ItemPositionChange && scene())
     {
         QPointF newPos = value.toPointF();
 
@@ -172,7 +175,7 @@ QVariant Node::itemChange(GraphicsItemChange change, const QVariant &value)
             return newPos;
         }
     }
-    else if(change == ItemPositionHasChanged)
+    else if (change == ItemPositionHasChanged)
     {
         for (Edge *edge : qAsConst(edgeList))
             edge->adjust();

@@ -26,6 +26,7 @@
 RGBWidget::RGBWidget(Heart *theHeart, QWidget* parent) : QOpenGLWidget(parent), heart { theHeart }
 {
     setWindowIcon(QIcon(":/icons/morphogengl.png"));
+    setWindowTitle("RGB Plot");
     resize(512, 512);
 }
 

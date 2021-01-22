@@ -463,6 +463,25 @@ void GraphWidget::connectNodes(QMap<QUuid, QMap<QUuid, InputData*>> connections)
     searchElementaryCycles();
 }
 
+void GraphWidget::markNodes(QVector<QUuid> ids)
+{
+    const QList<QGraphicsItem*> items = scene()->items();
+
+    for (QGraphicsItem* item : items)
+    {
+        if (OperationNode* node = qgraphicsitem_cast<OperationNode*>(item))
+        {
+            node->marked = false;
+
+            for (QUuid id : ids)
+                if (node->id == id)
+                    node->marked = true;
+
+            node->update();
+        }
+    }
+}
+
 void GraphWidget::contextMenuEvent(QContextMenuEvent *event)
 {
     if (!pointIntersectsItem(mapToScene(mapFromGlobal(event->globalPos()))))

@@ -55,6 +55,8 @@
 #include <QRect>
 #include <QPoint>
 #include <QSize>
+#include <QTableWidget>
+#include <QTableWidgetItem>
 
 class Heart;
 class ConfigurationParser;
@@ -92,12 +94,17 @@ private:
 
     QWidget* displayOptionsWidget;
     QWidget* recordingOptionsWidget;
+    QWidget* sortedOperationsWidget;
+
+    QTableWidget* sortedOperationsTable;
+    QVector<QPair<QUuid, QString>> sortedOperationsData;
 
     QAction* iterateAction;
     QAction* recordAction;
     QAction* screenshotAction;
     QAction* displayOptionsAction;
     QAction* recordingOptionsAction;
+    QAction* sortedOperationsAction;
     QAction* rgbAction;
     QAction* saveConfigAction;
     QAction* loadConfigAction;
@@ -125,6 +132,7 @@ private:
 
     void constructDisplayOptionsWidget();
     void constructRecordingOptionsWidget();
+    void constructSortedOperationsWidget();
 
     void updateIterationNumberLabel();
     void updateMetricsLabels(long int time);
@@ -138,10 +146,14 @@ private slots:
     void takeScreenshot();
     void toggleDisplayOptionsWidget();
     void toggleRecordingOptionsWidget();
+    void toggleSortedOperationsWidget();
     void toggleRGBGraph();
     void loadConfig();
     void saveConfig();
     void about();
+
+    void populateSortedOperationsTable(QVector<QPair<QUuid, QString>> data);
+    void selectNodesToMark();
 
     void showParametersWidget(QUuid id);
     void removeParametersWidget(QUuid id);
