@@ -42,8 +42,7 @@ void MatrixParameter::setValues()
 
 void KernelParameter::setValues()
 {
-    GLfloat* elements = &values[0];
-    operation->setKernelParameter(elements);
+    operation->setKernelParameter(values);
 }
 
 PolarKernelParameter::PolarKernelParameter(const PolarKernelParameter& parameter) :

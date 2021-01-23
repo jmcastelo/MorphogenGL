@@ -249,7 +249,9 @@ class ArrayParameterWidget : public QWidget
 public:
     QGridLayout* gridLayout;
 
-    ArrayParameterWidget(ArrayParameter* theArrayParameter, QWidget* parent = nullptr) : QWidget(parent), arrayParameter{ theArrayParameter }
+    ArrayParameterWidget(ArrayParameter* theArrayParameter, QWidget* parent = nullptr) :
+        QWidget(parent),
+        arrayParameter { theArrayParameter }
     {
         gridLayout = new QGridLayout;
 
@@ -304,7 +306,9 @@ public:
     QPushButton* normalizePushButton;
     QComboBox* presetsComboBox;
 
-    KernelParameterWidget(KernelParameter* theKernelParameter, QWidget* parent = nullptr) : ArrayParameterWidget(theKernelParameter, parent), kernelParameter{ theKernelParameter }
+    KernelParameterWidget(KernelParameter* theKernelParameter, QWidget* parent = nullptr) :
+        ArrayParameterWidget(theKernelParameter, parent),
+        kernelParameter { theKernelParameter }
     {
         normalizePushButton = new QPushButton("Normalize");
         normalizePushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
@@ -370,7 +374,9 @@ class MatrixParameterWidget : public ArrayParameterWidget
 public:
     QComboBox* presetsComboBox;
 
-    MatrixParameterWidget(MatrixParameter* theMatrixParameter, QWidget* parent = nullptr) : ArrayParameterWidget(theMatrixParameter, parent), matrixParameter{ theMatrixParameter }
+    MatrixParameterWidget(MatrixParameter* theMatrixParameter, QWidget* parent = nullptr) :
+        ArrayParameterWidget(theMatrixParameter, parent),
+        matrixParameter { theMatrixParameter }
     {
         presets = {
             { 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f }, // RGB to RGB
@@ -389,8 +395,9 @@ public:
         presetsComboBox->addItem("RGB to RBG");
         presetsComboBox->addItem("RGB to BRG");
         presetsComboBox->addItem("RGB to GBR");
+        presetsComboBox->setCurrentIndex(0);
 
-        connect(presetsComboBox, QOverload<int>::of(&QComboBox::activated), [&matrixParameter = this->matrixParameter, &lineEdits = this->lineEdits, &presets = this->presets](int index)
+        connect(presetsComboBox, QOverload<int>::of(&QComboBox::activated), [=](int index)
         {
             for (size_t i = 0; i < presets[index].size(); i++)
                 lineEdits[i]->setText(QString::number(presets[index][i]));
@@ -414,7 +421,7 @@ class PolarKernelParameterWidget : public QWidget
 public:
     QVBoxLayout* vBoxLayout;
 
-    PolarKernelParameterWidget(PolarKernelParameter* thePolarKernelParameter, QWidget* parent = nullptr) : QWidget(parent), polarKernelParameter{ thePolarKernelParameter }
+    PolarKernelParameterWidget(PolarKernelParameter* thePolarKernelParameter, QWidget* parent = nullptr) : QWidget(parent), polarKernelParameter { thePolarKernelParameter }
     {
         // Polar kernel plot
 
@@ -486,7 +493,7 @@ public:
         }
         
         QFormLayout* geometryFormLayout = new QFormLayout;
-        geometryFormLayout->addRow("#Elements:", numElementsLineEdit);
+        geometryFormLayout->addRow("Elements:", numElementsLineEdit);
         geometryFormLayout->addRow("Center value:", centerElementLineEdit);
         geometryFormLayout->addRow("Radius:", radiusLineEdit);
         geometryFormLayout->addRow("Initial angle:", initialAngleLineEdit);
@@ -808,8 +815,6 @@ public:
 
             mainLayout->addWidget(selectedParameterGroupBox);
 
-            setLayout(mainLayout);
-
             for (auto widget : floatParameterWidgets)
             {
                 connect(widget, &FloatParameterWidget::focusIn, [=]()
@@ -825,6 +830,8 @@ public:
                 });
             }
         }
+
+        setLayout(mainLayout);
     }
 
     void recreate(ImageOperation* operation)

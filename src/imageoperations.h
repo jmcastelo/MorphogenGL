@@ -85,7 +85,7 @@ public:
     virtual void setOptionsParameter(int, GLenum) {}
     virtual void setOptionsParameter(int, int) {}
     virtual void setMatrixParameter(GLfloat*) {}
-    virtual void setKernelParameter(GLfloat*) {}
+    virtual void setKernelParameter(std::vector<float>) {}
     virtual void setPolarKernelParameter() {}
 
     void adjustMinMax(float value, float minValue, float maxValue, float& min, float& max);
@@ -204,7 +204,7 @@ private:
 class Convolution : public ImageOperation
 {
 public:
-    Convolution(bool on, QOpenGLContext* mainContext, std::vector<float> theKernel, float theSize);
+    Convolution(bool on, QOpenGLContext* mainContext, std::vector<float> theKernel, float theFactor, float theSize);
     Convolution(const Convolution& operation);
     ~Convolution();
 
@@ -213,14 +213,15 @@ public:
     static QString name;
     QString getName() { return name; };
 
-    void setKernelParameter(GLfloat* values);
+    void setKernelParameter(std::vector<float> values);
     void setFloatParameter(int index, float value);
 
     KernelParameter* getKernelParameter() { return kernel; };
-    std::vector<FloatParameter*> getFloatParameters() { std::vector<FloatParameter*> parameters = { size }; return parameters; };
+    std::vector<FloatParameter*> getFloatParameters() { std::vector<FloatParameter*> parameters = { factor, size }; return parameters; };
 
 private:
     KernelParameter* kernel;
+    FloatParameter* factor;
     FloatParameter* size;
 };
 
@@ -312,6 +313,43 @@ public:
 
 private:
     FloatParameter* shift;
+};
+
+// Identity
+
+class Identity : public ImageOperation
+{
+public:
+    Identity(bool on, QOpenGLContext* mainContext);
+    Identity(const Identity& operation);
+    ~Identity();
+
+    ImageOperation* clone() { return new Identity(*this); }
+
+    static QString name;
+    QString getName() { return name; };
+};
+
+// Hue shift
+
+class Logistic : public ImageOperation
+{
+public:
+    Logistic(bool on, QOpenGLContext* mainContext, float R);
+    Logistic(const Logistic& operation);
+    ~Logistic();
+
+    ImageOperation* clone() { return new Logistic(*this); }
+
+    static QString name;
+    QString getName() { return name; };
+
+    void setFloatParameter(int index, float value);
+
+    std::vector<FloatParameter*> getFloatParameters() { std::vector<FloatParameter*> parameters = { r }; return parameters; };
+
+private:
+    FloatParameter* r;
 };
 
 // Mask

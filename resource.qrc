@@ -36,5 +36,6 @@
         <file>shaders/clear.frag</file>
         <file>icons/format-list-ordered.png</file>
         <file>icons/video-x-generic.png</file>
+        <file>shaders/logistic.frag</file>
     </qresource>
 </RCC>

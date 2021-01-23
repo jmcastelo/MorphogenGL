@@ -347,20 +347,22 @@ void Contrast::setFloatParameter(int index, float value)
 
 QString Convolution::name = "Convolution";
 
-Convolution::Convolution(bool on, QOpenGLContext* mainContext, std::vector<float> theKernel, float theSize) : ImageOperation(on, mainContext)
+Convolution::Convolution(bool on, QOpenGLContext* mainContext, std::vector<float> theKernel, float theFactor, float theSize) : ImageOperation(on, mainContext)
 {
     fbo = new FBO(":/shaders/screen.vert", ":/shaders/convolution.frag", mainContext);
     fbo->setInputTextureID(*blender->getTextureID());
 
     kernel = new KernelParameter("Kernel", this, theKernel, -1000.0f, 1000.0f, true);
 
-    setKernelParameter(&theKernel[0]);
-
     float min, max;
-    adjustMinMax(theSize, 0.0f, 1.0f, min, max);
-    size = new FloatParameter("Size", 0, this, theSize, min, max, 0.0f, 1.0f);
+    adjustMinMax(theFactor, -10.0f, 10.0f, min, max);
+    factor = new FloatParameter("Kernel factor", 0, this, theFactor, min, max, -1.0e3f, 1.0e3f);
 
-    setFloatParameter(0, theSize);
+    adjustMinMax(theSize, 0.0f, 1.0f, min, max);
+    size = new FloatParameter("Size", 1, this, theSize, min, max, 0.0f, 1.0f);
+
+    setFloatParameter(0, theFactor);
+    setFloatParameter(1, theSize);
 }
 
 Convolution::Convolution(const Convolution &operation) : ImageOperation(operation)
@@ -371,25 +373,31 @@ Convolution::Convolution(const Convolution &operation) : ImageOperation(operatio
     kernel = new KernelParameter(*operation.kernel);
     kernel->setOperation(this);
 
-    setKernelParameter(&kernel->values[0]);
+    factor = new FloatParameter(*operation.factor);
+    factor->setOperation(this);
 
     size = new FloatParameter(*operation.size);
     size->setOperation(this);
 
-    setFloatParameter(0, size->value);
+    setFloatParameter(0, factor->value);
+    setFloatParameter(1, size->value);
 }
 
 Convolution::~Convolution()
 {
     delete kernel;
+    delete factor;
     delete size;
 }
 
-void Convolution::setKernelParameter(GLfloat* values)
+void Convolution::setKernelParameter(std::vector<float> values)
 {
+    for (float& value : values)
+        value *= factor->value;
+
     fbo->makeCurrent();
     fbo->program->bind();
-    fbo->program->setUniformValueArray("kernel", values, 9, 1);
+    fbo->program->setUniformValueArray("kernel", &values[0], 9, 1);
     fbo->program->release();
     fbo->doneCurrent();
 }
@@ -397,6 +405,10 @@ void Convolution::setKernelParameter(GLfloat* values)
 void Convolution::setFloatParameter(int index, float value)
 {
     if (index == 0)
+    {
+        setKernelParameter(kernel->values);
+    }
+    else if (index == 1)
     {
         QVector2D offset[] = {
             QVector2D(-value, value),
@@ -638,6 +650,72 @@ void HueShift::setFloatParameter(int index, float value)
 
 // Mask
 
+QString Identity::name = "Identity";
+
+Identity::Identity(bool on, QOpenGLContext* mainContext) : ImageOperation(on, mainContext)
+{
+    fbo = new FBO(":/shaders/screen.vert", ":/shaders/screen.frag", mainContext);
+    fbo->setInputTextureID(*blender->getTextureID());
+
+    noParameters = true;
+}
+
+Identity::Identity(const Identity& operation) : ImageOperation(operation)
+{
+    fbo = new FBO(":/shaders/screen.vert", ":/shaders/screen.frag", context);
+    fbo->setInputTextureID(*blender->getTextureID());
+
+    noParameters = true;
+}
+
+Identity::~Identity(){}
+
+// Logistic
+
+QString Logistic::name = "Logistic";
+
+Logistic::Logistic(bool on, QOpenGLContext* mainContext, float R) : ImageOperation(on, mainContext)
+{
+    fbo = new FBO(":/shaders/screen.vert", ":/shaders/logistic.frag", mainContext);
+    fbo->setInputTextureID(*blender->getTextureID());
+
+    float min, max;
+    adjustMinMax(R, 0.0f, 4.0f, min, max);
+    r = new FloatParameter("r", 0, this, R, min, max, 0.0f, 4.0f);
+
+    setFloatParameter(0, R);
+}
+
+Logistic::Logistic(const Logistic& operation) : ImageOperation(operation)
+{
+    fbo = new FBO(":/shaders/screen.vert", ":/shaders/logistic.frag",context);
+    fbo->setInputTextureID(*blender->getTextureID());
+
+    r = new FloatParameter(*operation.r);
+    r->setOperation(this);
+
+    setFloatParameter(0, r->value);
+}
+
+Logistic::~Logistic()
+{
+    delete r;
+}
+
+void Logistic::setFloatParameter(int index, float value)
+{
+    if (index == 0)
+    {
+        fbo->makeCurrent();
+        fbo->program->bind();
+        fbo->program->setUniformValue("r", value);
+        fbo->program->release();
+        fbo->doneCurrent();
+    }
+}
+
+// Mask
+
 QString Mask::name = "Mask";
 
 Mask::Mask(bool on, QOpenGLContext* mainContext) : ImageOperation(on, mainContext)
@@ -652,6 +730,8 @@ Mask::Mask(const Mask& operation) : ImageOperation(operation)
 {
     fbo = new FBO(":/shaders/screen.vert", ":/shaders/mask.frag", context);
     fbo->setInputTextureID(*blender->getTextureID());
+
+    noParameters = true;
 }
 
 Mask::~Mask(){}

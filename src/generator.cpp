@@ -46,10 +46,13 @@ void ImageOperationNode::addSeedInput(QUuid id, InputData* data)
 
 void ImageOperationNode::removeSeedInput(QUuid id)
 {
-    delete inputs.value(id);
-    inputs.remove(id);
+    if (inputs.contains(id))
+    {
+        delete inputs.value(id);
+        inputs.remove(id);
 
-    operation->setInputData(inputsVector());
+        operation->setInputData(inputsVector());
+    }
 }
 
 void ImageOperationNode::addInput(ImageOperationNode *node, InputData* data)
@@ -167,6 +170,8 @@ GeneratorGL::GeneratorGL()
         Erosion::name,
         GammaCorrection::name,
         HueShift::name,
+        Identity::name,
+        Logistic::name,
         Mask::name,
         MorphologicalGradient::name,
         PolarConvolution::name,
@@ -425,6 +430,16 @@ void GeneratorGL::setOperation(QUuid id, QString operationName)
     delete operationNodes.value(id)->operation;
 
     operationNodes.value(id)->operation = operation;
+
+    // Set new texture id on output nodes
+
+    foreach (ImageOperationNode* node, operationNodes.value(id)->outputNodes)
+    {
+        if (node->inputs.value(id)->type == InputType::Normal)
+            node->inputs[id]->textureID = operation->getTextureID();
+        else if (node->inputs.value(id)->type == InputType::Blit)
+            node->inputs[id]->textureID = operation->getTextureBlit();
+    }
 }
 
 void GeneratorGL::removeOperation(QUuid id)
@@ -522,7 +537,7 @@ ImageOperation* GeneratorGL::newOperation(QString operationName)
     else if (operationName == Convolution::name)
     {
         std::vector<float> kernel = { 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f };
-        operation = new Convolution(false, sharedContext, kernel, 0.01f);
+        operation = new Convolution(false, sharedContext, kernel, 1.0f, 0.01f);
     }
     else if (operationName == Dilation::name)
     {
@@ -539,6 +554,14 @@ ImageOperation* GeneratorGL::newOperation(QString operationName)
     else if (operationName == HueShift::name)
     {
         operation = new HueShift(false, sharedContext, 0.0f);
+    }
+    else if (operationName == Identity::name)
+    {
+        operation = new Identity(false, sharedContext);
+    }
+    else if (operationName == Logistic::name)
+    {
+        operation = new Logistic(false, sharedContext, 1.0f);
     }
     else if (operationName == Mask::name)
     {
@@ -604,7 +627,7 @@ ImageOperation* GeneratorGL::loadImageOperation(
     }
     else if (operationName == Convolution::name)
     {
-        operation = new Convolution(enabled, sharedContext, kernelElements, floatParameters[0]);
+        operation = new Convolution(enabled, sharedContext, kernelElements, floatParameters[0], floatParameters[1]);
     }
     else if (operationName == Dilation::name)
     {
@@ -621,6 +644,14 @@ ImageOperation* GeneratorGL::loadImageOperation(
     else if (operationName == HueShift::name)
     {
         operation = new HueShift(enabled, sharedContext, floatParameters[0]);
+    }
+    else if (operationName == Identity::name)
+    {
+        operation = new Identity(enabled, sharedContext);
+    }
+    else if (operationName == Logistic::name)
+    {
+        operation = new Logistic(enabled, sharedContext, floatParameters[0]);
     }
     else if (operationName == Mask::name)
     {
@@ -678,6 +709,9 @@ void GeneratorGL::removeSeed(QUuid id)
 {
     delete seeds.value(id);
     seeds.remove(id);
+
+    foreach (ImageOperationNode* node, operationNodes)
+        node->removeSeedInput(id);
 }
 
 void GeneratorGL::loadSeed(QUuid id, int type, bool fixed)

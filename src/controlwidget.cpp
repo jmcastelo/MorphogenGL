@@ -584,6 +584,9 @@ void ControlWidget::updateParametersWidget(QUuid id)
 {
     if (operationsWidgets.contains(id))
     {
-        operationsWidgets.value(id)->recreate(generator->getOperation(id));
+        if (generator->getOperation(id)->hasParameters())
+            operationsWidgets.value(id)->recreate(generator->getOperation(id));
+        else
+            removeParametersWidget(id);
     }
 }
