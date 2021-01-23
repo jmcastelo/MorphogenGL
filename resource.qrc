@@ -3,7 +3,7 @@
         <file>shaders/blend.frag</file>
         <file>shaders/brightness.frag</file>
         <file>shaders/random-seed.frag</file>
-        <file>shaders/random-seed.vert</file>
+        <file>shaders/position.vert</file>
         <file>shaders/screen.frag</file>
         <file>shaders/screen.vert</file>
         <file>shaders/colormix.frag</file>
@@ -37,5 +37,6 @@
         <file>icons/format-list-ordered.png</file>
         <file>icons/video-x-generic.png</file>
         <file>shaders/logistic.frag</file>
+        <file>icons/view-refresh.png</file>
     </qresource>
 </RCC>

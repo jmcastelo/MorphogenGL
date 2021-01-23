@@ -142,6 +142,7 @@ private:
 
 private slots:
     void iterate();
+    void reset();
     void record();
     void takeScreenshot();
     void toggleDisplayOptionsWidget();

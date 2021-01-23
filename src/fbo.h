@@ -59,6 +59,7 @@ public:
     void draw();
     void blit();
     void identity();
+    void clear();
 
 protected:
     QOpenGLContext* context;

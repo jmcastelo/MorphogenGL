@@ -53,6 +53,9 @@ public:
     bool moreThanOneNode();
 
     bool nodesSelected();
+    bool operationNodesSelected();
+
+    void clearSelectedOperationNodes();
 
     void makeNodeSnapshot();
     void removeSelectedNodes();

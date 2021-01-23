@@ -133,6 +133,7 @@ public:
     bool isSeedFixed(QUuid id);
     void setSeedFixed(QUuid id, bool fixed);
     void drawSeed(QUuid id);
+    void drawAllSeeds();
 
     void clearLoadedSeeds() { loadedSeeds.clear(); }
     void loadSeed(QUuid id, int type, bool fixed);
@@ -150,6 +151,9 @@ public:
 
     void sortOperations();
     void iterate();
+
+    void clearOperation(QUuid id);
+    void clearAllOperations();
 
     void resetIterationNumer() { iteration = 0; }
     int getIterationNumber() { return iteration; }

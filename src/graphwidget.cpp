@@ -150,6 +150,29 @@ bool GraphWidget::nodesSelected()
     return !nodes.empty();
 }
 
+bool GraphWidget::operationNodesSelected()
+{
+    QVector<Node*> nodes;
+
+    const QList<QGraphicsItem*> items = scene()->selectedItems();
+
+    for (QGraphicsItem*item : items)
+        if (OperationNode* node = qgraphicsitem_cast<OperationNode*>(item))
+            nodes << node;
+
+    return !nodes.empty();
+}
+
+void GraphWidget::clearSelectedOperationNodes()
+{
+    const QList<QGraphicsItem*> items = scene()->selectedItems();
+
+    for (QGraphicsItem*item : items)
+        if (OperationNode* node = qgraphicsitem_cast<OperationNode*>(item))
+            generator->clearOperation(node->id);
+
+}
+
 void GraphWidget::removeSelectedNodes()
 {
     const QList<QGraphicsItem*> items = scene()->selectedItems();

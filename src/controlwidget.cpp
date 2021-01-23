@@ -35,6 +35,7 @@ ControlWidget::ControlWidget(Heart* theHeart, QWidget *parent) : QWidget(parent)
     QToolBar* toolbar = new QToolBar;
     iterateAction = toolbar->addAction(QIcon(QPixmap(":/icons/media-playback-start.png")), "Start/pause feedback loop");
     iterateAction->setCheckable(true);
+    QAction* resetAction = toolbar->addAction(QIcon(QPixmap(":/icons/view-refresh.png")), "Reset");
     recordAction = toolbar->addAction(QIcon(QPixmap(":/icons/media-record.png")), "Record video");
     recordAction->setCheckable(true);
     screenshotAction = toolbar->addAction(QIcon(QPixmap(":/icons/digikam.png")), "Take screenshot");
@@ -53,6 +54,7 @@ ControlWidget::ControlWidget(Heart* theHeart, QWidget *parent) : QWidget(parent)
     QAction* aboutAction = toolbar->addAction(QIcon(QPixmap(":/icons/help-about.png")), "About");
 
     connect(iterateAction, &QAction::triggered, this, &ControlWidget::iterate);
+    connect(resetAction, &QAction::triggered, this, &ControlWidget::reset);
     connect(recordAction, &QAction::triggered, this, &ControlWidget::record);
     connect(screenshotAction, &QAction::triggered, this, &ControlWidget::takeScreenshot);
     connect(displayOptionsAction, &QAction::triggered, this, &ControlWidget::toggleDisplayOptionsWidget);
@@ -166,6 +168,13 @@ void ControlWidget::iterate()
         iterateAction->setIcon(QIcon(QPixmap(":/icons/media-playback-start.png")));
         generator->active = false;
     }
+}
+
+void ControlWidget::reset()
+{
+    generator->clearAllOperations();
+    generator->drawAllSeeds();
+    generator->resetIterationNumer();
 }
 
 void ControlWidget::record()

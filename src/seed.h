@@ -51,8 +51,6 @@ public:
     void resize();
 
     void draw();
-    void drawRandom(bool grayscale);
-    void drawImage();
     void clear();
 
     int getType() { return type; }
@@ -63,10 +61,13 @@ public:
 
     QString getImageFilename() { return imageFilename; }
 
+    bool isCleared() { return cleared; }
+
 private:
     int type = 0;
     bool fixed = false;
     QString imageFilename;
+    bool cleared = false;
 
     QOpenGLContext* context;
     QOffscreenSurface* surface;
@@ -89,9 +90,9 @@ private:
     QOpenGLBuffer* vboTexImage;
     QOpenGLShaderProgram* imageProgram;
 
-    QOpenGLShaderProgram* clearProgram;
-
     std::default_random_engine generator;
 
     void resizeFBO(GLuint &fbo, GLuint &texture);
+    void drawRandom(bool grayscale);
+    void drawImage();
 };

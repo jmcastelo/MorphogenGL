@@ -110,6 +110,8 @@ private slots:
     void setParameters();
     void enableOperation(bool checked);
     void equalizeBlendFactors();
+    void clear();
+    void clearSelected();
 };
 
 // Seed node

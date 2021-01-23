@@ -92,6 +92,7 @@ public:
 
     void applyOperation();
     void blit();
+    void clear();
 
 protected:
     bool enabled;

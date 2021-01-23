@@ -47,14 +47,6 @@ Seed::Seed(QOpenGLContext* mainContext)
 
     // Initialize shader programs
 
-    clearProgram = new QOpenGLShaderProgram();
-    if (!clearProgram->addShaderFromSourceFile(QOpenGLShader::Vertex, ":/shaders/random-seed.vert"))
-        qDebug() << "Vertex shader error:\n" << clearProgram->log();
-    if (!clearProgram->addShaderFromSourceFile(QOpenGLShader::Fragment, ":/shaders/clear.frag"))
-        qDebug() << "Fragment shader error:\n" << clearProgram->log();
-    if (!clearProgram->link())
-        qDebug() << "Shader link error:\n" << clearProgram->log();
-
     imageProgram = new QOpenGLShaderProgram();
     if (!imageProgram->addShaderFromSourceFile(QOpenGLShader::Vertex, ":/shaders/screen.vert"))
         qDebug() << "Vertex shader error:\n" << imageProgram->log();
@@ -64,7 +56,7 @@ Seed::Seed(QOpenGLContext* mainContext)
         qDebug() << "Shader link error:\n" << imageProgram->log();
 
     randomProgram = new QOpenGLShaderProgram();
-    if (!randomProgram->addShaderFromSourceFile(QOpenGLShader::Vertex, ":/shaders/random-seed.vert"))
+    if (!randomProgram->addShaderFromSourceFile(QOpenGLShader::Vertex, ":/shaders/position.vert"))
         qDebug() << "Vertex shader error:\n" << randomProgram->log();
     if (!randomProgram->addShaderFromSourceFile(QOpenGLShader::Fragment, ":/shaders/random-seed.frag"))
         qDebug() << "Fragment shader error:\n" << randomProgram->log();
@@ -201,14 +193,6 @@ Seed::Seed(const Seed& seed) :
 
     // Initialize shader programs
 
-    clearProgram = new QOpenGLShaderProgram();
-    if (!clearProgram->addShaderFromSourceFile(QOpenGLShader::Vertex, ":/shaders/random-seed.vert"))
-        qDebug() << "Vertex shader error:\n" << clearProgram->log();
-    if (!clearProgram->addShaderFromSourceFile(QOpenGLShader::Fragment, ":/shaders/clear.frag"))
-        qDebug() << "Fragment shader error:\n" << clearProgram->log();
-    if (!clearProgram->link())
-        qDebug() << "Shader link error:\n" << clearProgram->log();
-
     imageProgram = new QOpenGLShaderProgram();
     if (!imageProgram->addShaderFromSourceFile(QOpenGLShader::Vertex, ":/shaders/screen.vert"))
         qDebug() << "Vertex shader error:\n" << imageProgram->log();
@@ -218,7 +202,7 @@ Seed::Seed(const Seed& seed) :
         qDebug() << "Shader link error:\n" << imageProgram->log();
 
     randomProgram = new QOpenGLShaderProgram();
-    if (!randomProgram->addShaderFromSourceFile(QOpenGLShader::Vertex, ":/shaders/random-seed.vert"))
+    if (!randomProgram->addShaderFromSourceFile(QOpenGLShader::Vertex, ":/shaders/position.vert"))
         qDebug() << "Vertex shader error:\n" << randomProgram->log();
     if (!randomProgram->addShaderFromSourceFile(QOpenGLShader::Fragment, ":/shaders/random-seed.frag"))
         qDebug() << "Fragment shader error:\n" << randomProgram->log();
@@ -354,8 +338,6 @@ Seed::~Seed()
     delete vboTexImage;
     delete imageProgram;
 
-    delete clearProgram;
-
     glDeleteTextures(1, &texRandom);
     glDeleteTextures(1, &texImage);
 
@@ -441,6 +423,8 @@ void Seed::draw()
     if (type == 0) drawRandom(false);
     else if (type == 1) drawRandom(true);
     else if (type == 2) drawImage();
+
+    cleared = false;
 }
 
 void Seed::drawRandom(bool grayscale)
@@ -508,16 +492,11 @@ void Seed::clear()
     glViewport(0, 0, FBO::width, FBO::height);
     glClear(GL_COLOR_BUFFER_BIT);
 
-    clearProgram->bind();
-    vaoRandom->bind();
-
-    glDrawArrays(GL_TRIANGLES, 0, 6);
-
-    vaoRandom->release();
-    clearProgram->release();
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     context->doneCurrent();
+
+    cleared = true;
 
     textureID = &texRandom;
 }

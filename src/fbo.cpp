@@ -330,3 +330,24 @@ void FBO::identity()
 
     context->doneCurrent();
 }
+
+void FBO::clear()
+{
+    context->makeCurrent(surface);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+
+    glViewport(0, 0, width, height);
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, fboBlit);
+
+    glViewport(0, 0, width, height);
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    context->doneCurrent();
+}

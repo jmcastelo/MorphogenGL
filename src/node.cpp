@@ -266,6 +266,16 @@ void OperationNode::equalizeBlendFactors()
         edge->update();
 }
 
+void OperationNode::clear()
+{
+    graph->generator->clearOperation(id);
+}
+
+void OperationNode::clearSelected()
+{
+    graph->clearSelectedOperationNodes();
+}
+
 void OperationNode::mousePressEvent(QGraphicsSceneMouseEvent *event)
 {
     if (event->buttons() == Qt::LeftButton)
@@ -307,6 +317,13 @@ void OperationNode::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
 
     if (graph->moreThanOneNode())
         menu.addAction("Connect to", this, &OperationNode::selectToConnect);
+
+    menu.addSeparator();
+
+    menu.addAction("Clear", this, &OperationNode::clear);
+
+    if (isSelected() && graph->operationNodesSelected())
+        menu.addAction("Clear selection", this, &OperationNode::clearSelected);
 
     menu.addSeparator();
 

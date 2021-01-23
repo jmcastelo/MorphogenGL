@@ -60,6 +60,11 @@ void ImageOperation::blit()
     fbo->blit();
 }
 
+void ImageOperation::clear()
+{
+    fbo->clear();
+}
+
 void ImageOperation::setInputData(QVector<InputData *> data)
 {
     blender->setInputData(data);

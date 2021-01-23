@@ -270,8 +270,20 @@ void GeneratorGL::iterate()
     }
 
     foreach (Seed* seed, seeds)
-        if (!seed->isFixed())
+        if (!seed->isFixed() && !seed->isCleared())
             seed->clear();
+}
+
+void GeneratorGL::clearOperation(QUuid id)
+{
+    if (operationNodes.contains(id))
+        operationNodes.value(id)->operation->clear();
+}
+
+void GeneratorGL::clearAllOperations()
+{
+    foreach (ImageOperationNode* node, operationNodes)
+        node->operation->clear();
 }
 
 void GeneratorGL::setOutput(QUuid id)
@@ -752,6 +764,13 @@ void GeneratorGL::setSeedFixed(QUuid id, bool fixed)
 void GeneratorGL::drawSeed(QUuid id)
 {
     seeds.value(id)->draw();
+}
+
+void GeneratorGL::drawAllSeeds()
+{
+    foreach (Seed* seed, seeds)
+        if (!seed->isFixed())
+            seed->draw();
 }
 
 void GeneratorGL::resize(GLuint width, GLuint height)
