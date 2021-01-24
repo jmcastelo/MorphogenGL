@@ -53,6 +53,7 @@ Cycle::Cycle(GraphWidget* graphWidget, QVector<Node*> nodes) : graph { graphWidg
     if (!containsPredge)
         edges.front()->setPredge(true);
 
+    setAcceptedMouseButtons(Qt::NoButton);
     setZValue(-2);
 }
 

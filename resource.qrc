@@ -33,10 +33,26 @@
         <file>shaders/rgb.vert</file>
         <file>icons/office-chart-scatter.png</file>
         <file>icons/video-display.png</file>
-        <file>shaders/clear.frag</file>
         <file>icons/format-list-ordered.png</file>
-        <file>icons/video-x-generic.png</file>
         <file>shaders/logistic.frag</file>
         <file>icons/view-refresh.png</file>
+        <file>icons/applications-system.png</file>
+        <file>icons/preferences-desktop.png</file>
+        <file>icons/edit-delete.png</file>
+        <file>icons/edit-copy.png</file>
+        <file>icons/network-connect.png</file>
+        <file>icons/eye.png</file>
+        <file>icons/edit-clear.png</file>
+        <file>icons/bookmark.png</file>
+        <file>icons/circle-green.png</file>
+        <file>icons/circle-grey.png</file>
+        <file>icons/emblem-videos.png</file>
+        <file>icons/color-chooser.png</file>
+        <file>icons/gray-chooser.png</file>
+        <file>icons/image-x-generic.png</file>
+        <file>icons/document-decrypt.png</file>
+        <file>icons/document-encrypt.png</file>
+        <file>icons/folder-image.png</file>
+        <file>icons/applications-graphics.png</file>
     </qresource>
 </RCC>

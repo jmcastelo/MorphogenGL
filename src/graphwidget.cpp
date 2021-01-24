@@ -42,6 +42,8 @@ GraphWidget::GraphWidget(GeneratorGL* generatorGL, QWidget *parent)
     scene->setSceneRect(0.0, 0.0, 10000.0, 10000.0);
     setScene(scene);
 
+    connect(scene, &QGraphicsScene::selectionChanged, this, &GraphWidget::newSelectedNodes);
+
     setDragMode(QGraphicsView::RubberBandDrag);
     setRubberBandSelectionMode(Qt::ContainsItemShape);
 
@@ -51,10 +53,36 @@ GraphWidget::GraphWidget(GeneratorGL* generatorGL, QWidget *parent)
     setTransformationAnchor(AnchorUnderMouse);
     setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    setFocusPolicy(Qt::NoFocus);
 
     scale(qreal(1.0), qreal(1.0));
     center = sceneRect().center();
     centerOn(sceneRect().center());
+}
+
+void GraphWidget::newSelectedNodes()
+{
+    QVector<OperationNode*> opNodes;
+    QVector<SeedNode*> seedNodes;
+
+    const QList<QGraphicsItem*> items = scene()->selectedItems();
+
+    for (QGraphicsItem* item : items)
+    {
+        if (OperationNode *node = qgraphicsitem_cast<OperationNode*>(item))
+            opNodes << node;
+        else if (SeedNode *node = qgraphicsitem_cast<SeedNode*>(item))
+            seedNodes << node;
+    }
+
+    if (seedNodes.size() + opNodes.size() > 1)
+        emit multipleNodesSelected(!opNodes.empty());
+    else if (seedNodes.size() == 1 && opNodes.empty())
+        emit singleNodeSelected(seedNodes.front());
+    else if (opNodes.size() == 1 && seedNodes.empty())
+        emit singleNodeSelected(opNodes.front());
+    else if (seedNodes.empty() && opNodes.empty())
+        emit singleNodeSelected(nullptr);
 }
 
 void GraphWidget::addOperationNodeUnderCursor(QAction *action)
@@ -133,6 +161,11 @@ bool GraphWidget::moreThanOneNode()
     return nodes.size() > 1;
 }
 
+void GraphWidget::newNodeSelected(Node* node)
+{
+    emit singleNodeSelected(node);
+}
+
 bool GraphWidget::nodesSelected()
 {
     QVector<Node*> nodes;
@@ -147,7 +180,7 @@ bool GraphWidget::nodesSelected()
             nodes << node;
     }
 
-    return !nodes.empty();
+    return nodes.size() > 1;
 }
 
 bool GraphWidget::operationNodesSelected()
@@ -160,7 +193,7 @@ bool GraphWidget::operationNodesSelected()
         if (OperationNode* node = qgraphicsitem_cast<OperationNode*>(item))
             nodes << node;
 
-    return !nodes.empty();
+    return nodes.size() > 1;
 }
 
 void GraphWidget::clearSelectedOperationNodes()
@@ -546,8 +579,22 @@ void GraphWidget::contextMenuEvent(QContextMenuEvent *event)
 
 bool GraphWidget::pointIntersectsItem(QPointF point)
 {
-    const QList<QGraphicsItem *> items = scene()->items(point);
-    return !items.empty();
+    QVector<Node*> nodes;
+    QVector<Edge*> edges;
+
+    const QList<QGraphicsItem*> items = scene()->items(point);
+
+    for (QGraphicsItem* item : items)
+    {
+        if (OperationNode* node = qgraphicsitem_cast<OperationNode*>(item))
+            nodes << node;
+        else if (SeedNode* node = qgraphicsitem_cast<SeedNode*>(item))
+            nodes << node;
+        else if (Edge* edge = qgraphicsitem_cast<Edge*>(item))
+            edges << edge;
+    }
+
+    return !nodes.empty() || !edges.empty();
 }
 
 void GraphWidget::wheelEvent(QWheelEvent *event)
@@ -648,6 +695,9 @@ void GraphWidget::mousePressEvent(QMouseEvent* event)
         if (!pointIntersectsItem(mapToScene(mapFromGlobal(event->globalPos()))))
             prevPos = event->localPos();
     }
+
+    if (!pointIntersectsItem(mapToScene(mapFromGlobal(event->globalPos()))))
+        deselectNodeToConnect();
 
     QGraphicsView::mousePressEvent(event);
 }

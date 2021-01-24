@@ -72,6 +72,8 @@ struct ImageOperationNode
     void setBlendFactor(QUuid id, float factor);
     void equalizeBlendFactors();
 
+    void setOperation(ImageOperation* newOperation);
+
     QVector<InputData*> inputsVector();
 };
 

@@ -92,6 +92,12 @@ private:
 
     GraphWidget* graphWidget;
 
+    OperationNode* selectedOperationNode = nullptr;
+    SeedNode* selectedSeedNode = nullptr;
+
+    QToolBar* systemToolBar;
+    QToolBar* nodesToolBar;
+
     QWidget* displayOptionsWidget;
     QWidget* recordingOptionsWidget;
     QWidget* sortedOperationsWidget;
@@ -130,6 +136,7 @@ private:
 
     QMap<QUuid, OperationsWidget*> operationsWidgets;
 
+    void constructSystemToolBar();
     void constructDisplayOptionsWidget();
     void constructRecordingOptionsWidget();
     void constructSortedOperationsWidget();
@@ -159,4 +166,14 @@ private slots:
     void showParametersWidget(QUuid id);
     void removeParametersWidget(QUuid id);
     void updateParametersWidget(QUuid id);
+
+    void constructSingleNodeToolBar(Node* node);
+    void constructMultipleNodesToolBar(bool opNodesSelected);
+
+    void setNodeOperation(QAction* action);
+    void enableNodeOperation(bool checked);
+    void removeNodeOperation();
+    void setSeedNodeType();
+    void setSeedNodeFixed(bool checked);
+    void removeSeedNode();
 };

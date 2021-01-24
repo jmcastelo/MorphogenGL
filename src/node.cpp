@@ -70,7 +70,6 @@ void Node::selectToConnect()
 void Node::addEdge(Edge *edge)
 {
     edgeList << edge;
-    //edge->adjust();
 }
 
 void Node::removeEdge(Edge *edge)
@@ -256,6 +255,8 @@ void OperationNode::setParameters()
 void OperationNode::enableOperation(bool checked)
 {
     graph->generator->enableOperation(id, checked);
+    if (isSelected())
+        graph->newNodeSelected(this);
 }
 
 void OperationNode::equalizeBlendFactors()
@@ -392,6 +393,9 @@ void SeedNode::draw()
 void SeedNode::setType(QAction* action)
 {
     graph->generator->setSeedType(id, action->data().toInt());
+
+    if (isSelected())
+        graph->newNodeSelected(this);
 }
 
 void SeedNode::loadImage()
@@ -407,11 +411,17 @@ void SeedNode::loadImage()
 void SeedNode::setFixed(bool fixed)
 {
     graph->generator->setSeedFixed(id, fixed);
+
+    if (isSelected())
+        graph->newNodeSelected(this);
 }
 
 void SeedNode::mousePressEvent(QGraphicsSceneMouseEvent *event)
 {
-    graph->deselectNodeToConnect();
+    if (event->buttons() == Qt::LeftButton)
+    {
+        graph->deselectNodeToConnect();
+    }
 
     update();
     QGraphicsObject::mousePressEvent(event);

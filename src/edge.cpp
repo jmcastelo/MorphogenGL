@@ -221,7 +221,7 @@ QPainterPath Edge::shape() const
 {
     QLineF line(sourcePoint, destPoint);
     QLineF normal1 = line.normalVector();
-    normal1.setLength(2.5);
+    normal1.setLength(5.0);
     QLineF normal2(sourcePoint, 2.0 * sourcePoint - normal1.p2());
 
     QPainterPath path;

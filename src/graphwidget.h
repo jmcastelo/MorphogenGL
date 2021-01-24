@@ -52,6 +52,7 @@ public:
     bool nodeSelectedToConnect();
     bool moreThanOneNode();
 
+    void newNodeSelected(Node*);
     bool nodesSelected();
     bool operationNodesSelected();
 
@@ -80,6 +81,8 @@ public:
     void markNodes(QVector<QUuid> ids);
 
 signals:
+    void singleNodeSelected(Node*);
+    void multipleNodesSelected(bool operationNodesSelected);
     void showOperationParameters(QUuid id);
     void removeOperationParameters(QUuid id);
     void updateOperationParameters(QUuid id);
@@ -107,6 +110,7 @@ private:
     void searchElementaryCycles();
 
 private slots:
+    void newSelectedNodes();
     void addOperationNodeUnderCursor(QAction* action);
     void addSeedNodeUnderCursor();
     void pasteCopiedNodes();

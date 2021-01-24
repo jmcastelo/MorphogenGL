@@ -22,6 +22,7 @@
 
 #include "heart.h"
 #include "configparser.h"
+#include "node.h"
 #include "controlwidget.h"
 
 ControlWidget::ControlWidget(Heart* theHeart, QWidget *parent) : QWidget(parent), heart { theHeart }
@@ -30,43 +31,13 @@ ControlWidget::ControlWidget(Heart* theHeart, QWidget *parent) : QWidget(parent)
 
     generator = new GeneratorGL();
 
-    // Actions toolbar
+    // Contruct nodes toolbar
 
-    QToolBar* toolbar = new QToolBar;
-    iterateAction = toolbar->addAction(QIcon(QPixmap(":/icons/media-playback-start.png")), "Start/pause feedback loop");
-    iterateAction->setCheckable(true);
-    QAction* resetAction = toolbar->addAction(QIcon(QPixmap(":/icons/view-refresh.png")), "Reset");
-    recordAction = toolbar->addAction(QIcon(QPixmap(":/icons/media-record.png")), "Record video");
-    recordAction->setCheckable(true);
-    screenshotAction = toolbar->addAction(QIcon(QPixmap(":/icons/digikam.png")), "Take screenshot");
-    toolbar->addSeparator();
-    displayOptionsAction = toolbar->addAction(QIcon(QPixmap(":/icons/video-display.png")), "Display options");
-    recordingOptionsAction = toolbar->addAction(QIcon(QPixmap(":/icons/video-x-generic.png")), "Recording options");
-    toolbar->addSeparator();
-    sortedOperationsAction = toolbar->addAction(QIcon(QPixmap(":/icons/format-list-ordered.png")), "List sorted operations");
-    toolbar->addSeparator();
-    rgbAction = toolbar->addAction(QIcon(QPixmap(":/icons/office-chart-scatter.png")), "Show RGB graph");
-    rgbAction->setCheckable(true);
-    toolbar->addSeparator();
-    loadConfigAction = toolbar->addAction(QIcon(QPixmap(":/icons/document-open.png")), "Load configuration");
-    saveConfigAction = toolbar->addAction(QIcon(QPixmap(":/icons/document-save.png")), "Save configuration");
-    toolbar->addSeparator();
-    QAction* aboutAction = toolbar->addAction(QIcon(QPixmap(":/icons/help-about.png")), "About");
+    nodesToolBar = new QToolBar;
+    nodesToolBar->setOrientation(Qt::Vertical);
+    nodesToolBar->hide();
 
-    connect(iterateAction, &QAction::triggered, this, &ControlWidget::iterate);
-    connect(resetAction, &QAction::triggered, this, &ControlWidget::reset);
-    connect(recordAction, &QAction::triggered, this, &ControlWidget::record);
-    connect(screenshotAction, &QAction::triggered, this, &ControlWidget::takeScreenshot);
-    connect(displayOptionsAction, &QAction::triggered, this, &ControlWidget::toggleDisplayOptionsWidget);
-    connect(recordingOptionsAction, &QAction::triggered, this, &ControlWidget::toggleRecordingOptionsWidget);
-    connect(sortedOperationsAction, &QAction::triggered, this, &ControlWidget::toggleSortedOperationsWidget);
-    connect(rgbAction, &QAction::triggered, this, &ControlWidget::toggleRGBGraph);
-    connect(loadConfigAction, &QAction::triggered, this, &ControlWidget::loadConfig);
-    connect(saveConfigAction, &QAction::triggered, this, &ControlWidget::saveConfig);
-    connect(aboutAction, &QAction::triggered, this, &ControlWidget::about);
-
-    // Contruct controls
-
+    constructSystemToolBar();
     constructDisplayOptionsWidget();
     constructRecordingOptionsWidget();
     constructSortedOperationsWidget();
@@ -75,6 +46,8 @@ ControlWidget::ControlWidget(Heart* theHeart, QWidget *parent) : QWidget(parent)
 
     graphWidget = new GraphWidget(generator);
 
+    connect(graphWidget, &GraphWidget::singleNodeSelected, this, &ControlWidget::constructSingleNodeToolBar);
+    connect(graphWidget, &GraphWidget::multipleNodesSelected, this, &ControlWidget::constructMultipleNodesToolBar);
     connect(graphWidget, &GraphWidget::showOperationParameters, this, &ControlWidget::showParametersWidget);
     connect(graphWidget, &GraphWidget::removeOperationParameters, this, &ControlWidget::removeParametersWidget);
     connect(graphWidget, &GraphWidget::updateOperationParameters, this, &ControlWidget::updateParametersWidget);
@@ -105,9 +78,13 @@ ControlWidget::ControlWidget(Heart* theHeart, QWidget *parent) : QWidget(parent)
 
     // Main layout
 
+    QHBoxLayout* mainHBoxLayout = new QHBoxLayout;
+    mainHBoxLayout->addWidget(graphWidget);
+    mainHBoxLayout->addWidget(nodesToolBar);
+
     QVBoxLayout* mainVBoxLayout = new QVBoxLayout;
-    mainVBoxLayout->addWidget(toolbar);
-    mainVBoxLayout->addWidget(graphWidget);
+    mainVBoxLayout->addWidget(systemToolBar);
+    mainVBoxLayout->addLayout(mainHBoxLayout);
     mainVBoxLayout->addWidget(statusBar);
 
     setLayout(mainVBoxLayout);
@@ -153,6 +130,41 @@ void ControlWidget::closeEvent(QCloseEvent* event)
 
     emit closing();
     event->accept();
+}
+
+void ControlWidget::constructSystemToolBar()
+{
+    systemToolBar = new QToolBar;
+    iterateAction = systemToolBar->addAction(QIcon(QPixmap(":/icons/media-playback-start.png")), "Start/pause feedback loop");
+    iterateAction->setCheckable(true);
+    QAction* resetAction = systemToolBar->addAction(QIcon(QPixmap(":/icons/view-refresh.png")), "Reset");
+    recordAction = systemToolBar->addAction(QIcon(QPixmap(":/icons/media-record.png")), "Record video");
+    recordAction->setCheckable(true);
+    screenshotAction = systemToolBar->addAction(QIcon(QPixmap(":/icons/digikam.png")), "Take screenshot");
+    systemToolBar->addSeparator();
+    displayOptionsAction = systemToolBar->addAction(QIcon(QPixmap(":/icons/video-display.png")), "Display options");
+    recordingOptionsAction = systemToolBar->addAction(QIcon(QPixmap(":/icons/emblem-videos.png")), "Recording options");
+    systemToolBar->addSeparator();
+    systemToolBar->addAction(QIcon(QPixmap(":/icons/format-list-ordered.png")), "List sorted operations", this, &ControlWidget::toggleSortedOperationsWidget);
+    systemToolBar->addSeparator();
+    rgbAction = systemToolBar->addAction(QIcon(QPixmap(":/icons/office-chart-scatter.png")), "Show RGB graph");
+    rgbAction->setCheckable(true);
+    systemToolBar->addSeparator();
+    loadConfigAction = systemToolBar->addAction(QIcon(QPixmap(":/icons/document-open.png")), "Load configuration");
+    saveConfigAction = systemToolBar->addAction(QIcon(QPixmap(":/icons/document-save.png")), "Save configuration");
+    systemToolBar->addSeparator();
+    QAction* aboutAction = systemToolBar->addAction(QIcon(QPixmap(":/icons/help-about.png")), "About");
+
+    connect(iterateAction, &QAction::triggered, this, &ControlWidget::iterate);
+    connect(resetAction, &QAction::triggered, this, &ControlWidget::reset);
+    connect(recordAction, &QAction::triggered, this, &ControlWidget::record);
+    connect(screenshotAction, &QAction::triggered, this, &ControlWidget::takeScreenshot);
+    connect(displayOptionsAction, &QAction::triggered, this, &ControlWidget::toggleDisplayOptionsWidget);
+    connect(recordingOptionsAction, &QAction::triggered, this, &ControlWidget::toggleRecordingOptionsWidget);
+    connect(rgbAction, &QAction::triggered, this, &ControlWidget::toggleRGBGraph);
+    connect(loadConfigAction, &QAction::triggered, this, &ControlWidget::loadConfig);
+    connect(saveConfigAction, &QAction::triggered, this, &ControlWidget::saveConfig);
+    connect(aboutAction, &QAction::triggered, this, &ControlWidget::about);
 }
 
 void ControlWidget::iterate()
@@ -313,10 +325,171 @@ void ControlWidget::updateWindowSizeLineEdits(int width, int height)
     windowHeightLineEdit->setText(QString::number(height));
 }
 
+// Nodes toolbar: single node selected
+
+void ControlWidget::constructSingleNodeToolBar(Node* node)
+{
+    nodesToolBar->clear();
+
+    if (node)
+    {
+        nodesToolBar->show();
+
+        if (OperationNode* opNode = qgraphicsitem_cast<OperationNode*>(node))
+        {
+            selectedOperationNode = opNode;
+
+            QMenu* operationsMenu = new QMenu("Set operation");
+
+            for (QString opName : generator->availableOperations)
+                operationsMenu->addAction(opName);
+
+            connect(operationsMenu, &QMenu::triggered, this, &ControlWidget::setNodeOperation);
+
+            QAction* setOperationAction = nodesToolBar->addAction(QIcon(QPixmap(":/icons/bookmark.png")), "Set operation");
+            setOperationAction->setMenu(operationsMenu);
+
+            if (generator->hasOperationParamaters(opNode->id))
+                nodesToolBar->addAction(QIcon(QPixmap(":/icons/applications-system.png")), "Set parameters", opNode, &OperationNode::setParameters);
+
+            QAction* enableAction = nodesToolBar->addAction(generator->isOperationEnabled(opNode->id) ? QIcon(QPixmap(":/icons/circle-green.png")) : QIcon(QPixmap(":/icons/circle-grey.png")), generator->isOperationEnabled(opNode->id) ? "Enabled" : "Disabled", this, &ControlWidget::enableNodeOperation);
+            enableAction->setCheckable(true);
+            enableAction->setChecked(generator->isOperationEnabled(opNode->id));
+
+            if (opNode->hasInputs())
+                nodesToolBar->addAction(QIcon(QPixmap(":/icons/preferences-desktop.png")), "Equalize blend factors", opNode, &OperationNode::equalizeBlendFactors);
+
+            nodesToolBar->addSeparator();
+
+            nodesToolBar->addAction(QIcon(QPixmap(":/icons/eye.png")), "Set as output", opNode, &OperationNode::setAsOutput);
+
+            if (graphWidget->moreThanOneNode())
+                nodesToolBar->addAction(QIcon(QPixmap(":/icons/network-connect.png")), "Connect to", opNode, &OperationNode::selectToConnect);
+
+            nodesToolBar->addSeparator();
+
+            nodesToolBar->addAction(QIcon(QPixmap(":/icons/edit-clear.png")), "Clear", opNode, &OperationNode::clear);
+
+            nodesToolBar->addSeparator();
+
+            nodesToolBar->addAction(QIcon(QPixmap(":/icons/edit-copy.png")), "Copy", opNode, &OperationNode::copy);
+            nodesToolBar->addAction(QIcon(QPixmap(":/icons/edit-delete.png")), "Remove", this, &ControlWidget::removeNodeOperation);
+        }
+        else if (SeedNode* seedNode = qgraphicsitem_cast<SeedNode*>(node))
+        {
+            selectedSeedNode = seedNode;
+
+            nodesToolBar->addAction(QIcon(QPixmap(":/icons/applications-graphics.png")), "Draw", seedNode, &SeedNode::draw);
+
+            nodesToolBar->addSeparator();
+
+            QAction* colorAction = nodesToolBar->addAction(QIcon(QPixmap(":/icons/color-chooser.png")), "Random: color", this, &ControlWidget::setSeedNodeType);
+            colorAction->setCheckable(true);
+            colorAction->setData(QVariant(0));
+
+            QAction* grayscaleAction = nodesToolBar->addAction(QIcon(QPixmap(":/icons/gray-chooser.png")), "Random: grayscale", this, &ControlWidget::setSeedNodeType);
+            grayscaleAction->setCheckable(true);
+            grayscaleAction->setData(QVariant(1));
+
+            QAction* imageAction = nodesToolBar->addAction(QIcon(QPixmap(":/icons/image-x-generic.png")), "Image", this, &ControlWidget::setSeedNodeType);
+            imageAction->setCheckable(true);
+            imageAction->setData(QVariant(2));
+
+            QActionGroup* type = new QActionGroup(this);
+            type->addAction(colorAction);
+            type->addAction(grayscaleAction);
+            type->addAction(imageAction);
+
+            colorAction->setChecked(generator->getSeedType(seedNode->id) == 0);
+            grayscaleAction->setChecked(generator->getSeedType(seedNode->id) == 1);
+            imageAction->setChecked(generator->getSeedType(seedNode->id) == 2);
+
+            nodesToolBar->addSeparator();
+
+            nodesToolBar->addAction(QIcon(QPixmap(":/icons/folder-image.png")), "Load image", seedNode, &SeedNode::loadImage);
+
+            QAction* fixedAction = nodesToolBar->addAction(generator->isSeedFixed(seedNode->id) ? QIcon(QPixmap(":/icons/document-encrypt.png")) : QIcon(QPixmap(":/icons/document-decrypt.png")), generator->isSeedFixed(seedNode->id) ? "Fixed" : "Not fixed", this, &ControlWidget::setSeedNodeFixed);
+            fixedAction->setCheckable(true);
+            fixedAction->setChecked(generator->isSeedFixed(seedNode->id));
+
+            nodesToolBar->addSeparator();
+
+            nodesToolBar->addAction(QIcon(QPixmap(":/icons/eye.png")), "Set as output", seedNode, &SeedNode::setAsOutput);
+
+            if (graphWidget->moreThanOneNode())
+                nodesToolBar->addAction(QIcon(QPixmap(":/icons/network-connect.png")), "Connect to", seedNode, &SeedNode::selectToConnect);
+
+            nodesToolBar->addSeparator();
+
+            nodesToolBar->addAction(QIcon(QPixmap(":/icons/edit-copy.png")), "Copy", seedNode, &SeedNode::copy);
+            nodesToolBar->addAction(QIcon(QPixmap(":/icons/edit-delete.png")), "Remove", this, &ControlWidget::removeSeedNode);
+        }
+    }
+    else
+    {
+        nodesToolBar->hide();
+    }
+}
+
+void ControlWidget::setNodeOperation(QAction* action)
+{
+    selectedOperationNode->setOperation(action);
+    constructSingleNodeToolBar(selectedOperationNode);
+}
+
+void ControlWidget::enableNodeOperation(bool checked)
+{
+    selectedOperationNode->enableOperation(checked);
+    constructSingleNodeToolBar(selectedOperationNode);
+}
+
+void ControlWidget::removeNodeOperation()
+{
+    selectedOperationNode->remove();
+    selectedOperationNode = nullptr;
+    constructSingleNodeToolBar(nullptr);
+}
+
+void ControlWidget::setSeedNodeType()
+{
+    QAction* action = qobject_cast<QAction*>(sender());
+    generator->setSeedType(selectedSeedNode->id, action->data().toInt());
+}
+
+void ControlWidget::setSeedNodeFixed(bool checked)
+{
+    selectedSeedNode->setFixed(checked);
+    constructSingleNodeToolBar(selectedSeedNode);
+}
+
+void ControlWidget::removeSeedNode()
+{
+    selectedSeedNode->remove();
+    selectedSeedNode = nullptr;
+    constructSingleNodeToolBar(nullptr);
+}
+
+// Nodes toolbar: multiple nodes selected
+
+void ControlWidget::constructMultipleNodesToolBar(bool operationNodesSelected)
+{
+    nodesToolBar->clear();
+    nodesToolBar->show();
+
+    if (operationNodesSelected)
+    {
+        nodesToolBar->addAction(QIcon(QPixmap(":/icons/edit-clear.png")), "Clear selection", this, [=](){ graphWidget->clearSelectedOperationNodes(); });
+        nodesToolBar->addSeparator();
+    }
+
+    nodesToolBar->addAction(QIcon(QPixmap(":/icons/edit-copy.png")), "Copy selection", [=](){ graphWidget->makeNodeSnapshot(); });
+    nodesToolBar->addAction(QIcon(QPixmap(":/icons/edit-delete.png")), "Remove selection", [=]{ graphWidget->removeSelectedNodes(); });
+}
+
+// Display
+
 void ControlWidget::constructDisplayOptionsWidget()
 {
-    // Display
-
     FocusLineEdit* fpsLineEdit = new FocusLineEdit;
     fpsLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
     QIntValidator* fpsIntValidator = new QIntValidator(1, 1000, fpsLineEdit);

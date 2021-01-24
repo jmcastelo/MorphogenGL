@@ -58,6 +58,12 @@ public:
     QPainterPath shape() const override;
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) override;
 
+public slots:
+    void setAsOutput();
+    void selectToConnect();
+    void copy();
+    void remove();
+
 protected:
     QString name;
     GraphWidget* graph;
@@ -70,10 +76,6 @@ protected:
     virtual void contextMenuEvent(QGraphicsSceneContextMenuEvent *event) override = 0;
 
 protected slots:
-    void selectToConnect();
-    void setAsOutput();
-    void copy();
-    void remove();
     void copySelected();
     void removeSelected();
 
@@ -97,20 +99,21 @@ public:
     enum { Type = UserType + 1 };
     int type() const override { return Type; }
 
-protected:
-    void mousePressEvent(QGraphicsSceneMouseEvent *event) override;
-    void contextMenuEvent(QGraphicsSceneContextMenuEvent *event) override;
-    QVariant itemChange(GraphicsItemChange change, const QVariant &value) override;
-
-private:
     bool hasInputs();
 
-private slots:
+public slots:
     void setOperation(QAction *action);
     void setParameters();
     void enableOperation(bool checked);
     void equalizeBlendFactors();
     void clear();
+
+protected:
+    void mousePressEvent(QGraphicsSceneMouseEvent *event) override;
+    void contextMenuEvent(QGraphicsSceneContextMenuEvent *event) override;
+    QVariant itemChange(GraphicsItemChange change, const QVariant &value) override;
+
+private slots:
     void clearSelected();
 };
 
@@ -129,13 +132,13 @@ public:
     enum { Type = UserType + 2 };
     int type() const override { return Type; }
 
-protected:
-    void mousePressEvent(QGraphicsSceneMouseEvent *event) override;
-    void contextMenuEvent(QGraphicsSceneContextMenuEvent *event) override;
-
-private slots:
+public slots:
     void draw();
     void setType(QAction* action);
     void loadImage();
     void setFixed(bool fixed);
+
+protected:
+    void mousePressEvent(QGraphicsSceneMouseEvent *event) override;
+    void contextMenuEvent(QGraphicsSceneContextMenuEvent *event) override;
 };

@@ -156,6 +156,27 @@ QVector<InputData*> ImageOperationNode::inputsVector()
     return inputData;
 }
 
+void ImageOperationNode::setOperation(ImageOperation *newOperation)
+{
+    delete operation;
+
+    operation = newOperation;
+
+    // Set operation's input data
+
+    operation->setInputData(inputsVector());
+
+    // Set new texture id on output nodes
+
+    foreach (ImageOperationNode* node, outputNodes)
+    {
+        if (node->inputs.value(id)->type == InputType::Normal)
+            node->inputs[id]->textureID = operation->getTextureID();
+        else if (node->inputs.value(id)->type == InputType::Blit)
+            node->inputs[id]->textureID = operation->getTextureBlit();
+    }
+}
+
 // GeneratorGL
 
 GeneratorGL::GeneratorGL()
@@ -439,19 +460,14 @@ void GeneratorGL::setOperation(QUuid id, QString operationName)
 {
     ImageOperation* operation = newOperation(operationName);
 
-    delete operationNodes.value(id)->operation;
+    operationNodes.value(id)->setOperation(operation);
 
-    operationNodes.value(id)->operation = operation;
+    // If it's output node, set new output texture id
 
-    // Set new texture id on output nodes
+    if (id == outputID)
+        outputTextureID = operation->getTextureBlit();
 
-    foreach (ImageOperationNode* node, operationNodes.value(id)->outputNodes)
-    {
-        if (node->inputs.value(id)->type == InputType::Normal)
-            node->inputs[id]->textureID = operation->getTextureID();
-        else if (node->inputs.value(id)->type == InputType::Blit)
-            node->inputs[id]->textureID = operation->getTextureBlit();
-    }
+    sortOperations();
 }
 
 void GeneratorGL::removeOperation(QUuid id)

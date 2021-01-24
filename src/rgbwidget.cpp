@@ -140,11 +140,13 @@ void RGBWidget::computeTransformMatrix()
 
     QMatrix4x4 transform = projection * view * model;
 
+    makeCurrent();
+
     program->bind();
     program->setUniformValue("transform", transform);
     program->release();
 
-    update();
+    doneCurrent();
 }
 
 void RGBWidget::closeEvent(QCloseEvent* event)
