@@ -185,6 +185,7 @@ GeneratorGL::GeneratorGL()
         BilateralFilter::name,
         Brightness::name,
         ColorMix::name,
+        ColorQuantization::name,
         Contrast::name,
         Convolution::name,
         Dilation::name,
@@ -558,6 +559,10 @@ ImageOperation* GeneratorGL::newOperation(QString operationName)
         std::vector<float> rgbMatrix = { 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f };
         operation = new ColorMix(false, sharedContext, rgbMatrix);
     }
+    else if (operationName == ColorQuantization::name)
+    {
+        operation = new ColorQuantization(false, sharedContext, 10, 10, 10);
+    }
     else if (operationName == Contrast::name)
     {
         operation = new Contrast(false, sharedContext, 1.0f);
@@ -648,6 +653,10 @@ ImageOperation* GeneratorGL::loadImageOperation(
     else if (operationName == ColorMix::name)
     {
         operation = new ColorMix(enabled, sharedContext, matrixElements);
+    }
+    else if (operationName == ColorQuantization::name)
+    {
+        operation = new ColorQuantization(enabled, sharedContext, intParameters[0], intParameters[1], intParameters[2]);
     }
     else if (operationName == Contrast::name)
     {

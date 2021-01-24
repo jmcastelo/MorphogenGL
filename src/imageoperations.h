@@ -178,6 +178,30 @@ private:
     MatrixParameter* rgbMatrix;
 };
 
+// Color quantization
+
+class ColorQuantization : public ImageOperation
+{
+public:
+    ColorQuantization(bool on, QOpenGLContext* mainContext, int theRedLevels, int theGreenLevels, int theBlueLevels);
+    ColorQuantization(const ColorQuantization& operation);
+    ~ColorQuantization();
+
+    ImageOperation* clone() { return new ColorQuantization(*this); }
+
+    static QString name;
+    QString getName() { return name; };
+
+    void setIntParameter(int index, int value);
+
+    std::vector<IntParameter*> getIntParameters() { std::vector<IntParameter*> parameters = { redLevels, greenLevels, blueLevels }; return parameters; };
+
+private:
+    IntParameter* redLevels;
+    IntParameter* greenLevels;
+    IntParameter* blueLevels;
+};
+
 // Contrast
 
 class Contrast : public ImageOperation

@@ -304,6 +304,78 @@ void ColorMix::setMatrixParameter(GLfloat* values)
     fbo->doneCurrent();
 }
 
+// Color quantization
+
+QString ColorQuantization::name = "Color quantization";
+
+ColorQuantization::ColorQuantization(bool on, QOpenGLContext* mainContext, int theRedLevels, int theGreenLevels, int theBlueLevels) : ImageOperation(on, mainContext)
+{
+    fbo = new FBO(":/shaders/screen.vert", ":/shaders/color-quantization.frag", mainContext);
+    fbo->setInputTextureID(*blender->getTextureID());
+
+    redLevels = new IntParameter("Red levels", 0, this, theRedLevels, 2, 255, false);
+    greenLevels = new IntParameter("Green levels", 1, this, theGreenLevels, 2, 255, false);
+    blueLevels = new IntParameter("Blue levels", 2, this, theBlueLevels, 2, 255, false);
+
+    setIntParameter(0, theRedLevels);
+    setIntParameter(1, theGreenLevels);
+    setIntParameter(2, theBlueLevels);
+}
+
+ColorQuantization::ColorQuantization(const ColorQuantization& operation) : ImageOperation(operation)
+{
+    fbo = new FBO(":/shaders/screen.vert", ":/shaders/color-quantization.frag", context);
+    fbo->setInputTextureID(*blender->getTextureID());
+
+    redLevels = new IntParameter(*operation.redLevels);
+    redLevels->setOperation(this);
+
+    greenLevels = new IntParameter(*operation.greenLevels);
+    greenLevels->setOperation(this);
+
+    blueLevels = new IntParameter(*operation.blueLevels);
+    blueLevels->setOperation(this);
+
+    setIntParameter(0, redLevels->value);
+    setIntParameter(1, greenLevels->value);
+    setIntParameter(2, blueLevels->value);
+}
+
+ColorQuantization::~ColorQuantization()
+{
+    delete redLevels;
+    delete greenLevels;
+    delete blueLevels;
+}
+
+void ColorQuantization::setIntParameter(int index, int value)
+{
+    if (index == 0)
+    {
+        fbo->makeCurrent();
+        fbo->program->bind();
+        fbo->program->setUniformValue("redLevels", value);
+        fbo->program->release();
+        fbo->doneCurrent();
+    }
+    else if (index == 1)
+    {
+        fbo->makeCurrent();
+        fbo->program->bind();
+        fbo->program->setUniformValue("greenLevels", value);
+        fbo->program->release();
+        fbo->doneCurrent();
+    }
+    else if (index == 2)
+    {
+        fbo->makeCurrent();
+        fbo->program->bind();
+        fbo->program->setUniformValue("blueLevels", value);
+        fbo->program->release();
+        fbo->doneCurrent();
+    }
+}
+
 // Contrast
 
 QString Contrast::name = "Contrast";
@@ -686,7 +758,7 @@ Logistic::Logistic(bool on, QOpenGLContext* mainContext, float R) : ImageOperati
 
     float min, max;
     adjustMinMax(R, 0.0f, 4.0f, min, max);
-    r = new FloatParameter("r", 0, this, R, min, max, 0.0f, 4.0f);
+    r = new FloatParameter("Nonlinear parameter", 0, this, R, min, max, 0.0f, 4.0f);
 
     setFloatParameter(0, R);
 }

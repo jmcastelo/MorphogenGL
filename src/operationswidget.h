@@ -112,7 +112,7 @@ public:
 
         connect(lineEdit, &FocusLineEdit::returnPressed, [&intParameter = this->intParameter, &lineEdit = this->lineEdit]()
         {
-            intParameter->value = lineEdit->text().toInt();
+            intParameter->setValue(lineEdit->text().toInt());
         });
         connect(lineEdit, &FocusLineEdit::focusOut, [&intParameter = this->intParameter, &lineEdit = this->lineEdit]()
         {
@@ -148,7 +148,7 @@ public:
                 value--;
                 lineEdit->setText(QString::number(value));
             }
-            intParameter->value = value;
+            intParameter->setValue(value);
         });
         connect(lineEdit, &FocusLineEdit::focusOut, [&intParameter = this->intParameter, &lineEdit = this->lineEdit]()
         {
