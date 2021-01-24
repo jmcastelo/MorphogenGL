@@ -168,7 +168,7 @@ private slots:
     void updateParametersWidget(QUuid id);
 
     void constructSingleNodeToolBar(Node* node);
-    void constructMultipleNodesToolBar(bool opNodesSelected);
+    void constructMultipleNodesToolBar();
 
     void setNodeOperation(QAction* action);
     void enableNodeOperation(bool checked);

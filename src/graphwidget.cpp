@@ -60,28 +60,33 @@ GraphWidget::GraphWidget(GeneratorGL* generatorGL, QWidget *parent)
     centerOn(sceneRect().center());
 }
 
+GraphWidget::~GraphWidget()
+{
+    disconnect(scene(), &QGraphicsScene::selectionChanged, this, &GraphWidget::newSelectedNodes);
+}
+
 void GraphWidget::newSelectedNodes()
 {
-    QVector<OperationNode*> opNodes;
-    QVector<SeedNode*> seedNodes;
+    selectedOperationNodes.clear();
+    selectedSeedNodes.clear();
 
     const QList<QGraphicsItem*> items = scene()->selectedItems();
 
     for (QGraphicsItem* item : items)
     {
         if (OperationNode *node = qgraphicsitem_cast<OperationNode*>(item))
-            opNodes << node;
+            selectedOperationNodes << node;
         else if (SeedNode *node = qgraphicsitem_cast<SeedNode*>(item))
-            seedNodes << node;
+            selectedSeedNodes << node;
     }
 
-    if (seedNodes.size() + opNodes.size() > 1)
-        emit multipleNodesSelected(!opNodes.empty());
-    else if (seedNodes.size() == 1 && opNodes.empty())
-        emit singleNodeSelected(seedNodes.front());
-    else if (opNodes.size() == 1 && seedNodes.empty())
-        emit singleNodeSelected(opNodes.front());
-    else if (seedNodes.empty() && opNodes.empty())
+    if (selectedSeedNodes.size() + selectedOperationNodes.size() > 1)
+        emit multipleNodesSelected();
+    else if (selectedSeedNodes.size() == 1 && selectedOperationNodes.empty())
+        emit singleNodeSelected(selectedSeedNodes.front());
+    else if (selectedOperationNodes.size() == 1 && selectedSeedNodes.empty())
+        emit singleNodeSelected(selectedOperationNodes.front());
+    else if (selectedSeedNodes.empty() && selectedOperationNodes.empty())
         emit singleNodeSelected(nullptr);
 }
 
@@ -104,10 +109,12 @@ void GraphWidget::addSeedNodeUnderCursor()
 
 void GraphWidget::removeNode(Node *node)
 {
-    for(Edge *edge: node->edges())
+    for (Edge *edge: node->edges())
     {
-        edge->sourceNode()->removeEdge(edge);
-        edge->destNode()->removeEdge(edge);
+        if (edge->sourceNode())
+            edge->sourceNode()->removeEdge(edge);
+        if (edge->destNode())
+            edge->destNode()->removeEdge(edge);
 
         scene()->removeItem(edge);
         delete edge;
@@ -115,6 +122,7 @@ void GraphWidget::removeNode(Node *node)
 
     scene()->removeItem(node);
     delete node;
+    node = nullptr;
 
     searchElementaryCycles();
 }
@@ -168,57 +176,71 @@ void GraphWidget::newNodeSelected(Node* node)
 
 bool GraphWidget::nodesSelected()
 {
-    QVector<Node*> nodes;
-
-    const QList<QGraphicsItem*> items = scene()->selectedItems();
-
-    for (QGraphicsItem*item : items)
-    {
-        if (OperationNode* node = qgraphicsitem_cast<OperationNode*>(item))
-            nodes << node;
-        else if (SeedNode* node = qgraphicsitem_cast<SeedNode*>(item))
-            nodes << node;
-    }
-
-    return nodes.size() > 1;
+    return selectedOperationNodes.size() + selectedSeedNodes.size() > 1;
 }
 
 bool GraphWidget::operationNodesSelected()
 {
-    QVector<Node*> nodes;
+    return selectedOperationNodes.size() > 1;
+}
 
-    const QList<QGraphicsItem*> items = scene()->selectedItems();
+int GraphWidget::seedNodesSelected()
+{
+    return selectedSeedNodes.size();
+}
 
-    for (QGraphicsItem*item : items)
-        if (OperationNode* node = qgraphicsitem_cast<OperationNode*>(item))
-            nodes << node;
+void GraphWidget::drawSelectedSeeds()
+{
+    for (SeedNode* node : selectedSeedNodes)
+        generator->drawSeed(node->id);
+}
 
-    return nodes.size() > 1;
+void GraphWidget::setSelectedOperationsParameters()
+{
+    for (OperationNode* node : selectedOperationNodes)
+        emit showOperationParameters(node->id);
+}
+
+void GraphWidget::enableSelectedOperations()
+{
+    for (OperationNode* node : selectedOperationNodes)
+        generator->enableOperation(node->id, true);
+}
+
+void GraphWidget::disableSelectedOperations()
+{
+    for (OperationNode* node : selectedOperationNodes)
+        generator->enableOperation(node->id, false);
+}
+
+void GraphWidget::equalizeSelectedBlendFactors()
+{
+    for (OperationNode* node : selectedOperationNodes)
+        generator->equalizeBlendFactors(node->id);
+
+    updateNodes();
 }
 
 void GraphWidget::clearSelectedOperationNodes()
 {
-    const QList<QGraphicsItem*> items = scene()->selectedItems();
-
-    for (QGraphicsItem*item : items)
-        if (OperationNode* node = qgraphicsitem_cast<OperationNode*>(item))
-            generator->clearOperation(node->id);
+    for (OperationNode* node : selectedOperationNodes)
+        generator->clearOperation(node->id);
 
 }
 
 void GraphWidget::removeSelectedNodes()
 {
-    const QList<QGraphicsItem*> items = scene()->selectedItems();
+    // Operate on copies since selected nodes change as they are removed
 
-    for (QGraphicsItem* item : items)
-    {
-        if (OperationNode* node = qgraphicsitem_cast<OperationNode*>(item))
-            removeNode(node);
-        else if (SeedNode* node = qgraphicsitem_cast<SeedNode*>(item))
-            removeNode(node);
-    }
+    QVector<OperationNode*> opNodes = selectedOperationNodes;
 
-    searchElementaryCycles();
+    for (OperationNode* node : opNodes)
+        removeNode(node);
+
+    QVector<SeedNode*> seedNodes = selectedSeedNodes;
+
+    for (SeedNode* node : seedNodes)
+        removeNode(node);
 }
 
 void GraphWidget::copyNode(Node *node)
@@ -232,15 +254,11 @@ void GraphWidget::makeNodeSnapshot()
 {
     copiedNodes[0].clear();
 
-    const QList<QGraphicsItem*> items = scene()->selectedItems();
+    for (OperationNode* node : selectedOperationNodes)
+        copiedNodes[0].insert(node->id, node);
 
-    for (QGraphicsItem* item : items)
-    {
-        if (OperationNode* node = qgraphicsitem_cast<OperationNode*>(item))
-            copiedNodes[0].insert(node->id, node);
-        else if (SeedNode* node = qgraphicsitem_cast<SeedNode*>(item))
-            copiedNodes[0].insert(node->id, node);
-    }
+    for (SeedNode* node : selectedSeedNodes)
+        copiedNodes[0].insert(node->id, node);
 
     copyNodes(true);
 }

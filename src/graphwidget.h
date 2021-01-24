@@ -41,6 +41,7 @@ public:
     GeneratorGL* generator;
 
     GraphWidget(GeneratorGL* generatorGL, QWidget *parent = nullptr);
+    ~GraphWidget();
 
     void copyNode(Node* node);
     void removeNode(Node* node);
@@ -55,11 +56,7 @@ public:
     void newNodeSelected(Node*);
     bool nodesSelected();
     bool operationNodesSelected();
-
-    void clearSelectedOperationNodes();
-
-    void makeNodeSnapshot();
-    void removeSelectedNodes();
+    int seedNodesSelected();
 
     void setOperationParameters(QUuid id);
     void updateOperation(QUuid id);
@@ -80,9 +77,19 @@ public:
 
     void markNodes(QVector<QUuid> ids);
 
+public slots:
+    void drawSelectedSeeds();
+    void setSelectedOperationsParameters();
+    void enableSelectedOperations();
+    void disableSelectedOperations();
+    void equalizeSelectedBlendFactors();
+    void clearSelectedOperationNodes();
+    void makeNodeSnapshot();
+    void removeSelectedNodes();
+
 signals:
     void singleNodeSelected(Node*);
-    void multipleNodesSelected(bool operationNodesSelected);
+    void multipleNodesSelected();
     void showOperationParameters(QUuid id);
     void removeOperationParameters(QUuid id);
     void updateOperationParameters(QUuid id);
@@ -96,6 +103,9 @@ protected:
 
 private:
     Node *selectedNode = nullptr;
+
+    QVector<OperationNode*> selectedOperationNodes;
+    QVector<SeedNode*> selectedSeedNodes;
 
     QMap<QUuid, Node*> copiedNodes[2];
     QVector<Edge*> newEdges;

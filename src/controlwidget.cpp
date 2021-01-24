@@ -471,19 +471,33 @@ void ControlWidget::removeSeedNode()
 
 // Nodes toolbar: multiple nodes selected
 
-void ControlWidget::constructMultipleNodesToolBar(bool operationNodesSelected)
+void ControlWidget::constructMultipleNodesToolBar()
 {
     nodesToolBar->clear();
     nodesToolBar->show();
 
-    if (operationNodesSelected)
+    if (graphWidget->seedNodesSelected() > 0)
     {
-        nodesToolBar->addAction(QIcon(QPixmap(":/icons/edit-clear.png")), "Clear selection", this, [=](){ graphWidget->clearSelectedOperationNodes(); });
+        nodesToolBar->addAction(QIcon(QPixmap(":/icons/applications-graphics.png")), graphWidget->seedNodesSelected() > 1 ? "Draw seeds" : "Draw seed", graphWidget, &GraphWidget::drawSelectedSeeds);
         nodesToolBar->addSeparator();
     }
 
-    nodesToolBar->addAction(QIcon(QPixmap(":/icons/edit-copy.png")), "Copy selection", [=](){ graphWidget->makeNodeSnapshot(); });
-    nodesToolBar->addAction(QIcon(QPixmap(":/icons/edit-delete.png")), "Remove selection", [=]{ graphWidget->removeSelectedNodes(); });
+    if (graphWidget->operationNodesSelected())
+    {
+        nodesToolBar->addAction(QIcon(QPixmap(":/icons/applications-system.png")), "Set parameters", graphWidget, &GraphWidget::setSelectedOperationsParameters);
+        nodesToolBar->addAction(QIcon(QPixmap(":/icons/circle-green.png")), "Enable", graphWidget, &GraphWidget::enableSelectedOperations);
+        nodesToolBar->addAction(QIcon(QPixmap(":/icons/circle-grey.png")), "Disable", graphWidget, &GraphWidget::disableSelectedOperations);
+        nodesToolBar->addAction(QIcon(QPixmap(":/icons/preferences-desktop.png")), "Equalize blend factors", graphWidget, &GraphWidget::equalizeSelectedBlendFactors);
+        nodesToolBar->addSeparator();
+        nodesToolBar->addAction(QIcon(QPixmap(":/icons/edit-clear.png")), "Clear", graphWidget, &GraphWidget::clearSelectedOperationNodes);
+        nodesToolBar->addSeparator();
+    }
+
+    if (graphWidget->nodesSelected())
+    {
+        nodesToolBar->addAction(QIcon(QPixmap(":/icons/edit-copy.png")), "Copy", graphWidget, &GraphWidget::makeNodeSnapshot);
+        nodesToolBar->addAction(QIcon(QPixmap(":/icons/edit-delete.png")), "Remove", graphWidget, &GraphWidget::removeSelectedNodes);
+    }
 }
 
 // Display

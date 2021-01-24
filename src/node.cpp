@@ -30,6 +30,8 @@
 #include <QPainter>
 #include <QStyleOption>
 #include <QFileDialog>
+#include <QWidgetAction>
+#include <QLabel>
 
 Node::Node(GraphWidget* graphWidget, QString text) :
     name { text },
@@ -50,16 +52,6 @@ void Node::copy()
 void Node::remove()
 {
     graph->removeNode(this);
-}
-
-void Node::copySelected()
-{
-    graph->makeNodeSnapshot();
-}
-
-void Node::removeSelected()
-{
-    graph->removeSelectedNodes();
 }
 
 void Node::selectToConnect()
@@ -272,11 +264,6 @@ void OperationNode::clear()
     graph->generator->clearOperation(id);
 }
 
-void OperationNode::clearSelected()
-{
-    graph->clearSelectedOperationNodes();
-}
-
 void OperationNode::mousePressEvent(QGraphicsSceneMouseEvent *event)
 {
     if (event->buttons() == Qt::LeftButton)
@@ -295,47 +282,65 @@ void OperationNode::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
 {
     QMenu menu;
 
-    QMenu *operationsMenu = menu.addMenu("Set operation");
-
-    for (QString opName : graph->generator->availableOperations)
-        operationsMenu->addAction(opName);
-
-    connect(operationsMenu, &QMenu::triggered, this, &OperationNode::setOperation);
-
-    if (graph->generator->hasOperationParamaters(id))
-        menu.addAction("Set parameters", this, &OperationNode::setParameters);
-
-    QAction* enableAction = menu.addAction("Enabled", this, &OperationNode::enableOperation);
-    enableAction->setCheckable(true);
-    enableAction->setChecked(graph->generator->isOperationEnabled(id));
-
-    if (hasInputs())
-        menu.addAction("Equalize blend factors", this, &OperationNode::equalizeBlendFactors);
-
-    menu.addSeparator();
-
-    menu.addAction("Set as output", this, &OperationNode::setAsOutput);
-
-    if (graph->moreThanOneNode())
-        menu.addAction("Connect to", this, &OperationNode::selectToConnect);
-
-    menu.addSeparator();
-
-    menu.addAction("Clear", this, &OperationNode::clear);
-
-    if (isSelected() && graph->operationNodesSelected())
-        menu.addAction("Clear selection", this, &OperationNode::clearSelected);
-
-    menu.addSeparator();
-
-    menu.addAction("Copy", this, &OperationNode::copy);
-    menu.addAction("Remove", this, &OperationNode::remove);
-
-    if (isSelected() && graph->nodesSelected())
+    if (isSelected() && (graph->seedNodesSelected() > 0 || graph->operationNodesSelected() || graph->nodesSelected()))
     {
+        if (graph->seedNodesSelected() > 0)
+        {
+            menu.addAction(graph->seedNodesSelected() > 1 ? "Draw seeds" : "Draw seed", graph, &GraphWidget::drawSelectedSeeds);
+            menu.addSeparator();
+        }
+
+        if (graph->operationNodesSelected())
+        {
+            menu.addAction("Set parameters", graph, &GraphWidget::setSelectedOperationsParameters);
+            menu.addAction("Enable", graph, &GraphWidget::enableSelectedOperations);
+            menu.addAction("Disable", graph, &GraphWidget::disableSelectedOperations);
+            menu.addAction("Equalize blend factors", graph, &GraphWidget::equalizeSelectedBlendFactors);
+            menu.addSeparator();
+            menu.addAction("Clear", graph, &GraphWidget::clearSelectedOperationNodes);
+            menu.addSeparator();
+        }
+
+        if (graph->nodesSelected())
+        {
+            menu.addAction("Copy", graph, &GraphWidget::makeNodeSnapshot);
+            menu.addAction("Remove", graph, &GraphWidget::removeSelectedNodes);
+        }
+    }
+    else
+    {
+        QMenu *operationsMenu = menu.addMenu("Set operation");
+
+        for (QString opName : graph->generator->availableOperations)
+            operationsMenu->addAction(opName);
+
+        connect(operationsMenu, &QMenu::triggered, this, &OperationNode::setOperation);
+
+        if (graph->generator->hasOperationParamaters(id))
+            menu.addAction("Set parameters", this, &OperationNode::setParameters);
+
+        QAction* enableAction = menu.addAction("Enabled", this, &OperationNode::enableOperation);
+        enableAction->setCheckable(true);
+        enableAction->setChecked(graph->generator->isOperationEnabled(id));
+
+        if (hasInputs())
+            menu.addAction("Equalize blend factors", this, &OperationNode::equalizeBlendFactors);
+
         menu.addSeparator();
-        menu.addAction("Copy selection", this, &OperationNode::copySelected);
-        menu.addAction("Remove selection", this, &OperationNode::removeSelected);
+
+        menu.addAction("Set as output", this, &OperationNode::setAsOutput);
+
+        if (graph->moreThanOneNode())
+            menu.addAction("Connect to", this, &OperationNode::selectToConnect);
+
+        menu.addSeparator();
+
+        menu.addAction("Clear", this, &OperationNode::clear);
+
+        menu.addSeparator();
+
+        menu.addAction("Copy", this, &OperationNode::copy);
+        menu.addAction("Remove", this, &OperationNode::remove);
     }
 
     menu.exec(event->screenPos());
@@ -431,60 +436,81 @@ void SeedNode::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
 {
     QMenu menu;
 
-    menu.addAction("Draw", this, &SeedNode::draw);
-
-    QMenu *typeMenu = menu.addMenu("Type");
-
-    QAction* colorAction = new QAction("Random: color");
-    colorAction->setCheckable(true);
-    colorAction->setData(QVariant(0));
-
-    QAction* grayscaleAction = new QAction("Random: grayscale");
-    grayscaleAction->setCheckable(true);
-    grayscaleAction->setData(QVariant(1));
-
-    QAction* imageAction = new QAction("Image");
-    imageAction->setCheckable(true);
-    imageAction->setData(QVariant(2));
-
-    QActionGroup* type = new QActionGroup(this);
-    type->addAction(colorAction);
-    type->addAction(grayscaleAction);
-    type->addAction(imageAction);
-
-    typeMenu->addAction(colorAction);
-    typeMenu->addAction(grayscaleAction);
-    typeMenu->addAction(imageAction);
-
-    connect(typeMenu, &QMenu::triggered, this, &SeedNode::setType);
-
-    colorAction->setChecked(graph->generator->getSeedType(id) == 0);
-    grayscaleAction->setChecked(graph->generator->getSeedType(id) == 1);
-    imageAction->setChecked(graph->generator->getSeedType(id) == 2);
-
-    menu.addAction("Load image", this, &SeedNode::loadImage);
-
-    QAction* fixedAction = menu.addAction("Fixed", this, &SeedNode::setFixed);
-    fixedAction->setCheckable(true);
-    fixedAction->setChecked(graph->generator->isSeedFixed(id));
-
-    menu.addSeparator();
-
-    menu.addAction("Set as output", this, &SeedNode::setAsOutput);
-
-    if (graph->moreThanOneNode())
-        menu.addAction("Connect to", this, &SeedNode::selectToConnect);
-
-    menu.addSeparator();
-
-    menu.addAction("Copy", this, &SeedNode::copy);
-    menu.addAction("Remove", this, &SeedNode::remove);
-
-    if (isSelected() && graph->nodesSelected())
+    if (isSelected() && (graph->seedNodesSelected() > 0 || graph->operationNodesSelected() || graph->nodesSelected()))
     {
+        if (graph->seedNodesSelected() > 0)
+        {
+            menu.addAction(graph->seedNodesSelected() > 1 ? "Draw seeds" : "Draw seed", graph, &GraphWidget::drawSelectedSeeds);
+            menu.addSeparator();
+        }
+
+        if (graph->operationNodesSelected())
+        {
+            menu.addAction("Set parameters", graph, &GraphWidget::setSelectedOperationsParameters);
+            menu.addAction("Enable", graph, &GraphWidget::enableSelectedOperations);
+            menu.addAction("Disable", graph, &GraphWidget::disableSelectedOperations);
+            menu.addAction("Equalize blend factors", graph, &GraphWidget::equalizeSelectedBlendFactors);
+            menu.addSeparator();
+            menu.addAction("Clear", graph, &GraphWidget::clearSelectedOperationNodes);
+            menu.addSeparator();
+        }
+
+        if (graph->nodesSelected())
+        {
+            menu.addAction("Copy", graph, &GraphWidget::makeNodeSnapshot);
+            menu.addAction("Remove", graph, &GraphWidget::removeSelectedNodes);
+        }
+    }
+    else
+    {
+        menu.addAction("Draw", this, &SeedNode::draw);
+
+        QMenu *typeMenu = menu.addMenu("Type");
+
+        QAction* colorAction = new QAction("Random: color");
+        colorAction->setCheckable(true);
+        colorAction->setData(QVariant(0));
+
+        QAction* grayscaleAction = new QAction("Random: grayscale");
+        grayscaleAction->setCheckable(true);
+        grayscaleAction->setData(QVariant(1));
+
+        QAction* imageAction = new QAction("Image");
+        imageAction->setCheckable(true);
+        imageAction->setData(QVariant(2));
+
+        QActionGroup* type = new QActionGroup(this);
+        type->addAction(colorAction);
+        type->addAction(grayscaleAction);
+        type->addAction(imageAction);
+
+        typeMenu->addAction(colorAction);
+        typeMenu->addAction(grayscaleAction);
+        typeMenu->addAction(imageAction);
+
+        connect(typeMenu, &QMenu::triggered, this, &SeedNode::setType);
+
+        colorAction->setChecked(graph->generator->getSeedType(id) == 0);
+        grayscaleAction->setChecked(graph->generator->getSeedType(id) == 1);
+        imageAction->setChecked(graph->generator->getSeedType(id) == 2);
+
+        menu.addAction("Load image", this, &SeedNode::loadImage);
+
+        QAction* fixedAction = menu.addAction("Fixed", this, &SeedNode::setFixed);
+        fixedAction->setCheckable(true);
+        fixedAction->setChecked(graph->generator->isSeedFixed(id));
+
         menu.addSeparator();
-        menu.addAction("Copy selection", this, &SeedNode::copySelected);
-        menu.addAction("Remove selection", this, &SeedNode::removeSelected);
+
+        menu.addAction("Set as output", this, &SeedNode::setAsOutput);
+
+        if (graph->moreThanOneNode())
+            menu.addAction("Connect to", this, &SeedNode::selectToConnect);
+
+        menu.addSeparator();
+
+        menu.addAction("Copy", this, &SeedNode::copy);
+        menu.addAction("Remove", this, &SeedNode::remove);
     }
 
     menu.exec(event->screenPos());

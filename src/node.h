@@ -75,10 +75,6 @@ protected:
     void mouseReleaseEvent(QGraphicsSceneMouseEvent *event) override;
     virtual void contextMenuEvent(QGraphicsSceneContextMenuEvent *event) override = 0;
 
-protected slots:
-    void copySelected();
-    void removeSelected();
-
 private:
     qreal ellipseMargin = 10.0;
     qreal penSize = 2.0;
@@ -112,9 +108,6 @@ protected:
     void mousePressEvent(QGraphicsSceneMouseEvent *event) override;
     void contextMenuEvent(QGraphicsSceneContextMenuEvent *event) override;
     QVariant itemChange(GraphicsItemChange change, const QVariant &value) override;
-
-private slots:
-    void clearSelected();
 };
 
 // Seed node
