@@ -58,18 +58,18 @@ public:
     virtual ImageOperation* clone() = 0;
 
     bool isEnabled() { return enabled; }
-    void enable(bool on) { enabled = on; }
+    virtual void enable(bool on) { enabled = on; }
 
     bool hasParameters() { return !noParameters; }
 
     virtual QString getName() = 0;
 
-    GLuint** getTextureBlit() { return fbo->getTextureBlit(); }
-    GLuint** getTextureID() { return fbo->getTextureID(); }
+    virtual GLuint** getTextureBlit() { return fbo->getTextureBlit(); }
+    virtual GLuint** getTextureID() { return fbo->getTextureID(); }
 
     void setInputData(QVector<InputData*> data);
 
-    void resize() { blender->resize(); fbo->resize(); }
+    virtual void resize() { blender->resize(); fbo->resize(); }
 
     virtual std::vector<BoolParameter*> getBoolParameters() { std::vector<BoolParameter*> parameters; return parameters; };
     virtual std::vector<IntParameter*> getIntParameters() { std::vector<IntParameter*> parameters; return parameters; };
@@ -90,9 +90,9 @@ public:
 
     void adjustMinMax(float value, float minValue, float maxValue, float& min, float& max);
 
-    void applyOperation();
-    void blit();
-    void clear();
+    virtual void applyOperation();
+    virtual void blit();
+    virtual void clear();
 
 protected:
     bool enabled;
@@ -392,6 +392,48 @@ public:
     QString getName() { return name; };
 };
 
+// Memory
+
+class Memory : public ImageOperation
+{
+public:
+    Memory(bool on, QOpenGLContext* mainContext, int theFrames, float theBlendFactor, float theDecayFactor);
+    Memory(const Memory& operation);
+    ~Memory();
+
+    ImageOperation* clone() { return new Memory(*this); }
+
+    static QString name;
+    QString getName() { return name; };
+
+    GLuint** getTextureBlit() { return fboOut->getTextureBlit(); }
+    GLuint** getTextureID() { return fboOut->getTextureID(); }
+
+    void enable(bool on);
+
+    void resize();
+
+    void applyOperation();
+    void blit();
+    void clear();
+
+    void setIntParameter(int index, int value);
+    void setFloatParameter(int index, float value);
+
+    std::vector<IntParameter*> getIntParameters() { std::vector<IntParameter*> parameters = { frames }; return parameters; };
+    std::vector<FloatParameter*> getFloatParameters() { std::vector<FloatParameter*> parameters = { blendFactor, decayFactor }; return parameters; };
+
+private:
+    QVector<FBO*> fbos;
+    Blender* blenderOut;
+    FBO* fboOut;
+
+    IntParameter* frames;
+    FloatParameter* blendFactor;
+    FloatParameter* decayFactor;
+
+    void setBlenderOutInputData();
+};
 
 // Morphological gradient
 

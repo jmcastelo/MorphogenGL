@@ -813,6 +813,177 @@ Mask::Mask(const Mask& operation) : ImageOperation(operation)
 
 Mask::~Mask(){}
 
+// Mask
+
+QString Memory::name = "Memory";
+
+Memory::Memory(bool on, QOpenGLContext* mainContext, int theFrames, float theBlendFactor, float theDecayFactor) : ImageOperation(on, mainContext)
+{
+    fbo = new FBO(":/shaders/screen.vert", ":/shaders/screen.frag", mainContext);
+    fbo->setInputTextureID(*blender->getTextureID());
+
+    frames = new IntParameter("Frames", 0, this, theFrames, 1, 10, false);
+
+    float min, max;
+    adjustMinMax(theBlendFactor, 0.0f, 1.0f, min, max);
+    blendFactor = new FloatParameter("Blend factor", 0, this, theBlendFactor, min, max, 0.0f, 1.0f);
+
+    adjustMinMax(theDecayFactor, 0.0f, 1.0f, min, max);
+    decayFactor = new FloatParameter("Decay factor", 1, this, theDecayFactor, min, max, 0.0f, 1.0f);
+
+    for (int i = 0; i < theFrames; i++)
+        fbos.push_back(new FBO(":/shaders/screen.vert", ":/shaders/screen.frag", mainContext));
+
+    fbos[0]->setInputTextureID(*fbo->getTextureBlit());
+
+    for (int i = 1; i < theFrames; i++)
+        fbos[i]->setInputTextureID(*fbos[i - 1]->getTextureID());
+
+    blenderOut = new Blender(":/shaders/screen.vert", ":/shaders/blend.frag", mainContext);
+
+    setBlenderOutInputData();
+
+    fboOut = new FBO(":/shaders/screen.vert", ":/shaders/screen.frag", mainContext);
+
+    enable(on);
+}
+
+Memory::Memory(const Memory& operation) : ImageOperation(operation)
+{
+    fbo = new FBO(":/shaders/screen.vert", ":/shaders/screen.frag", context);
+    fbo->setInputTextureID(*blender->getTextureID());
+
+    frames = new IntParameter(*operation.frames);
+    frames->setOperation(this);
+
+    blendFactor = new FloatParameter(*operation.blendFactor);
+    blendFactor->setOperation(this);
+
+    decayFactor = new FloatParameter(*operation.decayFactor);
+    decayFactor->setOperation(this);
+
+    for (int i = 0; i < operation.fbos.size(); i++)
+        fbos.push_back(new FBO(":/shaders/screen.vert", ":/shaders/screen.frag", context));
+
+    fbos[0]->setInputTextureID(*fbo->getTextureBlit());
+
+    for (int i = 1; i < operation.fbos.size(); i++)
+        fbos[i]->setInputTextureID(*fbos[i - 1]->getTextureID());
+
+    blenderOut = new Blender(":/shaders/screen.vert", ":/shaders/blend.frag", context);
+
+    fboOut = new FBO(":/shaders/screen.vert", ":/shaders/screen.frag", context);
+
+    enable(operation.enabled);
+}
+
+void Memory::setBlenderOutInputData()
+{
+    QVector<InputData*> inputs;
+
+    inputs.push_back(new InputData(InputType::Normal, fbo->getTextureID(), 1.0f));
+
+    float factor = blendFactor->value;
+
+    for (FBO* oneFBO : fbos)
+    {
+        inputs.push_back(new InputData(InputType::Normal, oneFBO->getTextureID(), factor));
+        factor *= decayFactor->value;
+    }
+    blenderOut->setInputData(inputs);
+}
+
+void Memory::enable(bool on)
+{
+    if (on)
+        fboOut->setInputTextureID(*blenderOut->getTextureID());
+    else
+        fboOut->setInputTextureID(*fbo->getTextureID());
+
+    enabled = on;
+}
+
+void Memory::resize()
+{
+    blender->resize();
+    fbo->resize();
+    for (FBO* oneFBO : fbos)
+        oneFBO->resize();
+    blenderOut->resize();
+    fboOut->resize();
+
+    setBlenderOutInputData();
+}
+
+void Memory::applyOperation()
+{
+    blender->blend();
+
+    if (enabled)
+    {
+        fbo->draw();
+        for (int i = fbos.size() - 1; i >= 0; i--)
+            fbos[i]->draw();
+        blenderOut->blend();
+        fboOut->draw();
+    }
+    else
+    {
+        fbo->identity();
+        fboOut->identity();
+    }
+}
+
+void Memory::blit()
+{
+    fbo->blit();
+    fboOut->blit();
+}
+
+void Memory::clear()
+{
+    fbo->clear();
+    for (FBO* oneFBO : fbos)
+        oneFBO->clear();
+    fboOut->clear();
+}
+
+void Memory::setIntParameter(int index, int value)
+{
+    if (index == 0)
+    {
+        if (value < fbos.size())
+        {
+            int imax = fbos.size();
+            for (int i = value; i < imax; i++)
+                if (!fbos.empty())
+                    fbos.removeLast();
+
+            setBlenderOutInputData();
+        }
+        else if (value > fbos.size())
+        {
+            for (int i = fbos.size(); i < value; i++)
+            {
+                fbos.push_back(new FBO(":/shaders/screen.vert", ":/shaders/screen.frag", context));
+                fbos[i]->setInputTextureID(*fbos[i - 1]->getTextureID());
+            }
+
+            setBlenderOutInputData();
+        }
+    }
+}
+
+void Memory::setFloatParameter(int index, float)
+{
+    if (index == 0 || index == 1)
+    {
+        setBlenderOutInputData();
+    }
+}
+
+Memory::~Memory(){}
+
 // Morphological gradient
 
 QString MorphologicalGradient::name = "Morphological gradient";

@@ -195,6 +195,7 @@ GeneratorGL::GeneratorGL()
         Identity::name,
         Logistic::name,
         Mask::name,
+        Memory::name,
         MorphologicalGradient::name,
         PolarConvolution::name,
         Rotation::name,
@@ -600,6 +601,10 @@ ImageOperation* GeneratorGL::newOperation(QString operationName)
     {
         operation = new Mask(false, sharedContext);
     }
+    else if (operationName == Memory::name)
+    {
+        operation = new Memory(false, sharedContext, 1, 0.1f, 0.5f);
+    }
     else if (operationName == MorphologicalGradient::name)
     {
         operation = new MorphologicalGradient(false, sharedContext, 0.01f, 0.01f);
@@ -693,6 +698,10 @@ ImageOperation* GeneratorGL::loadImageOperation(
     else if (operationName == Mask::name)
     {
         operation = new Mask(enabled, sharedContext);
+    }
+    else if (operationName == Memory::name)
+    {
+        operation = new Memory(enabled, sharedContext, intParameters[0], floatParameters[0], floatParameters[1]);
     }
     else if (operationName == MorphologicalGradient::name)
     {
