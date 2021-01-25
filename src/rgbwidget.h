@@ -38,27 +38,22 @@
 #include <QWheelEvent>
 #include <QMouseEvent>
 
-class Heart;
-
 class RGBWidget : public QOpenGLWidget, protected QOpenGLExtraFunctions
 {
     Q_OBJECT
 
 public:
-    RGBWidget(Heart* theHeart, QWidget* parent = nullptr);
+    RGBWidget(QWidget* parent = nullptr);
     virtual ~RGBWidget() override;
 
     void initializeGL() override;
     void paintGL() override;
     void resizeGL(int width, int height) override;
 
-    void getPixels();
+    void setPixels(GLfloat *pixels);
 
 signals:
     void closing();
-
-public slots:
-    void allocatePixelsArray();
 
 protected:
     void closeEvent(QCloseEvent* event) override;
@@ -67,12 +62,9 @@ protected:
     void mousePressEvent(QMouseEvent* event) override;
 
 private:
-    Heart* heart;
-
     QOpenGLShaderProgram* program = nullptr;
     QOpenGLVertexArrayObject* vao = nullptr;
     QOpenGLBuffer* vbo = nullptr;
-    GLfloat* pixels = nullptr;
 
     float scale = 1.0f;
     QMatrix4x4 rotation;

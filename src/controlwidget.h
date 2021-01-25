@@ -74,12 +74,12 @@ public:
     ~ControlWidget();
 
 signals:
+    void plotsActionTriggered();
     void imageSizeChanged();
     void seedDrawn();
     void closing();
 
 public slots:
-    void uncheckRGBGraphAction();
     void updateWindowSizeLineEdits(int width, int height);
 
 protected:
@@ -111,7 +111,6 @@ private:
     QAction* displayOptionsAction;
     QAction* recordingOptionsAction;
     QAction* sortedOperationsAction;
-    QAction* rgbAction;
     QAction* saveConfigAction;
     QAction* loadConfigAction;
 
@@ -155,7 +154,6 @@ private slots:
     void toggleDisplayOptionsWidget();
     void toggleRecordingOptionsWidget();
     void toggleSortedOperationsWidget();
-    void toggleRGBGraph();
     void loadConfig();
     void saveConfig();
     void about();

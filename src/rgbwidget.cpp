@@ -21,9 +21,8 @@
 */
 
 #include "rgbwidget.h"
-#include "heart.h"
 
-RGBWidget::RGBWidget(Heart *theHeart, QWidget* parent) : QOpenGLWidget(parent), heart { theHeart }
+RGBWidget::RGBWidget(QWidget* parent) : QOpenGLWidget(parent)
 {
     setWindowIcon(QIcon(":/icons/morphogengl.png"));
     setWindowTitle("RGB Plot");
@@ -38,8 +37,6 @@ RGBWidget::~RGBWidget()
     if (program) delete program;
     if (vao) delete vao;
     if (vbo) delete vbo;
-
-    if (pixels) delete pixels;
 }
 
 void RGBWidget::initializeGL()
@@ -62,8 +59,6 @@ void RGBWidget::initializeGL()
     vbo = new QOpenGLBuffer(QOpenGLBuffer::VertexBuffer);
     vbo->create();
     vbo->setUsagePattern(QOpenGLBuffer::DynamicDraw);
-
-    allocatePixelsArray();
 
     computeTransformMatrix();
 }
@@ -90,18 +85,10 @@ void RGBWidget::resizeGL(int width, int height)
     computeTransformMatrix();
 }
 
-void RGBWidget::allocatePixelsArray()
-{
-    if (pixels) delete pixels;
-    pixels = new GLfloat[FBO::width * FBO::height * 3];
-}
 
-void RGBWidget::getPixels()
+void RGBWidget::setPixels(GLfloat *pixels)
 {
     makeCurrent();
-
-    glBindTexture(GL_TEXTURE_2D, heart->getOutputTextureID());
-    glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_FLOAT, pixels);
 
     vao->bind();
     
@@ -119,6 +106,8 @@ void RGBWidget::getPixels()
     program->release();
 
     doneCurrent();
+
+    update();
 }
 
 void RGBWidget::computeTransformMatrix()

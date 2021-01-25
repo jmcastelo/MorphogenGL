@@ -75,6 +75,7 @@ HEADERS += src/blender.h \
     src/imageoperations.h \
     src/node.h \
     src/parameter.h \
+    src/plotswidget.h \
     src/rgbwidget.h \
     src/seed.h \
     src/controlwidget.h \
@@ -100,6 +101,7 @@ SOURCES += src/blender.cpp \
     src/morphowidget.cpp \
     src/node.cpp \
     src/parameter.cpp \
+    src/plotswidget.cpp \
     src/polarkernelplot.cpp \
     src/rgbwidget.cpp \
     src/seed.cpp \

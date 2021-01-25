@@ -24,7 +24,7 @@
 
 #include "morphowidget.h"
 #include "controlwidget.h"
-#include "rgbwidget.h"
+#include "plotswidget.h"
 #include "ffmpegencoder.h"
 #include <chrono>
 #include <QObject>
@@ -39,8 +39,6 @@ class Heart : public QObject
 public:
     Heart();
     ~Heart();
-
-    GLuint getOutputTextureID();
 
     void setStartTime();
     
@@ -57,8 +55,6 @@ public:
     void stopRecording();
     int getFrameCount();
 
-    void setRGBWidgetVisibility(bool visible);
-
 signals:
     void iterationPerformed();
     void iterationTimeMeasured(long int iterationTime);
@@ -70,7 +66,7 @@ signals:
 private:
     MorphoWidget* morphoWidget;
     ControlWidget* controlWidget;
-    RGBWidget* rgbWidget;
+    PlotsWidget* plotsWidget;
     FFmpegEncoder* encoder = nullptr;
 
     QTimer* timer;
@@ -79,4 +75,7 @@ private:
     std::chrono::time_point<std::chrono::steady_clock> end;
 
     void beat();
+
+private slots:
+    void togglePlotsWidget();
 };

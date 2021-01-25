@@ -35,8 +35,6 @@
 #include <QMouseEvent>
 #include <QStyle>
 
-class Heart;
-
 // MorphoWidget: OpenGL widget displaying MorphogenGL's output
 
 class MorphoWidget : public QOpenGLWidget, protected QOpenGLExtraFunctions
@@ -44,7 +42,7 @@ class MorphoWidget : public QOpenGLWidget, protected QOpenGLExtraFunctions
     Q_OBJECT
 
 public:
-    MorphoWidget(Heart* theHeart, QWidget* parent = nullptr);
+    MorphoWidget(QWidget* parent = nullptr);
     virtual ~MorphoWidget() override;
 
     void initializeGL() override;
@@ -52,13 +50,12 @@ public:
     void resizeGL(int width, int height) override;
 
 signals:
-    void initGenerator();
-    void initHeartBeat();
-    void stopHeartBeat();
+    void openGLInitialized();
     void screenSizeChanged(int width, int height);
     void closing();
 
 public slots:
+    void updateOutputTextureID(GLuint id);
     void resetZoom();
 
 protected:
@@ -68,7 +65,7 @@ protected:
     void mousePressEvent(QMouseEvent* event) override;
 
 private:
-    Heart* heart;
+    GLuint outputTextureID = 0;
 
     GLuint fbo = 0;
 

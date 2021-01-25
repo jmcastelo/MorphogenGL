@@ -20,10 +20,9 @@
 *  along with MorphogenGL.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include "heart.h"
 #include "morphowidget.h"
 
-MorphoWidget::MorphoWidget(Heart* theHeart, QWidget* parent) : QOpenGLWidget(parent), heart { theHeart }
+MorphoWidget::MorphoWidget(QWidget* parent) : QOpenGLWidget(parent)
 {
     setWindowIcon(QIcon(":/icons/morphogengl.png"));
     
@@ -43,7 +42,6 @@ MorphoWidget::~MorphoWidget()
 
 void MorphoWidget::closeEvent(QCloseEvent* event)
 {
-    emit stopHeartBeat();
     emit closing();
     event->accept();
 }
@@ -153,6 +151,11 @@ void MorphoWidget::mousePressEvent(QMouseEvent* event)
     }
 }
 
+void MorphoWidget::updateOutputTextureID(GLuint id)
+{
+    outputTextureID = id;
+}
+
 void MorphoWidget::resetZoom()
 {
     srcX0 = 0;
@@ -173,8 +176,7 @@ void MorphoWidget::initializeGL()
 
     glGenFramebuffers(1, &fbo);
 
-    emit initGenerator();
-    emit initHeartBeat();
+    emit openGLInitialized();
 }
 
 void MorphoWidget::paintGL()
@@ -186,7 +188,7 @@ void MorphoWidget::paintGL()
 
     // Set generator's output texture as fbo's texture
 
-    glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, heart->getOutputTextureID(), 0);
+    glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, outputTextureID, 0);
 
     // Render to default frame buffer (screen) from fbo
 

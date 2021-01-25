@@ -170,6 +170,7 @@ public:
     QString version = "1.0 beta";
 
 signals:
+    void outputTextureChanged(GLuint id);
     void sortedOperationsChanged(QVector<QPair<QUuid, QString>> data);
 
 private:

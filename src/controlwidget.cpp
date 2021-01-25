@@ -147,8 +147,7 @@ void ControlWidget::constructSystemToolBar()
     systemToolBar->addSeparator();
     systemToolBar->addAction(QIcon(QPixmap(":/icons/format-list-ordered.png")), "List sorted operations", this, &ControlWidget::toggleSortedOperationsWidget);
     systemToolBar->addSeparator();
-    rgbAction = systemToolBar->addAction(QIcon(QPixmap(":/icons/office-chart-scatter.png")), "Show RGB graph");
-    rgbAction->setCheckable(true);
+    systemToolBar->addAction(QIcon(QPixmap(":/icons/office-chart-area-stacked.png")), "Show plots", this, &ControlWidget::plotsActionTriggered);
     systemToolBar->addSeparator();
     loadConfigAction = systemToolBar->addAction(QIcon(QPixmap(":/icons/document-open.png")), "Load configuration");
     saveConfigAction = systemToolBar->addAction(QIcon(QPixmap(":/icons/document-save.png")), "Save configuration");
@@ -161,7 +160,6 @@ void ControlWidget::constructSystemToolBar()
     connect(screenshotAction, &QAction::triggered, this, &ControlWidget::takeScreenshot);
     connect(displayOptionsAction, &QAction::triggered, this, &ControlWidget::toggleDisplayOptionsWidget);
     connect(recordingOptionsAction, &QAction::triggered, this, &ControlWidget::toggleRecordingOptionsWidget);
-    connect(rgbAction, &QAction::triggered, this, &ControlWidget::toggleRGBGraph);
     connect(loadConfigAction, &QAction::triggered, this, &ControlWidget::loadConfig);
     connect(saveConfigAction, &QAction::triggered, this, &ControlWidget::saveConfig);
     connect(aboutAction, &QAction::triggered, this, &ControlWidget::about);
@@ -240,16 +238,6 @@ void ControlWidget::toggleRecordingOptionsWidget()
 void ControlWidget::toggleSortedOperationsWidget()
 {
     sortedOperationsWidget->setVisible(!sortedOperationsWidget->isVisible());
-}
-
-void ControlWidget::toggleRGBGraph()
-{
-    heart->setRGBWidgetVisibility(rgbAction->isChecked());
-}
-
-void ControlWidget::uncheckRGBGraphAction()
-{
-    rgbAction->setChecked(false);
 }
 
 void ControlWidget::loadConfig()

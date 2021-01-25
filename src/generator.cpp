@@ -315,11 +315,13 @@ void GeneratorGL::setOutput(QUuid id)
     {
         outputID = id;
         outputTextureID = operationNodes.value(id)->operation->getTextureBlit();
+        emit outputTextureChanged(**outputTextureID);
     }
     else if (seeds.contains(id))
     {
         outputID = id;
         outputTextureID = seeds.value(id)->getTextureID();
+        emit outputTextureChanged(**outputTextureID);
     }
 }
 

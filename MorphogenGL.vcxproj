@@ -127,6 +127,7 @@
     <ClCompile Include="src\morphowidget.cpp" />
     <ClCompile Include="src\node.cpp" />
     <ClCompile Include="src\parameter.cpp" />
+    <ClCompile Include="src\plotswidget.cpp" />
     <ClCompile Include="src\polarkernelplot.cpp" />
     <ClCompile Include="src\rgbwidget.cpp" />
     <ClCompile Include="src\seed.cpp" />
@@ -150,6 +151,7 @@
     <QtMoc Include="src\operationswidget.h" />
     <QtMoc Include="src\polarkernelplot.h" />
     <QtMoc Include="src\rgbwidget.h" />
+    <QtMoc Include="src\plotswidget.h" />
     <ClInclude Include="src\seed.h" />
   </ItemGroup>
   <ItemGroup>
