@@ -90,6 +90,7 @@ void PlotsWidget::getPixels()
 
     glBindTexture(GL_TEXTURE_2D, outputTextureID);
     glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_FLOAT, pixels);
+    glBindTexture(GL_TEXTURE_2D, 0);
 
     context->doneCurrent();
 

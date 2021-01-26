@@ -68,6 +68,7 @@ Heart::Heart()
 
     connect(controlWidget->generator, &GeneratorGL::outputTextureChanged, plotsWidget, &PlotsWidget::updateOutputTextureID);
     connect(controlWidget->generator, &GeneratorGL::outputTextureChanged, morphoWidget, &MorphoWidget::updateOutputTextureID);
+    connect(controlWidget->generator, &GeneratorGL::outputTextureChanged, [=](GLuint id){ if (encoder) encoder->setTextureID(id); });
     connect(controlWidget, &ControlWidget::plotsActionTriggered, this, &Heart::togglePlotsWidget);
     connect(controlWidget, &ControlWidget::imageSizeChanged, morphoWidget, &MorphoWidget::resetZoom);
     connect(controlWidget, &ControlWidget::imageSizeChanged, plotsWidget, &PlotsWidget::allocatePixelsArray);
@@ -174,7 +175,8 @@ void Heart::startRecording(QString recordFilename, int framesPerSecond, QString 
         framesPerSecond,
         preset.toStdString().c_str(),
         QString::number(crf).toStdString().c_str(),
-        morphoWidget->context());
+        morphoWidget->context(),
+        **controlWidget->generator->getOutputTextureID());
 }
 
 void Heart::stopRecording()

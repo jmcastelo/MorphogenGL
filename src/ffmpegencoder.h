@@ -30,22 +30,23 @@ extern "C"
 }
 #include <cstdlib>
 #include <iostream>
-#include <QOpenGLFunctions>
+#include <QOpenGLExtraFunctions>
 #include <QOpenGLContext>
 
 #pragma once
 
-class FFmpegEncoder : protected QOpenGLFunctions
+class FFmpegEncoder : protected QOpenGLExtraFunctions
 {
 public:
     unsigned int frameNumber = 0;
 
-    FFmpegEncoder(const char* filename, int width, int height, int fps, const char* preset, const char* crf, QOpenGLContext* mainContext);
+    FFmpegEncoder(const char* filename, int width, int height, int fps, const char* preset, const char* crf, QOpenGLContext* mainContext, GLuint id);
     ~FFmpegEncoder();
 
     void setFrameYUVFromRGB();
     void encodeFrame(AVFrame* oneFrame);
     void recordFrame();
+    void setTextureID(GLuint id) { textureID = id; }
 
 private:
     AVCodecContext* codecContext = NULL;
@@ -59,4 +60,5 @@ private:
     int width;
     int height;
     QOpenGLContext* context;
+    GLuint textureID = 0;
 };
