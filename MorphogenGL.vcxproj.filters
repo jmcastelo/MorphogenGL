@@ -63,6 +63,9 @@
     <QtMoc Include="src\plotswidget.h">
       <Filter>Header Files</Filter>
     </QtMoc>
+    <QtMoc Include="src\returnmap.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\controlwidget.cpp">
@@ -123,6 +126,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\plotswidget.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\returnmap.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -22,6 +22,7 @@
 
 #pragma once
 
+#include "fbo.h"
 #include "morphowidget.h"
 #include "controlwidget.h"
 #include "plotswidget.h"

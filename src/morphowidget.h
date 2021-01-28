@@ -22,11 +22,12 @@
 
 #pragma once
 
-
-#include "fbo.h"
 #include <cmath>
 #include <QOpenGLWidget>
 #include <QOpenGLExtraFunctions>
+#include <QOpenGLShaderProgram>
+#include <QOpenGLVertexArrayObject>
+#include <QOpenGLBuffer>
 #include <QIcon>
 #include <QGuiApplication>
 #include <QScreen>
@@ -42,7 +43,7 @@ class MorphoWidget : public QOpenGLWidget, protected QOpenGLExtraFunctions
     Q_OBJECT
 
 public:
-    MorphoWidget(QWidget* parent = nullptr);
+    MorphoWidget(int width, int height, QWidget* parent = nullptr);
     virtual ~MorphoWidget() override;
 
     void initializeGL() override;
@@ -52,29 +53,39 @@ public:
 signals:
     void openGLInitialized();
     void screenSizeChanged(int width, int height);
+    void selectedPointChanged(QPoint point);
     void closing();
 
 public slots:
     void updateOutputTextureID(GLuint id);
-    void resetZoom();
+    void resetZoom(int width, int height);
 
 protected:
     void closeEvent(QCloseEvent* event) override;
     void wheelEvent(QWheelEvent* event) override;
     void mouseMoveEvent(QMouseEvent* event) override;
     void mousePressEvent(QMouseEvent* event) override;
+    void keyPressEvent(QKeyEvent *event) override;
+    void keyReleaseEvent(QKeyEvent *event) override;
 
 private:
     GLuint outputTextureID = 0;
 
     GLuint fbo = 0;
 
-    GLint srcX0 = 0;
-    GLint srcY0 = 0;
-    GLint srcX1 = FBO::width;
-    GLint srcY1 = FBO::height;
-    int xPrev = -1;
-    int yPrev = -1;
-    float deltaX = 0.0f;
-    float deltaY = 0.0f;
+    QRect image;
+    QRect frame;
+    QTransform transform;
+    QPointF prevPos;
+
+    QPointF selectedPoint;
+    QPointF cursor;
+    bool drawingCursor = false;
+
+    QOpenGLShaderProgram* program = nullptr;
+    QOpenGLVertexArrayObject* vao = nullptr;
+    QOpenGLBuffer* vbo = nullptr;
+
+    void setSelectedPoint(QPointF pos);
+    void updateCursor();
 };

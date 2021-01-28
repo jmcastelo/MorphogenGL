@@ -129,6 +129,7 @@
     <ClCompile Include="src\parameter.cpp" />
     <ClCompile Include="src\plotswidget.cpp" />
     <ClCompile Include="src\polarkernelplot.cpp" />
+    <ClCompile Include="src\returnmap.cpp" />
     <ClCompile Include="src\rgbwidget.cpp" />
     <ClCompile Include="src\seed.cpp" />
   </ItemGroup>
@@ -152,6 +153,7 @@
     <QtMoc Include="src\polarkernelplot.h" />
     <QtMoc Include="src\rgbwidget.h" />
     <QtMoc Include="src\plotswidget.h" />
+    <QtMoc Include="src\returnmap.h" />
     <ClInclude Include="src\seed.h" />
   </ItemGroup>
   <ItemGroup>

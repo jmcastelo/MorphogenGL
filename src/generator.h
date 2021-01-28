@@ -171,6 +171,7 @@ public:
 
 signals:
     void outputTextureChanged(GLuint id);
+    void imageSizeChanged(int width, int height);
     void sortedOperationsChanged(QVector<QPair<QUuid, QString>> data);
 
 private:

@@ -821,4 +821,6 @@ void GeneratorGL::resize(GLuint width, GLuint height)
         node->operation->resize();
 
     setOutput(outputID);
+
+    emit imageSizeChanged(width, height);
 }

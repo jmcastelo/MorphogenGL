@@ -32,7 +32,7 @@ Heart::Heart()
 
     // MorphoWidget
 
-    morphoWidget = new MorphoWidget;
+    morphoWidget = new MorphoWidget(FBO::width, FBO::height);
 
     // ControlWidget
 
@@ -41,11 +41,11 @@ Heart::Heart()
     // Arrange both widgets side by side
     
     morphoWidget->setGeometry(morphoWidget->geometry().x() - controlWidget->width() / 2, morphoWidget->geometry().y(), morphoWidget->width(), morphoWidget->height());
-    controlWidget->setGeometry(morphoWidget->geometry().x() + morphoWidget->width(), morphoWidget->geometry().y(), controlWidget->width(), controlWidget->height());
+    controlWidget->setGeometry(morphoWidget->geometry().x() + morphoWidget->width(), morphoWidget->geometry().y(), controlWidget->width(), morphoWidget->height());
 
     // Plots widget
 
-    plotsWidget = new PlotsWidget;
+    plotsWidget = new PlotsWidget(FBO::width, FBO::height);
 
     // Signals + Slots
 
@@ -59,6 +59,7 @@ Heart::Heart()
         timer->start();
     });
     connect(morphoWidget, &MorphoWidget::screenSizeChanged, controlWidget, &ControlWidget::updateWindowSizeLineEdits);
+    connect(morphoWidget, &MorphoWidget::selectedPointChanged, plotsWidget, &PlotsWidget::setSelectedPoint);
     connect(morphoWidget, &MorphoWidget::closing, [=]()
     {
         timer->stop();
@@ -66,12 +67,12 @@ Heart::Heart()
         plotsWidget->close();
     });
 
-    connect(controlWidget->generator, &GeneratorGL::outputTextureChanged, plotsWidget, &PlotsWidget::updateOutputTextureID);
+    connect(controlWidget->generator, &GeneratorGL::outputTextureChanged, plotsWidget, &PlotsWidget::setTextureID);
     connect(controlWidget->generator, &GeneratorGL::outputTextureChanged, morphoWidget, &MorphoWidget::updateOutputTextureID);
     connect(controlWidget->generator, &GeneratorGL::outputTextureChanged, [=](GLuint id){ if (encoder) encoder->setTextureID(id); });
+    connect(controlWidget->generator, &GeneratorGL::imageSizeChanged, morphoWidget, &MorphoWidget::resetZoom);
+    connect(controlWidget->generator, &GeneratorGL::imageSizeChanged, plotsWidget, &PlotsWidget::setImageSize);
     connect(controlWidget, &ControlWidget::plotsActionTriggered, this, &Heart::togglePlotsWidget);
-    connect(controlWidget, &ControlWidget::imageSizeChanged, morphoWidget, &MorphoWidget::resetZoom);
-    connect(controlWidget, &ControlWidget::imageSizeChanged, plotsWidget, &PlotsWidget::allocatePixelsArray);
     connect(controlWidget, &ControlWidget::closing, [=]()
     {
         morphoWidget->close();
@@ -120,15 +121,10 @@ void Heart::beat()
     if (controlWidget->generator->active)
         emit iterationPerformed();
     
-    // Update rgbWidget (making all its pixel computations) only if visible
+    // Compute plots
 
-    if (plotsWidget->isVisible())
-    {
-        if (controlWidget->generator->active)
-            plotsWidget->getPixels();
-
-        plotsWidget->updatePlot();
-    }
+    if (controlWidget->generator->active && plotsWidget->plotsActive())
+        plotsWidget->getPixels();
 }
 
 void Heart::setStartTime()

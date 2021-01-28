@@ -85,7 +85,6 @@ void RGBWidget::resizeGL(int width, int height)
     computeTransformMatrix();
 }
 
-
 void RGBWidget::setPixels(GLfloat *pixels)
 {
     makeCurrent();
@@ -107,6 +106,11 @@ void RGBWidget::setPixels(GLfloat *pixels)
 
     doneCurrent();
 
+    update();
+}
+
+void RGBWidget::updatePlot()
+{
     update();
 }
 
@@ -136,6 +140,8 @@ void RGBWidget::computeTransformMatrix()
     program->release();
 
     doneCurrent();
+
+    update();
 }
 
 void RGBWidget::closeEvent(QCloseEvent* event)

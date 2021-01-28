@@ -22,17 +22,21 @@
 
 #include "plotswidget.h"
 
-PlotsWidget::PlotsWidget(QWidget* parent) : QWidget(parent)
+PlotsWidget::PlotsWidget(int width, int height, QWidget* parent) : QWidget(parent)
 {
-    allocatePixelsArray();
+    allocatePixelsArray(width, height);
 
     rgbWidget = new RGBWidget;
+    returnMap = new ReturnMap(width, height);
 
     tabWidget = new QTabWidget;
-    tabWidget->addTab(rgbWidget, "RGB");
+    tabWidget->addTab(returnMap, "Return map");
+    tabWidget->addTab(rgbWidget, "RGB Scatter plot");
 
     QVBoxLayout* layout = new QVBoxLayout;
     layout->addWidget(tabWidget);
+
+    connect(this, &PlotsWidget::setSelectedPoint, returnMap, &ReturnMap::setPoint);
 
     setLayout(layout);
     resize(512, 512);
@@ -46,7 +50,6 @@ PlotsWidget::~PlotsWidget()
     delete surface;
 
     if (pixels) delete pixels;
-    if (prevPixels) delete prevPixels;
 }
 
 void PlotsWidget::init(QOpenGLContext *mainContext)
@@ -65,35 +68,43 @@ void PlotsWidget::init(QOpenGLContext *mainContext)
     context->doneCurrent();
 }
 
-void PlotsWidget::updateOutputTextureID(GLuint id)
+void PlotsWidget::setTextureID(GLuint id)
 {
-    outputTextureID = id;
+    textureID = id;
 }
 
-void PlotsWidget::updatePlot()
+bool PlotsWidget::plotsActive()
 {
-    tabWidget->currentWidget()->update();
+    return returnMap->active() || rgbWidget->isVisible();
 }
 
-void PlotsWidget::allocatePixelsArray()
+void PlotsWidget::allocatePixelsArray(int width, int height)
 {
     if (pixels) delete pixels;
-    pixels = new GLfloat[FBO::width * FBO::height * 3];
+    pixels = new GLfloat[width * height * 3];
+}
 
-    if (prevPixels) delete prevPixels;
-    prevPixels = new GLfloat[FBO::width * FBO::height * 3];
+void PlotsWidget::setImageSize(int width, int height)
+{
+    allocatePixelsArray(width, height);
+    returnMap->setImageSize(width, height);
 }
 
 void PlotsWidget::getPixels()
 {
     context->makeCurrent(surface);
 
-    glBindTexture(GL_TEXTURE_2D, outputTextureID);
+    glBindTexture(GL_TEXTURE_2D, textureID);
     glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_FLOAT, pixels);
     glBindTexture(GL_TEXTURE_2D, 0);
 
     context->doneCurrent();
 
-    if (tabWidget->isTabVisible(0))
+    // Update rgb widget only if visible
+
+    if (tabWidget->currentWidget() == rgbWidget)
         rgbWidget->setPixels(pixels);
+
+    if (returnMap->active())
+        returnMap->setPixels(pixels);
 }

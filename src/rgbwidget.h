@@ -52,6 +52,8 @@ public:
 
     void setPixels(GLfloat *pixels);
 
+    void updatePlot();
+
 signals:
     void closing();
 

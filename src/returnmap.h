@@ -22,47 +22,56 @@
 
 #pragma once
 
-#include "rgbwidget.h"
-#include "returnmap.h"
+#include "focuslineedit.h"
+#include <qcustomplot.h>
 #include <QWidget>
-#include <QTabWidget>
 #include <QVBoxLayout>
-#include <QOpenGLExtraFunctions>
-#include <QOpenGLContext>
-#include <QOffscreenSurface>
+#include <QHBoxLayout>
+#include <QCheckBox>
+#include <QPushButton>
+#include <QIntValidator>
+#include <QPoint>
 
-class PlotsWidget : public QWidget, protected QOpenGLExtraFunctions
+class ReturnMap : public QWidget
 {
     Q_OBJECT
 
 public:
-    PlotsWidget(int width, int height, QWidget* parent = nullptr);
-    ~PlotsWidget();
+    ReturnMap(int width, int height, QWidget* parent = nullptr);
+    ~ReturnMap();
 
-    void init(QOpenGLContext* mainContext);
-
-    bool plotsActive();
-    void getPixels();
-
-signals:
-    void setSelectedPoint(QPoint point);
-
-public slots:
-    void setTextureID(GLuint id);
+    void setPixels(GLfloat* pixels);
     void setImageSize(int width, int height);
 
+    bool active() { return status; }
+
+public slots:
+    void setPoint(QPoint thePoint);
+
 private:
-    RGBWidget* rgbWidget;
-    ReturnMap* returnMap;
+    QCustomPlot* plot;
 
-    QTabWidget* tabWidget;
+    QCPCurve* redPoints;
+    QCPCurve* greenPoints;
+    QCPCurve* bluePoints;
 
-    QOpenGLContext* context;
-    QOffscreenSurface* surface;
+    int imageWidth;
+    int imageHeight;
 
-    GLuint textureID = 0;
+    QPoint point;
 
-    GLfloat* pixels = nullptr;
+    int iteration = 0;
+    int numPoints = 50;
 
-    void allocatePixelsArray(int width, int height);
+    double prevRed;
+    double prevGreen;
+    double prevBlue;
+
+    bool status = false;
+
+    void checkPoint();
+
+private slots:
+    void setStatus(int state) { status = (state == Qt::Checked); }
+    void reset();
 };

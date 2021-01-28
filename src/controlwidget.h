@@ -75,7 +75,6 @@ public:
 
 signals:
     void plotsActionTriggered();
-    void imageSizeChanged();
     void seedDrawn();
     void closing();
 

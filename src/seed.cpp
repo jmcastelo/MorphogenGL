@@ -357,7 +357,8 @@ void Seed::loadImage(QString filename)
     image->destroy();
     image->setSize(FBO::width, FBO::height);
     if (!filename.isEmpty())
-        image->setData(QImage(filename).mirrored());
+        //image->setData(QImage(filename).mirrored());
+        image->setData(QImage(filename));
 
     context->doneCurrent();
 

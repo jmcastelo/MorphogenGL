@@ -55,5 +55,7 @@
         <file>icons/applications-graphics.png</file>
         <file>shaders/color-quantization.frag</file>
         <file>icons/office-chart-area-stacked.png</file>
+        <file>shaders/cursor.frag</file>
+        <file>shaders/cursor.vert</file>
     </qresource>
 </RCC>

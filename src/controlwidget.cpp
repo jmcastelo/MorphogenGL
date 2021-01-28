@@ -102,7 +102,6 @@ ControlWidget::ControlWidget(Heart* theHeart, QWidget *parent) : QWidget(parent)
         generator->resize(width, height);
         imageWidthLineEdit->setText(QString::number(width));
         imageHeightLineEdit->setText(QString::number(height));
-        emit imageSizeChanged();
     });
 }
 
@@ -552,7 +551,6 @@ void ControlWidget::constructDisplayOptionsWidget()
     connect(imageWidthLineEdit, &FocusLineEdit::returnPressed, [=]()
     {
         generator->resize(imageWidthLineEdit->text().toInt(), generator->getHeight());
-        emit imageSizeChanged();
     });
     connect(imageWidthLineEdit, &FocusLineEdit::focusOut, [&generator = this->generator, &imageWidthLineEdit = this->imageWidthLineEdit]()
     {
@@ -561,7 +559,6 @@ void ControlWidget::constructDisplayOptionsWidget()
     connect(imageHeightLineEdit, &FocusLineEdit::returnPressed, [=]()
     {
         generator->resize(generator->getWidth(), imageHeightLineEdit->text().toInt());
-        emit imageSizeChanged();
     });
     connect(imageHeightLineEdit, &FocusLineEdit::focusOut, [&generator = this->generator, &imageHeightLineEdit = this->imageHeightLineEdit]()
     {
