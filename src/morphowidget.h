@@ -75,12 +75,15 @@ private:
 
     QRect image;
     QRect frame;
-    QTransform transform;
+    QTransform frameTransform;
     QPointF prevPos;
 
     QPointF selectedPoint;
+    QTransform selectedPointTransform;
     QPointF cursor;
     bool drawingCursor = false;
+
+    QRect prevFrame;
 
     QOpenGLShaderProgram* program = nullptr;
     QOpenGLVertexArrayObject* vao = nullptr;

@@ -66,36 +66,36 @@ void MorphoWidget::wheelEvent(QWheelEvent* event)
 
     qreal factor = pow(2.0, -event->angleDelta().y() / 1200.0);
 
-    transform.scale(factor, factor);
+    frameTransform.scale(factor, factor);
 
-    if (transform.m11() > 1.0 || transform.m22() > 1.0)
-        transform.reset();
+    if (frameTransform.m11() > 1.0 || frameTransform.m22() > 1.0)
+        frameTransform.reset();
 
-    frame = transform.mapRect(image);
+    frame = frameTransform.mapRect(image);
 
     // This transform is used to zoom following the pointer
 
-    QTransform superscale((frameBefore.width() - frame.width()) / (transform.m11() * width()), 0.0, 0.0, (frameBefore.height() - frame.height()) / (transform.m22() * height()), 0.0, 0.0);
+    QTransform superscale = QTransform().scale((frameBefore.width() - frame.width()) / (frameTransform.m11() * width()), (frameBefore.height() - frame.height()) / (frameTransform.m22() * height()));
     QPointF increment = superscale.map(event->position());
 
-    frame = transform.translate(increment.x(), increment.y()).mapRect(image);
+    frame = frameTransform.translate(increment.x(), increment.y()).mapRect(image);
 
     // Keep frame within image
 
     if (frame.y() < image.y())
-        frame = transform.translate(0.0, (image.y() - frame.y()) / transform.m22()).mapRect(image);
+        frame = frameTransform.translate(0.0, (image.y() - frame.y()) / frameTransform.m22()).mapRect(image);
     if (frame.y() + frame.height() > image.y() + image.height())
-        frame = transform.translate(0.0, (image.y() + image.height() - frame.y() - frame.height()) / transform.m22()).mapRect(image);
+        frame = frameTransform.translate(0.0, (image.y() + image.height() - frame.y() - frame.height()) / frameTransform.m22()).mapRect(image);
     if (frame.x() < image.x())
-        frame = transform.translate((image.x() - frame.x()) / transform.m11(), 0.0).mapRect(image);
+        frame = frameTransform.translate((image.x() - frame.x()) / frameTransform.m11(), 0.0).mapRect(image);
     if (frame.x() + frame.width() > image.x() + image.width())
-        frame = transform.translate((image.x() + image.width() - frame.x() - frame.width()) / transform.m11(), 0.0).mapRect(image);
+        frame = frameTransform.translate((image.x() + image.width() - frame.x() - frame.width()) / frameTransform.m11(), 0.0).mapRect(image);
 
     // Cursor
 
-    QPointF point = transform.inverted().map(selectedPoint);
-    cursor.setX(2.0 * (point.x() / image.width() - 0.5));
-    cursor.setY(2.0 * (0.5 - point.y() / image.height()));
+    QPointF point = selectedPointTransform.map(selectedPoint);
+    cursor.setX(2.0 * ((point.x() - frame.left()) / frame.width() - 0.5));
+    cursor.setY(2.0 * (0.5 - (point.y() - frame.top()) / frame.height()));
     updateCursor();
 
     event->accept();
@@ -109,23 +109,28 @@ void MorphoWidget::mouseMoveEvent(QMouseEvent* event)
         {
             // Frame
 
-            QPointF delta = prevPos - event->localPos();
+            QPointF delta = QTransform().scale(static_cast<qreal>(image.width()) / width(), static_cast<qreal>(image.height()) / height()).map(prevPos - event->localPos());
 
-            frame = transform.translate(delta.x(), delta.y()).mapRect(image);
+            frame = frameTransform.translate(delta.x(), delta.y()).mapRect(image);
 
             if (frame.top() < image.top() || frame.bottom() > image.bottom())
-                frame = transform.translate(0.0, -delta.y()).mapRect(image);
+                frame = frameTransform.translate(0.0, -delta.y()).mapRect(image);
             if (frame.left() < image.left() || frame.right() > image.right())
-                frame = transform.translate(-delta.x(), 0.0).mapRect(image);
+                frame = frameTransform.translate(-delta.x(), 0.0).mapRect(image);
 
             prevPos = event->pos();
 
             // Cursor
 
-            QPointF point = transform.inverted().map(selectedPoint);
-            cursor.setX(2.0 * (point.x() / image.width() - 0.5));
-            cursor.setY(2.0 * (0.5 - point.y() / image.height()));
-            updateCursor();
+            if (prevFrame != frame)
+            {
+                QPointF point = selectedPointTransform.translate(static_cast<qreal>(prevFrame.left() - frame.left()) / image.width(), static_cast<qreal>(prevFrame.top() - frame.top()) / image.height()).map(selectedPoint);
+                cursor.setX(2.0 * ((point.x() - frame.left()) / frame.width() - 0.5));
+                cursor.setY(2.0 * (0.5 - (point.y() - frame.top()) / frame.height()));
+                updateCursor();
+
+                prevFrame = frame;
+            }
         }
         else if (event->modifiers() == Qt::ControlModifier)
         {
@@ -143,12 +148,15 @@ void MorphoWidget::mousePressEvent(QMouseEvent* event)
         if (event->modifiers() == Qt::NoModifier)
         {
             prevPos = event->localPos();
+            prevFrame = frame;
         }
         else if (event->modifiers() == Qt::ControlModifier)
         {
             setSelectedPoint(event->localPos());
         }
     }
+
+    event->accept();
 }
 
 void MorphoWidget::keyPressEvent(QKeyEvent* event)
@@ -203,21 +211,48 @@ void MorphoWidget::setSelectedPoint(QPointF pos)
     updateCursor();
 }
 
+void MorphoWidget::resetZoom(int newWidth, int newHeight)
+{
+    QRect oldImage = image;
+
+    image = QRect(0, 0, newWidth, newHeight);
+
+    qreal scaleX = static_cast<qreal>(newWidth) / oldImage.width();
+    qreal scaleY = static_cast<qreal>(newHeight) / oldImage.height();
+
+    frameTransform.setMatrix(frameTransform.m11(), 0.0, 0.0, 0.0, frameTransform.m22(), 0.0, scaleX * frameTransform.dx(), scaleY * frameTransform.dy(), 1.0);
+
+    frame = frameTransform.mapRect(image);
+
+    selectedPoint = QTransform().scale(scaleX, scaleY).map(selectedPoint);
+
+    selectedPointTransform.setMatrix(1.0, 0.0, 0.0, 0.0, 1.0, 0.0, scaleX * selectedPointTransform.dx(), scaleY * selectedPointTransform.dy(), 1.0);
+
+    QPointF selPoint = selectedPointTransform.map(selectedPoint);
+    cursor.setX(2.0 * ((selPoint.x() - frame.left()) / frame.width() - 0.5));
+    cursor.setY(2.0 * (0.5 - (selPoint.y() - frame.top()) / frame.height()));
+    updateCursor();
+
+    QPoint point = QPoint(floor(selectedPoint.x()), floor(selectedPoint.y()));
+
+    // Check boundaries
+    // Note: right() = left() + width() - 1, bottom() = top() + height() - 1
+
+    if (point.x() < image.left())
+        point.setX(image.left());
+    if (point.x() > image.right())
+        point.setX(image.right());
+    if (point.y() < image.top())
+        point.setY(image.top());
+    if (point.y() > image.bottom())
+        point.setY(image.bottom());
+
+    emit selectedPointChanged(point);
+}
+
 void MorphoWidget::updateOutputTextureID(GLuint id)
 {
     outputTextureID = id;
-}
-
-void MorphoWidget::resetZoom(int newWidth, int newHeight)
-{
-    image = QRect(0, 0, newWidth, newHeight);
-    frame = image;
-
-    selectedPoint = QPointF(0.5 * newWidth, 0.5 * newHeight);
-
-    setSelectedPoint(QPointF(0.5 * width(), 0.5 * height()));
-
-    transform.reset();
 }
 
 void MorphoWidget::updateCursor()
