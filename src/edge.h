@@ -34,6 +34,7 @@ class Edge : public QGraphicsObject
 
 public:
     Edge(GraphWidget* graphWidget, Node *sourceNode, Node *destNode);
+    ~Edge();
 
     Node *sourceNode() const;
     Node *destNode() const;
@@ -56,6 +57,8 @@ public:
     void clearCycles() { cycleList.clear(); }
 
     void drawBlendFactor(bool draw) { paintBlendFactor = draw; }
+    void updateBlendFactor();
+    void closeBlendFactorWidget();
 
     QRectF boundingRect() const override;
 
@@ -79,13 +82,19 @@ private:
 
     bool paintBlendFactor = false;
 
+    QWidget* blendFactorWidget;
+
     QPointF intersectionPoint(Node *node, Node *other, QPointF offset, QLineF line);
     void setLinkOffset();
 
     void setAsPredge();
     void setAsEdge();
 
+    void constructBlendFactorWidget();
     void setBlendFactor();
+
+signals:
+    void blendFactorChanged();
 
 private slots:
     void remove();

@@ -256,7 +256,10 @@ void OperationNode::equalizeBlendFactors()
     graph->generator->equalizeBlendFactors(id);
 
     for (Edge* edge : edgeList)
+    {
         edge->update();
+        edge->updateBlendFactor();
+    }
 }
 
 void OperationNode::clear()

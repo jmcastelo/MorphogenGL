@@ -65,6 +65,15 @@ GraphWidget::~GraphWidget()
     disconnect(scene(), &QGraphicsScene::selectionChanged, this, &GraphWidget::newSelectedNodes);
 }
 
+void GraphWidget::closeWidgets()
+{
+    const QList<QGraphicsItem*> items = scene()->items();
+
+    for (QGraphicsItem* item : items)
+        if (Edge* edge = qgraphicsitem_cast<Edge*>(item))
+            edge->closeBlendFactorWidget();
+}
+
 void GraphWidget::newSelectedNodes()
 {
     selectedOperationNodes.clear();
@@ -74,9 +83,9 @@ void GraphWidget::newSelectedNodes()
 
     for (QGraphicsItem* item : items)
     {
-        if (OperationNode *node = qgraphicsitem_cast<OperationNode*>(item))
+        if (OperationNode* node = qgraphicsitem_cast<OperationNode*>(item))
             selectedOperationNodes << node;
-        else if (SeedNode *node = qgraphicsitem_cast<SeedNode*>(item))
+        else if (SeedNode* node = qgraphicsitem_cast<SeedNode*>(item))
             selectedSeedNodes << node;
     }
 

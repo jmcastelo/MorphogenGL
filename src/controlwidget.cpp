@@ -127,6 +127,8 @@ void ControlWidget::closeEvent(QCloseEvent* event)
     foreach(OperationsWidget* opWidget, operationsWidgets)
         opWidget->close();
 
+    graphWidget->closeWidgets();
+
     emit closing();
     event->accept();
 }

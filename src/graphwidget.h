@@ -77,6 +77,8 @@ public:
 
     void markNodes(QVector<QUuid> ids);
 
+    void closeWidgets();
+
 public slots:
     void drawSelectedSeeds();
     void setSelectedOperationsParameters();

@@ -442,6 +442,11 @@ void ConfigurationParser::read()
 
                 generator->connectLoadedOperations(connections);
 
+                generator->swapLoadedSeeds();
+                generator->swapLoadedOperations();
+
+                generator->sortOperations();
+
                 graphWidget->clearScene();
 
                 QMap<QUuid, QPointF>::const_iterator i = seedNodePositions.constBegin();
@@ -513,11 +518,6 @@ void ConfigurationParser::read()
                 xml.skipCurrentElement();
             }   
         }
-
-        generator->swapLoadedSeeds();
-        generator->swapLoadedOperations();
-
-        generator->sortOperations();
 
         if (!outputNodeId.isNull())
             generator->setOutput(outputNodeId);

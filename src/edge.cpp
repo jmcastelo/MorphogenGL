@@ -25,12 +25,15 @@
 #include "cycle.h"
 #include "graphwidget.h"
 #include "generator.h"
+#include "focuslineedit.h"
 
 #include <QPainter>
 #include <QtMath>
 #include <QGraphicsSceneContextMenuEvent>
 #include <QMenu>
-#include <QInputDialog>
+#include <QDoubleValidator>
+#include <QSlider>
+#include <QFormLayout>
 
 Edge::Edge(GraphWidget *graphWidget, Node *sourceNode, Node *destNode)
     : graph { graphWidget },
@@ -46,6 +49,13 @@ Edge::Edge(GraphWidget *graphWidget, Node *sourceNode, Node *destNode)
     for (Edge* edge: dest->edges())
         if (edge->destNode() == source)
             edge->adjust();
+
+    constructBlendFactorWidget();
+}
+
+Edge::~Edge()
+{
+    blendFactorWidget->deleteLater();
 }
 
 void Edge::remove()
@@ -200,13 +210,75 @@ void Edge::setAsEdge()
     update();
 }
 
+void Edge::constructBlendFactorWidget()
+{
+    FocusLineEdit* blendFactorLineEdit = new FocusLineEdit;
+    blendFactorLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+
+    QDoubleValidator* validator = new QDoubleValidator(0.0, 1.0, 6, blendFactorLineEdit);
+    validator->setLocale(QLocale::English);
+    blendFactorLineEdit->setValidator(validator);
+    blendFactorLineEdit->setText(QString::number(graph->generator->blendFactor(source->id, dest->id)));
+
+    connect(blendFactorLineEdit, &FocusLineEdit::focusOut, [=](){ blendFactorLineEdit->setText(QString::number(graph->generator->blendFactor(source->id, dest->id))); });
+
+    QFormLayout* formLayout = new QFormLayout;
+    formLayout->setAlignment(Qt::AlignLeft);
+    formLayout->addRow("Blend factor:", blendFactorLineEdit);
+
+    QSlider* blendFactorSlider = new QSlider(Qt::Horizontal);
+    blendFactorSlider->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
+    blendFactorSlider->setRange(0, 100000);
+    blendFactorSlider->setSliderPosition(graph->generator->blendFactor(source->id, dest->id) * blendFactorSlider->maximum());
+
+    connect(blendFactorSlider, &QAbstractSlider::valueChanged, [=](int value)
+    {
+        float factor = static_cast<float>(value) / blendFactorSlider->maximum();
+        graph->generator->setBlendFactor(source->id, dest->id, factor);
+        blendFactorLineEdit->setText(QString::number(factor));
+        update();
+    });
+
+    connect(blendFactorLineEdit, &FocusLineEdit::returnPressed, [=]()
+    {
+        float factor = blendFactorLineEdit->text().toFloat();
+        graph->generator->setBlendFactor(source->id, dest->id, factor);
+        int index = factor * blendFactorSlider->maximum();
+        blendFactorSlider->setSliderPosition(index);
+        update();
+    });
+
+    connect(this, &Edge::blendFactorChanged, [=]()
+    {
+        float factor = graph->generator->blendFactor(source->id, dest->id);
+        blendFactorLineEdit->setText(QString::number(factor));
+        int index = factor * blendFactorSlider->maximum();
+        blendFactorSlider->setSliderPosition(index);
+    });
+
+    QVBoxLayout* layout = new QVBoxLayout;
+    layout->setSizeConstraint(QLayout::SetFixedSize);
+    layout->addLayout(formLayout);
+    layout->addWidget(blendFactorSlider);
+
+    blendFactorWidget = new QWidget;
+    blendFactorWidget->setWindowFlags(Qt::WindowStaysOnTopHint);
+    blendFactorWidget->setLayout(layout);
+}
+
+void Edge::updateBlendFactor()
+{
+    emit blendFactorChanged();
+}
+
 void Edge::setBlendFactor()
 {
-    bool ok;
+    blendFactorWidget->show();
+}
 
-    float factor = QInputDialog::getDouble(graph, "Set blend factor", "Blend factor:", graph->generator->blendFactor(source->id, dest->id), 0.0, 1.0, 6, &ok, Qt::WindowFlags(), 0.001);
-
-    if (ok) graph->generator->setBlendFactor(source->id, dest->id, factor);
+void Edge::closeBlendFactorWidget()
+{
+    blendFactorWidget->close();
 }
 
 QRectF Edge::boundingRect() const
