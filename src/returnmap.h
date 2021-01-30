@@ -27,6 +27,7 @@
 #include <QWidget>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
+#include <QGridLayout>
 #include <QCheckBox>
 #include <QPushButton>
 #include <QIntValidator>
@@ -49,11 +50,15 @@ public slots:
     void setPoint(QPoint thePoint);
 
 private:
-    QCustomPlot* plot;
+    QCustomPlot* redPlot;
+    QCustomPlot* greenPlot;
+    QCustomPlot* bluePlot;
+    QCustomPlot* grayPlot;
 
     QCPCurve* redPoints;
     QCPCurve* greenPoints;
     QCPCurve* bluePoints;
+    QCPCurve* grayPoints;
 
     int imageWidth;
     int imageHeight;
@@ -66,6 +71,7 @@ private:
     double prevRed;
     double prevGreen;
     double prevBlue;
+    double prevGray;
 
     bool status = false;
 
