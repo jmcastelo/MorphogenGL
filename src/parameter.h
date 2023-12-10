@@ -28,33 +28,107 @@
 
 class ImageOperation;
 
-struct BoolParameter
+class NumberSignals : public QObject
 {
-    QString name;
-    bool value;
+    Q_OBJECT
 
-    BoolParameter(QString theName, bool theValue) :
-        name { theName },
-        value { theValue }
-    {}
+public:
+       explicit NumberSignals(QObject *parent = nullptr) : QObject(parent) {}
+
+signals:
+    void currentValueChanged(float currentValue);
+    void currentValueChanged(int currentValue);
+    void currentIndexChanged(int currentIndex);
 };
 
 template <class T>
-class OptionsParameter
+class Number : public NumberSignals
+{
+public:
+    T value, min, max, inf, sup;
+    int indexMax = 100000;
+
+    Number(T theValue, T theMin, T theMax, T theInf, T theSup) :
+        value { theValue },
+        min { theMin },
+        max { theMax },
+        inf { theInf },
+        sup { theSup }
+    {}
+
+    Number(const Number& number)
+    {
+        value = number.value;
+        min = number.min;
+        max = number.max;
+        inf = number.inf;
+        sup = number.sup;
+        indexMax = number.indexMax;
+    }
+
+    void setMin(T theMin) { min = theMin; }
+    T getMin() { return min; }
+
+    void setMax(T theMax) { max = theMax; }
+    T getMax() { return max; }
+
+    T getInf() { return inf; }
+    T getSup() { return sup; }
+
+    void setValue(T newValue)
+    {
+        value = newValue;
+        emit currentValueChanged(value);
+    }
+
+    void setValueFromIndex(int newIndex)
+    {
+        value = static_cast<T>(min + (max - min) * static_cast<float>(newIndex) / static_cast<float>(indexMax));
+        emit currentValueChanged(value);
+    }
+
+    void setIndex()
+    {
+        int index = static_cast<int>(indexMax * static_cast<float>(value - min) / static_cast<float>(max - min));
+        emit currentIndexChanged(index);
+    }
+
+    int getIndex()
+    {
+        return static_cast<int>(indexMax * static_cast<float>(value - min) / static_cast<float>(max - min));
+    }
+};
+
+class Parameter
 {
 public:
     QString name;
+
+    Parameter(QString theName, int theIndex, ImageOperation* theOperation) :
+        name { theName },
+        index { theIndex },
+        operation { theOperation }
+    {}
+
+    void setOperation(ImageOperation* op) { operation = op; }
+
+    int index;
+    ImageOperation* operation;
+};
+
+template <class T>
+class OptionsParameter : public Parameter
+{
+public:
     std::vector<QString> valueNames;
     std::vector<T> values;
     T value;
 
     OptionsParameter(QString theName, int theIndex, ImageOperation* theOperation, std::vector<QString> theValueNames, std::vector<T> theValues, T theValue) :
-        name { theName },
+        Parameter(theName, theIndex, theOperation),
         valueNames { theValueNames },
         values { theValues },
-        value { theValue },
-        index { theIndex },
-        operation { theOperation }
+        value { theValue }
     {}
 
     void setValue(int valueIndex)
@@ -62,107 +136,138 @@ public:
         value = values[valueIndex];
         operation->setOptionsParameter(index, value);
     }
-
-    void setOperation(ImageOperation* op) { operation = op; }
-
-private:
-    int index;
-    ImageOperation* operation;
 };
 
-class IntParameter
+class IntParameter : public Parameter
 {
 public:
-    QString name;
-    int value, min, max;
+    Number<int>* number;
     bool isOdd;
 
-    IntParameter(QString theName, int theIndex, ImageOperation* theOperation, int theValue, int theMin, int theMax, bool odd) :
-        name { theName },
-        value { theValue },
-        min { theMin },
-        max { theMax },
-        isOdd { odd },
-        index { theIndex },
-        operation { theOperation }
-    {}
+    IntParameter(QString theName, int theIndex, ImageOperation* theOperation, int theValue, int theMin, int theMax, int theInf, int theSup, bool odd) :
+        Parameter(theName, theIndex, theOperation),
+        isOdd { odd }
+    {
+        number = new Number<int>(theValue, theMin, theMax, theInf, theSup);
+    }
 
-    void setValue(int theValue);
-    void setOperation(ImageOperation* theOperation) { operation = theOperation; }
+    IntParameter(const IntParameter& parameter) :
+        Parameter(parameter)
+    {
+        number = new Number<int>(*parameter.number);
+    }
 
-private:
-    int index;
-    ImageOperation* operation;
+    ~IntParameter()
+    {
+        delete number;
+    }
+
+    void setValue(int theValue)
+    {
+        operation->setIntParameter(index, theValue);
+    }
 };
 
-class FloatParameter
+class FloatParameter : public Parameter
 {
 public:
-    QString name;
-    float value, min, max, inf, sup;
-    
+    Number<float>* number;
+
     FloatParameter(QString theName, int theIndex, ImageOperation* theOperation, float theValue, float theMin, float theMax, float theInf, float theSup) :
-        name { theName },
-        value { theValue },
-        min { theMin },
-        max { theMax },
-        inf { theInf },
-        sup { theSup },
-        index { theIndex },
-        operation { theOperation }
-    {}
+        Parameter(theName, theIndex, theOperation)
+    {
+        number = new Number<float>(theValue, theMin, theMax, theInf, theSup);
+    }
 
-    void setValue(float theValue);
-    void setOperation(ImageOperation* op) { operation = op; }
+    FloatParameter(const FloatParameter& parameter) :
+        Parameter(parameter)
+    {
+        number = new Number<float>(*parameter.number);
+    }
 
-private:
-    int index;
-    ImageOperation* operation;
+    ~FloatParameter()
+    {
+        delete number;
+    }
+
+    void setValue(float theValue)
+    {
+        operation->setFloatParameter(index, theValue);
+    }
 };
 
-class ArrayParameter
+class ArrayParameter : public Parameter
 {
 public:
-    QString name;
-    std::vector<float> values;
-    float min, max;
-    ArrayParameter(QString theName, ImageOperation* theOperation, std::vector<float> theValues, float theMin, float theMax) :
-        name { theName },
-        values { theValues },
-        min { theMin },
-        max { theMax },
-        operation { theOperation }
-    {}
-    virtual ~ArrayParameter(){}
+    std::vector<Number<float>*> numbers;
+
+    ArrayParameter(QString theName, int theIndex, ImageOperation* theOperation, std::vector<float> theValues, float theMin, float theMax, float theInf, float theSup) :
+        Parameter(theName, theIndex, theOperation)
+    {
+        for (float value : theValues)
+        {
+            Number<float>* number = new Number<float>(value, theMin, theMax, theInf, theSup);
+            numbers.push_back(number);
+        }
+    }
+
+    ArrayParameter(const ArrayParameter& parameter) :
+        Parameter(parameter)
+    {
+        for (auto n : parameter.numbers)
+        {
+            Number<float>* number = new Number<float>(*n);
+            numbers.push_back(number);
+        }
+    }
+
+    virtual ~ArrayParameter()
+    {
+        for (Number<float>* number : numbers)
+            delete number;
+        numbers.clear();
+    }
 
     virtual void setValues() = 0;
-
-protected:
-    ImageOperation* operation;
 };
 
 class KernelParameter : public ArrayParameter
 {
 public:
     bool normalize;
-    KernelParameter(QString theName, ImageOperation* theOperation, std::vector<float> theValues, float theMin, float theMax, bool norm) :
-        ArrayParameter(theName, theOperation, theValues, theMin, theMax),
+
+    KernelParameter(QString theName, int theIndex, ImageOperation* theOperation, std::vector<float> theValues, float theMin, float theMax, float theInf, float theSup, bool norm) :
+        ArrayParameter(theName, theIndex, theOperation, theValues, theMin, theMax, theInf, theSup),
         normalize { norm }
     {}
 
-    void setValues();
-    void setOperation(ImageOperation* op) { operation = op; }
+    KernelParameter(const KernelParameter& parameter) :
+        ArrayParameter(parameter)
+    {
+        normalize = parameter.normalize;
+    }
+
+    void setValues()
+    {
+        operation->setKernelParameter(numbers);
+    }
 };
 
 class MatrixParameter : public ArrayParameter
 {
 public:
-    MatrixParameter(QString theName, ImageOperation* theOperation, std::vector<float> theValues, float theMin, float theMax) :
-        ArrayParameter(theName, theOperation, theValues, theMin, theMax)
+    MatrixParameter(QString theName, int theIndex, ImageOperation* theOperation, std::vector<float> theValues, float theMin, float theMax, float theInf, float theSup) :
+        ArrayParameter(theName, theIndex, theOperation, theValues, theMin, theMax, theInf, theSup)
     {}
 
-    void setValues();
-    void setOperation(ImageOperation* op) { operation = op; }
+    MatrixParameter(const MatrixParameter& parameter) :
+        ArrayParameter(parameter)
+    {}
+
+    void setValues()
+    {
+        operation->setMatrixParameter(numbers);
+    }
 };
 
 struct PolarKernel
@@ -186,25 +291,35 @@ struct PolarKernel
     {}
 };
 
-class PolarKernelParameter
+class PolarKernelParameter : public Parameter
 {
 public:
-    QString name;
     std::vector<PolarKernel*> polarKernels;
     float centerElement;
 
-    PolarKernelParameter(QString theName, ImageOperation* theOperation, std::vector<PolarKernel*> thePolarKernels, float theCenterElement) :
-        name { theName },
+    PolarKernelParameter(QString theName, int theIndex, ImageOperation* theOperation, std::vector<PolarKernel*> thePolarKernels, float theCenterElement) :
+        Parameter(theName, theIndex, theOperation),
         polarKernels { thePolarKernels },
-        centerElement { theCenterElement },
-        operation { theOperation }
+        centerElement { theCenterElement }
     {}
-    PolarKernelParameter(const PolarKernelParameter& parameter);
-    ~PolarKernelParameter();
+    PolarKernelParameter(const PolarKernelParameter& parameter) :
+        Parameter(parameter.name, parameter.index, parameter.operation),
+        centerElement { parameter.centerElement }
+    {
+        for (PolarKernel* kernel : parameter.polarKernels)
+            polarKernels.push_back(new PolarKernel(*kernel));
+    }
 
-    void setValues();
-    void setOperation(ImageOperation* op) { operation = op; }
+   ~PolarKernelParameter()
+    {
+        for (auto& kernel : polarKernels)
+            delete kernel;
 
-private:
-    ImageOperation* operation;
+        polarKernels.clear();
+    }
+
+    void setValues()
+    {
+        operation->setPolarKernelParameter();
+    }
 };

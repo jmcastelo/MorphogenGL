@@ -22,21 +22,21 @@
 
 #include "morphowidget.h"
 
-MorphoWidget::MorphoWidget(int width, int height, QWidget* parent) : QOpenGLWidget(parent)
+MorphoWidget::MorphoWidget(QWidget* parent) : QOpenGLWidget(parent)
 {
-    image = QRect(0, 0, width, height);
+    image = QRect(0, 0, width(), height());
     frame = image;
 
-    selectedPoint = QPointF(width / 2, height / 2);
+    selectedPoint = QPointF(width() / 2, height() / 2);
     cursor = QPointF(0.0, 0.0);
 
-    setWindowIcon(QIcon(":/icons/morphogengl.png"));
+    //setWindowIcon(QIcon(":/icons/morphogengl.png"));
     
-    resize(width, height);
+    //resize(width, height);
 
     // Set widget on screen center
 
-    setGeometry(QStyle::alignedRect(Qt::LeftToRight, Qt::AlignCenter, size(), QGuiApplication::screens().first()->geometry()));
+    //setGeometry(QStyle::alignedRect(Qt::LeftToRight, Qt::AlignCenter, size(), QGuiApplication::screens().first()->geometry()));
 }
 
 MorphoWidget::~MorphoWidget()
@@ -52,11 +52,11 @@ MorphoWidget::~MorphoWidget()
     delete program;
 }
 
-void MorphoWidget::closeEvent(QCloseEvent* event)
+/*void MorphoWidget::closeEvent(QCloseEvent* event)
 {
     emit closing();
     event->accept();
-}
+}*/
 
 void MorphoWidget::wheelEvent(QWheelEvent* event)
 {
@@ -132,7 +132,7 @@ void MorphoWidget::mouseMoveEvent(QMouseEvent* event)
                 prevFrame = frame;
             }
         }
-        else if (event->modifiers() == Qt::ControlModifier)
+        else if (event->modifiers() == Qt::AltModifier)
         {
             setSelectedPoint(event->localPos());
         }
@@ -145,12 +145,14 @@ void MorphoWidget::mousePressEvent(QMouseEvent* event)
 {
     if (event->buttons() == Qt::LeftButton)
     {
+        setFocus();
+
         if (event->modifiers() == Qt::NoModifier)
         {
             prevPos = event->localPos();
             prevFrame = frame;
         }
-        else if (event->modifiers() == Qt::ControlModifier)
+        else if (event->modifiers() == Qt::AltModifier)
         {
             setSelectedPoint(event->localPos());
         }
@@ -161,15 +163,18 @@ void MorphoWidget::mousePressEvent(QMouseEvent* event)
 
 void MorphoWidget::keyPressEvent(QKeyEvent* event)
 {
-    if (event->key() == Qt::Key_Control)
+    if (event->key() == Qt::Key_Alt)
     {
         drawingCursor = true;
+        event->accept();
     }
+    else
+        event->ignore();
 }
 
 void MorphoWidget::keyReleaseEvent(QKeyEvent* event)
 {
-    if (event->key() == Qt::Key_Control)
+    if (event->key() == Qt::Key_Alt)
     {
         drawingCursor = false;
     }

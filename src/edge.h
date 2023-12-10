@@ -23,6 +23,8 @@
 #pragma once
 
 #include <QGraphicsObject>
+#include <QAction>
+#include <QGroupBox>
 
 class GraphWidget;
 class Node;
@@ -59,8 +61,14 @@ public:
     void drawBlendFactor(bool draw) { paintBlendFactor = draw; }
     void updateBlendFactor();
     void closeBlendFactorWidget();
+    void setBlendFactorGroupBoxTitle();
+
+    void constructBlendFactorWidget();
 
     QRectF boundingRect() const override;
+
+public slots:
+    void remove();
 
 protected:
     QPainterPath shape() const override;
@@ -83,6 +91,7 @@ private:
     bool paintBlendFactor = false;
 
     QWidget* blendFactorWidget;
+    QGroupBox* blendFactorGroupBox;
 
     QPointF intersectionPoint(Node *node, Node *other, QPointF offset, QLineF line);
     void setLinkOffset();
@@ -90,12 +99,13 @@ private:
     void setAsPredge();
     void setAsEdge();
 
-    void constructBlendFactorWidget();
     void setBlendFactor();
 
 signals:
     void blendFactorChanged();
+    void blendFactorWidgetCreated(QWidget* widget);
+    void blendFactorWidgetToggled(QWidget* widget);
 
 private slots:
-    void remove();
+    void insertNode(QAction* action);
 };

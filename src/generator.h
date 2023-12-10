@@ -151,6 +151,8 @@ public:
     void swapLoadedOperations() { operationNodes = loadedOperationNodes; }
     void swapLoadedSeeds() { seeds = loadedSeeds; }
 
+    void swapTwoOperations(QUuid id1, QUuid id2);
+
     void sortOperations();
     void iterate();
 
@@ -160,14 +162,19 @@ public:
     void resetIterationNumer() { iteration = 0; }
     int getIterationNumber() { return iteration; }
 
-    void resize(GLuint width, GLuint height);
     int getWidth() { return FBO::width; }
     int getHeight() { return FBO::height; }
 
     QMap<QUuid, ImageOperationNode*> getOperationNodes() { return operationNodes; }
     QMap<QUuid, Seed*> getSeeds() { return seeds; }
+    QList<QUuid> getOperationNodesIDs() { return operationNodes.keys(); }
+
+    bool isNode(QUuid id) { return operationNodes.contains(id) || seeds.contains(id); }
 
     QString version = "1.0 beta";
+
+public slots:
+    void resize(GLuint width, GLuint height);
 
 signals:
     void outputTextureChanged(GLuint id);

@@ -43,22 +43,27 @@ public:
     GraphWidget(GeneratorGL* generatorGL, QWidget *parent = nullptr);
     ~GraphWidget();
 
+    Node* getNode(QUuid id);
+    void selectNode(QUuid id, bool selected);
     void copyNode(Node* node);
     void removeNode(Node* node);
     void removeEdge(Edge* edge);
     void selectNodeToConnect(Node* node);
     void deselectNodeToConnect();
     void connectNodes(Node* node);
+    void insertNodeBetween(QAction* action, Edge* edge);
 
     bool nodeSelectedToConnect();
     bool moreThanOneNode();
 
     void newNodeSelected(Node*);
     bool nodesSelected();
+    bool singleOperationNodeSelected();
+    bool isOperationNodeSelected(QUuid id);
     bool operationNodesSelected();
+    bool twoOperationNodesSelected();
     int seedNodesSelected();
 
-    void setOperationParameters(QUuid id);
     void updateOperation(QUuid id);
 
     void onDestroyOperationNode(QUuid id);
@@ -81,20 +86,25 @@ public:
 
 public slots:
     void drawSelectedSeeds();
-    void setSelectedOperationsParameters();
     void enableSelectedOperations();
     void disableSelectedOperations();
     void equalizeSelectedBlendFactors();
     void clearSelectedOperationNodes();
+    void swapSelectedOperationNodes();
     void makeNodeSnapshot();
     void removeSelectedNodes();
 
 signals:
     void singleNodeSelected(Node*);
+    void operationNodeSelected(QUuid id);
     void multipleNodesSelected();
+    void noOperationNodesSelected();
     void showOperationParameters(QUuid id);
     void removeOperationParameters(QUuid id);
     void updateOperationParameters(QUuid id);
+    void blendFactorWidgetCreated(QWidget* widget);
+    void blendFactorWidgetToggled(QWidget* widget);
+    void operationEnabled(QUuid id, bool enabled);
 
 protected:
     void contextMenuEvent(QContextMenuEvent* event) override;
@@ -116,10 +126,10 @@ private:
     QPointF center;
     qreal scaleFactor = 1.0;
 
-    Node* getNode(QUuid id);
     void copyNodes(bool connectionA);
     bool pointIntersectsItem(QPointF point);
     void searchElementaryCycles();
+    void reconnectNodes(Node* node);
 
 private slots:
     void newSelectedNodes();

@@ -24,16 +24,15 @@ TEMPLATE = app
 
 CONFIG += qt c++14
 
-QMAKE_CXXFLAGS_RELEASE += /MT
+win32:QMAKE_CXXFLAGS_RELEASE += /MT
 
 DEFINES += QT_DEPRECATED_WARNINGS
 
 QT += widgets printsupport
 
-INCLUDEPATH += C:/Development/include
+win32:INCLUDEPATH += C:/Development/include
 
-LIBS += -LC:/Development/libs \
-    -lopengl32 \
+win32:LIBS += -LC:/Development/libs \
     -lavcodec \
     -lavformat \
     -lswscale \
@@ -56,38 +55,73 @@ LIBS += -LC:/Development/libs \
     -lodbc32 \
     -lodbccp32
 
+unix:INCLUDEPATH += /usr/local/include
+
+unix:LIBS += -L/usr/local/lib \
+    -lavformat \
+    -lavcodec \
+    -lswscale \
+    -lavutil \
+    -lavresample \
+    -lx264 \
+    -lz \
+    -lbz2 \
+    -lX11 \
+    -lvdpau
+
 CONFIG(debug, debug|release) {
-    LIBS += -lqcustomplotd2
+    LIBS += -lqcustomplotd
 }
 
 CONFIG(release, debug|release) {
     LIBS += -lqcustomplot
+    #CONFIG += link_pkgconfig
+    #PKGCONFIG += libavcodec libavformat libavutil libswscale libavresample x264
 }
 
-HEADERS += src/blender.h \
+RESOURCES += resource.qrc
+
+RC_ICONS = ./icons/morphogengl.ico
+
+#unix:!macx: LIBS += -L/usr/local/lib -lavcodec -lavformat -lavutil -lswscale -lx264 -lz -lX11 -lbz2
+
+#INCLUDEPATH += /usr/local/include
+#DEPENDPATH += /usr/local/include
+
+#unix:!macx: PRE_TARGETDEPS += /usr/local/lib/libavcodec.a
+#unix:!macx: PRE_TARGETDEPS += /usr/local/lib/libavformat.a
+#unix:!macx: PRE_TARGETDEPS += /usr/local/lib/libavutil.a
+#unix:!macx: PRE_TARGETDEPS += /usr/local/lib/libavresample.a
+#unix:!macx: PRE_TARGETDEPS += /usr/local/lib/libswscale.a
+#unix:!macx: PRE_TARGETDEPS += /usr/local/lib/libx264.a
+
+HEADERS += \
+    src/blender.h \
+    src/configparser.h \
+    src/controlwidget.h \
     src/cycle.h \
     src/cyclesearch.h \
     src/edge.h \
     src/fbo.h \
     src/ffmpegencoder.h \
+    src/focuslineedit.h \
     src/generator.h \
     src/graphwidget.h \
+    src/heart.h \
     src/imageoperations.h \
+    src/mainwidget.h \
+    src/morphowidget.h \
     src/node.h \
+    src/operationswidget.h \
     src/parameter.h \
     src/plotswidget.h \
+    src/polarkernelplot.h \
     src/returnmap.h \
     src/rgbwidget.h \
-    src/seed.h \
-    src/controlwidget.h \
-    src/configparser.h \
-    src/focuslineedit.h \
-    src/morphowidget.h \
-    src/operationswidget.h \
-    src/polarkernelplot.h \
-    src/heart.h
+    src/seed.h
 
-SOURCES += src/blender.cpp \
+SOURCES += \
+    src/blender.cpp \
     src/configparser.cpp \
     src/controlwidget.cpp \
     src/cycle.cpp \
@@ -97,18 +131,14 @@ SOURCES += src/blender.cpp \
     src/ffmpegencoder.cpp \
     src/generator.cpp \
     src/graphwidget.cpp \
+    src/heart.cpp \
     src/imageoperations.cpp \
     src/main.cpp \
+    src/mainwidget.cpp \
     src/morphowidget.cpp \
     src/node.cpp \
-    src/parameter.cpp \
     src/plotswidget.cpp \
     src/polarkernelplot.cpp \
     src/returnmap.cpp \
     src/rgbwidget.cpp \
-    src/seed.cpp \
-    src/heart.cpp
-
-RESOURCES += resource.qrc
-
-RC_ICONS = ./icons/morphogengl.ico
+    src/seed.cpp

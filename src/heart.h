@@ -23,9 +23,7 @@
 #pragma once
 
 #include "fbo.h"
-#include "morphowidget.h"
-#include "controlwidget.h"
-#include "plotswidget.h"
+#include "mainwidget.h"
 #include "ffmpegencoder.h"
 #include <chrono>
 #include <QObject>
@@ -65,9 +63,10 @@ signals:
     void screenSizeChanged();
 
 private:
-    MorphoWidget* morphoWidget;
-    ControlWidget* controlWidget;
-    PlotsWidget* plotsWidget;
+    //MorphoWidget* morphoWidget;
+    //ControlWidget* controlWidget;
+    //PlotsWidget* plotsWidget;
+    MainWidget* mainWidget;
     FFmpegEncoder* encoder = nullptr;
 
     QTimer* timer;
@@ -77,6 +76,6 @@ private:
 
     void beat();
 
-private slots:
-    void togglePlotsWidget();
+//private slots:
+    //void startTimer();
 };

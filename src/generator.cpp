@@ -195,9 +195,12 @@ GeneratorGL::GeneratorGL()
         Identity::name,
         Logistic::name,
         Mask::name,
+        Median::name,
         Memory::name,
         MorphologicalGradient::name,
+        Pixelation::name,
         PolarConvolution::name,
+        Power::name,
         Rotation::name,
         Saturation::name,
         Scale::name,
@@ -414,6 +417,20 @@ void GeneratorGL::pasteOperations()
     sortOperations();
 }
 
+void GeneratorGL::swapTwoOperations(QUuid id1, QUuid id2)
+{
+    ImageOperation* operation = operationNodes.value(id1)->operation->clone();
+    operationNodes.value(id1)->setOperation(operationNodes.value(id2)->operation->clone());
+    operationNodes.value(id2)->setOperation(operation);
+
+    sortOperations();
+
+    if (isOutput(id1))
+        setOutput(id1);
+    else if (isOutput(id2))
+        setOutput(id2);
+}
+
 float GeneratorGL::blendFactor(QUuid srcId, QUuid dstId)
 {
     return operationNodes.value(dstId)->blendFactor(srcId);
@@ -551,45 +568,45 @@ ImageOperation* GeneratorGL::newOperation(QString operationName)
 
     if (operationName == BilateralFilter::name)
     {
-        operation = new BilateralFilter(false, sharedContext, 3, 0.01f, 10.0f, 0.1f);
+        operation = new BilateralFilter(false, sharedContext, 3, 1.0f, 10.0f, 0.1f, 1.0f);
     }
     else if (operationName == Brightness::name)
     {
-        operation = new Brightness(false, sharedContext, 0.0f);
+        operation = new Brightness(false, sharedContext, 0.0f, 1.0f);
     }
     else if (operationName == ColorMix::name)
     {
         std::vector<float> rgbMatrix = { 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f };
-        operation = new ColorMix(false, sharedContext, rgbMatrix);
+        operation = new ColorMix(false, sharedContext, rgbMatrix, 1.0f);
     }
     else if (operationName == ColorQuantization::name)
     {
-        operation = new ColorQuantization(false, sharedContext, 10, 10, 10);
+        operation = new ColorQuantization(false, sharedContext, 10, 10, 10, 1.0f);
     }
     else if (operationName == Contrast::name)
     {
-        operation = new Contrast(false, sharedContext, 1.0f);
+        operation = new Contrast(false, sharedContext, 1.0f, 1.0f);
     }
     else if (operationName == Convolution::name)
     {
         std::vector<float> kernel = { 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f };
-        operation = new Convolution(false, sharedContext, kernel, 1.0f, 0.01f);
+        operation = new Convolution(false, sharedContext, kernel, 1.0f, 1.0f, 1.0f);
     }
     else if (operationName == Dilation::name)
     {
-        operation = new Dilation(false, sharedContext, 0.01f);
+        operation = new Dilation(false, sharedContext, 1.0f, 1.0f);
     }
     else if (operationName == Erosion::name)
     {
-        operation = new Erosion(false, sharedContext, 0.01f);
+        operation = new Erosion(false, sharedContext, 1.0f, 1.0f);
     }
     else if (operationName == GammaCorrection::name)
     {
-        operation = new GammaCorrection(false, sharedContext, 1.0f, 1.0f, 1.0f);
+        operation = new GammaCorrection(false, sharedContext, 1.0f, 1.0f, 1.0f, 1.0f);
     }
     else if (operationName == HueShift::name)
     {
-        operation = new HueShift(false, sharedContext, 0.0f);
+        operation = new HueShift(false, sharedContext, 0.0f, 1.0f);
     }
     else if (operationName == Identity::name)
     {
@@ -597,11 +614,15 @@ ImageOperation* GeneratorGL::newOperation(QString operationName)
     }
     else if (operationName == Logistic::name)
     {
-        operation = new Logistic(false, sharedContext, 1.0f);
+        operation = new Logistic(false, sharedContext, 1.0f, 1.0f);
     }
     else if (operationName == Mask::name)
     {
         operation = new Mask(false, sharedContext);
+    }
+    else if (operationName == Median::name)
+    {
+        operation = new Median(false, sharedContext, 1.0f, 1.0f);
     }
     else if (operationName == Memory::name)
     {
@@ -609,12 +630,20 @@ ImageOperation* GeneratorGL::newOperation(QString operationName)
     }
     else if (operationName == MorphologicalGradient::name)
     {
-        operation = new MorphologicalGradient(false, sharedContext, 0.01f, 0.01f);
+        operation = new MorphologicalGradient(false, sharedContext, 1.0f, 1.0f, 1.0f);
+    }
+    else if (operationName == Pixelation::name)
+    {
+        operation = new Pixelation(false, sharedContext, 1.0f, 1.0f);
     }
     else if (operationName == PolarConvolution::name)
     {
         std::vector<PolarKernel*> polarKernels = { new PolarKernel(8, 0.01f, 0.0f, 1.0f, 0.0f, -1.0f, 1.0f) };
-        operation = new PolarConvolution(false, sharedContext, polarKernels, 1.0f);
+        operation = new PolarConvolution(false, sharedContext, polarKernels, 1.0f, 1.0f);
+    }
+    else if (operationName == Power::name)
+    {
+        operation = new Power(false, sharedContext, 1.0f, 1.0f);
     }
     else if (operationName == Rotation::name)
     {
@@ -622,7 +651,7 @@ ImageOperation* GeneratorGL::newOperation(QString operationName)
     }
     else if (operationName == Saturation::name)
     {
-        operation = new Saturation(false, sharedContext, 0.5f);
+        operation = new Saturation(false, sharedContext, 0.5f, 1.0f);
     }
     else if (operationName == Scale::name)
     {
@@ -630,7 +659,7 @@ ImageOperation* GeneratorGL::newOperation(QString operationName)
     }
     else if (operationName == Value::name)
     {
-        operation = new Value(false, sharedContext, 0.5f);
+        operation = new Value(false, sharedContext, 0.5f, 1.0f);
     }
 
     return operation;
@@ -651,43 +680,43 @@ ImageOperation* GeneratorGL::loadImageOperation(
 
     if (operationName == BilateralFilter::name)
     {
-        operation = new BilateralFilter(enabled, sharedContext, intParameters[0], floatParameters[0], floatParameters[1], floatParameters[2]);
+        operation = new BilateralFilter(enabled, sharedContext, intParameters[0], floatParameters[0], floatParameters[1], floatParameters[2], floatParameters[3]);
     }
     else if (operationName == Brightness::name)
     {
-        operation = new Brightness(enabled, sharedContext, floatParameters[0]);
+        operation = new Brightness(enabled, sharedContext, floatParameters[0], floatParameters[1]);
     }
     else if (operationName == ColorMix::name)
     {
-        operation = new ColorMix(enabled, sharedContext, matrixElements);
+        operation = new ColorMix(enabled, sharedContext, matrixElements, floatParameters[0]);
     }
     else if (operationName == ColorQuantization::name)
     {
-        operation = new ColorQuantization(enabled, sharedContext, intParameters[0], intParameters[1], intParameters[2]);
+        operation = new ColorQuantization(enabled, sharedContext, intParameters[0], intParameters[1], intParameters[2], floatParameters[0]);
     }
     else if (operationName == Contrast::name)
     {
-        operation = new Contrast(enabled, sharedContext, floatParameters[0]);
+        operation = new Contrast(enabled, sharedContext, floatParameters[0], floatParameters[1]);
     }
     else if (operationName == Convolution::name)
     {
-        operation = new Convolution(enabled, sharedContext, kernelElements, floatParameters[0], floatParameters[1]);
+        operation = new Convolution(enabled, sharedContext, kernelElements, floatParameters[0], floatParameters[1], floatParameters[2]);
     }
     else if (operationName == Dilation::name)
     {
-        operation = new Dilation(enabled, sharedContext, floatParameters[0]);
+        operation = new Dilation(enabled, sharedContext, floatParameters[0], floatParameters[1]);
     }
     else if (operationName == Erosion::name)
     {
-        operation = new Erosion(enabled, sharedContext, floatParameters[0]);
+        operation = new Erosion(enabled, sharedContext, floatParameters[0], floatParameters[1]);
     }
     else if (operationName == GammaCorrection::name)
     {
-        operation = new GammaCorrection(enabled, sharedContext, floatParameters[0], floatParameters[1], floatParameters[2]);
+        operation = new GammaCorrection(enabled, sharedContext, floatParameters[0], floatParameters[1], floatParameters[2], floatParameters[3]);
     }
     else if (operationName == HueShift::name)
     {
-        operation = new HueShift(enabled, sharedContext, floatParameters[0]);
+        operation = new HueShift(enabled, sharedContext, floatParameters[0], floatParameters[1]);
     }
     else if (operationName == Identity::name)
     {
@@ -695,11 +724,15 @@ ImageOperation* GeneratorGL::loadImageOperation(
     }
     else if (operationName == Logistic::name)
     {
-        operation = new Logistic(enabled, sharedContext, floatParameters[0]);
+        operation = new Logistic(enabled, sharedContext, floatParameters[0], floatParameters[1]);
     }
     else if (operationName == Mask::name)
     {
         operation = new Mask(enabled, sharedContext);
+    }
+    else if (operationName == Median::name)
+    {
+        operation = new Median(enabled, sharedContext, floatParameters[0], floatParameters[1]);
     }
     else if (operationName == Memory::name)
     {
@@ -707,11 +740,19 @@ ImageOperation* GeneratorGL::loadImageOperation(
     }
     else if (operationName == MorphologicalGradient::name)
     {
-        operation = new MorphologicalGradient(enabled, sharedContext, floatParameters[0], floatParameters[1]);
+        operation = new MorphologicalGradient(enabled, sharedContext, floatParameters[0], floatParameters[1], floatParameters[2]);
+    }
+    else if (operationName == Pixelation::name)
+    {
+        operation = new Pixelation(enabled, sharedContext, floatParameters[0], floatParameters[1]);
     }
     else if (operationName == PolarConvolution::name)
     {
-        operation = new PolarConvolution(enabled, sharedContext, polarKernels, floatParameters[0]);
+        operation = new PolarConvolution(enabled, sharedContext, polarKernels, floatParameters[0], floatParameters[1]);
+    }
+    else if (operationName == Power::name)
+    {
+        operation = new Power(enabled, sharedContext, floatParameters[0], floatParameters[1]);
     }
     else if (operationName == Rotation::name)
     {
@@ -719,7 +760,7 @@ ImageOperation* GeneratorGL::loadImageOperation(
     }
     else if (operationName == Saturation::name)
     {
-        operation = new Saturation(enabled, sharedContext, floatParameters[0]);
+        operation = new Saturation(enabled, sharedContext, floatParameters[0], floatParameters[1]);
     }
     else if (operationName == Scale::name)
     {
@@ -727,7 +768,7 @@ ImageOperation* GeneratorGL::loadImageOperation(
     }
     else if (operationName == Value::name)
     {
-        operation = new Value(enabled, sharedContext, floatParameters[0]);
+        operation = new Value(enabled, sharedContext, floatParameters[0], floatParameters[1]);
     }
 
     return operation;

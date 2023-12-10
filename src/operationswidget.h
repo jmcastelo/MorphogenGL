@@ -30,6 +30,7 @@
 #include <string>
 #include <cmath>
 #include <QWidget>
+#include <QFrame>
 #include <QString>
 #include <QIntValidator>
 #include <QDoubleValidator>
@@ -37,39 +38,42 @@
 #include <QCheckBox>
 #include <QPushButton>
 #include <QLabel>
+#include <QSlider>
 #include <QFormLayout>
 #include <QVBoxLayout>
 #include <QCloseEvent>
 
-// Bool parameter widget: QCheckBox
+// Parameter widget base class
 
-class BoolParameterWidget : public QWidget
+class ParameterWidget : public QWidget
 {
+    Q_OBJECT
+
 public:
-    QCheckBox* checkBox;
+    ParameterWidget(QWidget* parent = nullptr) : QWidget(parent){}
 
-    BoolParameterWidget(BoolParameter* theBoolParameter, QWidget* parent = nullptr) : QWidget(parent), boolParameter(theBoolParameter)
-    {
-        checkBox = new QCheckBox(boolParameter->name);
-        checkBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
-        checkBox->setChecked(boolParameter->value);
+    QWidget* lastFocusedWidget() { return focusedWidget; }
+    virtual QString getName() = 0;
 
-        connect(checkBox, &QCheckBox::stateChanged, [=](int state) { boolParameter->value = (state == Qt::Checked); });
-    }
+signals:
+    void focusIn(Number<float>* number);
+    void focusIn(Number<int>* number);
+    void focusIn();
+    void focusOut();
 
-private:
-    BoolParameter* boolParameter;
+protected:
+    QWidget* focusedWidget;
 };
 
 // Options parameter widget: QComboBox
 
 template <class T>
-class OptionsParameterWidget : public QWidget
+class OptionsParameterWidget : public ParameterWidget
 {
 public:
-    QComboBox* comboBox;
+    FocusComboBox* comboBox;
 
-    OptionsParameterWidget(OptionsParameter<T>* theOptionsParameter, QWidget* parent = nullptr) : QWidget(parent), optionsParameter(theOptionsParameter)
+    OptionsParameterWidget(OptionsParameter<T>* theOptionsParameter, QWidget* parent = nullptr) : ParameterWidget(parent), optionsParameter(theOptionsParameter)
     {
         // Get current index
 
@@ -78,17 +82,24 @@ public:
             if (optionsParameter->value == optionsParameter->values[i])
                 index = static_cast<int>(i);
 
-        comboBox = new QComboBox;
+        comboBox = new FocusComboBox;
         comboBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
         for (auto valueName : optionsParameter->valueNames)
             comboBox->addItem(valueName);
         comboBox->setCurrentIndex(index);
 
-        connect(comboBox, QOverload<int>::of(&QComboBox::activated), [&optionsParameter = this->optionsParameter](int index)
+        connect(comboBox, QOverload<int>::of(&QComboBox::activated), this, [=](int index)
         {
             optionsParameter->setValue(index);
         });
+
+        connect(comboBox, &FocusComboBox::focusIn, this, [=](){ emit focusIn(); });
+        connect(comboBox, &FocusComboBox::focusOut, this, &ParameterWidget::focusOut);
+
+        focusedWidget = comboBox;
     }
+
+    QString getName() { return optionsParameter->name; }
 
 private:
     OptionsParameter<T>* optionsParameter;
@@ -96,29 +107,45 @@ private:
 
 // Integer parameter widget
 
-class IntParameterWidget : public QWidget
+class IntParameterWidget : public ParameterWidget
 {
+    Q_OBJECT
+
 public:
     FocusLineEdit* lineEdit;
 
-    IntParameterWidget(IntParameter* theIntParameter, QWidget* parent = nullptr) : QWidget(parent), intParameter(theIntParameter)
+    IntParameterWidget(IntParameter* theIntParameter, QWidget* parent = nullptr) : ParameterWidget(parent), intParameter(theIntParameter)
     {
         lineEdit = new FocusLineEdit;
         lineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
 
-        QIntValidator* validator = new QIntValidator(intParameter->min, intParameter->max, lineEdit);
+        QIntValidator* validator = new QIntValidator(intParameter->number->getMin(), intParameter->number->getMax(), lineEdit);
         lineEdit->setValidator(validator);
-        lineEdit->setText(QString::number(intParameter->value));
+        lineEdit->setText(QString::number(intParameter->number->value));
 
-        connect(lineEdit, &FocusLineEdit::returnPressed, [&intParameter = this->intParameter, &lineEdit = this->lineEdit]()
+        connect(lineEdit, &FocusLineEdit::returnPressed, this, [=]()
         {
-            intParameter->setValue(lineEdit->text().toInt());
+            intParameter->number->setValue(lineEdit->text().toInt());
+            intParameter->number->setIndex();
         });
-        connect(lineEdit, &FocusLineEdit::focusOut, [&intParameter = this->intParameter, &lineEdit = this->lineEdit]()
+        connect(lineEdit, &FocusLineEdit::focusOut, this, [=]()
         {
-            lineEdit->setText(QString::number(intParameter->value));
+            lineEdit->setText(QString::number(intParameter->number->value));
+        });
+        connect(lineEdit, &FocusLineEdit::focusIn, this, [=](){ emit focusIn(intParameter->number); });
+        connect(lineEdit, &FocusLineEdit::focusIn, this, QOverload<>::of(&ParameterWidget::focusIn));
+        connect(lineEdit, &FocusLineEdit::focusOut, this, &ParameterWidget::focusOut);
+
+        focusedWidget = lineEdit;
+
+        connect(intParameter->number, QOverload<int>::of(&Number<int>::currentValueChanged), this, [=](int newValue)
+        {
+            intParameter->setValue(newValue);
+            lineEdit->setText(QString::number(newValue));
         });
     }
+
+    QString getName() { return intParameter->name; }
 
 private:
     IntParameter* intParameter;
@@ -126,21 +153,21 @@ private:
 
 // Odd integer parameter widget
 
-class IntOddParameterWidget : public QWidget
+class IntOddParameterWidget : public ParameterWidget
 {
 public:
     FocusLineEdit* lineEdit;
 
-    IntOddParameterWidget(IntParameter* theIntParameter, QWidget* parent = nullptr) : QWidget(parent), intParameter(theIntParameter)
+    IntOddParameterWidget(IntParameter* theIntParameter, QWidget* parent = nullptr) : ParameterWidget(parent), intParameter(theIntParameter)
     {
         lineEdit = new FocusLineEdit;
         lineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
 
-        QIntValidator* validator = new QIntValidator(intParameter->min, intParameter->max, lineEdit);
+        QIntValidator* validator = new QIntValidator(intParameter->number->getInf(), intParameter->number->getSup(), lineEdit);
         lineEdit->setValidator(validator);
-        lineEdit->setText(QString::number(intParameter->value));
+        lineEdit->setText(QString::number(intParameter->number->value));
 
-        connect(lineEdit, &FocusLineEdit::returnPressed, [&intParameter = this->intParameter, &lineEdit = this->lineEdit]()
+        connect(lineEdit, &FocusLineEdit::returnPressed, this, [=]()
         {
             int value = lineEdit->text().toInt();
             if (value > 0 && value % 2 == 0)
@@ -148,13 +175,27 @@ public:
                 value--;
                 lineEdit->setText(QString::number(value));
             }
-            intParameter->setValue(value);
+            intParameter->number->setValue(value);
+            intParameter->number->setIndex();
         });
-        connect(lineEdit, &FocusLineEdit::focusOut, [&intParameter = this->intParameter, &lineEdit = this->lineEdit]()
+        connect(lineEdit, &FocusLineEdit::focusOut, this, [=]()
         {
-            lineEdit->setText(QString::number(intParameter->value));
+            lineEdit->setText(QString::number(intParameter->number->value));
+        });
+        connect(lineEdit, &FocusLineEdit::focusIn, this, [=](){ emit focusIn(intParameter->number); });
+        connect(lineEdit, &FocusLineEdit::focusIn, this, QOverload<>::of(&ParameterWidget::focusIn));
+        connect(lineEdit, &FocusLineEdit::focusOut, this, &ParameterWidget::focusOut);
+
+        focusedWidget = lineEdit;
+
+        connect(intParameter->number, QOverload<int>::of(&Number<int>::currentValueChanged), this, [=](int newValue)
+        {
+            intParameter->setValue(newValue);
+            lineEdit->setText(QString::number(newValue));
         });
     }
+
+    QString getName() { return intParameter->name; }
 
 private:
     IntParameter* intParameter;
@@ -162,18 +203,15 @@ private:
 
 // Float parameter widget
 
-class FloatParameterWidget : public QWidget
+class FloatParameterWidget : public ParameterWidget
 {
     Q_OBJECT
 
 public:
     FocusLineEdit* lineEdit;
 
-    int indexMax;
-
-    FloatParameterWidget(FloatParameter* theFloatParameter, int theIndexMax, QWidget* parent = nullptr) :
-        QWidget(parent),
-        indexMax(theIndexMax),
+    FloatParameterWidget(FloatParameter* theFloatParameter, QWidget* parent = nullptr) :
+        ParameterWidget(parent),
         floatParameter(theFloatParameter)
     {
         // Focus line edit setup
@@ -181,68 +219,42 @@ public:
         lineEdit = new FocusLineEdit;
         lineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
 
-        QDoubleValidator* validator = new QDoubleValidator(floatParameter->inf, floatParameter->sup, 10, lineEdit);
+        QDoubleValidator* validator = new QDoubleValidator(floatParameter->number->getInf(), floatParameter->number->getSup(), 10, lineEdit);
         validator->setLocale(QLocale::English);
         lineEdit->setValidator(validator);
-        lineEdit->setText(QString::number(floatParameter->value));
+        lineEdit->setText(QString::number(floatParameter->number->value));
 
-        connect(lineEdit, &FocusLineEdit::returnPressed, [&]()
+        connect(lineEdit, &FocusLineEdit::returnPressed, this, [&]()
         {
-            floatParameter->setValue(lineEdit->text().toFloat());
-            emit currentValueChanged(floatParameter->value);
-            setIndex();
+            floatParameter->number->setValue(lineEdit->text().toFloat());
+            floatParameter->number->setIndex();
         });
-        connect(lineEdit, &FocusLineEdit::focusOut, [&floatParameter = this->floatParameter, &lineEdit = this->lineEdit]()
+        connect(lineEdit, &FocusLineEdit::focusOut, this, [=]()
         {
-            lineEdit->setText(QString::number(floatParameter->value));
+            lineEdit->setText(QString::number(floatParameter->number->value));
         });
-        connect(lineEdit, &FocusLineEdit::focusIn, [&]()
+        connect(lineEdit, &FocusLineEdit::focusIn, this, [=](){ emit focusIn(floatParameter->number); });
+        connect(lineEdit, &FocusLineEdit::focusIn, this, QOverload<>::of(&ParameterWidget::focusIn));
+        connect(lineEdit, &FocusLineEdit::focusOut, this, &ParameterWidget::focusOut);
+
+        focusedWidget = lineEdit;
+
+        connect(floatParameter->number, QOverload<float>::of(&Number<float>::currentValueChanged), this, [=](float newValue)
         {
-            emit focusIn();
+            floatParameter->setValue(newValue);
+            lineEdit->setText(QString::number(newValue));
         });
     }
 
     QString getName() { return floatParameter->name; }
 
-    void setValue(int newIndex)
-    {
-        float newValue = floatParameter->min + (floatParameter->max - floatParameter->min) * newIndex / indexMax;
-        floatParameter->setValue(newValue);
-        lineEdit->setText(QString::number(newValue));
-    }
-
-    void setIndex()
-    {
-        int index = static_cast<int>(indexMax * (floatParameter->value - floatParameter->min) / (floatParameter->max - floatParameter->min));
-        emit currentIndexChanged(index);
-    }
-
-    int getIndex()
-    {
-        return static_cast<int>(indexMax * (floatParameter->value - floatParameter->min) / (floatParameter->max - floatParameter->min));
-    }
-
-    void setMin(float min) { floatParameter->min = min; }
-    float getMin() { return floatParameter->min; }
-
-    void setMax(float max) { floatParameter->max = max; }
-    float getMax() { return floatParameter->max; }
-
-    float getInf() { return floatParameter->inf; }
-    float getSup() { return floatParameter->sup; }
-
 private:
     FloatParameter* floatParameter;
-
-signals:
-    void focusIn();
-    void currentValueChanged(float currentValue);
-    void currentIndexChanged(int currentIndex);
 };
 
 // Array parameter widget
 
-class ArrayParameterWidget : public QWidget
+class ArrayParameterWidget : public ParameterWidget
 {
     Q_OBJECT
 
@@ -250,7 +262,7 @@ public:
     QGridLayout* gridLayout;
 
     ArrayParameterWidget(ArrayParameter* theArrayParameter, QWidget* parent = nullptr) :
-        QWidget(parent),
+        ParameterWidget(parent),
         arrayParameter { theArrayParameter }
     {
         gridLayout = new QGridLayout;
@@ -258,14 +270,14 @@ public:
         int row = 0;
         int col = 0;
 
-        for (auto element : arrayParameter->values)
+        for (auto element : arrayParameter->numbers)
         {
             FocusLineEdit* lineEdit = new FocusLineEdit;
-            lineEdit->setFixedWidth(50);
+            lineEdit->setFixedWidth(75);
 
-            QDoubleValidator* validator = new QDoubleValidator(arrayParameter->min, arrayParameter->max, 5, lineEdit);
+            QDoubleValidator* validator = new QDoubleValidator(element->getInf(), element->getSup(), 5, lineEdit);
             lineEdit->setValidator(validator);
-            lineEdit->setText(QString::number(element));
+            lineEdit->setText(QString::number(element->value));
 
             gridLayout->addWidget(lineEdit, row, col, Qt::AlignCenter);
 
@@ -278,18 +290,33 @@ public:
 
             lineEdits.push_back(lineEdit);
         }
-        for (size_t i = 0; i < arrayParameter->values.size(); i++)
+        for (size_t i = 0; i < arrayParameter->numbers.size(); i++)
         {
-            connect(lineEdits[i], &FocusLineEdit::returnPressed, [&arrayParameter = this->arrayParameter, &lineEdits = this->lineEdits, i]()
+            connect(lineEdits[i], &FocusLineEdit::returnPressed, this, [=]()
             {
-                arrayParameter->values[i] = lineEdits[i]->text().toFloat(); arrayParameter->setValues();
+                arrayParameter->numbers[i]->setValue(lineEdits[i]->text().toFloat());
+                arrayParameter->numbers[i]->setIndex();
+                arrayParameter->setValues();
             });
-            connect(lineEdits[i], &FocusLineEdit::focusOut, [&arrayParameter = this->arrayParameter, &lineEdits = this->lineEdits, i]()
+            connect(lineEdits[i], &FocusLineEdit::focusOut, this, [=]()
             {
-                lineEdits[i]->setText(QString::number(arrayParameter->values[i]));
+                lineEdits[i]->setText(QString::number(arrayParameter->numbers[i]->value));
+            });
+            connect(lineEdits[i], &FocusLineEdit::focusIn, this, [=](){ focusedWidget = lineEdits[i]; });
+            connect(lineEdits[i], &FocusLineEdit::focusIn, this, [=](){ emit focusIn(arrayParameter->numbers[i]); });
+            connect(lineEdits[i], &FocusLineEdit::focusIn, this, QOverload<>::of(&ParameterWidget::focusIn));
+            connect(lineEdits[i], &FocusLineEdit::focusOut, this, &ParameterWidget::focusOut);
+            connect(arrayParameter->numbers[i], QOverload<float>::of(&Number<float>::currentValueChanged), this, [=](float newValue)
+            {
+                arrayParameter->setValues();
+                lineEdits[i]->setText(QString::number(newValue));
             });
         }
+
+        focusedWidget = lineEdits[0];
     }
+
+    QString getName() { return arrayParameter->name; }
 
 protected:
     ArrayParameter* arrayParameter;
@@ -303,33 +330,38 @@ class KernelParameterWidget : public ArrayParameterWidget
     Q_OBJECT
 
 public:
-    QPushButton* normalizePushButton;
-    QComboBox* presetsComboBox;
+    FocusPushButton* normalizePushButton;
+    FocusComboBox* presetsComboBox;
 
     KernelParameterWidget(KernelParameter* theKernelParameter, QWidget* parent = nullptr) :
         ArrayParameterWidget(theKernelParameter, parent),
         kernelParameter { theKernelParameter }
     {
-        normalizePushButton = new QPushButton("Normalize");
+        normalizePushButton = new FocusPushButton;
+        normalizePushButton->setText("Normalize");
         normalizePushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
         normalizePushButton->setVisible(kernelParameter->normalize);
 
-        connect(normalizePushButton, &QPushButton::clicked, [=]()
+        connect(normalizePushButton, &QPushButton::clicked, this, [=]()
+        {
+            float sum = 0.0;
+            for (auto element : kernelParameter->numbers)
+                sum += fabs(element->value);
+            if (sum > 0)
             {
-                float sum = 0.0;
-                for (auto element : kernelParameter->values)
-                    sum += fabs(element);
-                if (sum > 0)
+                for (size_t i = 0; i < kernelParameter->numbers.size(); i++)
                 {
-                    for (size_t i = 0; i < kernelParameter->values.size(); i++)
-                    {
-                        kernelParameter->values[i] /= sum;
-                        lineEdits[i]->setText(QString::number(kernelParameter->values[i]));
-                    }
-
-                    kernelParameter->setValues();
+                    kernelParameter->numbers[i]->setValue(kernelParameter->numbers[i]->value / sum);
+                    kernelParameter->numbers[i]->setIndex();
+                    lineEdits[i]->setText(QString::number(kernelParameter->numbers[i]->value));
                 }
-            });
+
+                kernelParameter->setValues();
+            }
+        });
+        connect(normalizePushButton, &FocusPushButton::focusIn, this, [=](){ focusedWidget = normalizePushButton; });
+        connect(normalizePushButton, &FocusPushButton::focusIn, this, QOverload<>::of(&ParameterWidget::focusIn));
+        connect(normalizePushButton, &FocusPushButton::focusOut, this, &ParameterWidget::focusOut);
 
         presets = {
             { 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f }, // Identity
@@ -340,7 +372,7 @@ public:
             { 1.0f / 16.0f, 2.0f / 16.0f, 1.0f / 16.0f, 2.0f / 16.0f, 4.0f / 16.0f, 2.0f / 16.0f, 1.0f / 16.0f, 2.0f / 16.0f, 1.0f / 16.0f } // Gaussian blur
         };
 
-        presetsComboBox = new QComboBox;
+        presetsComboBox = new FocusComboBox;
         presetsComboBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
         presetsComboBox->addItem("Identity");
         presetsComboBox->addItem("Laplacian");
@@ -350,15 +382,21 @@ public:
         presetsComboBox->addItem("Gaussian blur");
         presetsComboBox->setCurrentIndex(0);
 
-        connect(presetsComboBox, QOverload<int>::of(&QComboBox::activated), [&kernelParameter = this->kernelParameter, &lineEdits = this->lineEdits, &presets = this->presets](int index)
+        connect(presetsComboBox, QOverload<int>::of(&QComboBox::activated), this, [=](int index)
         {
             for (size_t i = 0; i < presets[index].size(); i++)
+            {
+                kernelParameter->numbers[i]->setValue(presets[index][i]);
                 lineEdits[i]->setText(QString::number(presets[index][i]));
-
-            kernelParameter->values = presets[index];
+            }
             kernelParameter->setValues();
         });
+        connect(presetsComboBox, &FocusComboBox::focusIn, this, [=](){ focusedWidget = presetsComboBox; });
+        connect(presetsComboBox, &FocusComboBox::focusIn, this, QOverload<>::of(&ParameterWidget::focusIn));
+        connect(presetsComboBox, &FocusComboBox::focusOut, this, &ParameterWidget::focusOut);
     }
+
+    QString getName() { return kernelParameter->name; }
 
 private:
     KernelParameter* kernelParameter;
@@ -372,7 +410,7 @@ class MatrixParameterWidget : public ArrayParameterWidget
     Q_OBJECT
 
 public:
-    QComboBox* presetsComboBox;
+    FocusComboBox* presetsComboBox;
 
     MatrixParameterWidget(MatrixParameter* theMatrixParameter, QWidget* parent = nullptr) :
         ArrayParameterWidget(theMatrixParameter, parent),
@@ -387,7 +425,7 @@ public:
             { 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 0.0f, 0.0f }  // RGB to GBR
         };
 
-        presetsComboBox = new QComboBox;
+        presetsComboBox = new FocusComboBox;
         presetsComboBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
         presetsComboBox->addItem("RGB to RGB");
         presetsComboBox->addItem("RGB to GRB");
@@ -397,15 +435,22 @@ public:
         presetsComboBox->addItem("RGB to GBR");
         presetsComboBox->setCurrentIndex(0);
 
-        connect(presetsComboBox, QOverload<int>::of(&QComboBox::activated), [=](int index)
+        connect(presetsComboBox, QOverload<int>::of(&QComboBox::activated), this, [=](int index)
         {
             for (size_t i = 0; i < presets[index].size(); i++)
+            {
+                matrixParameter->numbers[i]->setValue(presets[index][i]);
+                matrixParameter->numbers[i]->setIndex();
                 lineEdits[i]->setText(QString::number(presets[index][i]));
-
-            matrixParameter->values = presets[index];
+            }
             matrixParameter->setValues();
         });
+        connect(presetsComboBox, &FocusComboBox::focusIn, this, [=](){ focusedWidget = presetsComboBox; });
+        connect(presetsComboBox, &FocusComboBox::focusIn, this, QOverload<>::of(&ParameterWidget::focusIn));
+        connect(presetsComboBox, &FocusComboBox::focusOut, this, &ParameterWidget::focusOut);
     }
+
+    QString getName() { return matrixParameter->name; }
 
 private:
     MatrixParameter* matrixParameter;
@@ -518,14 +563,14 @@ public:
 
         // Signals + Slots
 
-        connect(selectKernelComboBox, QOverload<int>::of(&QComboBox::activated), [&](int index)
+        connect(selectKernelComboBox, QOverload<int>::of(&QComboBox::activated), this, [&](int index)
         {
             kernelIndex = index;
             setLineEditTexts();
             setKernelValuesPlotData();
         });
 
-        connect(addKernelPushButton, &QPushButton::pressed, [=]()
+        connect(addKernelPushButton, &QPushButton::pressed, this, [=]()
         {
             if (polarKernelParameter->polarKernels.size() < 5)
             {
@@ -542,7 +587,7 @@ public:
                 setKernelValuesPlotData();
             }
         });
-        connect(removeKernelPushButton, &QPushButton::pressed, [=]()
+        connect(removeKernelPushButton, &QPushButton::pressed, this, [=]()
         {
             if (polarKernelParameter->polarKernels.size() > 1)
             {
@@ -565,94 +610,96 @@ public:
             }
         });
 
-        connect(numElementsLineEdit, &FocusLineEdit::returnPressed, [&]()
+        connect(numElementsLineEdit, &FocusLineEdit::returnPressed, this, [&]()
         {
             polarKernelParameter->polarKernels[kernelIndex]->numElements = numElementsLineEdit->text().toInt();
             polarKernelParameter->setValues();
             setGeometryPlotData();
             setKernelValuesPlotData();
         });
-        connect(numElementsLineEdit, &FocusLineEdit::focusOut, [&polarKernelParameter = this->polarKernelParameter, &kernelIndex = this->kernelIndex, &numElementsLineEdit = this->numElementsLineEdit]()
+        connect(numElementsLineEdit, &FocusLineEdit::focusOut, this, [=]()
         {
             numElementsLineEdit->setText(QString::number(polarKernelParameter->polarKernels[kernelIndex]->numElements));
         });
 
-        connect(centerElementLineEdit, &FocusLineEdit::returnPressed, [&polarKernelParameter = this->polarKernelParameter, &centerElementLineEdit = this->centerElementLineEdit]()
+        connect(centerElementLineEdit, &FocusLineEdit::returnPressed, this, [=]()
         {
             polarKernelParameter->centerElement = centerElementLineEdit->text().toFloat();
             polarKernelParameter->setValues();
         });
-        connect(centerElementLineEdit, &FocusLineEdit::focusOut, [&polarKernelParameter = this->polarKernelParameter, &centerElementLineEdit = this->centerElementLineEdit]()
+        connect(centerElementLineEdit, &FocusLineEdit::focusOut, this, [=]()
         {
             centerElementLineEdit->setText(QString::number(polarKernelParameter->centerElement));
         });
 
-        connect(radiusLineEdit, &FocusLineEdit::returnPressed, [&]()
+        connect(radiusLineEdit, &FocusLineEdit::returnPressed, this, [&]()
         {
             polarKernelParameter->polarKernels[kernelIndex]->radius = radiusLineEdit->text().toFloat();
             polarKernelParameter->setValues();
             setGeometryPlotData();
         });
-        connect(radiusLineEdit, &FocusLineEdit::focusOut, [&polarKernelParameter = this->polarKernelParameter, &kernelIndex = this->kernelIndex, &radiusLineEdit = this->radiusLineEdit]()
+        connect(radiusLineEdit, &FocusLineEdit::focusOut, this, [=]()
         {
             radiusLineEdit->setText(QString::number(polarKernelParameter->polarKernels[kernelIndex]->radius));
         });
 
-        connect(initialAngleLineEdit, &FocusLineEdit::returnPressed, [&]()
+        connect(initialAngleLineEdit, &FocusLineEdit::returnPressed, this, [&]()
         {
             polarKernelParameter->polarKernels[kernelIndex]->initialAngle = initialAngleLineEdit->text().toFloat();
             polarKernelParameter->setValues();
             setGeometryPlotData();
         });
-        connect(initialAngleLineEdit, &FocusLineEdit::focusOut, [&polarKernelParameter = this->polarKernelParameter, &kernelIndex = this->kernelIndex, &initialAngleLineEdit = this->initialAngleLineEdit]()
+        connect(initialAngleLineEdit, &FocusLineEdit::focusOut, this, [=]()
         {
             initialAngleLineEdit->setText(QString::number(polarKernelParameter->polarKernels[kernelIndex]->initialAngle));
         });
 
-        connect(frequencyLineEdit, &FocusLineEdit::returnPressed, [&]()
+        connect(frequencyLineEdit, &FocusLineEdit::returnPressed, this, [&]()
         {
             polarKernelParameter->polarKernels[kernelIndex]->frequency = frequencyLineEdit->text().toFloat();
             polarKernelParameter->setValues();
             setKernelValuesPlotData();
         });
-        connect(frequencyLineEdit, &FocusLineEdit::focusOut, [&polarKernelParameter = this->polarKernelParameter, &kernelIndex = this->kernelIndex, &frequencyLineEdit = this->frequencyLineEdit]()
+        connect(frequencyLineEdit, &FocusLineEdit::focusOut, this, [=]()
         {
             frequencyLineEdit->setText(QString::number(polarKernelParameter->polarKernels[kernelIndex]->frequency));
         });
 
-        connect(phaseLineEdit, &FocusLineEdit::returnPressed, [&]()
+        connect(phaseLineEdit, &FocusLineEdit::returnPressed, this, [&]()
         {
             polarKernelParameter->polarKernels[kernelIndex]->phase = phaseLineEdit->text().toFloat();
             polarKernelParameter->setValues();
             setKernelValuesPlotData();
         });
-        connect(phaseLineEdit, &FocusLineEdit::focusOut, [&polarKernelParameter = this->polarKernelParameter, &kernelIndex = this->kernelIndex, &phaseLineEdit = this->phaseLineEdit]()
+        connect(phaseLineEdit, &FocusLineEdit::focusOut, this, [=]()
         {
             phaseLineEdit->setText(QString::number(polarKernelParameter->polarKernels[kernelIndex]->phase));
         });
 
-        connect(minimumLineEdit, &FocusLineEdit::returnPressed, [&]()
+        connect(minimumLineEdit, &FocusLineEdit::returnPressed, this, [&]()
         {
             polarKernelParameter->polarKernels[kernelIndex]->minimum = minimumLineEdit->text().toFloat();
             polarKernelParameter->setValues();
             setKernelValuesPlotData();
         });
-        connect(minimumLineEdit, &FocusLineEdit::focusOut, [&polarKernelParameter = this->polarKernelParameter, &kernelIndex = this->kernelIndex, &minimumLineEdit = this->minimumLineEdit]()
+        connect(minimumLineEdit, &FocusLineEdit::focusOut, this, [=]()
         {
             minimumLineEdit->setText(QString::number(polarKernelParameter->polarKernels[kernelIndex]->minimum));
         });
 
-        connect(maximumLineEdit, &FocusLineEdit::returnPressed, [&]()
+        connect(maximumLineEdit, &FocusLineEdit::returnPressed, this, [&]()
         {
             polarKernelParameter->polarKernels[kernelIndex]->maximum = maximumLineEdit->text().toFloat();
             polarKernelParameter->setValues();
             setKernelValuesPlotData();
         });
-        connect(maximumLineEdit, &FocusLineEdit::focusOut, [&polarKernelParameter = this->polarKernelParameter, &kernelIndex = this->kernelIndex, &maximumLineEdit = this->maximumLineEdit]()
+        connect(maximumLineEdit, &FocusLineEdit::focusOut, this, [=]()
         {
             maximumLineEdit->setText(QString::number(polarKernelParameter->polarKernels[kernelIndex]->maximum));
         });
     }
+
+    QString getName() { return polarKernelParameter->name; }
 
 private:
     PolarKernelParameter* polarKernelParameter;
@@ -692,20 +739,24 @@ private:
 
 // Operations widget
 
-class OperationsWidget : public QWidget
+class OperationsWidget : public QFrame
 {
     Q_OBJECT
 
 public:
-    OperationsWidget(ImageOperation* operation)
+    OperationsWidget(ImageOperation* operation, QWidget* parent) : QFrame(parent)
     {
+        setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
+
         mainLayout = new QVBoxLayout;
         mainLayout->setAlignment(Qt::AlignCenter);
         mainLayout->setSizeConstraint(QLayout::SetFixedSize);
 
-        setup(operation);
+        setFrameStyle(QFrame::Panel | QFrame::Plain);
+        setLineWidth(0);
+        setMidLineWidth(0);
 
-        setWindowFlags(Qt::WindowStaysOnTopHint);
+        setup(operation);
     }
 
     void setup(ImageOperation* operation)
@@ -720,38 +771,42 @@ public:
             if (parameter->isOdd)
             {
                 IntOddParameterWidget* widget = new IntOddParameterWidget(parameter, this);
+                parameterWidgets.push_back(widget);
+                slideableIntParameterWidgets.push_back(widget);
                 formLayout->addRow(parameter->name + ":", widget->lineEdit);
             }
             else
             {
                 IntParameterWidget* widget = new IntParameterWidget(parameter, this);
+                parameterWidgets.push_back(widget);
+                slideableIntParameterWidgets.push_back(widget);
                 formLayout->addRow(parameter->name + ":", widget->lineEdit);
             }
         }
         for (auto parameter : operation->getFloatParameters())
         {
-            FloatParameterWidget* widget = new FloatParameterWidget(parameter, 100000, this);
-            floatParameterWidgets.push_back(widget);
+            FloatParameterWidget* widget = new FloatParameterWidget(parameter, this);
+            parameterWidgets.push_back(widget);
+            slideableFloatParameterWidgets.push_back(widget);
             formLayout->addRow(parameter->name + ":", widget->lineEdit);
-        }
-        for (auto parameter : operation->getBoolParameters())
-        {
-            BoolParameterWidget* widget = new BoolParameterWidget(parameter, this);
-            formLayout->addRow("", widget->checkBox);
         }
         for (auto parameter : operation->getOptionsIntParameters())
         {
             OptionsParameterWidget<int>* widget = new OptionsParameterWidget<int>(parameter, this);
+            parameterWidgets.push_back(widget);
             formLayout->addRow(parameter->name + ":", widget->comboBox);
         }
         for (auto parameter : operation->getOptionsGLenumParameters())
         {
             OptionsParameterWidget<GLenum>* widget = new OptionsParameterWidget<GLenum>(parameter, this);
+            parameterWidgets.push_back(widget);
             formLayout->addRow(parameter->name + ":", widget->comboBox);
         }
         if (operation->getKernelParameter())
         {
             KernelParameterWidget* widget = new KernelParameterWidget(operation->getKernelParameter(), this);
+            parameterWidgets.push_back(widget);
+            slideableFloatParameterWidgets.push_back(widget);
             parametersLayout->addWidget(new QLabel(operation->getKernelParameter()->name + ":"));
             parametersLayout->addLayout(widget->gridLayout);
             parametersLayout->addWidget(widget->normalizePushButton);
@@ -760,6 +815,8 @@ public:
         if (operation->getMatrixParameter())
         {
             MatrixParameterWidget* widget = new MatrixParameterWidget(operation->getMatrixParameter(), this);
+            parameterWidgets.push_back(widget);
+            slideableFloatParameterWidgets.push_back(widget);
             parametersLayout->addWidget(new QLabel(operation->getMatrixParameter()->name + ":"));
             parametersLayout->addLayout(widget->gridLayout);
             formLayout->addRow("Presets:", widget->presetsComboBox);
@@ -777,11 +834,11 @@ public:
 
         mainLayout->addWidget(parametersGroupBox);
 
-        // Selected real parameter
+        // Selected float or int parameter
 
-        if (!floatParameterWidgets.empty())
+        if (!slideableFloatParameterWidgets.empty() || !slideableIntParameterWidgets.empty())
         {
-            QSlider* selectedParameterSlider = new QSlider(Qt::Horizontal);
+            FocusSlider* selectedParameterSlider = new FocusSlider(Qt::Horizontal);
             selectedParameterSlider->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
             selectedParameterSlider->setRange(0, 10000);
 
@@ -815,12 +872,29 @@ public:
 
             mainLayout->addWidget(selectedParameterGroupBox);
 
-            for (auto widget : floatParameterWidgets)
+            for (auto widget : qAsConst(slideableFloatParameterWidgets))
             {
-                connect(widget, &FloatParameterWidget::focusIn, [=]()
+                connect(widget, QOverload<Number<float>*>::of(&ParameterWidget::focusIn), this, [=](Number<float>* number)
                 {
-                    updateFloatParameterControls(
-                            widget,
+                    updateSlideableParameterControls<float>(
+                            widget->getName(),
+                            number,
+                            selectedParameterSlider,
+                            selectedParameterMinLineEdit,
+                            selectedParameterMinValidator,
+                            selectedParameterMaxLineEdit,
+                            selectedParameterMaxValidator,
+                            selectedParameterGroupBox);
+                });
+            }
+
+            for (auto widget : qAsConst(slideableIntParameterWidgets))
+            {
+                connect(widget, QOverload<Number<int>*>::of(&ParameterWidget::focusIn), this, [=](Number<int>* number)
+                {
+                    updateSlideableParameterControls<int>(
+                            widget->getName(),
+                            number,
                             selectedParameterSlider,
                             selectedParameterMinLineEdit,
                             selectedParameterMinValidator,
@@ -831,6 +905,60 @@ public:
             }
         }
 
+        // Connect widgets
+
+        if (!parameterWidgets.isEmpty())
+        {
+            for (auto widget : qAsConst(parameterWidgets))
+            {
+                connect(widget, QOverload<>::of(&ParameterWidget::focusIn), this, [=](){
+                    setLineWidth(1);
+                    lastFocusedWidget = widget->lastFocusedWidget();
+                    lastFocused = true;
+                    emit focusIn(this);
+                });
+                connect(widget, &ParameterWidget::focusOut, this, [=](){
+                    setLineWidth(0);
+                    emit focusOut(this);
+                });
+            }
+
+            lastFocusedWidget = parameterWidgets.front()->lastFocusedWidget();
+        }
+
+        // Enable button
+
+        enableButton = new FocusPushButton;
+        enableButton->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+        enableButton->setFixedHeight(10);
+        enableButton->setCheckable(true);
+        enableButton->setChecked(operation->isEnabled());
+        if (operation->isEnabled())
+            enableButton->setStyleSheet("background-color: rgb(0, 255, 0); color: rgb(255, 255, 255)");
+        else
+            enableButton->setStyleSheet("background-color: rgb(32, 32, 32); color: rgb(255, 255, 255)");
+
+        connect(enableButton, &QPushButton::toggled, this, [=](bool checked){
+            operation->enable(checked);
+            if (checked)
+                enableButton->setStyleSheet("background-color: rgb(0, 255, 0); color: rgb(255, 255, 255)");
+            else
+                enableButton->setStyleSheet("background-color: rgb(32, 32, 32); color: rgb(255, 255, 255)");
+            emit enableButtonToggled();
+        });
+        connect(enableButton, &FocusPushButton::focusIn, this, [=](){
+            setLineWidth(1);
+            lastFocusedWidget = enableButton;
+            lastFocused = true;
+            emit focusIn(this);
+        });
+        connect(enableButton, &FocusPushButton::focusOut, this, [=](){
+            setLineWidth(0);
+            emit focusOut(this);
+        });
+
+        mainLayout->addWidget(enableButton);
+
         setLayout(mainLayout);
     }
 
@@ -838,18 +966,59 @@ public:
     {
         qDeleteAll(findChildren<QWidget*>(QString(), Qt::FindDirectChildrenOnly));
 
-        floatParameterWidgets.clear();
+        parameterWidgets.clear();
+        slideableFloatParameterWidgets.clear();
+        slideableIntParameterWidgets.clear();
 
         setup(operation);
     }
 
+    void toggleEnableButton(bool checked)
+    {
+        enableButton->setChecked(checked);
+        if (checked)
+            enableButton->setStyleSheet("background-color: rgb(0, 255, 0); color: rgb(255, 255, 255)");
+        else
+            enableButton->setStyleSheet("background-color: rgb(32, 32, 32); color: rgb(255, 255, 255)");
+    }
+
+    bool isFocused()
+    {
+        return lastFocusedWidget->hasFocus();
+    }
+
+    bool isLastFocused()
+    {
+        return lastFocused;
+    }
+
+    void setLastFocused(bool focus)
+    {
+        lastFocused = focus;
+    }
+
+signals:
+    void enableButtonToggled();
+    void focusIn(QWidget* widget);
+    void focusOut(QWidget* widget);
+
 private:
     QVBoxLayout* mainLayout;
-    QVector<FloatParameterWidget*> floatParameterWidgets;
 
-    void updateFloatParameterControls(
-            FloatParameterWidget* widget,
-            QSlider* selectedParameterSlider,
+    QVector<ParameterWidget*> parameterWidgets;
+    QVector<ParameterWidget*> slideableFloatParameterWidgets;
+    QVector<ParameterWidget*> slideableIntParameterWidgets;
+
+    FocusPushButton* enableButton;
+
+    QWidget* lastFocusedWidget = nullptr;
+    bool lastFocused = false;
+
+    template <class T>
+    void updateSlideableParameterControls(
+            QString name,
+            Number<T>* number,
+            FocusSlider* selectedParameterSlider,
             FocusLineEdit* selectedParameterMinLineEdit,
             QDoubleValidator* selectedParameterMinValidator,
             FocusLineEdit* selectedParameterMaxLineEdit,
@@ -859,84 +1028,127 @@ private:
         // Slider
 
         selectedParameterSlider->disconnect();
-        selectedParameterSlider->setRange(0, widget->indexMax);
-        selectedParameterSlider->setValue(widget->getIndex());
+        selectedParameterSlider->setRange(0, number->indexMax);
+        selectedParameterSlider->setValue(number->getIndex());
 
-        connect(selectedParameterSlider, &QAbstractSlider::valueChanged, widget, &FloatParameterWidget::setValue);
+        connect(selectedParameterSlider, &QAbstractSlider::valueChanged, number, &Number<T>::setValueFromIndex);
 
-        connect(widget, &FloatParameterWidget::currentIndexChanged, [=](int currentIndex)
+        connect(number, &Number<T>::currentIndexChanged, this, [=](int currentIndex)
         {
             disconnect(selectedParameterSlider, &QAbstractSlider::valueChanged, nullptr, nullptr);
             selectedParameterSlider->setValue(currentIndex);
-            connect(selectedParameterSlider, &QAbstractSlider::valueChanged, widget, &FloatParameterWidget::setValue);
+            connect(selectedParameterSlider, &QAbstractSlider::valueChanged, number, &Number<T>::setValueFromIndex);
+        });
+
+        // Focus
+
+        connect(selectedParameterSlider, &FocusSlider::focusIn, this, [=](){
+            setLineWidth(1);
+            lastFocusedWidget = selectedParameterSlider;
+            lastFocused = true;
+            emit focusIn(this);
+        });
+        connect(selectedParameterSlider, &FocusSlider::focusOut, this, [=](){
+            setLineWidth(0);
+            emit focusOut(this);
         });
 
         // Value changed: check if within min/max range and adjust controls
 
-        connect(widget, &FloatParameterWidget::currentValueChanged, [=](double currentValue)
+        connect(number, QOverload<float>::of(&Number<T>::currentValueChanged), this, [=](double currentValue)
         {
-            if (currentValue < widget->getMin())
+            if (currentValue < number->getMin())
             {
-                widget->setMin(currentValue);
+                number->setMin(currentValue);
 
                 selectedParameterMinLineEdit->setText(QString::number(currentValue));
 
                 disconnect(selectedParameterSlider, &QAbstractSlider::valueChanged, nullptr, nullptr);
-                selectedParameterSlider->setValue(widget->getIndex());
-                connect(selectedParameterSlider, &QAbstractSlider::valueChanged, widget, &FloatParameterWidget::setValue);
+                selectedParameterSlider->setValue(number->getIndex());
+                connect(selectedParameterSlider, &QAbstractSlider::valueChanged, number, &Number<T>::setValueFromIndex);
             }
-            else if (currentValue > widget->getMax())
+            else if (currentValue > number->getMax())
             {
-                widget->setMax(currentValue);
+                number->setMax(currentValue);
 
                 selectedParameterMaxLineEdit->setText(QString::number(currentValue));
 
                 disconnect(selectedParameterSlider, &QAbstractSlider::valueChanged, nullptr, nullptr);
-                selectedParameterSlider->setValue(widget->getIndex());
-                connect(selectedParameterSlider, &QAbstractSlider::valueChanged, widget, &FloatParameterWidget::setValue);
+                selectedParameterSlider->setValue(number->getIndex());
+                connect(selectedParameterSlider, &QAbstractSlider::valueChanged, number, &Number<T>::setValueFromIndex);
             }
         });
 
         // Minimum
 
         selectedParameterMinLineEdit->disconnect();
-        selectedParameterMinLineEdit->setText(QString::number(widget->getMin()));
+        selectedParameterMinLineEdit->setText(QString::number(number->getMin()));
 
-        connect(selectedParameterMinLineEdit, &FocusLineEdit::returnPressed, [=]()
+        connect(selectedParameterMinLineEdit, &FocusLineEdit::returnPressed, this, [=]()
         {
-            widget->setMin(selectedParameterMinLineEdit->text().toDouble());
-            widget->setIndex();
+            number->setMin(selectedParameterMinLineEdit->text().toDouble());
+            number->setIndex();
         });
-        connect(selectedParameterMinLineEdit, &FocusLineEdit::focusOut, [=]()
+        connect(selectedParameterMinLineEdit, &FocusLineEdit::focusOut, this, [=]()
         {
-            selectedParameterMinLineEdit->setText(QString::number(widget->getMin()));
+            selectedParameterMinLineEdit->setText(QString::number(number->getMin()));
         });
 
         // Maximum
 
         selectedParameterMaxLineEdit->disconnect();
-        selectedParameterMaxLineEdit->setText(QString::number(widget->getMax()));
+        selectedParameterMaxLineEdit->setText(QString::number(number->getMax()));
 
-        connect(selectedParameterMaxLineEdit, &FocusLineEdit::returnPressed, [=]()
+        connect(selectedParameterMaxLineEdit, &FocusLineEdit::returnPressed, this, [=]()
         {
-            widget->setMax(selectedParameterMaxLineEdit->text().toDouble());
-            widget->setIndex();
+            number->setMax(selectedParameterMaxLineEdit->text().toDouble());
+            number->setIndex();
         });
-        connect(selectedParameterMaxLineEdit, &FocusLineEdit::focusOut, [=]()
+        connect(selectedParameterMaxLineEdit, &FocusLineEdit::focusOut, this, [=]()
         {
-            selectedParameterMaxLineEdit->setText(QString::number(widget->getMax()));
+            selectedParameterMaxLineEdit->setText(QString::number(number->getMax()));
         });
 
         // Validators
 
-        selectedParameterMinValidator->setBottom(widget->getInf());
-        selectedParameterMinValidator->setTop(widget->getMax());
+        selectedParameterMinValidator->setBottom(number->getInf());
+        selectedParameterMinValidator->setTop(number->getMax());
 
-        selectedParameterMaxValidator->setBottom(widget->getMin());
-        selectedParameterMaxValidator->setTop(widget->getSup());
+        selectedParameterMaxValidator->setBottom(number->getMin());
+        selectedParameterMaxValidator->setTop(number->getSup());
+
+        // Focus
+
+        connect(selectedParameterMinLineEdit, &FocusLineEdit::focusIn, this, [=](){
+            setLineWidth(1);
+            lastFocusedWidget = selectedParameterMinLineEdit;
+            lastFocused = true;
+            emit focusIn(this);
+        });
+        connect(selectedParameterMinLineEdit, &FocusLineEdit::focusOut, this, [=](){
+            setLineWidth(0);
+            emit focusOut(this);
+        });
+
+        connect(selectedParameterMaxLineEdit, &FocusLineEdit::focusIn, this, [=](){
+            setLineWidth(1);
+            lastFocusedWidget = selectedParameterMaxLineEdit;
+            lastFocused = true;
+            emit focusIn(this);
+        });
+        connect(selectedParameterMaxLineEdit, &FocusLineEdit::focusOut, this, [=](){
+            setLineWidth(0);
+            emit focusOut(this);
+        });
 
         // Title
 
-        selectedParameterGroupBox->setTitle("Selected parameter: " + widget->getName());
+        selectedParameterGroupBox->setTitle("Selected parameter: " + name);
+    }
+
+    void focusInEvent(QFocusEvent *event) override
+    {
+        lastFocusedWidget->setFocus(Qt::MouseFocusReason);
+        event->accept();
     }
 };

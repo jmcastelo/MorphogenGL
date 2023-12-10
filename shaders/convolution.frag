@@ -8,13 +8,15 @@ uniform sampler2D inTexture;
 
 uniform float kernel[9];
 uniform vec2 offset[9];
+uniform float opacity;
 
 void main()
 {
-    vec3 color = vec3(0.0);
+    vec3 srcColor = texture(inTexture, texCoords).rgb;
+    vec3 dstColor = vec3(0.0);
 
     for (int i = 0; i < 9; i++)
-        color += kernel[i] * texture(inTexture, texCoords + offset[i]).rgb;
+        dstColor += kernel[i] * texture(inTexture, texCoords + offset[i]).rgb;
 
-    fragColor = vec4(color, 1.0);
+    fragColor = vec4(mix(srcColor, dstColor, opacity), 1.0);
 }

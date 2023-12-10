@@ -9,9 +9,12 @@ uniform sampler2D inTexture;
 uniform int redLevels;
 uniform int greenLevels;
 uniform int blueLevels;
+uniform float opacity;
 
 void main()
 {
+    vec3 srcColor = texture(inTexture, texCoords).rgb;
     vec3 levels = vec3(redLevels, greenLevels, blueLevels);
-    fragColor = vec4(floor(levels * texture(inTexture, texCoords).rgb - 0.5) / (levels - 1.0), 1.0);
+    vec3 dstColor = floor(levels * srcColor - 0.5) / (levels - 1.0);
+    fragColor = vec4(mix(srcColor, dstColor, opacity), 1.0);
 }

@@ -22,8 +22,8 @@
 
 #include "fbo.h"
 
-GLuint FBO::width = 512;
-GLuint FBO::height = 512;
+GLuint FBO::width = 1024;
+GLuint FBO::height = 1024;
 
 FBO::FBO(QString vertexShader, QString fragmentShader, QOpenGLContext* mainContext)
 {
@@ -146,6 +146,12 @@ FBO::FBO(QString vertexShader, QString fragmentShader, QOpenGLContext* mainConte
         qDebug() << "Shader link error:\n" << identityProgram->log();
 
     context->doneCurrent();
+
+    // Set ortho projection
+
+    resizeVertices();
+    transformationMatrix.setToIdentity();
+    adjustTransform();
 }
 
 FBO::~FBO()
@@ -213,8 +219,94 @@ void FBO::doneCurrent()
     context->doneCurrent();
 }
 
+void FBO::resizeVertices()
+{
+    // Recompute vertices and texture coordinates
+
+    GLfloat left, right, bottom, top;
+    GLfloat ratio = static_cast<GLfloat>(width) / static_cast<GLfloat>(height);
+
+    if (width > height)
+    {
+        top = 1.0f;
+        bottom = -top;
+        right = top * ratio;
+        left = -right;
+    }
+    else
+    {
+        right = 1.0f;
+        left = -right;
+        top = right / ratio;
+        bottom = -top;
+    }
+
+    GLfloat vertices[] = {
+        left, top,
+        left, bottom,
+        right, bottom,
+        left, top,
+        right, bottom,
+        right, top
+    };
+
+    context->makeCurrent(surface);
+
+    vao->bind();
+    vboPos->bind();
+    vboPos->allocate(vertices, 12 * sizeof(GLfloat));
+    vao->release();
+    vboPos->release();
+
+    context->doneCurrent();
+}
+
+void FBO::adjustTransform()
+{
+    GLfloat left, right, bottom, top;
+    GLfloat ratio = static_cast<GLfloat>(width) / static_cast<GLfloat>(height);
+
+    if (width > height)
+    {
+        top = 1.0f;
+        bottom = -top;
+        right = top * ratio;
+        left = -right;
+    }
+    else
+    {
+        right = 1.0f;
+        left = -right;
+        top = right / ratio;
+        bottom = -top;
+    }
+
+    // Maintain aspect ratio
+
+    QMatrix4x4 transform;
+    transform.setToIdentity();
+    transform.ortho(left, right, bottom, top, -1.0, 1.0);
+
+    context->makeCurrent(surface);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+    program->bind();
+    program->setUniformValue("transform", transform * transformationMatrix);
+    program->release();
+    identityProgram->bind();
+    identityProgram->setUniformValue("transform", transform);
+    identityProgram->release();
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    context->doneCurrent();
+}
+
 void FBO::resize()
 {
+    resizeVertices();
+
+    adjustTransform();
+
     context->makeCurrent(surface);
 
     // FBO
@@ -261,6 +353,8 @@ void FBO::resize()
 
     widthOld = width;
     heightOld = height;
+
+    emit sizeChanged();
 }
 
 void FBO::draw()

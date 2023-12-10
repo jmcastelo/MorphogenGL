@@ -23,6 +23,9 @@
 #pragma once
 
 #include <QLineEdit>
+#include <QSlider>
+#include <QComboBox>
+#include <QPushButton>
 
 // A custom QLineEdit that signals focus out and in
 
@@ -42,6 +45,85 @@ protected:
     void focusInEvent(QFocusEvent* event)
     {
         QLineEdit::focusInEvent(event);
+        emit focusIn();
+    }
+
+signals:
+    void focusOut();
+    void focusIn();
+};
+
+
+// A custom QSlider that signals focus out and in
+
+class FocusSlider : public QSlider
+{
+    Q_OBJECT
+
+public:
+    FocusSlider(Qt::Orientation orientation, QWidget* parent = nullptr) : QSlider(orientation, parent) {}
+
+protected:
+    void focusOutEvent(QFocusEvent* event)
+    {
+        QSlider::focusOutEvent(event);
+        emit focusOut();
+    }
+    void focusInEvent(QFocusEvent* event)
+    {
+        QSlider::focusInEvent(event);
+        emit focusIn();
+    }
+
+signals:
+    void focusOut();
+    void focusIn();
+};
+
+// A custom QComboBox that signals focus out and in
+
+class FocusComboBox : public QComboBox
+{
+    Q_OBJECT
+
+public:
+    FocusComboBox(QWidget* parent = nullptr) : QComboBox(parent) {}
+
+protected:
+    void focusOutEvent(QFocusEvent* event)
+    {
+        QComboBox::focusOutEvent(event);
+        emit focusOut();
+    }
+    void focusInEvent(QFocusEvent* event)
+    {
+        QComboBox::focusInEvent(event);
+        emit focusIn();
+    }
+
+signals:
+    void focusOut();
+    void focusIn();
+};
+
+// A custom QPushButton that signals focus out and in
+
+class FocusPushButton : public QPushButton
+{
+    Q_OBJECT
+
+public:
+    FocusPushButton(QWidget* parent = nullptr) : QPushButton(parent) {}
+
+protected:
+    void focusOutEvent(QFocusEvent* event)
+    {
+        QPushButton::focusOutEvent(event);
+        emit focusOut();
+    }
+    void focusInEvent(QFocusEvent* event)
+    {
+        QPushButton::focusInEvent(event);
         emit focusIn();
     }
 

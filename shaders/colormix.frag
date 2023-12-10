@@ -7,8 +7,11 @@ in vec2 texCoords;
 uniform sampler2D inTexture;
 
 uniform mat3 rgbMatrix;
+uniform float opacity;
 
 void main()
 {
-    fragColor = vec4(rgbMatrix * texture(inTexture, texCoords).rgb, 1.0);
+    vec3 srcColor = texture(inTexture, texCoords).rgb;
+    vec3 dstColor = rgbMatrix * srcColor;
+    fragColor = vec4(mix(srcColor, dstColor, opacity), 1.0);
 }

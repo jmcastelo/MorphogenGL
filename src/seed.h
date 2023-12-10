@@ -92,6 +92,8 @@ private:
 
     std::default_random_engine generator;
 
+    void maintainAspectRatio();
+    void resizeVertices();
     void resizeFBO(GLuint &fbo, GLuint &texture);
     void drawRandom(bool grayscale);
     void drawImage();

@@ -34,9 +34,10 @@
 #include <QUuid>
 #include <QOpenGLContext>
 #include <QOffscreenSurface>
-#include <QDebug>
+#include <QObject>
 
-struct BoolParameter;
+template <class T>
+class Number;
 class IntParameter;
 class FloatParameter;
 template <class T>
@@ -71,7 +72,6 @@ public:
 
     virtual void resize() { blender->resize(); fbo->resize(); }
 
-    virtual std::vector<BoolParameter*> getBoolParameters() { std::vector<BoolParameter*> parameters; return parameters; };
     virtual std::vector<IntParameter*> getIntParameters() { std::vector<IntParameter*> parameters; return parameters; };
     virtual std::vector<FloatParameter*> getFloatParameters() { std::vector<FloatParameter*> parameters; return parameters; };
     virtual std::vector<OptionsParameter<int>*> getOptionsIntParameters() { std::vector<OptionsParameter<int>*> parameters; return parameters; }
@@ -84,8 +84,8 @@ public:
     virtual void setFloatParameter(int, float) {}
     virtual void setOptionsParameter(int, GLenum) {}
     virtual void setOptionsParameter(int, int) {}
-    virtual void setMatrixParameter(GLfloat*) {}
-    virtual void setKernelParameter(std::vector<float>) {}
+    virtual void setMatrixParameter(std::vector<Number<float>*>) {}
+    virtual void setKernelParameter(std::vector<Number<float>*>) {}
     virtual void setPolarKernelParameter() {}
 
     void adjustMinMax(float value, float minValue, float maxValue, float& min, float& max);
@@ -107,7 +107,7 @@ protected:
 class BilateralFilter : public ImageOperation
 {
 public:
-    BilateralFilter(bool on, QOpenGLContext* mainContext, int theNumSideElements, float theSize, float theSpatialSigma, float theRangeSigma);
+    BilateralFilter(bool on, QOpenGLContext* mainContext, int theNumSideElements, float theSize, float theSpatialSigma, float theRangeSigma, float theOpacity);
     BilateralFilter(const BilateralFilter& operation);
     ~BilateralFilter();
 
@@ -120,13 +120,14 @@ public:
     void setFloatParameter(int index, float value);
 
     std::vector<IntParameter*> getIntParameters() { std::vector<IntParameter*> parameters = { numSideElements }; return parameters; };
-    std::vector<FloatParameter*> getFloatParameters() { std::vector<FloatParameter*> parameters = { size, spatialSigma, rangeSigma }; return parameters; }
+    std::vector<FloatParameter*> getFloatParameters() { std::vector<FloatParameter*> parameters = { size, spatialSigma, rangeSigma, opacity }; return parameters; }
 
 private:
     IntParameter* numSideElements;
     FloatParameter* size;
     FloatParameter* spatialSigma;
     FloatParameter* rangeSigma;
+    FloatParameter* opacity;
 
     void computeOffsets();
     void computeSpatialKernel();
@@ -139,7 +140,7 @@ private:
 class Brightness : public ImageOperation
 {
 public:
-    Brightness(bool on, QOpenGLContext* mainContext, float theBrightness);
+    Brightness(bool on, QOpenGLContext* mainContext, float theBrightness, float theOpacity);
     Brightness(const Brightness& operation);
     ~Brightness();
 
@@ -150,10 +151,11 @@ public:
 
     void setFloatParameter(int index, float value);
 
-    std::vector<FloatParameter*> getFloatParameters() { std::vector<FloatParameter*> parameters = { brightness }; return parameters; }
+    std::vector<FloatParameter*> getFloatParameters() { std::vector<FloatParameter*> parameters = { brightness, opacity }; return parameters; }
 
 private:
     FloatParameter* brightness;
+    FloatParameter* opacity;
 };
 
 // Color mix
@@ -161,7 +163,7 @@ private:
 class ColorMix : public ImageOperation
 {
 public:
-    ColorMix(bool on, QOpenGLContext* mainContext, std::vector<float> theMatrix);
+    ColorMix(bool on, QOpenGLContext* mainContext, std::vector<float> theMatrix, float theOpacity);
     ColorMix(const ColorMix& operation);
     ~ColorMix();
 
@@ -170,12 +172,15 @@ public:
     static QString name;
     QString getName() { return name; };
 
-    void setMatrixParameter(GLfloat* values);
+    void setMatrixParameter(std::vector<Number<float>*> numbers);
+    void setFloatParameter(int index, float value);
 
     MatrixParameter* getMatrixParameter() { return rgbMatrix; }
+    std::vector<FloatParameter*> getFloatParameters() { std::vector<FloatParameter*> parameters = { opacity }; return parameters; }
 
 private:
     MatrixParameter* rgbMatrix;
+    FloatParameter* opacity;
 };
 
 // Color quantization
@@ -183,7 +188,7 @@ private:
 class ColorQuantization : public ImageOperation
 {
 public:
-    ColorQuantization(bool on, QOpenGLContext* mainContext, int theRedLevels, int theGreenLevels, int theBlueLevels);
+    ColorQuantization(bool on, QOpenGLContext* mainContext, int theRedLevels, int theGreenLevels, int theBlueLevels, float theOpacity);
     ColorQuantization(const ColorQuantization& operation);
     ~ColorQuantization();
 
@@ -193,13 +198,16 @@ public:
     QString getName() { return name; };
 
     void setIntParameter(int index, int value);
+    void setFloatParameter(int index, float value);
 
     std::vector<IntParameter*> getIntParameters() { std::vector<IntParameter*> parameters = { redLevels, greenLevels, blueLevels }; return parameters; };
+    std::vector<FloatParameter*> getFloatParameters() { std::vector<FloatParameter*> parameters = { opacity }; return parameters; }
 
 private:
     IntParameter* redLevels;
     IntParameter* greenLevels;
     IntParameter* blueLevels;
+    FloatParameter* opacity;
 };
 
 // Contrast
@@ -207,7 +215,7 @@ private:
 class Contrast : public ImageOperation
 {
 public:
-    Contrast(bool on, QOpenGLContext* mainContext, float theContrast);
+    Contrast(bool on, QOpenGLContext* mainContext, float theContrast, float theOpacity);
     Contrast(const Contrast& operation);
     ~Contrast();
 
@@ -218,10 +226,11 @@ public:
 
     void setFloatParameter(int index, float value);
 
-    std::vector<FloatParameter*> getFloatParameters() { std::vector<FloatParameter*> parameters = { contrast }; return parameters; };
+    std::vector<FloatParameter*> getFloatParameters() { std::vector<FloatParameter*> parameters = { contrast, opacity }; return parameters; };
 
 private:
     FloatParameter* contrast;
+    FloatParameter* opacity;
 };
 
 // Convolution
@@ -229,7 +238,7 @@ private:
 class Convolution : public ImageOperation
 {
 public:
-    Convolution(bool on, QOpenGLContext* mainContext, std::vector<float> theKernel, float theFactor, float theSize);
+    Convolution(bool on, QOpenGLContext* mainContext, std::vector<float> theKernel, float theFactor, float theSize, float theOpacity);
     Convolution(const Convolution& operation);
     ~Convolution();
 
@@ -238,16 +247,17 @@ public:
     static QString name;
     QString getName() { return name; };
 
-    void setKernelParameter(std::vector<float> values);
+    void setKernelParameter(std::vector<Number<float>*> numbers);
     void setFloatParameter(int index, float value);
 
     KernelParameter* getKernelParameter() { return kernel; };
-    std::vector<FloatParameter*> getFloatParameters() { std::vector<FloatParameter*> parameters = { factor, size }; return parameters; };
+    std::vector<FloatParameter*> getFloatParameters() { std::vector<FloatParameter*> parameters = { factor, size, opacity }; return parameters; };
 
 private:
     KernelParameter* kernel;
     FloatParameter* factor;
     FloatParameter* size;
+    FloatParameter* opacity;
 };
 
 // Dilation
@@ -255,7 +265,7 @@ private:
 class Dilation : public ImageOperation
 {
 public:
-    Dilation(bool on, QOpenGLContext* mainContext, float theSize);
+    Dilation(bool on, QOpenGLContext* mainContext, float theSize, float theOpacity);
     Dilation(const Dilation& operation);
     ~Dilation();
 
@@ -266,10 +276,11 @@ public:
 
     void setFloatParameter(int index, float value);
 
-    std::vector<FloatParameter*> getFloatParameters() { std::vector<FloatParameter*> parameters = { size }; return parameters; };
+    std::vector<FloatParameter*> getFloatParameters() { std::vector<FloatParameter*> parameters = { size, opacity }; return parameters; };
 
 private:
     FloatParameter* size;
+    FloatParameter* opacity;
 };
 
 // Erosion
@@ -277,7 +288,7 @@ private:
 class Erosion : public ImageOperation
 {
 public:
-    Erosion(bool on, QOpenGLContext* mainContext, float theSize);
+    Erosion(bool on, QOpenGLContext* mainContext, float theSize, float theOpacity);
     Erosion(const Erosion& operation);
     ~Erosion();
 
@@ -288,10 +299,11 @@ public:
 
     void setFloatParameter(int index, float value);
 
-    std::vector<FloatParameter*> getFloatParameters() { std::vector<FloatParameter*> parameters = { size }; return parameters; };
+    std::vector<FloatParameter*> getFloatParameters() { std::vector<FloatParameter*> parameters = { size, opacity }; return parameters; };
 
 private:
     FloatParameter* size;
+    FloatParameter* opacity;
 };
 
 // Gamma correction
@@ -299,7 +311,7 @@ private:
 class GammaCorrection : public ImageOperation
 {
 public:
-    GammaCorrection(bool on, QOpenGLContext* mainContext, float theGammaRed, float theGammaGreen, float theGammaBlue);
+    GammaCorrection(bool on, QOpenGLContext* mainContext, float theGammaRed, float theGammaGreen, float theGammaBlue, float theOpacity);
     GammaCorrection(const GammaCorrection& operation);
     ~GammaCorrection();
 
@@ -310,12 +322,13 @@ public:
 
     void setFloatParameter(int index, float value);
 
-    std::vector<FloatParameter*> getFloatParameters() { std::vector<FloatParameter*> parameters = { gammaRed, gammaGreen, gammaBlue }; return parameters; };
+    std::vector<FloatParameter*> getFloatParameters() { std::vector<FloatParameter*> parameters = { gammaRed, gammaGreen, gammaBlue, opacity }; return parameters; };
 
 private:
     FloatParameter* gammaRed;
     FloatParameter* gammaGreen;
     FloatParameter* gammaBlue;
+    FloatParameter* opacity;
 };
 
 // Hue shift
@@ -323,7 +336,7 @@ private:
 class HueShift : public ImageOperation
 {
 public:
-    HueShift(bool on, QOpenGLContext* mainContext, float theShift);
+    HueShift(bool on, QOpenGLContext* mainContext, float theShift, float theOpacity);
     HueShift(const HueShift& operation);
     ~HueShift();
 
@@ -334,10 +347,11 @@ public:
 
     void setFloatParameter(int index, float value);
 
-    std::vector<FloatParameter*> getFloatParameters() { std::vector<FloatParameter*> parameters = { shift }; return parameters; };
+    std::vector<FloatParameter*> getFloatParameters() { std::vector<FloatParameter*> parameters = { shift, opacity }; return parameters; };
 
 private:
     FloatParameter* shift;
+    FloatParameter* opacity;
 };
 
 // Identity
@@ -355,12 +369,12 @@ public:
     QString getName() { return name; };
 };
 
-// Hue shift
+// Logistic
 
 class Logistic : public ImageOperation
 {
 public:
-    Logistic(bool on, QOpenGLContext* mainContext, float R);
+    Logistic(bool on, QOpenGLContext* mainContext, float R, float theOpacity);
     Logistic(const Logistic& operation);
     ~Logistic();
 
@@ -371,16 +385,19 @@ public:
 
     void setFloatParameter(int index, float value);
 
-    std::vector<FloatParameter*> getFloatParameters() { std::vector<FloatParameter*> parameters = { r }; return parameters; };
+    std::vector<FloatParameter*> getFloatParameters() { std::vector<FloatParameter*> parameters = { r, opacity }; return parameters; };
 
 private:
     FloatParameter* r;
+    FloatParameter* opacity;
 };
 
 // Mask
 
-class Mask : public ImageOperation
+class Mask : public QObject, public ImageOperation
 {
+    Q_OBJECT
+
 public:
     Mask(bool on, QOpenGLContext* mainContext);
     Mask(const Mask& operation);
@@ -390,6 +407,32 @@ public:
 
     static QString name;
     QString getName() { return name; };
+
+private slots:
+    void setScale();
+};
+
+// Median
+
+class Median : public ImageOperation
+{
+public:
+    Median(bool on, QOpenGLContext* mainContext, float theSize, float theOpacity);
+    Median(const Median& operation);
+    ~Median();
+
+    ImageOperation* clone() { return new Median(*this); }
+
+    static QString name;
+    QString getName() { return name; };
+
+    void setFloatParameter(int index, float value);
+
+    std::vector<FloatParameter*> getFloatParameters() { std::vector<FloatParameter*> parameters = { size, opacity }; return parameters; };
+
+private:
+    FloatParameter* size;
+    FloatParameter* opacity;
 };
 
 // Memory
@@ -440,7 +483,7 @@ private:
 class MorphologicalGradient : public ImageOperation
 {
 public:
-    MorphologicalGradient(bool on, QOpenGLContext* mainContext, float theDilationSize, float theErosionSize);
+    MorphologicalGradient(bool on, QOpenGLContext* mainContext, float theDilationSize, float theErosionSize, float theOpacity);
     MorphologicalGradient(const MorphologicalGradient& operation);
     ~MorphologicalGradient();
 
@@ -451,11 +494,40 @@ public:
 
     void setFloatParameter(int index, float value);
 
-    std::vector<FloatParameter*> getFloatParameters() { std::vector<FloatParameter*> parameters = { dilationSize, erosionSize }; return parameters; };
+    std::vector<FloatParameter*> getFloatParameters() { std::vector<FloatParameter*> parameters = { dilationSize, erosionSize, opacity }; return parameters; };
 
 private:
     FloatParameter* dilationSize;
     FloatParameter* erosionSize;
+    FloatParameter* opacity;
+};
+
+// Morphological gradient
+
+class Pixelation : public QObject, public ImageOperation
+{
+    Q_OBJECT
+
+public:
+    Pixelation(bool on, QOpenGLContext* mainContext, float theSize, float theOpacity);
+    Pixelation(const Pixelation& operation);
+    ~Pixelation();
+
+    ImageOperation* clone() { return new Pixelation(*this); }
+
+    static QString name;
+    QString getName() { return name; };
+
+    void setFloatParameter(int index, float value);
+
+    std::vector<FloatParameter*> getFloatParameters() { std::vector<FloatParameter*> parameters = { size, opacity }; return parameters; };
+
+private:
+    FloatParameter* size;
+    FloatParameter* opacity;
+
+private slots:
+    void setWidthAndHeight();
 };
 
 // Polar convolution
@@ -463,7 +535,7 @@ private:
 class PolarConvolution : public ImageOperation
 {
 public:
-    PolarConvolution(bool on, QOpenGLContext* mainContext, std::vector<PolarKernel*> thePolarKernels, float theCenterElement);
+    PolarConvolution(bool on, QOpenGLContext* mainContext, std::vector<PolarKernel*> thePolarKernels, float theCenterElement, float theOpacity);
     PolarConvolution(const PolarConvolution& operation);
     ~PolarConvolution();
 
@@ -473,16 +545,42 @@ public:
     QString getName() { return name; }
 
     void setPolarKernelParameter();
+    void setFloatParameter(int index, float value);
 
     PolarKernelParameter* getPolarKernelParameter() { return polarKernelParameter; }
+    std::vector<FloatParameter*> getFloatParameters() { std::vector<FloatParameter*> parameters = { opacity }; return parameters; };
 
 private:
     PolarKernelParameter* polarKernelParameter;
+    FloatParameter* opacity;
+};
+
+// Power
+
+class Power: public ImageOperation
+{
+public:
+    Power(bool on, QOpenGLContext* mainContext, float theExponent, float theOpacity);
+    Power(const Power& operation);
+    ~Power();
+
+    ImageOperation* clone() { return new Power(*this); }
+
+    static QString name;
+    QString getName() { return name; };
+
+    void setFloatParameter(int index, float value);
+
+    std::vector<FloatParameter*> getFloatParameters() { std::vector<FloatParameter*> parameters = { exponent, opacity }; return parameters; };
+
+private:
+    FloatParameter* exponent;
+    FloatParameter* opacity;
 };
 
 // Rotation
 
-class Rotation: public ImageOperation
+class Rotation: public QObject, public ImageOperation
 {
 public:
     Rotation(bool on, QOpenGLContext* mainContext, float theAngle, GLenum theMinMagFilter);
@@ -510,7 +608,7 @@ private:
 class Saturation: public ImageOperation
 {
 public:
-    Saturation(bool on, QOpenGLContext* mainContext, float theSaturation);
+    Saturation(bool on, QOpenGLContext* mainContext, float theSaturation, float theOpacity);
     Saturation(const Saturation& operation);
     ~Saturation();
 
@@ -521,10 +619,11 @@ public:
 
     void setFloatParameter(int index, float value);
 
-    std::vector<FloatParameter*> getFloatParameters() { std::vector<FloatParameter*> parameters = { saturation }; return parameters; };
+    std::vector<FloatParameter*> getFloatParameters() { std::vector<FloatParameter*> parameters = { saturation, opacity }; return parameters; };
 
 private:
     FloatParameter* saturation;
+    FloatParameter* opacity;
 };
 
 // Scale
@@ -557,7 +656,7 @@ private:
 class Value: public ImageOperation
 {
 public:
-    Value(bool on, QOpenGLContext* mainContext, float theValue);
+    Value(bool on, QOpenGLContext* mainContext, float theValue, float theOpacity);
     Value(const Value& operation);
     ~Value();
 
@@ -568,8 +667,9 @@ public:
 
     void setFloatParameter(int index, float value);
 
-    std::vector<FloatParameter*> getFloatParameters() { std::vector<FloatParameter*> parameters = { value }; return parameters; };
+    std::vector<FloatParameter*> getFloatParameters() { std::vector<FloatParameter*> parameters = { value, opacity }; return parameters; };
 
 private:
     FloatParameter* value;
+    FloatParameter* opacity;
 };

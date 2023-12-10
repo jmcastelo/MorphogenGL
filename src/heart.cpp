@@ -32,27 +32,32 @@ Heart::Heart()
 
     // MorphoWidget
 
-    morphoWidget = new MorphoWidget(FBO::width, FBO::height);
+    //morphoWidget = new MorphoWidget(FBO::width, FBO::height);
 
     // ControlWidget
 
-    controlWidget = new ControlWidget(this);
+    //controlWidget = new ControlWidget(this);
 
     // Arrange both widgets side by side
     
-    morphoWidget->setGeometry(morphoWidget->geometry().x() - controlWidget->width() / 2, morphoWidget->geometry().y(), morphoWidget->width(), morphoWidget->height());
-    controlWidget->setGeometry(morphoWidget->geometry().x() + morphoWidget->width(), morphoWidget->geometry().y(), controlWidget->width(), morphoWidget->height());
+    //morphoWidget->setGeometry(morphoWidget->geometry().x() - controlWidget->width() / 2, morphoWidget->geometry().y(), morphoWidget->width(), morphoWidget->height());
+    //controlWidget->setGeometry(morphoWidget->geometry().x() + morphoWidget->width(), morphoWidget->geometry().y(), controlWidget->width(), morphoWidget->height());
 
     // Plots widget
 
-    plotsWidget = new PlotsWidget(FBO::width, FBO::height);
+    //plotsWidget = new PlotsWidget(FBO::width, FBO::height);
+
+    // Main widget
+
+    mainWidget = new MainWidget(this);
 
     // Signals + Slots
 
-    connect(timer, &QTimer::timeout, morphoWidget, QOverload<>::of(&MorphoWidget::update));
+    connect(timer, &QTimer::timeout, mainWidget, &MainWidget::updateMorphoWidget);
+    //connect(timer, &QTimer::timeout, morphoWidget, QOverload<>::of(&MorphoWidget::update));
     connect(timer, &QTimer::timeout, this, &Heart::beat);
 
-    connect(morphoWidget, &MorphoWidget::openGLInitialized, [=]()
+    /*connect(morphoWidget, &MorphoWidget::openGLInitialized, [=]()
     {
         controlWidget->generator->init(morphoWidget->context());
         plotsWidget->init(morphoWidget->context());
@@ -65,9 +70,9 @@ Heart::Heart()
         timer->stop();
         controlWidget->close();
         plotsWidget->close();
-    });
+    });*/
 
-    connect(controlWidget->generator, &GeneratorGL::outputTextureChanged, plotsWidget, &PlotsWidget::setTextureID);
+    /*connect(controlWidget->generator, &GeneratorGL::outputTextureChanged, plotsWidget, &PlotsWidget::setTextureID);
     connect(controlWidget->generator, &GeneratorGL::outputTextureChanged, morphoWidget, &MorphoWidget::updateOutputTextureID);
     connect(controlWidget->generator, &GeneratorGL::outputTextureChanged, [=](GLuint id){ if (encoder) encoder->setTextureID(id); });
     connect(controlWidget->generator, &GeneratorGL::imageSizeChanged, morphoWidget, &MorphoWidget::resetZoom);
@@ -77,19 +82,36 @@ Heart::Heart()
     {
         morphoWidget->close();
         plotsWidget->close();
+    });*/
+
+    connect(mainWidget, &MainWidget::morphoWidgetInitialized, this, [&](){
+        timer->start();
+    });
+
+    connect(mainWidget, &MainWidget::closing, this, [&](){
+        timer->stop();
+    });
+
+    connect(mainWidget, &MainWidget::outputTextureChanged, this, [=](GLuint id){
+        if (encoder)
+            encoder->setTextureID(id);
     });
 
     // Show widgets
 
-    morphoWidget->show();
-    controlWidget->show();
+    //morphoWidget->show();
+    //controlWidget->show();
+
+    mainWidget->resize(1024, 1024);
+    mainWidget->show();
 }
 
 Heart::~Heart()
 {
-    delete plotsWidget;
+    /*delete plotsWidget;
     delete morphoWidget;
-    delete controlWidget;
+    delete controlWidget;*/
+    delete mainWidget;
     if (encoder) delete encoder;
 }
 
@@ -97,7 +119,7 @@ void Heart::beat()
 {
     // Perform one iteration
 
-    controlWidget->generator->iterate();
+    mainWidget->generator()->iterate();
 
     // Record frame
 
@@ -109,7 +131,7 @@ void Heart::beat()
 
     // Compute iteration time
 
-    if (controlWidget->generator->active && controlWidget->generator->getIterationNumber() % 10 == 0)
+    if (mainWidget->generator()->active && mainWidget->generator()->getIterationNumber() % 10 == 0)
     {
         end = std::chrono::steady_clock::now();
         auto iterationTime = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
@@ -118,13 +140,15 @@ void Heart::beat()
         emit iterationTimeMeasured(iterationTime);
     }
 
-    if (controlWidget->generator->active)
+    if (mainWidget->generator()->active)
         emit iterationPerformed();
     
     // Compute plots
 
-    if (controlWidget->generator->active && plotsWidget->plotsActive())
-        plotsWidget->getPixels();
+    /*if (controlWidget->generator->active && plotsWidget->plotsActive())
+        plotsWidget->getPixels();*/
+
+    mainWidget->computePlots();
 }
 
 void Heart::setStartTime()
@@ -144,35 +168,36 @@ void Heart::setTimerInterval(int interval)
 
 int Heart::getMorphoWidgetWidth()
 {
-    return morphoWidget->width();
+    return mainWidget->morphoWidgetWidth();
 }
 
 int Heart::getMorphoWidgetHeight()
 {
-    return morphoWidget->height();
+    return mainWidget->morphoWidgetHeight();
 }
 
 void Heart::resizeMorphoWidget(int width, int height)
 {
-    morphoWidget->resize(width, height);
+    mainWidget->resize(width, height);
 }
 
 QImage Heart::grabMorphoWidgetFramebuffer()
 {
-    return morphoWidget->grabFramebuffer();
+    //return morphoWidget->grabFramebuffer();
+    return mainWidget->grabMorphoWidgetFramebuffer();
 }
 
 void Heart::startRecording(QString recordFilename, int framesPerSecond, QString preset, int crf)
 {
     encoder = new FFmpegEncoder(
         recordFilename.toStdString().c_str(),
-        morphoWidget->width(),
-        morphoWidget->height(),
+        mainWidget->width(),
+        mainWidget->height(),
         framesPerSecond,
         preset.toStdString().c_str(),
         QString::number(crf).toStdString().c_str(),
-        morphoWidget->context(),
-        **controlWidget->generator->getOutputTextureID());
+        mainWidget->morphoWidgetContext(),
+        **mainWidget->generator()->getOutputTextureID());
 }
 
 void Heart::stopRecording()
@@ -184,9 +209,4 @@ void Heart::stopRecording()
 int Heart::getFrameCount()
 {
     return encoder ? encoder->frameNumber : 0;
-}
-
-void Heart::togglePlotsWidget()
-{
-    plotsWidget->setVisible(!plotsWidget->isVisible());
 }

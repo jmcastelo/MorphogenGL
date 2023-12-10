@@ -40,6 +40,7 @@ class Node : public QGraphicsObject
 
 public:
     QUuid id;
+    QString name;
 
     bool marked = false;
 
@@ -65,7 +66,6 @@ public slots:
     void remove();
 
 protected:
-    QString name;
     GraphWidget* graph;
     QVector<Edge *> edgeList;
 
@@ -97,9 +97,10 @@ public:
 
     bool hasInputs();
 
+    void renameOperation(QString newName);
+
 public slots:
     void setOperation(QAction *action);
-    void setParameters();
     void enableOperation(bool checked);
     void equalizeBlendFactors();
     void clear();

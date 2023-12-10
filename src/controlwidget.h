@@ -26,6 +26,7 @@
 #include "focuslineedit.h"
 #include "operationswidget.h"
 #include "graphwidget.h"
+#include "plotswidget.h"
 #include <QWidget>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -57,6 +58,9 @@
 #include <QSize>
 #include <QTableWidget>
 #include <QTableWidgetItem>
+#include <QSplitter>
+#include <QScrollArea>
+#include <QSizeGrip>
 
 class Heart;
 class ConfigurationParser;
@@ -69,23 +73,30 @@ class ControlWidget : public QWidget
 
 public:
     GeneratorGL* generator;
+    QSizeGrip* grip;
 
     ControlWidget(Heart* theHeart, QWidget *parent = nullptr);
     ~ControlWidget();
 
+    void computePlots();
+    void initPlotsWidget(QOpenGLContext* context){ plotsWidget->init(context); }
+
 signals:
-    void plotsActionTriggered();
     void seedDrawn();
-    void closing();
+    void selectedPointChanged(QPoint point);
+    //void closing();
 
 public slots:
     void updateWindowSizeLineEdits(int width, int height);
 
 protected:
     void closeEvent(QCloseEvent* event) override;
+    void resizeEvent(QResizeEvent* event) override;
 
 private:
     Heart* heart;
+
+    PlotsWidget* plotsWidget;
 
     ConfigurationParser* parser;
 
@@ -114,7 +125,7 @@ private:
     QAction* loadConfigAction;
 
     int framesPerSecond = 50;
-    QString recordFilename;
+    QString outputDir = QDir::homePath();
     QString preset = "ultrafast";
     int crf = 17;
 
@@ -124,15 +135,20 @@ private:
     QLabel* timePerIterationLabel;
     QLabel* fpsLabel;
 
-    FocusLineEdit* imageWidthLineEdit;
-    FocusLineEdit* imageHeightLineEdit;
+    //FocusLineEdit* imageWidthLineEdit;
+    //FocusLineEdit* imageHeightLineEdit;
     FocusLineEdit* windowWidthLineEdit;
     FocusLineEdit* windowHeightLineEdit;
 
     QLabel* videoCaptureElapsedTimeLabel;
-    QLabel* videoCaptureFilenameLabel;
 
     QMap<QUuid, OperationsWidget*> operationsWidgets;
+
+    QScrollArea* scrollArea;
+    QWidget* scrollWidget;
+    QHBoxLayout* scrollLayout;
+
+    QSplitter* splitter;
 
     void constructSystemToolBar();
     void constructDisplayOptionsWidget();
@@ -143,16 +159,20 @@ private:
     void updateMetricsLabels(long int time);
 
     void setVideoCaptureElapsedTimeLabel();
-    void setVideoFilename();
+
+    void updateScrollLayout(QWidget* widget);
+    void updateScrollArea();
 
 private slots:
     void iterate();
     void reset();
     void record();
     void takeScreenshot();
+    void setOutputDir();
     void toggleDisplayOptionsWidget();
     void toggleRecordingOptionsWidget();
     void toggleSortedOperationsWidget();
+    void plotsActionTriggered();
     void loadConfig();
     void saveConfig();
     void about();
@@ -160,9 +180,13 @@ private slots:
     void populateSortedOperationsTable(QVector<QPair<QUuid, QString>> data);
     void selectNodesToMark();
 
+    void createParametersWidget(QUuid id);
     void showParametersWidget(QUuid id);
     void removeParametersWidget(QUuid id);
     void updateParametersWidget(QUuid id);
+    void updateParametersWidgetsBorder(QWidget* widget);
+    void removeAllParametersWidgetsBorder();
+    void removeOneParametersWidgetBorder(QWidget* widget);
 
     void constructSingleNodeToolBar(Node* node);
     void constructMultipleNodesToolBar();

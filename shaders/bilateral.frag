@@ -10,25 +10,28 @@ uniform float spatialKernel[49];
 uniform vec2 offset[49];
 uniform float rangeSigma;
 uniform int numElements;
+uniform float opacity;
 
 void main()
 {
-    vec3 centerColor = texture(inTexture, texCoords).rgb;
+    vec3 srcColor = texture(inTexture, texCoords).rgb;
 
-    vec3 color = vec3(0.0);
+    vec3 dstColor = vec3(0.0);
     float sum = 0.0;
 
     for (int i = 0; i < numElements; i++)
     {
         vec3 offsetColor = texture(inTexture, texCoords + offset[i]).rgb;
 
-        float rangeKernel = exp(-0.5 * dot(centerColor - offsetColor, centerColor - offsetColor) / (rangeSigma * rangeSigma));
+        float rangeKernel = exp(-0.5 * dot(srcColor - offsetColor, srcColor - offsetColor) / (rangeSigma * rangeSigma));
         float kernel = spatialKernel[i] * rangeKernel;
 
-        color += kernel * offsetColor;
+        dstColor += kernel * offsetColor;
 
         sum += kernel;
     }
 
-    fragColor = vec4(color / sum, 1.0);
+    dstColor /= sum;
+
+    fragColor = vec4(mix(srcColor, dstColor, opacity), 1.0);
 }

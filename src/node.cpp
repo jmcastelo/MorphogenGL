@@ -76,7 +76,7 @@ QVector<Edge *> Node::edges() const
 
 bool Node::connectedTo(Node *node)
 {
-    for (Edge *edge : edgeList)
+    for (Edge *edge : qAsConst(edgeList))
         if (edge->destNode() == node)
             return true;
 
@@ -217,11 +217,25 @@ OperationNode::~OperationNode()
 
 bool OperationNode::hasInputs()
 {
-    for (Edge* edge : edgeList)
+    for (Edge* edge : qAsConst(edgeList))
         if (edge->destNode() == this)
             return true;
 
     return false;
+}
+
+void OperationNode::renameOperation(QString newName)
+{
+    name = newName;
+
+    for (Edge *edge : qAsConst(edgeList))
+    {
+        edge->setBlendFactorGroupBoxTitle();
+        edge->adjust();
+    }
+
+    update();
+    scene()->update();
 }
 
 void OperationNode::setOperation(QAction *action)
@@ -239,11 +253,6 @@ void OperationNode::setOperation(QAction *action)
     graph->updateOperation(id);
 }
 
-void OperationNode::setParameters()
-{
-    graph->setOperationParameters(id);
-}
-
 void OperationNode::enableOperation(bool checked)
 {
     graph->generator->enableOperation(id, checked);
@@ -255,7 +264,7 @@ void OperationNode::equalizeBlendFactors()
 {
     graph->generator->equalizeBlendFactors(id);
 
-    for (Edge* edge : edgeList)
+    for (Edge* edge : qAsConst(edgeList))
     {
         edge->update();
         edge->updateBlendFactor();
@@ -295,13 +304,18 @@ void OperationNode::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
 
         if (graph->operationNodesSelected())
         {
-            menu.addAction("Set parameters", graph, &GraphWidget::setSelectedOperationsParameters);
             menu.addAction("Enable", graph, &GraphWidget::enableSelectedOperations);
             menu.addAction("Disable", graph, &GraphWidget::disableSelectedOperations);
             menu.addAction("Equalize blend factors", graph, &GraphWidget::equalizeSelectedBlendFactors);
             menu.addSeparator();
             menu.addAction("Clear", graph, &GraphWidget::clearSelectedOperationNodes);
             menu.addSeparator();
+
+            if (graph->twoOperationNodesSelected())
+            {
+                menu.addAction("Swap", graph, &GraphWidget::swapSelectedOperationNodes);
+                menu.addSeparator();
+            }
         }
 
         if (graph->nodesSelected())
@@ -314,13 +328,10 @@ void OperationNode::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
     {
         QMenu *operationsMenu = menu.addMenu("Set operation");
 
-        for (QString opName : graph->generator->availableOperations)
+        for (QString opName : qAsConst(graph->generator->availableOperations))
             operationsMenu->addAction(opName);
 
         connect(operationsMenu, &QMenu::triggered, this, &OperationNode::setOperation);
-
-        if (graph->generator->hasOperationParamaters(id))
-            menu.addAction("Set parameters", this, &OperationNode::setParameters);
 
         QAction* enableAction = menu.addAction("Enabled", this, &OperationNode::enableOperation);
         enableAction->setCheckable(true);
@@ -353,7 +364,7 @@ QVariant OperationNode::itemChange(GraphicsItemChange change, const QVariant &va
 {
     if ((change == ItemSelectedChange && value.toBool() == true) || change == ItemPositionChange)
     {
-        for (Edge* edge : edgeList)
+        for (Edge* edge : qAsConst(edgeList))
         {
             if (edge->destNode() == this)
             {
@@ -408,7 +419,7 @@ void SeedNode::setType(QAction* action)
 
 void SeedNode::loadImage()
 {
-    QString filename = QFileDialog::getOpenFileName(graph, "Load image", "", "Images (*.bmp *.jpeg *.jpg *.png *.tif *.tiff)");
+    QString filename = QFileDialog::getOpenFileName(graph, "Load image", QDir::homePath(), "Images (*.bmp *.jpeg *.jpg *.png *.tif *.tiff)");
 
     if (!filename.isEmpty())
     {
@@ -449,7 +460,6 @@ void SeedNode::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
 
         if (graph->operationNodesSelected())
         {
-            menu.addAction("Set parameters", graph, &GraphWidget::setSelectedOperationsParameters);
             menu.addAction("Enable", graph, &GraphWidget::enableSelectedOperations);
             menu.addAction("Disable", graph, &GraphWidget::disableSelectedOperations);
             menu.addAction("Equalize blend factors", graph, &GraphWidget::equalizeSelectedBlendFactors);

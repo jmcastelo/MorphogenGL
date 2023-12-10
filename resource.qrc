@@ -57,5 +57,9 @@
         <file>icons/office-chart-area-stacked.png</file>
         <file>shaders/cursor.frag</file>
         <file>shaders/cursor.vert</file>
+        <file>shaders/pixelation.frag</file>
+        <file>icons/emblem-synchronized.png</file>
+        <file>shaders/power.frag</file>
+        <file>shaders/median.frag</file>
     </qresource>
 </RCC>

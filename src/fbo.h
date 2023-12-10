@@ -28,17 +28,21 @@
 #include <QOpenGLShaderProgram>
 #include <QOpenGLContext>
 #include <QOffscreenSurface>
-#include <QDebug>
+#include <QObject>
 
 class MorphoWidget;
 
-class FBO : protected QOpenGLExtraFunctions
+class FBO : public QObject, protected QOpenGLExtraFunctions
 {
+    Q_OBJECT
+
 public:
     static GLuint width;
     static GLuint height;
 
     QOpenGLShaderProgram* program;
+
+    QMatrix4x4 transformationMatrix;
     
     FBO(QString vertexShader, QString fragmentShader, QOpenGLContext* mainContext);
     virtual ~FBO();
@@ -61,6 +65,11 @@ public:
     void identity();
     void clear();
 
+    void adjustTransform();
+
+signals:
+    void sizeChanged();
+
 protected:
     QOpenGLContext* context;
     QOffscreenSurface* surface;
@@ -79,4 +88,7 @@ protected:
     QOpenGLShaderProgram* identityProgram;
     GLuint widthOld;
     GLuint heightOld;
+
+private:
+    void resizeVertices();
 };

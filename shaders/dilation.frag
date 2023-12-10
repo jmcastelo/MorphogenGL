@@ -7,13 +7,15 @@ in vec2 texCoords;
 uniform sampler2D inTexture;
 
 uniform vec2 offset[8];
+uniform float opacity;
 
 void main()
 {
-    vec3 color = texture(inTexture, texCoords + offset[0]).rgb;
+    vec3 srcColor = texture(inTexture, texCoords).rgb;
+    vec3 dstColor = texture(inTexture, texCoords + offset[0]).rgb;
 
     for (int i = 1; i < 8; i++)
-        color = max(color,  texture(inTexture, texCoords + offset[i]).rgb);
+        dstColor = max(dstColor,  texture(inTexture, texCoords + offset[i]).rgb);
 
-    fragColor = vec4(color, 1.0);
+    fragColor = vec4(mix(srcColor, dstColor, opacity), 1.0);
 }

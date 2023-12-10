@@ -94,9 +94,15 @@ void GraphWidget::newSelectedNodes()
     else if (selectedSeedNodes.size() == 1 && selectedOperationNodes.empty())
         emit singleNodeSelected(selectedSeedNodes.front());
     else if (selectedOperationNodes.size() == 1 && selectedSeedNodes.empty())
+    {
         emit singleNodeSelected(selectedOperationNodes.front());
+        emit operationNodeSelected(selectedOperationNodes.front()->id);
+    }
     else if (selectedSeedNodes.empty() && selectedOperationNodes.empty())
         emit singleNodeSelected(nullptr);
+
+    if (selectedOperationNodes.empty())
+        emit noOperationNodesSelected();
 }
 
 void GraphWidget::addOperationNodeUnderCursor(QAction *action)
@@ -104,6 +110,7 @@ void GraphWidget::addOperationNodeUnderCursor(QAction *action)
     Node *node = new OperationNode(this, action->text());
     scene()->addItem(node);
     node->setPos(mapToScene(mapFromGlobal(action->data().toPoint())));
+    emit showOperationParameters(node->id);
 }
 
 void GraphWidget::addSeedNodeUnderCursor()
@@ -116,8 +123,68 @@ void GraphWidget::addSeedNodeUnderCursor()
     node->setPos(mapToScene(mapFromGlobal(data.toPoint())));
 }
 
+void GraphWidget::reconnectNodes(Node* node)
+{
+    if (node->edges().size() == 2)
+    {
+        Edge* input = nullptr;
+        Edge* output = nullptr;
+
+        // Identify input and output edges
+
+        if (node->edges().constFirst()->destNode() == node && node->edges().constLast()->sourceNode() == node)
+        {
+            input = node->edges().constFirst();
+            output = node->edges().constLast();
+        }
+        else if (node->edges().constLast()->destNode() == node && node->edges().constFirst()->sourceNode() == node)
+        {
+            input = node->edges().constLast();
+            output = node->edges().constFirst();
+        }
+
+        // Avoid connecting node with itself
+
+        if (input && output && (input->sourceNode() != output->destNode()))
+        {
+            // Avoid connecting already connected nodes
+
+            for (Edge* edge: input->sourceNode()->edges())
+            {
+                if (edge->destNode() == output->destNode())
+                    return;
+            }
+
+            // Connect nodes
+
+            generator->connectOperations(input->sourceNode()->id, output->destNode()->id, generator->blendFactor(node->id, output->destNode()->id));
+
+            Edge* newEdge = new Edge(this, input->sourceNode(), output->destNode());
+
+            if (input->isPredge() || output->isPredge())
+                newEdge->setPredge(true);
+
+            scene()->addItem(newEdge);
+        }
+    }
+}
+
+void GraphWidget::selectNode(QUuid id, bool selected)
+{
+    const QList<QGraphicsItem*> items = scene()->items();
+
+    for (QGraphicsItem* item : items)
+    {
+        if (OperationNode *node = qgraphicsitem_cast<OperationNode*>(item))
+            if (node->id == id)
+                node->setSelected(selected);
+    }
+}
+
 void GraphWidget::removeNode(Node *node)
 {
+    reconnectNodes(node);
+
     for (Edge *edge: node->edges())
     {
         if (edge->sourceNode())
@@ -128,6 +195,7 @@ void GraphWidget::removeNode(Node *node)
         scene()->removeItem(edge);
         delete edge;
     }
+
 
     scene()->removeItem(node);
     delete node;
@@ -188,9 +256,27 @@ bool GraphWidget::nodesSelected()
     return selectedOperationNodes.size() + selectedSeedNodes.size() > 1;
 }
 
+bool GraphWidget::singleOperationNodeSelected()
+{
+    return (selectedOperationNodes.size() == 1) && (selectedSeedNodes.size() == 0);
+}
+
+bool GraphWidget::isOperationNodeSelected(QUuid id)
+{
+    for (OperationNode* node : selectedOperationNodes)
+        if (node->id == id)
+            return true;
+    return false;
+}
+
 bool GraphWidget::operationNodesSelected()
 {
     return selectedOperationNodes.size() > 1;
+}
+
+bool GraphWidget::twoOperationNodesSelected()
+{
+    return selectedOperationNodes.size() == 2;
 }
 
 int GraphWidget::seedNodesSelected()
@@ -204,22 +290,22 @@ void GraphWidget::drawSelectedSeeds()
         generator->drawSeed(node->id);
 }
 
-void GraphWidget::setSelectedOperationsParameters()
-{
-    for (OperationNode* node : selectedOperationNodes)
-        emit showOperationParameters(node->id);
-}
-
 void GraphWidget::enableSelectedOperations()
 {
     for (OperationNode* node : selectedOperationNodes)
+    {
         generator->enableOperation(node->id, true);
+        emit operationEnabled(node->id, true);
+    }
 }
 
 void GraphWidget::disableSelectedOperations()
 {
     for (OperationNode* node : selectedOperationNodes)
+    {
         generator->enableOperation(node->id, false);
+        emit operationEnabled(node->id, false);
+    }
 }
 
 void GraphWidget::equalizeSelectedBlendFactors()
@@ -235,6 +321,21 @@ void GraphWidget::clearSelectedOperationNodes()
     for (OperationNode* node : selectedOperationNodes)
         generator->clearOperation(node->id);
 
+}
+
+void GraphWidget::swapSelectedOperationNodes()
+{
+    if (selectedOperationNodes.size() == 2)
+    {
+        generator->swapTwoOperations(selectedOperationNodes[0]->id, selectedOperationNodes[1]->id);
+
+        QString name = selectedOperationNodes[0]->name;
+        selectedOperationNodes[0]->renameOperation(selectedOperationNodes[1]->name);
+        selectedOperationNodes[1]->renameOperation(name);
+
+        emit updateOperationParameters(selectedOperationNodes[0]->id);
+        emit updateOperationParameters(selectedOperationNodes[1]->id);
+    }
 }
 
 void GraphWidget::removeSelectedNodes()
@@ -329,15 +430,13 @@ void GraphWidget::copyNodes(bool connectionA)
                 QUuid newSourceId = isomorphism.value(sourceId);
                 QUuid newDestId = isomorphism.value(destId);
 
-                Edge* newEdge = new Edge(this, copiedNodes[1].value(newSourceId), copiedNodes[1].value(newDestId));
-
                 if (connectionA)
                     generator->connectCopiedOperationsA(sourceId, destId, newSourceId, newDestId);
                 else
                     generator->connectCopiedOperationsB(sourceId, destId, newSourceId, newDestId);
 
+                Edge* newEdge = new Edge(this, copiedNodes[1].value(newSourceId), copiedNodes[1].value(newDestId));
                 newEdge->setPredge(edge->isPredge());
-
                 newEdges.push_back(newEdge);
             }
         }
@@ -346,6 +445,8 @@ void GraphWidget::copyNodes(bool connectionA)
 
 void GraphWidget::pasteCopiedNodes()
 {
+    generator->pasteOperations();
+
     // Get cursor position in scene coordinate system
 
     QAction* action = qobject_cast<QAction*>(sender());
@@ -359,15 +460,15 @@ void GraphWidget::pasteCopiedNodes()
     {
         scene()->addItem(node);
         node->setPos(origin + node->pos());
+        emit showOperationParameters(node->id);
     }
 
-    for (Edge* edge : newEdges)
+    for (Edge* edge : qAsConst(newEdges))
     {
         scene()->addItem(edge);
         edge->adjust();
+        edge->constructBlendFactorWidget();
     }
-
-    generator->pasteOperations();
 
     copiedNodes[0] = copiedNodes[1];
 
@@ -388,9 +489,27 @@ void GraphWidget::connectNodes(Node *node)
     selectedNode = nullptr;
 }
 
-void GraphWidget::setOperationParameters(QUuid id)
+void GraphWidget::insertNodeBetween(QAction* action, Edge* edge)
 {
-    emit showOperationParameters(id);
+    Node *node = new OperationNode(this, action->text());
+
+    generator->connectOperations(edge->sourceNode()->id, node->id, generator->blendFactor(edge->sourceNode()->id, edge->destNode()->id));
+    generator->connectOperations(node->id, edge->destNode()->id, generator->blendFactor(edge->sourceNode()->id, edge->destNode()->id));
+
+    scene()->addItem(node);
+    node->setPos(mapToScene(mapFromGlobal(action->data().toPoint())));
+
+    scene()->addItem(new Edge(this, edge->sourceNode(), node));
+
+    Edge* output = new Edge(this, node, edge->destNode());
+    if (edge->isPredge())
+        output->setPredge(true);
+
+    scene()->addItem(output);
+
+    edge->remove();
+
+    emit showOperationParameters(node->id);
 }
 
 void GraphWidget::updateOperation(QUuid id)
@@ -575,7 +694,7 @@ void GraphWidget::contextMenuEvent(QContextMenuEvent *event)
 
         QMenu *operationsMenu = menu.addMenu("Add operation");
 
-        for (QString opName : generator->availableOperations)
+        for (QString opName : qAsConst(generator->availableOperations))
         {
             QAction* action = operationsMenu->addAction(opName);
             action->setData(QVariant(QCursor::pos()));
@@ -724,7 +843,10 @@ void GraphWidget::mousePressEvent(QMouseEvent* event)
     }
 
     if (!pointIntersectsItem(mapToScene(mapFromGlobal(event->globalPos()))))
+    {
         deselectNodeToConnect();
+        setFocus();
+    }
 
     QGraphicsView::mousePressEvent(event);
 }

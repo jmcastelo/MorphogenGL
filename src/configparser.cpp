@@ -132,21 +132,12 @@ void ConfigurationParser::writeOperationNode(ImageOperationNode* node)
     stream.writeAttribute("name", node->operation->getName());
     stream.writeAttribute("enabled", QString::number(node->operation->isEnabled()));
 
-    for (auto parameter: node->operation->getBoolParameters())
-    {
-        stream.writeStartElement("parameter");
-        stream.writeAttribute("name", parameter->name);
-        stream.writeAttribute("type", "bool");
-        stream.writeCharacters(QString::number(parameter->value));
-        stream.writeEndElement();
-    }
-
     for (auto parameter: node->operation->getIntParameters())
     {
         stream.writeStartElement("parameter");
         stream.writeAttribute("name", parameter->name);
         stream.writeAttribute("type", "int");
-        stream.writeCharacters(QString::number(parameter->value));
+        stream.writeCharacters(QString::number(parameter->number->value));
         stream.writeEndElement();
     }
 
@@ -155,7 +146,7 @@ void ConfigurationParser::writeOperationNode(ImageOperationNode* node)
         stream.writeStartElement("parameter");
         stream.writeAttribute("name", parameter->name);
         stream.writeAttribute("type", "float");
-        stream.writeCharacters(QString::number(parameter->value));
+        stream.writeCharacters(QString::number(parameter->number->value));
         stream.writeEndElement();
     }
 
@@ -183,10 +174,10 @@ void ConfigurationParser::writeOperationNode(ImageOperationNode* node)
         stream.writeAttribute("name", node->operation->getKernelParameter()->name);
         stream.writeAttribute("type", "kernel");
 
-        for (auto element: node->operation->getKernelParameter()->values)
+        for (auto element: node->operation->getKernelParameter()->numbers)
         {
             stream.writeStartElement("element");
-            stream.writeCharacters(QString::number(element));
+            stream.writeCharacters(QString::number(element->value));
             stream.writeEndElement();
         }
 
@@ -199,10 +190,10 @@ void ConfigurationParser::writeOperationNode(ImageOperationNode* node)
         stream.writeAttribute("name", node->operation->getMatrixParameter()->name);
         stream.writeAttribute("type", "matrix");
 
-        for (auto element : node->operation->getMatrixParameter()->values)
+        for (auto element : node->operation->getMatrixParameter()->numbers)
         {
             stream.writeStartElement("element");
-            stream.writeCharacters(QString::number(element));
+            stream.writeCharacters(QString::number(element->value));
             stream.writeEndElement();
         }
 

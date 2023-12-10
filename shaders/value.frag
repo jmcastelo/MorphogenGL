@@ -7,6 +7,7 @@ in vec2 texCoords;
 uniform sampler2D inTexture;
 
 uniform float value;
+uniform float opacity;
 
 // HSV in [0,1]
 
@@ -30,7 +31,9 @@ vec3 hsv2rgb(vec3 c)
 
 void main()
 {
-    vec3 hsvColor = rgb2hsv(texture(inTexture, texCoords).rgb);
+    vec3 srcColor = texture(inTexture, texCoords).rgb;
+    vec3 hsvColor = rgb2hsv(srcColor);
     hsvColor.z = value;
-    fragColor = vec4(hsv2rgb(hsvColor), 1.0);
+    vec3 dstColor = hsv2rgb(hsvColor);
+    fragColor = vec4(mix(srcColor, dstColor, opacity), 1.0);
 }

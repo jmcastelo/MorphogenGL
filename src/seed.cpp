@@ -102,9 +102,11 @@ Seed::Seed(QOpenGLContext* mainContext)
     // Map vbo data to shader attribute location
 
     randomProgram->bind();
+
     int posLocation = randomProgram->attributeLocation("pos");
     randomProgram->setAttributeBuffer(posLocation, GL_FLOAT, 0, 2);
     randomProgram->enableAttributeArray(posLocation);
+
     randomProgram->release();
 
     // Unbind all
@@ -131,9 +133,11 @@ Seed::Seed(QOpenGLContext* mainContext)
     // Map vbo data to shader attribute location
 
     imageProgram->bind();
+
     posLocation = imageProgram->attributeLocation("pos");
     imageProgram->setAttributeBuffer(posLocation, GL_FLOAT, 0, 2);
     imageProgram->enableAttributeArray(posLocation);
+
     imageProgram->release();
 
     // Vertex buffer object: texture coordinates
@@ -163,7 +167,14 @@ Seed::Seed(QOpenGLContext* mainContext)
     widthOld = FBO::width;
     heightOld = FBO::height;
 
+    // Set image
+
     image = new QOpenGLTexture(QOpenGLTexture::Target2D);
+
+    // Set ortho projection
+
+    resizeVertices();
+    maintainAspectRatio();
 }
 
 Seed::Seed(const Seed& seed) :
@@ -313,6 +324,9 @@ Seed::Seed(const Seed& seed) :
 
     if (!imageFilename.isEmpty())
         loadImage(imageFilename);
+
+    resizeVertices();
+    maintainAspectRatio();
 }
 
 Seed::~Seed()
@@ -408,8 +422,115 @@ void Seed::resizeFBO(GLuint &fbo, GLuint &texture)
     fbo = fbo2;
 }
 
+void Seed::resizeVertices()
+{
+    // Recompute vertices and texture coordinates
+
+    GLfloat left, right, bottom, top;
+    GLfloat ratio = static_cast<GLfloat>(FBO::width) / static_cast<GLfloat>(FBO::height);
+
+    if (FBO::width > FBO::height)
+    {
+        top = 1.0f;
+        bottom = -top;
+        right = top * ratio;
+        left = -right;
+    }
+    else
+    {
+        right = 1.0f;
+        left = -right;
+        top = right / ratio;
+        bottom = -top;
+    }
+
+    GLfloat vertices[] = {
+        left, top,
+        left, bottom,
+        right, bottom,
+        left, top,
+        right, bottom,
+        right, top
+    };
+
+    /*GLfloat texcoords[] = {
+        0.0f, top,
+        0.0f, 0.0f,
+        right, 0.0f,
+        0.0f, top,
+        right, 0.0f,
+        right, top
+    };*/
+
+    context->makeCurrent(surface);
+
+    vaoRandom->bind();
+    vboRandom->bind();
+    vboRandom->allocate(vertices, 12 * sizeof(GLfloat));
+    vaoRandom->release();
+    vboRandom->release();
+
+    vaoImage->bind();
+    vboPosImage->bind();
+    vboPosImage->allocate(vertices, 12 * sizeof(GLfloat));
+    //vboTexImage->bind();
+    //vboTexImage->allocate(texcoords, 12 * sizeof(GLfloat));
+    vaoImage->release();
+    vboPosImage->release();
+    //vboTexImage->release();
+
+    context->doneCurrent();
+}
+
+void Seed::maintainAspectRatio()
+{
+    GLfloat left, right, bottom, top;
+    GLfloat ratio = static_cast<GLfloat>(FBO::width) / static_cast<GLfloat>(FBO::height);
+
+    if (FBO::width > FBO::height)
+    {
+        top = 1.0f;
+        bottom = -top;
+        right = top * ratio;
+        left = -right;
+    }
+    else
+    {
+        right = 1.0f;
+        left = -right;
+        top = right / ratio;
+        bottom = -top;
+    }
+
+    QMatrix4x4 transform;
+    transform.setToIdentity();
+    transform.ortho(left, right, bottom, top, -1.0, 1.0);
+
+    context->makeCurrent(surface);
+
+    // Adjust projection (ortho) to keep aspect ratio
+
+    glBindFramebuffer(GL_FRAMEBUFFER, fboImage);
+    imageProgram->bind();
+    imageProgram->setUniformValue("transform", transform);
+    imageProgram->release();
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    // Adjust projection (ortho) to keep aspect ratio
+
+    glBindFramebuffer(GL_FRAMEBUFFER, fboRandom);
+    randomProgram->bind();
+    randomProgram->setUniformValue("transform", transform);
+    randomProgram->release();
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    context->doneCurrent();
+}
+
 void Seed::resize()
 {
+    resizeVertices();
+    maintainAspectRatio();
     resizeFBO(fboRandom, texRandom);
     resizeFBO(fboImage, texImage);
 

@@ -24,12 +24,27 @@
 #include "configparser.h"
 #include "node.h"
 #include "controlwidget.h"
+#include <QTimer>
 
 ControlWidget::ControlWidget(Heart* theHeart, QWidget *parent) : QWidget(parent), heart { theHeart }
 {
     // Generator
 
     generator = new GeneratorGL();
+
+    // Scroll area
+
+    scrollWidget = new QWidget;
+    scrollWidget->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
+
+    scrollLayout = new QHBoxLayout;
+    scrollLayout->setSizeConstraint(QLayout::SetFixedSize);
+    scrollLayout->setAlignment(Qt::AlignLeft);
+    scrollLayout->setDirection(QBoxLayout::RightToLeft);
+    scrollWidget->setLayout(scrollLayout);
+
+    scrollArea = new QScrollArea;
+    scrollArea->setWidget(scrollWidget);
 
     // Contruct nodes toolbar
 
@@ -42,15 +57,50 @@ ControlWidget::ControlWidget(Heart* theHeart, QWidget *parent) : QWidget(parent)
     constructRecordingOptionsWidget();
     constructSortedOperationsWidget();
 
+    updateScrollArea();
+
+    // Plots widget
+
+    plotsWidget = new PlotsWidget(FBO::width, FBO::height);
+    plotsWidget->setVisible(false);
+
     // Graph widget
 
     graphWidget = new GraphWidget(generator);
 
     connect(graphWidget, &GraphWidget::singleNodeSelected, this, &ControlWidget::constructSingleNodeToolBar);
+    connect(graphWidget, &GraphWidget::operationNodeSelected, this, &ControlWidget::showParametersWidget);
+    connect(graphWidget, &GraphWidget::noOperationNodesSelected, this, &ControlWidget::removeAllParametersWidgetsBorder);
     connect(graphWidget, &GraphWidget::multipleNodesSelected, this, &ControlWidget::constructMultipleNodesToolBar);
-    connect(graphWidget, &GraphWidget::showOperationParameters, this, &ControlWidget::showParametersWidget);
+    connect(graphWidget, &GraphWidget::showOperationParameters, this, &ControlWidget::createParametersWidget);
     connect(graphWidget, &GraphWidget::removeOperationParameters, this, &ControlWidget::removeParametersWidget);
     connect(graphWidget, &GraphWidget::updateOperationParameters, this, &ControlWidget::updateParametersWidget);
+    connect(graphWidget, &GraphWidget::blendFactorWidgetCreated, this, [&](QWidget* widget)
+    {
+        widget->setParent(scrollWidget);
+        updateScrollArea();
+    });
+    connect(graphWidget, &GraphWidget::blendFactorWidgetToggled, this, [&](QWidget* widget)
+    {
+        if (widget->isVisible())
+        {
+            if (scrollLayout->indexOf(widget) == -1)
+            {
+                scrollLayout->addWidget(widget);
+                updateScrollArea();
+            }
+            scrollArea->ensureWidgetVisible(widget);
+        }
+        else
+        {
+            scrollLayout->removeWidget(widget);
+            updateScrollArea();
+        }
+    });
+    connect(graphWidget, &GraphWidget::operationEnabled, this, [&](QUuid id, bool enabled){
+        if (operationsWidgets.contains(id))
+            operationsWidgets.value(id)->toggleEnableButton(enabled);
+    });
 
     // Parser
 
@@ -70,6 +120,11 @@ ControlWidget::ControlWidget(Heart* theHeart, QWidget *parent) : QWidget(parent)
     statusBar->insertWidget(1, timePerIterationLabel, 1);
     statusBar->insertWidget(2, fpsLabel, 1);
 
+    // Grip
+
+    grip = new QSizeGrip(this);
+    grip->setVisible(true);
+
     // Style
 
     QString pipelineButtonStyle = "QPushButton#pipelineButton{ color: #ffffff; background-color: #6600a6; } QPushButton:checked#pipelineButton { color: #000000; background-color: #fcff59; }";
@@ -78,14 +133,25 @@ ControlWidget::ControlWidget(Heart* theHeart, QWidget *parent) : QWidget(parent)
 
     // Main layout
 
-    QHBoxLayout* mainHBoxLayout = new QHBoxLayout;
-    mainHBoxLayout->addWidget(graphWidget);
-    mainHBoxLayout->addWidget(nodesToolBar);
+    QHBoxLayout* hLayout = new QHBoxLayout;
+    hLayout->addWidget(graphWidget);
+    hLayout->addWidget(nodesToolBar);
+
+    QWidget* widget = new QWidget;
+    widget->setLayout(hLayout);
+
+    QSplitter* splitter = new QSplitter;
+    splitter->setOrientation(Qt::Vertical);
+    splitter->setChildrenCollapsible(true);
+    splitter->addWidget(widget);
+    splitter->addWidget(plotsWidget);
 
     QVBoxLayout* mainVBoxLayout = new QVBoxLayout;
     mainVBoxLayout->addWidget(systemToolBar);
-    mainVBoxLayout->addLayout(mainHBoxLayout);
+    mainVBoxLayout->addWidget(splitter);
+    mainVBoxLayout->addWidget(scrollArea);
     mainVBoxLayout->addWidget(statusBar);
+    mainVBoxLayout->addWidget(grip, 0, Qt::AlignLeft | Qt::AlignBottom);
 
     setLayout(mainVBoxLayout);
 
@@ -93,16 +159,24 @@ ControlWidget::ControlWidget(Heart* theHeart, QWidget *parent) : QWidget(parent)
 
     setWindowIcon(QIcon(":/icons/morphogengl.png"));
 
+    // Needed over morphoWidget
+
+    setAutoFillBackground(true);
+    setWindowFlags(Qt::SubWindow);
+
     // Signals + Slots
 
     connect(heart, &Heart::iterationPerformed, this, &ControlWidget::updateIterationNumberLabel);
     connect(heart, &Heart::iterationTimeMeasured, this, &ControlWidget::updateMetricsLabels);
-    connect(parser, &ConfigurationParser::updateImageSize, [&](int width, int height)
+    connect(parser, &ConfigurationParser::updateImageSize, this, [&](int width, int height)
     {
         generator->resize(width, height);
-        imageWidthLineEdit->setText(QString::number(width));
-        imageHeightLineEdit->setText(QString::number(height));
+        //imageWidthLineEdit->setText(QString::number(width));
+        //imageHeightLineEdit->setText(QString::number(height));
     });
+    connect(this, &ControlWidget::selectedPointChanged, plotsWidget, &PlotsWidget::setSelectedPoint);
+    connect(generator, &GeneratorGL::outputTextureChanged, plotsWidget, &PlotsWidget::setTextureID);
+    connect(generator, &GeneratorGL::imageSizeChanged, plotsWidget, &PlotsWidget::setImageSize);
 }
 
 ControlWidget::~ControlWidget()
@@ -114,6 +188,12 @@ ControlWidget::~ControlWidget()
     delete graphWidget;
     delete generator;
     qDeleteAll(operationsWidgets);
+}
+
+void ControlWidget::computePlots()
+{
+    if (generator->active && plotsWidget->plotsActive())
+        plotsWidget->getPixels();
 }
 
 void ControlWidget::closeEvent(QCloseEvent* event)
@@ -129,7 +209,13 @@ void ControlWidget::closeEvent(QCloseEvent* event)
 
     graphWidget->closeWidgets();
 
-    emit closing();
+    //emit closing();
+    event->accept();
+}
+
+void ControlWidget::resizeEvent(QResizeEvent* event)
+{
+    updateScrollArea();
     event->accept();
 }
 
@@ -139,9 +225,10 @@ void ControlWidget::constructSystemToolBar()
     iterateAction = systemToolBar->addAction(QIcon(QPixmap(":/icons/media-playback-start.png")), "Start/pause feedback loop");
     iterateAction->setCheckable(true);
     QAction* resetAction = systemToolBar->addAction(QIcon(QPixmap(":/icons/view-refresh.png")), "Reset");
+    systemToolBar->addSeparator();
+    screenshotAction = systemToolBar->addAction(QIcon(QPixmap(":/icons/digikam.png")), "Take screenshot");
     recordAction = systemToolBar->addAction(QIcon(QPixmap(":/icons/media-record.png")), "Record video");
     recordAction->setCheckable(true);
-    screenshotAction = systemToolBar->addAction(QIcon(QPixmap(":/icons/digikam.png")), "Take screenshot");
     systemToolBar->addSeparator();
     displayOptionsAction = systemToolBar->addAction(QIcon(QPixmap(":/icons/video-display.png")), "Display options");
     recordingOptionsAction = systemToolBar->addAction(QIcon(QPixmap(":/icons/emblem-videos.png")), "Recording options");
@@ -157,8 +244,8 @@ void ControlWidget::constructSystemToolBar()
 
     connect(iterateAction, &QAction::triggered, this, &ControlWidget::iterate);
     connect(resetAction, &QAction::triggered, this, &ControlWidget::reset);
-    connect(recordAction, &QAction::triggered, this, &ControlWidget::record);
     connect(screenshotAction, &QAction::triggered, this, &ControlWidget::takeScreenshot);
+    connect(recordAction, &QAction::triggered, this, &ControlWidget::record);
     connect(displayOptionsAction, &QAction::triggered, this, &ControlWidget::toggleDisplayOptionsWidget);
     connect(recordingOptionsAction, &QAction::triggered, this, &ControlWidget::toggleRecordingOptionsWidget);
     connect(loadConfigAction, &QAction::triggered, this, &ControlWidget::loadConfig);
@@ -192,63 +279,83 @@ void ControlWidget::record()
 {
     if (recordAction->isChecked())
     {
-        if (recordFilename.isEmpty())
-        {
-            QMessageBox messageBox;
-            messageBox.setText("Please select output file.");
-            messageBox.exec();
+        recordAction->setIcon(QIcon(QPixmap(":/icons/media-playback-stop.png")));
+        videoCaptureElapsedTimeLabel->setText("00:00:00.000");
 
-            recordAction->setChecked(false);
-        }
-        else
-        {
-            recordAction->setIcon(QIcon(QPixmap(":/icons/media-playback-stop.png")));
-            videoCaptureElapsedTimeLabel->setText("00:00:00.000");
-            heart->startRecording(recordFilename, framesPerSecond, preset, crf);
-        }
+        QString filename = QDir::toNativeSeparators(outputDir + '/' + QDateTime::currentDateTime().toString(Qt::ISODate) + ".avi");
+        heart->startRecording(filename, framesPerSecond, preset, crf);
     }
     else
     {
         recordAction->setIcon(QIcon(QPixmap(":/icons/media-record.png")));
         heart->stopRecording();
-        recordFilename.clear();
     }
 }
 
 void ControlWidget::takeScreenshot()
 {   
     QImage screenshot = heart->grabMorphoWidgetFramebuffer();
-    
-    QString filename = QFileDialog::getSaveFileName(this, "Save image", "", "Images (*.bmp *.ico *.jpeg *.jpg *.png *.tif *.tiff)");
-    if (!filename.isEmpty())
-    {
-        screenshot.save(filename);
-    }
+    QString filename = QDir::toNativeSeparators(outputDir + '/' + QDateTime::currentDateTime().toString(Qt::ISODate) + ".png");
+    screenshot.save(filename);
 }
 
 void ControlWidget::toggleDisplayOptionsWidget()
 {
     displayOptionsWidget->setVisible(!displayOptionsWidget->isVisible());
+
+    if (displayOptionsWidget->isVisible())
+        scrollLayout->addWidget(displayOptionsWidget);
+    else
+        scrollLayout->removeWidget(displayOptionsWidget);
+
+    updateScrollArea();
 }
 
 void ControlWidget::toggleRecordingOptionsWidget()
 {
     recordingOptionsWidget->setVisible(!recordingOptionsWidget->isVisible());
+
+    if (recordingOptionsWidget->isVisible())
+        scrollLayout->addWidget(recordingOptionsWidget);
+    else
+        scrollLayout->removeWidget(recordingOptionsWidget);
+
+    updateScrollArea();
 }
 
 void ControlWidget::toggleSortedOperationsWidget()
 {
     sortedOperationsWidget->setVisible(!sortedOperationsWidget->isVisible());
+
+    if (sortedOperationsWidget->isVisible())
+        scrollLayout->addWidget(sortedOperationsWidget);
+    else
+        scrollLayout->removeWidget(sortedOperationsWidget);
+
+    updateScrollArea();
+}
+
+void ControlWidget::plotsActionTriggered()
+{
+    plotsWidget->setVisible(!plotsWidget->isVisible());
 }
 
 void ControlWidget::loadConfig()
 {
-    QString filename = QFileDialog::getOpenFileName(this, "Load configuration", "", "MorphogenGL configurations (*.morph)");
+    QString filename = QFileDialog::getOpenFileName(this, "Load configuration", outputDir, "MorphogenGL configurations (*.morph)");
 
     if (!filename.isEmpty())
     {
+        QList<QUuid> opIDs = generator->getOperationNodesIDs();
+        for (QUuid id : opIDs)
+            removeParametersWidget(id);
+
         parser->setFilename(filename);
         parser->read();
+
+        opIDs = generator->getOperationNodesIDs();
+        for (QUuid id : opIDs)
+            createParametersWidget(id);
 
         // ToDo: connect with graph widget
 
@@ -262,7 +369,7 @@ void ControlWidget::loadConfig()
 
 void ControlWidget::saveConfig()
 {
-    QString filename = QFileDialog::getSaveFileName(this, "Save configuration", "", "MorphogenGL configurations (*.morph)");
+    QString filename = QFileDialog::getSaveFileName(this, "Save configuration", outputDir, "MorphogenGL configurations (*.morph)");
 
     if (!filename.isEmpty())
     {
@@ -330,16 +437,13 @@ void ControlWidget::constructSingleNodeToolBar(Node* node)
 
             QMenu* operationsMenu = new QMenu("Set operation");
 
-            for (QString opName : generator->availableOperations)
+            for (QString opName : qAsConst(generator->availableOperations))
                 operationsMenu->addAction(opName);
 
             connect(operationsMenu, &QMenu::triggered, this, &ControlWidget::setNodeOperation);
 
-            QAction* setOperationAction = nodesToolBar->addAction(QIcon(QPixmap(":/icons/bookmark.png")), "Set operation");
+            QAction* setOperationAction = nodesToolBar->addAction(QIcon(QPixmap(":/icons/applications-system.png")), "Set operation");
             setOperationAction->setMenu(operationsMenu);
-
-            if (generator->hasOperationParamaters(opNode->id))
-                nodesToolBar->addAction(QIcon(QPixmap(":/icons/applications-system.png")), "Set parameters", opNode, &OperationNode::setParameters);
 
             QAction* enableAction = nodesToolBar->addAction(generator->isOperationEnabled(opNode->id) ? QIcon(QPixmap(":/icons/circle-green.png")) : QIcon(QPixmap(":/icons/circle-grey.png")), generator->isOperationEnabled(opNode->id) ? "Enabled" : "Disabled", this, &ControlWidget::enableNodeOperation);
             enableAction->setCheckable(true);
@@ -429,6 +533,8 @@ void ControlWidget::setNodeOperation(QAction* action)
 void ControlWidget::enableNodeOperation(bool checked)
 {
     selectedOperationNode->enableOperation(checked);
+    if (operationsWidgets.contains(selectedOperationNode->id))
+        operationsWidgets.value(selectedOperationNode->id)->toggleEnableButton(checked);
     constructSingleNodeToolBar(selectedOperationNode);
 }
 
@@ -473,13 +579,18 @@ void ControlWidget::constructMultipleNodesToolBar()
 
     if (graphWidget->operationNodesSelected())
     {
-        nodesToolBar->addAction(QIcon(QPixmap(":/icons/applications-system.png")), "Set parameters", graphWidget, &GraphWidget::setSelectedOperationsParameters);
         nodesToolBar->addAction(QIcon(QPixmap(":/icons/circle-green.png")), "Enable", graphWidget, &GraphWidget::enableSelectedOperations);
         nodesToolBar->addAction(QIcon(QPixmap(":/icons/circle-grey.png")), "Disable", graphWidget, &GraphWidget::disableSelectedOperations);
         nodesToolBar->addAction(QIcon(QPixmap(":/icons/preferences-desktop.png")), "Equalize blend factors", graphWidget, &GraphWidget::equalizeSelectedBlendFactors);
         nodesToolBar->addSeparator();
         nodesToolBar->addAction(QIcon(QPixmap(":/icons/edit-clear.png")), "Clear", graphWidget, &GraphWidget::clearSelectedOperationNodes);
         nodesToolBar->addSeparator();
+
+        if (graphWidget->twoOperationNodesSelected())
+        {
+            nodesToolBar->addAction(QIcon(QPixmap(":/icons/emblem-synchronized.png")), "Swap", graphWidget, &GraphWidget::swapSelectedOperationNodes);
+            nodesToolBar->addSeparator();
+        }
     }
 
     if (graphWidget->nodesSelected())
@@ -500,7 +611,7 @@ void ControlWidget::constructDisplayOptionsWidget()
     fpsLineEdit->setValidator(fpsIntValidator);
     fpsLineEdit->setText(QString::number(static_cast<int>(1000.0 / heart->getTimerInterval())));
 
-    imageWidthLineEdit = new FocusLineEdit;
+    /*imageWidthLineEdit = new FocusLineEdit;
     imageWidthLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
     QIntValidator* imageWidthIntValidator = new QIntValidator(0, 8192, imageWidthLineEdit);
     imageWidthIntValidator->setLocale(QLocale::English);
@@ -512,45 +623,55 @@ void ControlWidget::constructDisplayOptionsWidget()
     QIntValidator* imageHeightIntValidator = new QIntValidator(0, 8192, imageHeightLineEdit);
     imageHeightIntValidator->setLocale(QLocale::English);
     imageHeightLineEdit->setValidator(imageHeightIntValidator);
-    imageHeightLineEdit->setText(QString::number(generator->getHeight()));
+    imageHeightLineEdit->setText(QString::number(generator->getHeight()));*/
 
     windowWidthLineEdit = new FocusLineEdit;
     windowWidthLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
     QIntValidator* windowWidthIntValidator = new QIntValidator(0, 8192, windowWidthLineEdit);
     windowWidthIntValidator->setLocale(QLocale::English);
     windowWidthLineEdit->setValidator(windowWidthIntValidator);
-    windowWidthLineEdit->setText(QString::number(heart->getMorphoWidgetWidth()));
+    //windowWidthLineEdit->setText(QString::number(heart->getMorphoWidgetWidth()));
 
     windowHeightLineEdit = new FocusLineEdit;
     windowHeightLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
     QIntValidator* windowHeightIntValidator = new QIntValidator(0, 8192, windowHeightLineEdit);
     windowHeightIntValidator->setLocale(QLocale::English);
     windowHeightLineEdit->setValidator(windowHeightIntValidator);
-    windowHeightLineEdit->setText(QString::number(heart->getMorphoWidgetHeight()));
+    //windowHeightLineEdit->setText(QString::number(heart->getMorphoWidgetHeight()));
 
     QFormLayout* formLayout = new QFormLayout;
     formLayout->addRow("FPS:", fpsLineEdit);
-    formLayout->addRow("Image width (px):", imageWidthLineEdit);
-    formLayout->addRow("Image height (px):", imageHeightLineEdit);
-    formLayout->addRow("Window width (px):", windowWidthLineEdit);
-    formLayout->addRow("Window height (px):", windowHeightLineEdit);
+    //formLayout->addRow("Image width (px):", imageWidthLineEdit);
+    //formLayout->addRow("Image height (px):", imageHeightLineEdit);
+    formLayout->addRow("Width (px):", windowWidthLineEdit);
+    formLayout->addRow("Height (px):", windowHeightLineEdit);
 
-    displayOptionsWidget = new QWidget;
-    displayOptionsWidget->setLayout(formLayout);
-    displayOptionsWidget->setWindowTitle("Display options");
+    QGroupBox* displayGroupBox = new QGroupBox("Display options");
+    displayGroupBox->setLayout(formLayout);
+
+    QVBoxLayout* mainLayout = new QVBoxLayout;
+    mainLayout->setAlignment(Qt::AlignCenter);
+    mainLayout->setSizeConstraint(QLayout::SetFixedSize);
+    mainLayout->addWidget(displayGroupBox);
+
+    displayOptionsWidget = new QWidget(scrollWidget);
+    displayOptionsWidget->setLayout(mainLayout);
+    //displayOptionsWidget->setWindowTitle("Display options");
+    displayOptionsWidget->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+    displayOptionsWidget->setVisible(false);
 
     // Signals + Slots
 
-    connect(fpsLineEdit, &FocusLineEdit::returnPressed, [&heart = this->heart, fpsLineEdit]()
+    connect(fpsLineEdit, &FocusLineEdit::returnPressed, this, [=]()
     {
         heart->setTimerInterval(static_cast<int>(1000.0 / fpsLineEdit->text().toInt()));
     });
-    connect(fpsLineEdit, &FocusLineEdit::focusOut, [&heart = this->heart, fpsLineEdit]()
+    connect(fpsLineEdit, &FocusLineEdit::focusOut, this, [=]()
     {
         fpsLineEdit->setText(QString::number(static_cast<int>(1000.0 / heart->getTimerInterval())));
     });
 
-    connect(imageWidthLineEdit, &FocusLineEdit::returnPressed, [=]()
+    /*connect(imageWidthLineEdit, &FocusLineEdit::returnPressed, [=]()
     {
         generator->resize(imageWidthLineEdit->text().toInt(), generator->getHeight());
     });
@@ -565,21 +686,21 @@ void ControlWidget::constructDisplayOptionsWidget()
     connect(imageHeightLineEdit, &FocusLineEdit::focusOut, [&generator = this->generator, &imageHeightLineEdit = this->imageHeightLineEdit]()
     {
         imageHeightLineEdit->setText(QString::number(generator->getHeight()));
-    });
+    });*/
 
-    connect(windowWidthLineEdit, &FocusLineEdit::returnPressed, [&heart = this->heart, &windowWidthLineEdit = this->windowWidthLineEdit, &windowHeightLineEdit = this->windowHeightLineEdit]()
+    connect(windowWidthLineEdit, &FocusLineEdit::returnPressed, this, [=]()
     {
         heart->resizeMorphoWidget(windowWidthLineEdit->text().toInt(), windowHeightLineEdit->text().toInt());
     });
-    connect(windowWidthLineEdit, &FocusLineEdit::focusOut, [&heart = this->heart, &windowWidthLineEdit = this->windowWidthLineEdit]()
+    connect(windowWidthLineEdit, &FocusLineEdit::focusOut, this, [=]()
     {
         windowWidthLineEdit->setText(QString::number(heart->getMorphoWidgetWidth()));
     });
-    connect(windowHeightLineEdit, &FocusLineEdit::returnPressed, [&heart = this->heart, &windowWidthLineEdit = this->windowWidthLineEdit, &windowHeightLineEdit = this->windowHeightLineEdit]()
+    connect(windowHeightLineEdit, &FocusLineEdit::returnPressed, this, [=]()
     {
         heart->resizeMorphoWidget(windowWidthLineEdit->text().toInt(), windowHeightLineEdit->text().toInt());
     });
-    connect(windowHeightLineEdit, &FocusLineEdit::focusOut, [&heart = this->heart, &windowHeightLineEdit = this->windowHeightLineEdit]()
+    connect(windowHeightLineEdit, &FocusLineEdit::focusOut, this, [=]()
     {
         windowHeightLineEdit->setText(QString::number(heart->getMorphoWidgetHeight()));
     });
@@ -587,7 +708,7 @@ void ControlWidget::constructDisplayOptionsWidget()
 
 void ControlWidget::constructRecordingOptionsWidget()
 {
-    QPushButton* videoFilenamePushButton = new QPushButton(QIcon(QPixmap(":/icons/document-open.png")), "Select output file");
+    QPushButton* videoFilenamePushButton = new QPushButton(QIcon(QPixmap(":/icons/document-open.png")), "Select output dir");
     videoFilenamePushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
 
     QComboBox* presetsVideoComboBox = new QComboBox;
@@ -620,11 +741,7 @@ void ControlWidget::constructRecordingOptionsWidget()
     videoCaptureElapsedTimeLabel = new QLabel("00:00:00.000");
     videoCaptureElapsedTimeLabel->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
 
-    videoCaptureFilenameLabel = new QLabel;
-    videoCaptureFilenameLabel->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
-
     QFormLayout* videoFormLayout = new QFormLayout;
-    videoFormLayout->addRow("Filename:", videoCaptureFilenameLabel);
     videoFormLayout->addRow("Speed:", presetsVideoComboBox);
     videoFormLayout->addRow("Quality:", crfVideoLineEdit);
     videoFormLayout->addRow("FPS:", fpsVideoLineEdit);
@@ -634,45 +751,51 @@ void ControlWidget::constructRecordingOptionsWidget()
     videoVBoxLayout->addWidget(videoFilenamePushButton);
     videoVBoxLayout->addLayout(videoFormLayout);
 
-    recordingOptionsWidget = new QWidget;
-    recordingOptionsWidget->setLayout(videoVBoxLayout);
-    recordingOptionsWidget->setWindowTitle("Recording options");
+    QGroupBox* videoGroupBox = new QGroupBox("Capture options");
+    videoGroupBox->setLayout(videoVBoxLayout);
 
-    // Signals + Slot
+    QVBoxLayout* mainLayout = new QVBoxLayout;
+    mainLayout->setAlignment(Qt::AlignCenter);
+    mainLayout->setSizeConstraint(QLayout::SetFixedSize);
+    mainLayout->addWidget(videoGroupBox);
 
-    connect(videoFilenamePushButton, &QPushButton::clicked, this, &ControlWidget::setVideoFilename);
-    connect(presetsVideoComboBox, &QComboBox::currentTextChanged, [&preset = this->preset](QString thePreset)
+    recordingOptionsWidget = new QWidget(scrollWidget);
+    recordingOptionsWidget->setLayout(mainLayout);
+    recordingOptionsWidget->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+    recordingOptionsWidget->setVisible(false);
+
+    // Signals + Slots
+
+    connect(videoFilenamePushButton, &QPushButton::clicked, this, &ControlWidget::setOutputDir);
+    connect(presetsVideoComboBox, &QComboBox::currentTextChanged, this, [=](QString thePreset)
     {
         preset = thePreset;
     });
-    connect(crfVideoLineEdit, &FocusLineEdit::returnPressed, [&crf = this->crf, crfVideoLineEdit]()
+    connect(crfVideoLineEdit, &FocusLineEdit::returnPressed, this, [=]()
     {
         crf = crfVideoLineEdit->text().toInt();
     });
-    connect(crfVideoLineEdit, &FocusLineEdit::focusOut, [&crf = this->crf, crfVideoLineEdit]()
+    connect(crfVideoLineEdit, &FocusLineEdit::focusOut, this, [=]()
     {
         crfVideoLineEdit->setText(QString::number(crf));
     });
-    connect(fpsVideoLineEdit, &FocusLineEdit::returnPressed, [&framesPerSecond = this->framesPerSecond, fpsVideoLineEdit]()
+    connect(fpsVideoLineEdit, &FocusLineEdit::returnPressed, this, [=]()
     {
         framesPerSecond = fpsVideoLineEdit->text().toInt();
     });
-    connect(fpsVideoLineEdit, &FocusLineEdit::focusOut, [&framesPerSecond = this->framesPerSecond, fpsVideoLineEdit]()
+    connect(fpsVideoLineEdit, &FocusLineEdit::focusOut, this, [=]()
     {
         fpsVideoLineEdit->setText(QString::number(framesPerSecond));
     });
     connect(heart, &Heart::frameRecorded, this, &ControlWidget::setVideoCaptureElapsedTimeLabel);
 }
 
-void ControlWidget::setVideoFilename()
+void ControlWidget::setOutputDir()
 {
-    QString videoPath = QFileDialog::getSaveFileName(this, "Output video file", "", "Videos (*.mp4 *.mkv *.mov)");
+    QString dir = QFileDialog::getExistingDirectory(this, "Select output directory", QDir::homePath());
 
-    if (!videoPath.isEmpty())
-    {
-        recordFilename = videoPath;
-        videoCaptureFilenameLabel->setText(videoPath.section('/', -1));
-    }
+    if (!dir.isEmpty())
+        outputDir = dir;
 }
 
 void ControlWidget::setVideoCaptureElapsedTimeLabel()
@@ -697,11 +820,10 @@ void ControlWidget::constructSortedOperationsWidget()
      layout->setAlignment(Qt::AlignCenter);
      layout->addWidget(sortedOperationsTable);
 
-     sortedOperationsWidget = new QWidget;
+     sortedOperationsWidget = new QWidget(scrollWidget);
      sortedOperationsWidget->setLayout(layout);
-     sortedOperationsWidget->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
-     sortedOperationsWidget->setWindowTitle("Sorted operations");
-     sortedOperationsWidget->setWindowFlags(Qt::WindowStaysOnTopHint);
+     sortedOperationsWidget->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+     sortedOperationsWidget->setVisible(false);
 
      connect(generator, &GeneratorGL::sortedOperationsChanged, this, &ControlWidget::populateSortedOperationsTable);
      connect(sortedOperationsTable, &QTableWidget::itemSelectionChanged, this, &ControlWidget::selectNodesToMark);
@@ -732,25 +854,91 @@ void ControlWidget::selectNodesToMark()
     graphWidget->markNodes(nodeIds);
 }
 
-void ControlWidget::showParametersWidget(QUuid id)
+void ControlWidget::createParametersWidget(QUuid id)
 {
-    if (generator->hasOperationParamaters(id))
+    if (generator->hasOperationParamaters(id) && !operationsWidgets.contains(id))
     {
-        if (operationsWidgets.contains(id))
-        {
-            // If it exists, recreate it, perhaps with new operation
+        operationsWidgets.insert(id, new OperationsWidget(generator->getOperation(id), scrollWidget));
 
-            operationsWidgets.value(id)->recreate(generator->getOperation(id));
+        connect(operationsWidgets.value(id), &OperationsWidget::enableButtonToggled, this, [=]()
+        {
+            if (nodesToolBar->isVisible() && graphWidget->singleOperationNodeSelected() && graphWidget->isOperationNodeSelected(id))
+                constructSingleNodeToolBar(graphWidget->getNode(id));
+        });
+        connect(operationsWidgets.value(id), &OperationsWidget::focusOut, this, &ControlWidget::removeOneParametersWidgetBorder);
+        connect(operationsWidgets.value(id), &OperationsWidget::focusIn, this, &ControlWidget::updateParametersWidgetsBorder);
+
+        operationsWidgets.value(id)->setVisible(true);
+        //updateScrollLayout(operationsWidgets.value(id));
+        scrollLayout->addWidget(operationsWidgets.value(id));
+        scrollArea->ensureWidgetVisible(operationsWidgets.value(id));
+        //operationsWidgets.value(id)->setFocus();
+        updateScrollArea();
+    }
+}
+
+void ControlWidget::updateParametersWidgetsBorder(QWidget* widget)
+{
+    QMapIterator<QUuid, OperationsWidget*> it(operationsWidgets);
+    while (it.hasNext())
+    {
+        it.next();
+        if (it.value() == widget)
+        {
+            if (!graphWidget->isOperationNodeSelected(it.key()))
+            {
+                graphWidget->selectNode(it.key(), true);
+                if (!it.value()->isFocused())
+                    it.value()->setFocus();
+            }
         }
         else
         {
-            // Create it
-
-            operationsWidgets.insert(id, new OperationsWidget(generator->getOperation(id)));
+            if (graphWidget->isOperationNodeSelected(it.key()))
+                graphWidget->selectNode(it.key(), false);
         }
+    }
+}
 
-        if (!operationsWidgets.value(id)->isVisible())
-            operationsWidgets.value(id)->show();
+void ControlWidget::removeAllParametersWidgetsBorder()
+{
+    foreach (OperationsWidget* widget, operationsWidgets)
+        widget->setLastFocused(false);
+}
+
+void ControlWidget::removeOneParametersWidgetBorder(QWidget* widget)
+{
+    QMapIterator<QUuid, OperationsWidget*> it(operationsWidgets);
+    while (it.hasNext())
+    {
+        it.next();
+        if (it.value() == widget && !it.value()->isLastFocused())
+        {
+            graphWidget->selectNode(it.key(), false);
+            break;
+        }
+    }
+}
+
+void ControlWidget::showParametersWidget(QUuid id)
+{
+    if (generator->hasOperationParamaters(id) && operationsWidgets.contains(id))
+    {
+        /*if (operationsWidgets.value(id)->isVisible())
+        {
+            scrollArea->ensureWidgetVisible(operationsWidgets.value(id));
+        }
+        else
+        {
+            operationsWidgets.value(id)->setVisible(true);
+            updateScrollLayout(operationsWidgets.value(id));
+        }*/
+
+        //updateParametersWidgetsBorder(operationsWidgets.value(id));
+        if (!operationsWidgets.value(id)->isFocused())
+            operationsWidgets.value(id)->setFocus();
+        scrollArea->ensureWidgetVisible(operationsWidgets.value(id));
+        updateScrollArea();
     }
 }
 
@@ -758,6 +946,11 @@ void ControlWidget::removeParametersWidget(QUuid id)
 {
     if (operationsWidgets.contains(id))
     {
+        operationsWidgets.value(id)->setVisible(false);
+        //updateScrollLayout(operationsWidgets.value(id));
+        scrollLayout->removeWidget(operationsWidgets.value(id));
+        updateScrollArea();
+
         operationsWidgets.value(id)->deleteLater();
         operationsWidgets.remove(id);
     }
@@ -768,8 +961,50 @@ void ControlWidget::updateParametersWidget(QUuid id)
     if (operationsWidgets.contains(id))
     {
         if (generator->getOperation(id)->hasParameters())
+        {
             operationsWidgets.value(id)->recreate(generator->getOperation(id));
+
+            if (operationsWidgets.value(id)->isVisible())
+                QTimer::singleShot(10, this, [&]{ updateScrollArea(); });
+        }
         else
             removeParametersWidget(id);
+    }
+}
+
+void ControlWidget::updateScrollLayout(QWidget* widget)
+{
+    if (widget->isVisible())
+        scrollLayout->addWidget(widget);
+    else
+        scrollLayout->removeWidget(widget);
+
+    updateScrollArea();
+}
+
+void ControlWidget::updateScrollArea()
+{
+    int visible = false;
+    QList<QWidget*> children = scrollWidget->findChildren<QWidget*>(QString(), Qt::FindDirectChildrenOnly);
+    for (QWidget* child : qAsConst(children))
+    {
+        if (child->isVisible())
+        {
+            visible = true;
+            break;
+        }
+    }
+
+    scrollWidget->adjustSize();
+
+    if (visible)
+    {
+        scrollArea->setFixedHeight(scrollWidget->height() + scrollLayout->margin());
+        if (scrollArea->horizontalScrollBar()->isVisible())
+            scrollArea->setFixedHeight(scrollWidget->height() + scrollLayout->margin() + scrollArea->horizontalScrollBar()->height());
+    }
+    else
+    {
+        scrollArea->setFixedHeight(0);
     }
 }

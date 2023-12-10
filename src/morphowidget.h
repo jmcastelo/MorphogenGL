@@ -43,7 +43,8 @@ class MorphoWidget : public QOpenGLWidget, protected QOpenGLExtraFunctions
     Q_OBJECT
 
 public:
-    MorphoWidget(int width, int height, QWidget* parent = nullptr);
+    //MorphoWidget(int width, int height, QWidget* parent = nullptr);
+    MorphoWidget(QWidget* parent = nullptr);
     virtual ~MorphoWidget() override;
 
     void initializeGL() override;
@@ -54,14 +55,14 @@ signals:
     void openGLInitialized();
     void screenSizeChanged(int width, int height);
     void selectedPointChanged(QPoint point);
-    void closing();
+    //void closing();
 
 public slots:
     void updateOutputTextureID(GLuint id);
     void resetZoom(int width, int height);
 
 protected:
-    void closeEvent(QCloseEvent* event) override;
+    //void closeEvent(QCloseEvent* event) override;
     void wheelEvent(QWheelEvent* event) override;
     void mouseMoveEvent(QMouseEvent* event) override;
     void mousePressEvent(QMouseEvent* event) override;
