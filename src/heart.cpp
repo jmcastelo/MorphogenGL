@@ -92,10 +92,10 @@ Heart::Heart()
         timer->stop();
     });
 
-    connect(mainWidget, &MainWidget::outputTextureChanged, this, [=](GLuint id){
+    /*connect(mainWidget, &MainWidget::outputTextureChanged, this, [=](GLuint id){
         if (encoder)
             encoder->setTextureID(id);
-    });
+    });*/
 
     // Show widgets
 
@@ -112,7 +112,7 @@ Heart::~Heart()
     delete morphoWidget;
     delete controlWidget;*/
     delete mainWidget;
-    if (encoder) delete encoder;
+    if (recorder) delete recorder;
 }
 
 void Heart::beat()
@@ -123,15 +123,15 @@ void Heart::beat()
 
     // Record frame
 
-    if (encoder)
+    if (recorder)
     {
-        encoder->recordFrame();
+        recorder->sendVideoFrame(grabMorphoWidgetFramebuffer());
         emit frameRecorded();
     }
 
     // Compute iteration time
 
-    if (mainWidget->generator()->active && mainWidget->generator()->getIterationNumber() % 10 == 0)
+    if (mainWidget->generator()->active && mainWidget->generator()->getIterationNumber() % 100 == 0)
     {
         end = std::chrono::steady_clock::now();
         auto iterationTime = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
@@ -187,7 +187,7 @@ QImage Heart::grabMorphoWidgetFramebuffer()
     return mainWidget->grabMorphoWidgetFramebuffer();
 }
 
-void Heart::startRecording(QString recordFilename, int framesPerSecond, QString preset, int crf)
+/*void Heart::startRecording(QString recordFilename, int framesPerSecond, QString preset, int crf)
 {
     encoder = new FFmpegEncoder(
         recordFilename.toStdString().c_str(),
@@ -198,15 +198,24 @@ void Heart::startRecording(QString recordFilename, int framesPerSecond, QString 
         QString::number(crf).toStdString().c_str(),
         mainWidget->morphoWidgetContext(),
         **mainWidget->generator()->getOutputTextureID());
+}*/
+
+void Heart::startRecording(QString recordFilename, int framesPerSecond)
+{
+    disconnect(timer, &QTimer::timeout, this, &Heart::beat);
+    recorder = new Recorder(recordFilename, framesPerSecond);
+    connect(&recorder->videoInput, &QVideoFrameInput::readyToSendVideoFrame, this, &Heart::beat);
 }
 
 void Heart::stopRecording()
 {
-    delete encoder;
-    encoder = nullptr;
+    disconnect(&recorder->videoInput, &QVideoFrameInput::readyToSendVideoFrame, this, &Heart::beat);
+    delete recorder;
+    recorder = nullptr;
+    connect(timer, &QTimer::timeout, this, &Heart::beat);
 }
 
 int Heart::getFrameCount()
 {
-    return encoder ? encoder->frameNumber : 0;
+    return recorder ? recorder->frameNumber : 0;
 }

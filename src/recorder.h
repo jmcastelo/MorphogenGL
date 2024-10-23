@@ -6,26 +6,23 @@
 #include <QMediaRecorder>
 #include <QOpenGLExtraFunctions>
 #include <QOpenGLContext>
+#include <QImage>
 
 class Recorder : protected QOpenGLExtraFunctions
 {
 public:
     unsigned int frameNumber = 0;
+    qreal fps;
+    QVideoFrameInput videoInput;
 
-    Recorder(QString filename, int width, int height, int fps, QOpenGLContext* mainContext, GLuint id);
+    Recorder(QString filename, qreal framesPerSecond);
     ~Recorder();
 
-    void recordFrame();
-    void setTextureID(GLuint id) { textureID = id; }
+    void sendVideoFrame(const QImage &image);
 
 private:
-    QVideoFrameInput videoInput;
     QMediaCaptureSession session;
     QMediaRecorder recorder;
-    int width;
-    int height;
-    QOpenGLContext* context;
-    GLuint textureID = 0;
 };
 
 #endif // RECORDER_H

@@ -30,14 +30,6 @@ QMAKE_CXXFLAGS += -fpermissive
 
 QT += widgets openglwidgets multimedia
 
-LIBS += -L/usr/lib \
-    -lavformat \
-    -lavcodec \
-    -lswscale \
-    -lavutil \
-    -lswresample \
-    -lx264
-
 RESOURCES += resource.qrc
 
 #RC_ICONS = ./icons/morphogengl.ico
@@ -50,7 +42,6 @@ HEADERS += \
     src/cyclesearch.h \
     src/edge.h \
     src/fbo.h \
-    src/ffmpegencoder.h \
     src/focuslineedit.h \
     src/generator.h \
     src/graphwidget.h \
@@ -74,7 +65,6 @@ SOURCES += \
     src/cyclesearch.cpp \
     src/edge.cpp \
     src/fbo.cpp \
-    src/ffmpegencoder.cpp \
     src/generator.cpp \
     src/graphwidget.cpp \
     src/heart.cpp \

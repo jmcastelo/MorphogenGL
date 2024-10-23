@@ -287,7 +287,7 @@ void ControlWidget::record()
         videoCaptureElapsedTimeLabel->setText("00:00:00.000");
 
         QString filename = QDir::toNativeSeparators(outputDir + '/' + QDateTime::currentDateTime().toString(Qt::ISODate) + ".avi");
-        heart->startRecording(filename, framesPerSecond, preset, crf);
+        heart->startRecording(filename, framesPerSecond);
     }
     else
     {

@@ -22,9 +22,10 @@
 
 #pragma once
 
-#include "fbo.h"
+//#include "fbo.h"
 #include "mainwidget.h"
-#include "ffmpegencoder.h"
+//#include "ffmpegencoder.h"
+#include "recorder.h"
 #include <chrono>
 #include <QObject>
 #include <QTimer>
@@ -50,7 +51,7 @@ public:
 
     QImage grabMorphoWidgetFramebuffer();
 
-    void startRecording(QString recordFilename, int framesPerSecond, QString preset, int crf);
+    void startRecording(QString recordFilename, int framesPerSecond);
     void stopRecording();
     int getFrameCount();
 
@@ -67,7 +68,8 @@ private:
     //ControlWidget* controlWidget;
     //PlotsWidget* plotsWidget;
     MainWidget* mainWidget;
-    FFmpegEncoder* encoder = nullptr;
+    //FFmpegEncoder* encoder = nullptr;
+    Recorder* recorder = nullptr;
 
     QTimer* timer;
 
