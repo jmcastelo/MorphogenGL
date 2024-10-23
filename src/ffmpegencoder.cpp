@@ -32,7 +32,7 @@ FFmpegEncoder::FFmpegEncoder(const char* filename, int theWidth, int theHeight, 
     initializeOpenGLFunctions();
     context->doneCurrent();
 
-    av_register_all();
+    //av_register_all();
 
     // Init encoding format
 
@@ -83,7 +83,7 @@ FFmpegEncoder::FFmpegEncoder(const char* filename, int theWidth, int theHeight, 
     formatContext->oformat = outputFormat;
     formatContext->video_codec_id = outputFormat->video_codec;
     
-    snprintf(formatContext->filename, sizeof(formatContext->filename), "%s", filename);
+    snprintf(formatContext->url, sizeof(formatContext->url), "%s", filename);
 
     av_dict_set(&formatContext->metadata, "comment", "MorphogenGL", 0);
 
@@ -92,7 +92,8 @@ FFmpegEncoder::FFmpegEncoder(const char* filename, int theWidth, int theHeight, 
     videoStream = avformat_new_stream(formatContext, codec);
     if (!videoStream)
         throw "Could not allocate stream\n";
-    videoStream->codec = codecContext;
+    //videoStream->codec = codecContext;
+    avcodec_parameters_from_context(videoStream->codecpar, codecContext);
     videoStream->time_base.num = 1;
     videoStream->time_base.den = fps;
 

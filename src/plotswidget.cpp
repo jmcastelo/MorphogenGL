@@ -27,16 +27,14 @@ PlotsWidget::PlotsWidget(int width, int height, QWidget* parent) : QWidget(paren
     allocatePixelsArray(width, height);
 
     rgbWidget = new RGBWidget;
-    returnMap = new ReturnMap(width, height);
 
     tabWidget = new QTabWidget;
-    tabWidget->addTab(returnMap, "Return map");
     tabWidget->addTab(rgbWidget, "RGB Scatter plot");
 
     QVBoxLayout* layout = new QVBoxLayout;
     layout->addWidget(tabWidget);
 
-    connect(this, &PlotsWidget::setSelectedPoint, returnMap, &ReturnMap::setPoint);
+    //connect(this, &PlotsWidget::setSelectedPoint, returnMap, &ReturnMap::setPoint);
 
     setLayout(layout);
     resize(512, 512);
@@ -75,7 +73,7 @@ void PlotsWidget::setTextureID(GLuint id)
 
 bool PlotsWidget::plotsActive()
 {
-    return returnMap->active() || rgbWidget->isVisible();
+    return rgbWidget->isVisible();
 }
 
 void PlotsWidget::allocatePixelsArray(int width, int height)
@@ -87,7 +85,6 @@ void PlotsWidget::allocatePixelsArray(int width, int height)
 void PlotsWidget::setImageSize(int width, int height)
 {
     allocatePixelsArray(width, height);
-    returnMap->setImageSize(width, height);
 }
 
 void PlotsWidget::getPixels()
@@ -104,7 +101,4 @@ void PlotsWidget::getPixels()
 
     if (tabWidget->currentWidget() == rgbWidget)
         rgbWidget->setPixels(pixels);
-
-    if (returnMap->active())
-        returnMap->setPixels(pixels);
 }

@@ -25,7 +25,6 @@
 #include "parameter.h"
 #include "focuslineedit.h"
 #include "imageoperations.h"
-#include "polarkernelplot.h"
 #include <vector>
 #include <string>
 #include <cmath>
@@ -42,6 +41,7 @@
 #include <QFormLayout>
 #include <QVBoxLayout>
 #include <QCloseEvent>
+#include <QGroupBox>
 
 // Parameter widget base class
 
@@ -470,7 +470,7 @@ public:
     {
         // Polar kernel plot
 
-        plot = new PolarKernelPlot("Polar kernel");
+        //plot = new PolarKernelPlot("Polar kernel");
               
         // Select kernel combo box
 
@@ -533,8 +533,8 @@ public:
         if (!polarKernelParameter->polarKernels.empty())
         {
             setLineEditTexts();
-            setGeometryPlotData();
-            setKernelValuesPlotData();
+            //setGeometryPlotData();
+            //setKernelValuesPlotData();
         }
         
         QFormLayout* geometryFormLayout = new QFormLayout;
@@ -559,7 +559,7 @@ public:
         vBoxLayout->addLayout(selectKernelFormLayout);
         vBoxLayout->addLayout(buttonsHBoxLayout);
         vBoxLayout->addLayout(formsHBoxLayout);
-        vBoxLayout->addLayout(plot->layout);
+        //vBoxLayout->addLayout(plot->layout);
 
         // Signals + Slots
 
@@ -567,7 +567,7 @@ public:
         {
             kernelIndex = index;
             setLineEditTexts();
-            setKernelValuesPlotData();
+            //setKernelValuesPlotData();
         });
 
         connect(addKernelPushButton, &QPushButton::pressed, this, [=]()
@@ -583,8 +583,8 @@ public:
                 selectKernelComboBox->setCurrentIndex(kernelIndex);
 
                 setLineEditTexts();
-                setGeometryPlotData();
-                setKernelValuesPlotData();
+                //setGeometryPlotData();
+                //setKernelValuesPlotData();
             }
         });
         connect(removeKernelPushButton, &QPushButton::pressed, this, [=]()
@@ -605,8 +605,8 @@ public:
                 selectKernelComboBox->setCurrentIndex(kernelIndex);
 
                 setLineEditTexts();
-                setGeometryPlotData();
-                setKernelValuesPlotData();
+                //setGeometryPlotData();
+                //setKernelValuesPlotData();
             }
         });
 
@@ -614,8 +614,8 @@ public:
         {
             polarKernelParameter->polarKernels[kernelIndex]->numElements = numElementsLineEdit->text().toInt();
             polarKernelParameter->setValues();
-            setGeometryPlotData();
-            setKernelValuesPlotData();
+            //setGeometryPlotData();
+            //setKernelValuesPlotData();
         });
         connect(numElementsLineEdit, &FocusLineEdit::focusOut, this, [=]()
         {
@@ -636,7 +636,7 @@ public:
         {
             polarKernelParameter->polarKernels[kernelIndex]->radius = radiusLineEdit->text().toFloat();
             polarKernelParameter->setValues();
-            setGeometryPlotData();
+            //setGeometryPlotData();
         });
         connect(radiusLineEdit, &FocusLineEdit::focusOut, this, [=]()
         {
@@ -647,7 +647,7 @@ public:
         {
             polarKernelParameter->polarKernels[kernelIndex]->initialAngle = initialAngleLineEdit->text().toFloat();
             polarKernelParameter->setValues();
-            setGeometryPlotData();
+            //setGeometryPlotData();
         });
         connect(initialAngleLineEdit, &FocusLineEdit::focusOut, this, [=]()
         {
@@ -658,7 +658,7 @@ public:
         {
             polarKernelParameter->polarKernels[kernelIndex]->frequency = frequencyLineEdit->text().toFloat();
             polarKernelParameter->setValues();
-            setKernelValuesPlotData();
+            //setKernelValuesPlotData();
         });
         connect(frequencyLineEdit, &FocusLineEdit::focusOut, this, [=]()
         {
@@ -669,7 +669,7 @@ public:
         {
             polarKernelParameter->polarKernels[kernelIndex]->phase = phaseLineEdit->text().toFloat();
             polarKernelParameter->setValues();
-            setKernelValuesPlotData();
+            //setKernelValuesPlotData();
         });
         connect(phaseLineEdit, &FocusLineEdit::focusOut, this, [=]()
         {
@@ -680,7 +680,7 @@ public:
         {
             polarKernelParameter->polarKernels[kernelIndex]->minimum = minimumLineEdit->text().toFloat();
             polarKernelParameter->setValues();
-            setKernelValuesPlotData();
+            //setKernelValuesPlotData();
         });
         connect(minimumLineEdit, &FocusLineEdit::focusOut, this, [=]()
         {
@@ -691,7 +691,7 @@ public:
         {
             polarKernelParameter->polarKernels[kernelIndex]->maximum = maximumLineEdit->text().toFloat();
             polarKernelParameter->setValues();
-            setKernelValuesPlotData();
+            //setKernelValuesPlotData();
         });
         connect(maximumLineEdit, &FocusLineEdit::focusOut, this, [=]()
         {
@@ -711,7 +711,7 @@ private:
     FocusLineEdit* phaseLineEdit;
     FocusLineEdit* minimumLineEdit;
     FocusLineEdit* maximumLineEdit;
-    PolarKernelPlot* plot;
+    //PolarKernelPlot* plot;
     int kernelIndex = 0;
 
     void setLineEditTexts()
@@ -726,7 +726,7 @@ private:
         maximumLineEdit->setText(QString::number(polarKernelParameter->polarKernels[kernelIndex]->maximum));
     }
 
-    void setGeometryPlotData()
+    /*void setGeometryPlotData()
     {
         plot->setGeometryData(polarKernelParameter->polarKernels);
     }
@@ -734,7 +734,7 @@ private:
     void setKernelValuesPlotData()
     {
         plot->setKernelValuesData(polarKernelParameter->polarKernels[kernelIndex]);
-    }
+    }*/
 };
 
 // Operations widget

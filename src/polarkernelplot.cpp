@@ -98,7 +98,7 @@ void PolarKernelPlot::setGeometryData(std::vector<PolarKernel*> kernels)
             yData.push_back(kernels[n]->radius * sin(t));
         }
 
-        circle->setData(tData, xData, yData);
+        //circle->setData(tData, xData, yData);
 
         if (kernels[n]->radius > maxRadius)
             maxRadius = kernels[n]->radius;
@@ -119,7 +119,7 @@ void PolarKernelPlot::setGeometryData(std::vector<PolarKernel*> kernels)
         }
     }
 
-    geometryPlot->graph(0)->setData(x, y, true);
+    //geometryPlot->graph(0)->setData(x, y, true);
 
     geometryPlot->graph(0)->setPen(QColor(50, 50, 50, 255));
     geometryPlot->graph(0)->setLineStyle(QCPGraph::lsNone);
@@ -151,7 +151,7 @@ void PolarKernelPlot::setKernelValuesData(PolarKernel* kernel)
         kernelElementValues.push_back(kernel->minimum + (kernel->maximum - kernel->minimum) * (1.0 + sin(kernel->phase * 3.14159265359 / 180.0  + kernel->frequency * angle)) * 0.5);
     }
 
-    kernelValuesPlot->graph(0)->setData(indices, kernelElementValues, true);
+    //kernelValuesPlot->graph(0)->setData(indices, kernelElementValues, true);
 
     // Points
 
@@ -167,7 +167,7 @@ void PolarKernelPlot::setKernelValuesData(PolarKernel* kernel)
         kernelElementValues.push_back(kernel->minimum + (kernel->maximum - kernel->minimum) * (1.0 + sin(kernel->phase * 3.14159265359 / 180.0 + kernel->frequency * angle)) * 0.5);
     }
 
-    kernelValuesPlot->graph(1)->setData(indices, kernelElementValues, true);
+    //kernelValuesPlot->graph(1)->setData(indices, kernelElementValues, true);
 
     // Set ranges
 

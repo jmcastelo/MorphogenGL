@@ -23,7 +23,6 @@
 #pragma once
 
 #include "rgbwidget.h"
-#include "returnmap.h"
 #include <QWidget>
 #include <QTabWidget>
 #include <QVBoxLayout>
@@ -53,7 +52,6 @@ public slots:
 
 private:
     RGBWidget* rgbWidget;
-    ReturnMap* returnMap;
 
     QTabWidget* tabWidget;
 

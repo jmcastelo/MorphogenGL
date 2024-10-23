@@ -29,7 +29,7 @@ int main(int argc, char* argv[])
     QSurfaceFormat format;
     format.setRenderableType(QSurfaceFormat::OpenGL);
     format.setProfile(QSurfaceFormat::CoreProfile);
-    format.setVersion(3, 3);
+    format.setVersion(4, 6);
     QSurfaceFormat::setDefaultFormat(format);
 
     // MorphoWidget and RGBWidget must share OpenGL contexts

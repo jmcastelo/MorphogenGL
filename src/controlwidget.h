@@ -135,8 +135,8 @@ private:
     QLabel* timePerIterationLabel;
     QLabel* fpsLabel;
 
-    //FocusLineEdit* imageWidthLineEdit;
-    //FocusLineEdit* imageHeightLineEdit;
+    //QLineEdit* imageWidthLineEdit;
+    //QLineEdit* imageHeightLineEdit;
     FocusLineEdit* windowWidthLineEdit;
     FocusLineEdit* windowHeightLineEdit;
 

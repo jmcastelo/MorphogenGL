@@ -107,7 +107,7 @@ void GraphWidget::newSelectedNodes()
 
 void GraphWidget::addOperationNodeUnderCursor(QAction *action)
 {
-    Node *node = new OperationNode(this, action->text());
+    Node *node = new OperationNode(this, action->whatsThis());
     scene()->addItem(node);
     node->setPos(mapToScene(mapFromGlobal(action->data().toPoint())));
     emit showOperationParameters(node->id);
@@ -694,10 +694,12 @@ void GraphWidget::contextMenuEvent(QContextMenuEvent *event)
 
         QMenu *operationsMenu = menu.addMenu("Add operation");
 
-        for (QString opName : qAsConst(generator->availableOperations))
+        foreach (const QString &opName, generator->availableOperations)
         {
             QAction* action = operationsMenu->addAction(opName);
+            action->setWhatsThis(opName);
             action->setData(QVariant(QCursor::pos()));
+            operationsMenu->addAction(action);
         }
 
         connect(operationsMenu, &QMenu::triggered, this, &GraphWidget::addOperationNodeUnderCursor);

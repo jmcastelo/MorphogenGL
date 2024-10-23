@@ -24,7 +24,11 @@
 #include "configparser.h"
 #include "node.h"
 #include "controlwidget.h"
+#include "focuslineedit.h"
 #include <QTimer>
+#include <QActionGroup>
+#include <QHeaderView>
+#include <QScrollBar>
 
 ControlWidget::ControlWidget(Heart* theHeart, QWidget *parent) : QWidget(parent), heart { theHeart }
 {
@@ -999,9 +1003,9 @@ void ControlWidget::updateScrollArea()
 
     if (visible)
     {
-        scrollArea->setFixedHeight(scrollWidget->height() + scrollLayout->margin());
+        scrollArea->setFixedHeight(scrollWidget->height() + scrollLayout->contentsMargins().top());
         if (scrollArea->horizontalScrollBar()->isVisible())
-            scrollArea->setFixedHeight(scrollWidget->height() + scrollLayout->margin() + scrollArea->horizontalScrollBar()->height());
+            scrollArea->setFixedHeight(scrollWidget->height() + scrollLayout->contentsMargins().top() + scrollArea->horizontalScrollBar()->height());
     }
     else
     {

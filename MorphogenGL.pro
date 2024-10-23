@@ -22,78 +22,25 @@ TARGET = MorphogenGL
 
 TEMPLATE = app
 
-CONFIG += qt c++14
+CONFIG += qt c++17
 
-win32:QMAKE_CXXFLAGS_RELEASE += /MT
+QMAKE_CXXFLAGS += -fpermissive
 
-DEFINES += QT_DEPRECATED_WARNINGS
+#DEFINES += QT_DEPRECATED_WARNINGS QCUSTOMPLOT_USE_LIBRARY
 
-QT += widgets printsupport
+QT += widgets openglwidgets multimedia
 
-win32:INCLUDEPATH += C:/Development/include
-
-win32:LIBS += -LC:/Development/libs \
-    -lavcodec \
+LIBS += -L/usr/lib \
     -lavformat \
+    -lavcodec \
     -lswscale \
     -lavutil \
     -lswresample \
-    -llibx264 \
-    -lbcrypt \
-    -lws2_32 \
-    -lsecur32 \
-    -lkernel32 \
-    -luser32 \
-    -lgdi32 \
-    -lwinspool \
-    -lcomdlg32 \
-    -ladvapi32 \
-    -lshell32 \
-    -lole32 \
-    -loleaut32 \
-    -luuid \
-    -lodbc32 \
-    -lodbccp32
-
-unix:INCLUDEPATH += /usr/local/include
-
-unix:LIBS += -L/usr/local/lib \
-    -lavformat \
-    -lavcodec \
-    -lswscale \
-    -lavutil \
-    -lavresample \
-    -lx264 \
-    -lz \
-    -lbz2 \
-    -lX11 \
-    -lvdpau
-
-CONFIG(debug, debug|release) {
-    LIBS += -lqcustomplotd
-}
-
-CONFIG(release, debug|release) {
-    LIBS += -lqcustomplot
-    #CONFIG += link_pkgconfig
-    #PKGCONFIG += libavcodec libavformat libavutil libswscale libavresample x264
-}
+    -lx264
 
 RESOURCES += resource.qrc
 
-RC_ICONS = ./icons/morphogengl.ico
-
-#unix:!macx: LIBS += -L/usr/local/lib -lavcodec -lavformat -lavutil -lswscale -lx264 -lz -lX11 -lbz2
-
-#INCLUDEPATH += /usr/local/include
-#DEPENDPATH += /usr/local/include
-
-#unix:!macx: PRE_TARGETDEPS += /usr/local/lib/libavcodec.a
-#unix:!macx: PRE_TARGETDEPS += /usr/local/lib/libavformat.a
-#unix:!macx: PRE_TARGETDEPS += /usr/local/lib/libavutil.a
-#unix:!macx: PRE_TARGETDEPS += /usr/local/lib/libavresample.a
-#unix:!macx: PRE_TARGETDEPS += /usr/local/lib/libswscale.a
-#unix:!macx: PRE_TARGETDEPS += /usr/local/lib/libx264.a
+#RC_ICONS = ./icons/morphogengl.ico
 
 HEADERS += \
     src/blender.h \
@@ -115,8 +62,7 @@ HEADERS += \
     src/operationswidget.h \
     src/parameter.h \
     src/plotswidget.h \
-    src/polarkernelplot.h \
-    src/returnmap.h \
+    src/recorder.h \
     src/rgbwidget.h \
     src/seed.h
 
@@ -138,7 +84,6 @@ SOURCES += \
     src/morphowidget.cpp \
     src/node.cpp \
     src/plotswidget.cpp \
-    src/polarkernelplot.cpp \
-    src/returnmap.cpp \
+    src/recorder.cpp \
     src/rgbwidget.cpp \
     src/seed.cpp

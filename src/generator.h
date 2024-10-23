@@ -82,7 +82,7 @@ class GeneratorGL : public QObject
     Q_OBJECT
 
 public:
-    QVector<QString> availableOperations;
+    QList<const QString> availableOperations;
 
     bool active = false;
 

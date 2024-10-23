@@ -36,6 +36,10 @@ class FocusLineEdit : public QLineEdit
 public:
     FocusLineEdit(QWidget* parent = nullptr) : QLineEdit(parent) {}
 
+signals:
+    void focusOut();
+    void focusIn();
+
 protected:
     void focusOutEvent(QFocusEvent* event)
     {
@@ -47,10 +51,6 @@ protected:
         QLineEdit::focusInEvent(event);
         emit focusIn();
     }
-
-signals:
-    void focusOut();
-    void focusIn();
 };
 
 

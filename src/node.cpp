@@ -32,6 +32,7 @@
 #include <QFileDialog>
 #include <QWidgetAction>
 #include <QLabel>
+#include <QActionGroup>
 
 Node::Node(GraphWidget* graphWidget, QString text) :
     name { text },
