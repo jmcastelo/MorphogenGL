@@ -26,9 +26,9 @@ Heart::Heart()
 {
     // Heart beat!
 
-    timer = new QTimer(this);
+    timer = new QChronoTimer(this);
     timer->setTimerType(Qt::PreciseTimer);
-    timer->setInterval(20);
+    timer->setInterval(std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::duration<double>{1.0 / fps}));
 
     // MorphoWidget
 
@@ -53,9 +53,9 @@ Heart::Heart()
 
     // Signals + Slots
 
-    connect(timer, &QTimer::timeout, mainWidget, &MainWidget::updateMorphoWidget);
+    connect(timer, &QChronoTimer::timeout, mainWidget, &MainWidget::updateMorphoWidget);
     //connect(timer, &QTimer::timeout, morphoWidget, QOverload<>::of(&MorphoWidget::update));
-    connect(timer, &QTimer::timeout, this, &Heart::beat);
+    connect(timer, &QChronoTimer::timeout, this, &Heart::beat);
 
     /*connect(morphoWidget, &MorphoWidget::openGLInitialized, [=]()
     {
@@ -131,13 +131,13 @@ void Heart::beat()
 
     // Compute iteration time
 
-    if (mainWidget->generator()->active && mainWidget->generator()->getIterationNumber() % 100 == 0)
+    if (mainWidget->generator()->active && mainWidget->generator()->getIterationNumber() % numIterations == 0)
     {
         end = std::chrono::steady_clock::now();
-        auto iterationTime = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+        auto iterationTime = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
         start = std::chrono::steady_clock::now();
 
-        emit iterationTimeMeasured(iterationTime);
+        emit iterationTimeMeasured(iterationTime, numIterations);
     }
 
     if (mainWidget->generator()->active)
@@ -156,12 +156,12 @@ void Heart::setStartTime()
     start = std::chrono::steady_clock::now();
 }
 
-int Heart::getTimerInterval()
+std::chrono::nanoseconds Heart::getTimerInterval()
 {
     return timer->interval();
 }
 
-void Heart::setTimerInterval(int interval)
+void Heart::setTimerInterval(std::chrono::nanoseconds interval)
 {
     timer->setInterval(interval);
 }
@@ -200,10 +200,10 @@ QImage Heart::grabMorphoWidgetFramebuffer()
         **mainWidget->generator()->getOutputTextureID());
 }*/
 
-void Heart::startRecording(QString recordFilename, int framesPerSecond)
+void Heart::startRecording(QString recordFilename, int framesPerSecond, QMediaFormat::VideoCodec codec)
 {
-    disconnect(timer, &QTimer::timeout, this, &Heart::beat);
-    recorder = new Recorder(recordFilename, framesPerSecond);
+    disconnect(timer, &QChronoTimer::timeout, this, &Heart::beat);
+    recorder = new Recorder(recordFilename, framesPerSecond, codec);
     connect(&recorder->videoInput, &QVideoFrameInput::readyToSendVideoFrame, this, &Heart::beat);
 }
 
@@ -212,7 +212,7 @@ void Heart::stopRecording()
     disconnect(&recorder->videoInput, &QVideoFrameInput::readyToSendVideoFrame, this, &Heart::beat);
     delete recorder;
     recorder = nullptr;
-    connect(timer, &QTimer::timeout, this, &Heart::beat);
+    connect(timer, &QChronoTimer::timeout, this, &Heart::beat);
 }
 
 int Heart::getFrameCount()

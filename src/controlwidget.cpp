@@ -286,8 +286,8 @@ void ControlWidget::record()
         recordAction->setIcon(QIcon(QPixmap(":/icons/media-playback-stop.png")));
         videoCaptureElapsedTimeLabel->setText("00:00:00.000");
 
-        QString filename = QDir::toNativeSeparators(outputDir + '/' + QDateTime::currentDateTime().toString(Qt::ISODate) + ".avi");
-        heart->startRecording(filename, framesPerSecond);
+        QString filename = QDir::toNativeSeparators(outputDir + '/' + QDateTime::currentDateTime().toString(Qt::ISODate) + ".mkv");
+        heart->startRecording(filename, framesPerSecond, codec);
     }
     else
     {
@@ -401,7 +401,7 @@ void ControlWidget::about()
 
     aboutBox->setText(text);
 
-    aboutBox->setInformativeText("Copyright 2021 Jose Maria Castelo Ares\njose.maria.castelo@gmail.com\nLicense: GPLv3");
+    aboutBox->setInformativeText("Copyright 2024 Jose Maria Castelo Ares\njose.maria.castelo@gmail.com\nLicense: GPLv3");
 
     aboutBox->exec();
 }
@@ -411,10 +411,12 @@ void ControlWidget::updateIterationNumberLabel()
     iterationNumberLabel->setText(QString("Frame: %1").arg(generator->getIterationNumber()));
 }
 
-void ControlWidget::updateMetricsLabels(long int iterationTime)
+void ControlWidget::updateMetricsLabels(std::chrono::microseconds iterationTime, unsigned int its)
 {
-    timePerIterationLabel->setText(QString("mSPF: %1").arg(iterationTime / 10.0));
-    fpsLabel->setText(QString("FPS: %1").arg(10000.0 / iterationTime));
+    double mSec = std::chrono::duration<double, std::milli>{iterationTime}.count();
+    timePerIterationLabel->setText(QString("mSPF: %1").arg(mSec / its));
+    double sec = std::chrono::duration<double>{iterationTime}.count();
+    fpsLabel->setText(QString("FPS: %1").arg(its / sec));
 }
 
 // Public slots
@@ -610,10 +612,11 @@ void ControlWidget::constructDisplayOptionsWidget()
 {
     FocusLineEdit* fpsLineEdit = new FocusLineEdit;
     fpsLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
-    QIntValidator* fpsIntValidator = new QIntValidator(1, 1000, fpsLineEdit);
-    fpsIntValidator->setLocale(QLocale::English);
-    fpsLineEdit->setValidator(fpsIntValidator);
-    fpsLineEdit->setText(QString::number(static_cast<int>(1000.0 / heart->getTimerInterval())));
+    QDoubleValidator* fpsDoubleValidator = new QDoubleValidator(1.0, 1000.0, 3, fpsLineEdit);
+    fpsDoubleValidator->setLocale(QLocale::English);
+    fpsLineEdit->setValidator(fpsDoubleValidator);
+    std::chrono::duration<double> intervalSeconds = std::chrono::duration<double>(heart->getTimerInterval());
+    fpsLineEdit->setText(QString::number(1.0 / intervalSeconds.count()));
 
     /*imageWidthLineEdit = new FocusLineEdit;
     imageWidthLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
@@ -668,11 +671,13 @@ void ControlWidget::constructDisplayOptionsWidget()
 
     connect(fpsLineEdit, &FocusLineEdit::returnPressed, this, [=]()
     {
-        heart->setTimerInterval(static_cast<int>(1000.0 / fpsLineEdit->text().toInt()));
+        std::chrono::duration<double> intervalSeconds {1.0 / fpsLineEdit->text().toDouble()};
+        heart->setTimerInterval(std::chrono::duration_cast<std::chrono::nanoseconds>(intervalSeconds));
     });
     connect(fpsLineEdit, &FocusLineEdit::focusOut, this, [=]()
     {
-        fpsLineEdit->setText(QString::number(static_cast<int>(1000.0 / heart->getTimerInterval())));
+        std::chrono::duration<double> intervalSeconds = std::chrono::duration<double>(heart->getTimerInterval());
+        fpsLineEdit->setText(QString::number(1.0 / intervalSeconds.count()));
     });
 
     /*connect(imageWidthLineEdit, &FocusLineEdit::returnPressed, [=]()
@@ -715,25 +720,60 @@ void ControlWidget::constructRecordingOptionsWidget()
     QPushButton* videoFilenamePushButton = new QPushButton(QIcon(QPixmap(":/icons/document-open.png")), "Select output dir");
     videoFilenamePushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
 
-    QComboBox* presetsVideoComboBox = new QComboBox;
-    presetsVideoComboBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
-    presetsVideoComboBox->addItem("ultrafast");
-    presetsVideoComboBox->addItem("superfast");
-    presetsVideoComboBox->addItem("veryfast");
-    presetsVideoComboBox->addItem("faster");
-    presetsVideoComboBox->addItem("fast");
-    presetsVideoComboBox->addItem("medium");
-    presetsVideoComboBox->addItem("slow");
-    presetsVideoComboBox->addItem("slower");
-    presetsVideoComboBox->addItem("veryslow");
-    presetsVideoComboBox->setCurrentIndex(0);
+    QComboBox* videoCodecsComboBox = new QComboBox;
+    videoCodecsComboBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
 
-    FocusLineEdit* crfVideoLineEdit = new FocusLineEdit;
-    crfVideoLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
-    QIntValidator* crfVideoValidator = new QIntValidator(0, 51, crfVideoLineEdit);
-    crfVideoValidator->setLocale(QLocale::English);
-    crfVideoLineEdit->setValidator(crfVideoValidator);
-    crfVideoLineEdit->setText(QString::number(crf));
+    QMediaFormat format;
+    supportedVideoCodecs = format.supportedVideoCodecs(QMediaFormat::Encode);
+    foreach (QMediaFormat::VideoCodec codec, supportedVideoCodecs)
+    {
+        QString codecName;
+        switch (codec) {
+        case QMediaFormat::VideoCodec::VP8:
+            codecName = "VP8";
+            break;
+        case QMediaFormat::VideoCodec::MPEG2:
+            codecName = "MPEG-2";
+            break;
+        case QMediaFormat::VideoCodec::MPEG1:
+            codecName = "MPEG-1";
+            break;
+        case QMediaFormat::VideoCodec::WMV:
+            codecName = "WMV";
+            break;
+        case QMediaFormat::VideoCodec::H265:
+            codecName = "H265";
+            break;
+        case QMediaFormat::VideoCodec::H264:
+            codecName = "H264";
+            break;
+        case QMediaFormat::VideoCodec::MPEG4:
+            codecName = "MPEG-4";
+            break;
+        case QMediaFormat::VideoCodec::AV1:
+            codecName = "AV1";
+            break;
+        case QMediaFormat::VideoCodec::MotionJPEG:
+            codecName = "MotionJPEG";
+            break;
+        case QMediaFormat::VideoCodec::VP9:
+            codecName = "VP9";
+            break;
+        case QMediaFormat::VideoCodec::Theora:
+            codecName = "Theora";
+            break;
+        default:
+            codecName = "Unspecified";
+            break;
+        }
+        videoCodecsComboBox->addItem(codecName);
+    }
+
+    if (!supportedVideoCodecs.isEmpty())
+    {
+        videoCodecsComboBox->setCurrentIndex(0);
+        codec = supportedVideoCodecs[0];
+    }
 
     FocusLineEdit* fpsVideoLineEdit = new FocusLineEdit;
     fpsVideoLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
@@ -746,8 +786,7 @@ void ControlWidget::constructRecordingOptionsWidget()
     videoCaptureElapsedTimeLabel->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
 
     QFormLayout* videoFormLayout = new QFormLayout;
-    videoFormLayout->addRow("Speed:", presetsVideoComboBox);
-    videoFormLayout->addRow("Quality:", crfVideoLineEdit);
+    videoFormLayout->addRow("Codec:", videoCodecsComboBox);
     videoFormLayout->addRow("FPS:", fpsVideoLineEdit);
     videoFormLayout->addRow("Elapsed time:", videoCaptureElapsedTimeLabel);
 
@@ -771,26 +810,18 @@ void ControlWidget::constructRecordingOptionsWidget()
     // Signals + Slots
 
     connect(videoFilenamePushButton, &QPushButton::clicked, this, &ControlWidget::setOutputDir);
-    connect(presetsVideoComboBox, &QComboBox::currentTextChanged, this, [=](QString thePreset)
+    connect(videoCodecsComboBox, &QComboBox::currentIndexChanged, this, [=](int index)
     {
-        preset = thePreset;
+        codec = supportedVideoCodecs[index];
     });
-    connect(crfVideoLineEdit, &FocusLineEdit::returnPressed, this, [=]()
+    connect(fpsVideoLineEdit, &FocusLineEdit::editingFinished, this, [=]()
     {
-        crf = crfVideoLineEdit->text().toInt();
+        framesPerSecond = fpsVideoLineEdit->text().toDouble();
     });
-    connect(crfVideoLineEdit, &FocusLineEdit::focusOut, this, [=]()
-    {
-        crfVideoLineEdit->setText(QString::number(crf));
-    });
-    connect(fpsVideoLineEdit, &FocusLineEdit::returnPressed, this, [=]()
-    {
-        framesPerSecond = fpsVideoLineEdit->text().toInt();
-    });
-    connect(fpsVideoLineEdit, &FocusLineEdit::focusOut, this, [=]()
+    /*connect(fpsVideoLineEdit, &FocusLineEdit::focusOut, this, [=]()
     {
         fpsVideoLineEdit->setText(QString::number(framesPerSecond));
-    });
+    });*/
     connect(heart, &Heart::frameRecorded, this, &ControlWidget::setVideoCaptureElapsedTimeLabel);
 }
 

@@ -4,6 +4,7 @@
 #include <QVideoFrameInput>
 #include <QMediaCaptureSession>
 #include <QMediaRecorder>
+#include <QMediaFormat>
 #include <QOpenGLExtraFunctions>
 #include <QOpenGLContext>
 #include <QImage>
@@ -15,7 +16,7 @@ public:
     qreal fps;
     QVideoFrameInput videoInput;
 
-    Recorder(QString filename, qreal framesPerSecond);
+    Recorder(QString filename, qreal framesPerSecond, QMediaFormat::VideoCodec codec, QMediaFormat::FileFormat fileFormat);
     ~Recorder();
 
     void sendVideoFrame(const QImage &image);

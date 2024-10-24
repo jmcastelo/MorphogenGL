@@ -28,7 +28,7 @@
 #include "recorder.h"
 #include <chrono>
 #include <QObject>
-#include <QTimer>
+#include <QChronoTimer>
 #include <QImage>
 #include <QString>
 
@@ -40,10 +40,13 @@ public:
     Heart();
     ~Heart();
 
+    unsigned int numIterations = 100;
+    double fps = 50.0;
+
     void setStartTime();
-    
-    int getTimerInterval();
-    void setTimerInterval(int interval);
+
+    std::chrono::nanoseconds getTimerInterval();
+    void setTimerInterval(std::chrono::nanoseconds interval);
 
     int getMorphoWidgetWidth();
     int getMorphoWidgetHeight();
@@ -51,13 +54,13 @@ public:
 
     QImage grabMorphoWidgetFramebuffer();
 
-    void startRecording(QString recordFilename, int framesPerSecond);
+    void startRecording(QString recordFilename, int framesPerSecond, QMediaFormat::VideoCodec codec);
     void stopRecording();
     int getFrameCount();
 
 signals:
     void iterationPerformed();
-    void iterationTimeMeasured(long int iterationTime);
+    void iterationTimeMeasured(std::chrono::microseconds iterationTime, int numIterations);
     void frameRecorded();
     void updateImageSize(int width, int height);
     void imageSizeChanged();
@@ -71,7 +74,7 @@ private:
     //FFmpegEncoder* encoder = nullptr;
     Recorder* recorder = nullptr;
 
-    QTimer* timer;
+    QChronoTimer* timer;
 
     std::chrono::time_point<std::chrono::steady_clock> start;
     std::chrono::time_point<std::chrono::steady_clock> end;

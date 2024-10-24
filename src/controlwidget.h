@@ -61,6 +61,7 @@
 #include <QSplitter>
 #include <QScrollArea>
 #include <QSizeGrip>
+#include <QMediaFormat>
 
 class Heart;
 class ConfigurationParser;
@@ -124,10 +125,10 @@ private:
     QAction* saveConfigAction;
     QAction* loadConfigAction;
 
-    int framesPerSecond = 50;
+    qreal framesPerSecond = 50.0;
     QString outputDir = QDir::homePath();
-    QString preset = "ultrafast";
-    int crf = 17;
+    QList<QMediaFormat::VideoCodec> supportedVideoCodecs;
+    QMediaFormat::VideoCodec codec;
 
     QStatusBar* statusBar;
 
@@ -156,7 +157,7 @@ private:
     void constructSortedOperationsWidget();
 
     void updateIterationNumberLabel();
-    void updateMetricsLabels(long int time);
+    void updateMetricsLabels(std::chrono::microseconds time, unsigned int its);
 
     void setVideoCaptureElapsedTimeLabel();
 
