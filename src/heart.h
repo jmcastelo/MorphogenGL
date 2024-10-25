@@ -54,7 +54,7 @@ public:
 
     QImage grabMorphoWidgetFramebuffer();
 
-    void startRecording(QString recordFilename, int framesPerSecond, QMediaFormat::VideoCodec codec);
+    void startRecording(QString recordFilename, int framesPerSecond, QMediaFormat format);
     void stopRecording();
     int getFrameCount();
 
@@ -80,7 +80,4 @@ private:
     std::chrono::time_point<std::chrono::steady_clock> end;
 
     void beat();
-
-//private slots:
-    //void startTimer();
 };

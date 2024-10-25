@@ -123,11 +123,8 @@ void Heart::beat()
 
     // Record frame
 
-    if (recorder)
-    {
-        recorder->sendVideoFrame(grabMorphoWidgetFramebuffer());
-        emit frameRecorded();
-    }
+    if (recorder && recorder->isRecording())
+        recorder->addImage(grabMorphoWidgetFramebuffer());
 
     // Compute iteration time
 
@@ -200,19 +197,21 @@ QImage Heart::grabMorphoWidgetFramebuffer()
         **mainWidget->generator()->getOutputTextureID());
 }*/
 
-void Heart::startRecording(QString recordFilename, int framesPerSecond, QMediaFormat::VideoCodec codec)
+void Heart::startRecording(QString recordFilename, int framesPerSecond, QMediaFormat format)
 {
-    disconnect(timer, &QChronoTimer::timeout, this, &Heart::beat);
-    recorder = new Recorder(recordFilename, framesPerSecond, codec);
-    connect(&recorder->videoInput, &QVideoFrameInput::readyToSendVideoFrame, this, &Heart::beat);
+    //disconnect(timer, &QChronoTimer::timeout, this, &Heart::beat);
+    recorder = new Recorder(recordFilename, framesPerSecond, format);
+    connect(recorder, &Recorder::frameRecorded, this, &Heart::frameRecorded);
+    recorder->startRecording();
 }
 
 void Heart::stopRecording()
 {
-    disconnect(&recorder->videoInput, &QVideoFrameInput::readyToSendVideoFrame, this, &Heart::beat);
+    recorder->stopRecording();
+    disconnect(recorder, &Recorder::frameRecorded, this, &Heart::frameRecorded);
     delete recorder;
     recorder = nullptr;
-    connect(timer, &QChronoTimer::timeout, this, &Heart::beat);
+    //connect(timer, &QChronoTimer::timeout, this, &Heart::beat);
 }
 
 int Heart::getFrameCount()

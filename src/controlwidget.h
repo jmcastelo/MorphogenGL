@@ -127,8 +127,11 @@ private:
 
     qreal framesPerSecond = 50.0;
     QString outputDir = QDir::homePath();
+    QMediaFormat format;
     QList<QMediaFormat::VideoCodec> supportedVideoCodecs;
-    QMediaFormat::VideoCodec codec;
+    QList<QMediaFormat::FileFormat> supportedFileFormats;
+    QComboBox* fileFormatsComboBox;
+    QComboBox* videoCodecsComboBox;
 
     QStatusBar* statusBar;
 
@@ -160,6 +163,8 @@ private:
     void updateMetricsLabels(std::chrono::microseconds time, unsigned int its);
 
     void setVideoCaptureElapsedTimeLabel();
+    void populateFileFormatsComboBox();
+    void populateVideoCodecsComboBox();
 
     void updateScrollLayout(QWidget* widget);
     void updateScrollArea();

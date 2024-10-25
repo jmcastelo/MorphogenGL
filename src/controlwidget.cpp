@@ -285,9 +285,8 @@ void ControlWidget::record()
     {
         recordAction->setIcon(QIcon(QPixmap(":/icons/media-playback-stop.png")));
         videoCaptureElapsedTimeLabel->setText("00:00:00.000");
-
-        QString filename = QDir::toNativeSeparators(outputDir + '/' + QDateTime::currentDateTime().toString(Qt::ISODate) + ".mkv");
-        heart->startRecording(filename, framesPerSecond, codec);
+        QString filename = QDir::toNativeSeparators(outputDir + '/' + QDateTime::currentDateTime().toString(Qt::ISODate));
+        heart->startRecording(filename, framesPerSecond, format);
     }
     else
     {
@@ -720,60 +719,13 @@ void ControlWidget::constructRecordingOptionsWidget()
     QPushButton* videoFilenamePushButton = new QPushButton(QIcon(QPixmap(":/icons/document-open.png")), "Select output dir");
     videoFilenamePushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
 
-    QComboBox* videoCodecsComboBox = new QComboBox;
+    fileFormatsComboBox = new QComboBox;
+    fileFormatsComboBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+    populateFileFormatsComboBox();
+
+    videoCodecsComboBox = new QComboBox;
     videoCodecsComboBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
-
-    QMediaFormat format;
-    supportedVideoCodecs = format.supportedVideoCodecs(QMediaFormat::Encode);
-    foreach (QMediaFormat::VideoCodec codec, supportedVideoCodecs)
-    {
-        QString codecName;
-        switch (codec) {
-        case QMediaFormat::VideoCodec::VP8:
-            codecName = "VP8";
-            break;
-        case QMediaFormat::VideoCodec::MPEG2:
-            codecName = "MPEG-2";
-            break;
-        case QMediaFormat::VideoCodec::MPEG1:
-            codecName = "MPEG-1";
-            break;
-        case QMediaFormat::VideoCodec::WMV:
-            codecName = "WMV";
-            break;
-        case QMediaFormat::VideoCodec::H265:
-            codecName = "H265";
-            break;
-        case QMediaFormat::VideoCodec::H264:
-            codecName = "H264";
-            break;
-        case QMediaFormat::VideoCodec::MPEG4:
-            codecName = "MPEG-4";
-            break;
-        case QMediaFormat::VideoCodec::AV1:
-            codecName = "AV1";
-            break;
-        case QMediaFormat::VideoCodec::MotionJPEG:
-            codecName = "MotionJPEG";
-            break;
-        case QMediaFormat::VideoCodec::VP9:
-            codecName = "VP9";
-            break;
-        case QMediaFormat::VideoCodec::Theora:
-            codecName = "Theora";
-            break;
-        default:
-            codecName = "Unspecified";
-            break;
-        }
-        videoCodecsComboBox->addItem(codecName);
-    }
-
-    if (!supportedVideoCodecs.isEmpty())
-    {
-        videoCodecsComboBox->setCurrentIndex(0);
-        codec = supportedVideoCodecs[0];
-    }
+    populateVideoCodecsComboBox();
 
     FocusLineEdit* fpsVideoLineEdit = new FocusLineEdit;
     fpsVideoLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
@@ -786,6 +738,7 @@ void ControlWidget::constructRecordingOptionsWidget()
     videoCaptureElapsedTimeLabel->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
 
     QFormLayout* videoFormLayout = new QFormLayout;
+    videoFormLayout->addRow("File format:", fileFormatsComboBox);
     videoFormLayout->addRow("Codec:", videoCodecsComboBox);
     videoFormLayout->addRow("FPS:", fpsVideoLineEdit);
     videoFormLayout->addRow("Elapsed time:", videoCaptureElapsedTimeLabel);
@@ -810,9 +763,21 @@ void ControlWidget::constructRecordingOptionsWidget()
     // Signals + Slots
 
     connect(videoFilenamePushButton, &QPushButton::clicked, this, &ControlWidget::setOutputDir);
-    connect(videoCodecsComboBox, &QComboBox::currentIndexChanged, this, [=](int index)
+    connect(fileFormatsComboBox, &QComboBox::activated, this, [=](int index)
     {
-        codec = supportedVideoCodecs[index];
+        if (index >= 0)
+        {
+            format.setFileFormat(supportedFileFormats[index]);
+            populateVideoCodecsComboBox();
+        }
+    });
+    connect(videoCodecsComboBox, &QComboBox::activated, this, [=](int index)
+    {
+        if (index >= 0)
+        {
+            format.setVideoCodec(supportedVideoCodecs[index]);
+            populateFileFormatsComboBox();
+        }
     });
     connect(fpsVideoLineEdit, &FocusLineEdit::editingFinished, this, [=]()
     {
@@ -823,6 +788,70 @@ void ControlWidget::constructRecordingOptionsWidget()
         fpsVideoLineEdit->setText(QString::number(framesPerSecond));
     });*/
     connect(heart, &Heart::frameRecorded, this, &ControlWidget::setVideoCaptureElapsedTimeLabel);
+}
+
+void ControlWidget::populateFileFormatsComboBox()
+{
+    QString previousFormat = fileFormatsComboBox->currentText();
+
+    fileFormatsComboBox->clear();
+
+    format.resolveForEncoding(QMediaFormat::RequiresVideo);
+
+    supportedFileFormats = format.supportedFileFormats(QMediaFormat::Encode);
+    foreach (QMediaFormat::FileFormat fileFormat, supportedFileFormats)
+        fileFormatsComboBox->addItem(QMediaFormat::fileFormatName(fileFormat));
+
+    if (!supportedFileFormats.isEmpty())
+    {
+        int index = fileFormatsComboBox->findText(previousFormat);
+        if (index == -1)
+        {
+            fileFormatsComboBox->setCurrentIndex(0);
+            format.setFileFormat(supportedFileFormats[0]);
+        }
+        else
+        {
+            fileFormatsComboBox->setCurrentIndex(index);
+        }
+    }
+    else
+    {
+        fileFormatsComboBox->setCurrentIndex(-1);
+        format.setFileFormat(QMediaFormat::UnspecifiedFormat);
+    }
+}
+
+void ControlWidget::populateVideoCodecsComboBox()
+{
+    QString previousCodec = videoCodecsComboBox->currentText();
+
+    videoCodecsComboBox->clear();
+
+    format.resolveForEncoding(QMediaFormat::RequiresVideo);
+
+    supportedVideoCodecs = format.supportedVideoCodecs(QMediaFormat::Encode);
+    foreach (QMediaFormat::VideoCodec videoCodec, supportedVideoCodecs)
+        videoCodecsComboBox->addItem(QMediaFormat::videoCodecName(videoCodec));
+
+    if (!supportedVideoCodecs.isEmpty())
+    {
+        int index = videoCodecsComboBox->findText(previousCodec);
+        if (index == -1)
+        {
+            videoCodecsComboBox->setCurrentIndex(0);
+            format.setVideoCodec(supportedVideoCodecs[0]);
+        }
+        else
+        {
+            videoCodecsComboBox->setCurrentIndex(index);
+        }
+    }
+    else
+    {
+        videoCodecsComboBox->setCurrentIndex(-1);
+        format.setVideoCodec(QMediaFormat::VideoCodec::Unspecified);
+    }
 }
 
 void ControlWidget::setOutputDir()
