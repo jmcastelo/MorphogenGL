@@ -117,14 +117,27 @@ Heart::~Heart()
 
 void Heart::beat()
 {
+    // Record frame
+
+    if (recorder)
+    {
+        if(recorder->isRecording())
+        {
+            iterate();
+            recorder->sendVideoFrame(mainWidget->generator()->outputImage());
+        }
+    }
+    else
+    {
+        iterate();
+    }
+}
+
+void Heart::iterate()
+{
     // Perform one iteration
 
     mainWidget->generator()->iterate();
-
-    // Record frame
-
-    if (recorder && recorder->isRecording())
-        recorder->addImage(grabMorphoWidgetFramebuffer());
 
     // Compute iteration time
 
@@ -139,11 +152,11 @@ void Heart::beat()
 
     if (mainWidget->generator()->active)
         emit iterationPerformed();
-    
+
     // Compute plots
 
     /*if (controlWidget->generator->active && plotsWidget->plotsActive())
-        plotsWidget->getPixels();*/
+            plotsWidget->getPixels();*/
 
     mainWidget->computePlots();
 }

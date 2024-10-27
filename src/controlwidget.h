@@ -86,6 +86,7 @@ signals:
     void seedDrawn();
     void selectedPointChanged(QPoint point);
     //void closing();
+    void updateStateChanged(bool state);
 
 public slots:
     void updateWindowSizeLineEdits(int width, int height);
@@ -125,7 +126,7 @@ private:
     QAction* saveConfigAction;
     QAction* loadConfigAction;
 
-    qreal framesPerSecond = 50.0;
+    qreal framesPerSecond = 60.0;
     QString outputDir = QDir::homePath();
     QMediaFormat format;
     QList<QMediaFormat::VideoCodec> supportedVideoCodecs;

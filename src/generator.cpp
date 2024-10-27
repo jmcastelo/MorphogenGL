@@ -448,7 +448,7 @@ void GeneratorGL::equalizeBlendFactors(QUuid id)
 
 ImageOperation* GeneratorGL::getOperation(QUuid id)
 {
-    return operationNodes.value(id)->operation;
+    return operationNodes.contains(id) ? operationNodes.value(id)->operation : nullptr;
 }
 
 QUuid GeneratorGL::addOperation(QString operationName)
@@ -848,6 +848,21 @@ void GeneratorGL::drawAllSeeds()
     foreach (Seed* seed, seeds)
         if (!seed->isFixed())
             seed->draw();
+}
+
+QImage GeneratorGL::outputImage()
+{
+    ImageOperation* operation = getOperation(outputID);
+    if (operation)
+    {
+        return operation->outputImage();
+    }
+    else
+    {
+        QImage image(FBO::width, FBO::height, QImage::Format_RGBA8888);
+        image.fill(Qt::black);
+        return image;
+    }
 }
 
 void GeneratorGL::resize(GLuint width, GLuint height)

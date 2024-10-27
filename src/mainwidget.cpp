@@ -7,6 +7,7 @@ MainWidget::MainWidget(Heart* heart, QWidget* parent) : QWidget(parent)
     // MorphoWidget
 
     morphoWidget = new MorphoWidget(this);
+    //morphoWidget->setUpdatesEnabled(false);
 
     // ControlWidget
 
@@ -32,6 +33,8 @@ MainWidget::MainWidget(Heart* heart, QWidget* parent) : QWidget(parent)
     connect(morphoWidget, &MorphoWidget::screenSizeChanged, controlWidget, &ControlWidget::updateWindowSizeLineEdits);
     connect(morphoWidget, &MorphoWidget::screenSizeChanged, controlWidget->generator, &GeneratorGL::resize);
     connect(morphoWidget, &MorphoWidget::selectedPointChanged, controlWidget, &ControlWidget::selectedPointChanged);
+
+    connect(controlWidget, &ControlWidget::updateStateChanged, morphoWidget, &MorphoWidget::setUpdate);
 
     connect(controlWidget->generator, &GeneratorGL::outputTextureChanged, morphoWidget, &MorphoWidget::updateOutputTextureID);
     connect(controlWidget->generator, &GeneratorGL::outputTextureChanged, this, &MainWidget::outputTextureChanged);

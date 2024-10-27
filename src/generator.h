@@ -146,6 +146,8 @@ public:
 
     GLuint** getOutputTextureID() { return outputTextureID; };
 
+    QImage outputImage();
+
     void pasteOperations();
 
     void swapLoadedOperations() { operationNodes = loadedOperationNodes; }

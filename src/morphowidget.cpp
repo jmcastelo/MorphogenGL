@@ -21,6 +21,7 @@
 */
 
 #include "morphowidget.h"
+#include <QSurfaceFormat>
 
 MorphoWidget::MorphoWidget(QWidget* parent) : QOpenGLWidget(parent)
 {
@@ -57,6 +58,11 @@ MorphoWidget::~MorphoWidget()
     emit closing();
     event->accept();
 }*/
+
+void MorphoWidget::setUpdate(bool state)
+{
+    setUpdatesEnabled(state);
+}
 
 void MorphoWidget::wheelEvent(QWheelEvent* event)
 {

@@ -21,6 +21,7 @@
 */
 
 #include "fbo.h"
+#include <QDebug>
 
 GLuint FBO::width = 1024;
 GLuint FBO::height = 1024;
@@ -197,7 +198,8 @@ void FBO::generateFramebuffer(GLuint& framebuffer, GLuint& texture)
 
     glGenTextures(1, &texture);
     glBindTexture(GL_TEXTURE_2D, texture);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+    //glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_FLOAT, nullptr);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glBindTexture(GL_TEXTURE_2D, 0);
@@ -444,4 +446,35 @@ void FBO::clear()
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     context->doneCurrent();
+}
+
+QImage FBO::outputImage()
+{
+    context->makeCurrent(surface);
+
+    fence = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+    //glFlush();
+    //glFinish();
+    //glClientWaitSync(fence, 0, GL_TIMEOUT_IGNORED);
+    //glClientWaitSync(fence, GL_SYNC_FLUSH_COMMANDS_BIT, GL_TIMEOUT_IGNORED);
+    GLenum status;
+    do {
+        status = glClientWaitSync(fence, GL_SYNC_FLUSH_COMMANDS_BIT, 1000000);
+    } while (status == GL_TIMEOUT_EXPIRED);
+
+    glDeleteSync(fence);
+
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, fboBlit);
+
+    glViewport(0, 0, width, height);
+
+    QImage image(width, height, QImage::Format_RGB32);
+
+    glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, image.bits());
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    context->doneCurrent();
+
+    return image;
 }

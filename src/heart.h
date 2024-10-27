@@ -41,7 +41,7 @@ public:
     ~Heart();
 
     unsigned int numIterations = 100;
-    double fps = 50.0;
+    double fps = 60.0;
 
     void setStartTime();
 
@@ -80,4 +80,5 @@ private:
     std::chrono::time_point<std::chrono::steady_clock> end;
 
     void beat();
+    void iterate();
 };

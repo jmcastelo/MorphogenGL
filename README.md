@@ -34,7 +34,19 @@ To do...
 
 # Compilation
 
-To do...
+## Build options
+
+Useful environment variables to build and run.
+
+```
+QT_MEDIA_BACKEND=ffmpeg
+QT_FFMPEG_ENCODING_HW_DEVICE_TYPES=vdpau
+QT_FFMPEG_DECODING_HW_DEVICE_TYPES=vdpau
+QT_FFMPEG_HW_ALLOW_PROFILE_MISMATCH=1
+QT_FFMPEG_DEBUG=1
+QT_QPA_PLATFORM=wayland
+QT_ASSUME_STDERR_HAS_CONSOLE=1
+```
 
 # How to use MorphogenGL?
 

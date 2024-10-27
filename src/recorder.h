@@ -22,8 +22,8 @@ public:
 
     void startRecording();
     void stopRecording();
-    bool isRecording(){ return recorder.recorderState() == QMediaRecorder::RecordingState; }
-    void addImage(const QImage &image);
+    bool isRecording(){ return recorder.recorderState() == QMediaRecorder::RecordingState && videoFrameInputReady; }
+    void sendVideoFrame(const QImage &image);
 
 signals:
     void frameRecorded();
@@ -31,9 +31,7 @@ signals:
 private:
     QMediaCaptureSession session;
     QMediaRecorder recorder;
-    QList<QImage> images;
-    bool videoFrameInputReady = false;
-    void sendVideoFrames();
+    bool videoFrameInputReady = true;
 
 private slots:
     void setVideoFrameInputReady();

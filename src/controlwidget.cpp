@@ -645,8 +645,13 @@ void ControlWidget::constructDisplayOptionsWidget()
     windowHeightLineEdit->setValidator(windowHeightIntValidator);
     //windowHeightLineEdit->setText(QString::number(heart->getMorphoWidgetHeight()));
 
+    QCheckBox* updateCheckBox = new QCheckBox;
+    updateCheckBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+    updateCheckBox->setChecked(true);
+
     QFormLayout* formLayout = new QFormLayout;
     formLayout->addRow("FPS:", fpsLineEdit);
+    formLayout->addRow("Update:", updateCheckBox);
     //formLayout->addRow("Image width (px):", imageWidthLineEdit);
     //formLayout->addRow("Image height (px):", imageHeightLineEdit);
     formLayout->addRow("Width (px):", windowWidthLineEdit);
@@ -677,6 +682,10 @@ void ControlWidget::constructDisplayOptionsWidget()
     {
         std::chrono::duration<double> intervalSeconds = std::chrono::duration<double>(heart->getTimerInterval());
         fpsLineEdit->setText(QString::number(1.0 / intervalSeconds.count()));
+    });
+
+    connect(updateCheckBox, &QCheckBox::checkStateChanged, this, [=](Qt::CheckState state){
+        emit updateStateChanged(state == Qt::Checked);
     });
 
     /*connect(imageWidthLineEdit, &FocusLineEdit::returnPressed, [=]()

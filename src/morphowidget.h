@@ -60,6 +60,7 @@ signals:
 public slots:
     void updateOutputTextureID(GLuint id);
     void resetZoom(int width, int height);
+    void setUpdate(bool state);
 
 protected:
     //void closeEvent(QCloseEvent* event) override;

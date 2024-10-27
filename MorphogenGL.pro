@@ -24,11 +24,9 @@ TEMPLATE = app
 
 CONFIG += qt c++17
 
-QMAKE_CXXFLAGS += -fpermissive
+QMAKE_CXXFLAGS = -fpermissive
 
-#DEFINES += QT_DEPRECATED_WARNINGS QCUSTOMPLOT_USE_LIBRARY
-
-QT += widgets openglwidgets multimedia
+QT += widgets openglwidgets multimedia opengl
 
 RESOURCES += resource.qrc
 

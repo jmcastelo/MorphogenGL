@@ -93,6 +93,7 @@ public:
     virtual void applyOperation();
     virtual void blit();
     virtual void clear();
+    QImage outputImage(){ return fbo->outputImage(); }
 
 protected:
     bool enabled;

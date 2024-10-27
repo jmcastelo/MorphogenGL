@@ -28,6 +28,7 @@
 #include <QOpenGLShaderProgram>
 #include <QOpenGLContext>
 #include <QOffscreenSurface>
+#include <QImage>
 #include <QObject>
 
 class MorphoWidget;
@@ -67,6 +68,8 @@ public:
 
     void adjustTransform();
 
+    QImage outputImage();
+
 signals:
     void sizeChanged();
 
@@ -88,6 +91,7 @@ protected:
     QOpenGLShaderProgram* identityProgram;
     GLuint widthOld;
     GLuint heightOld;
+    GLsync fence = 0;
 
 private:
     void resizeVertices();

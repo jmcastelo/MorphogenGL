@@ -4,6 +4,8 @@
 #include <QVideoFrame>
 #include <QDebug>
 
+
+
 Recorder::Recorder(QString filename, qreal framesPerSecond, QMediaFormat format) : fps { framesPerSecond }
 {
     recorder.setOutputLocation(QUrl::fromLocalFile(filename));
@@ -47,38 +49,31 @@ void Recorder::stopRecording()
 void Recorder::setVideoFrameInputReady()
 {
     videoFrameInputReady = true;
+    //qDebug() << "Ready";
 }
 
 
-void Recorder::addImage(const QImage &image)
-{
-    images.push_back(image);
-    if (videoFrameInputReady)
-        sendVideoFrames();
-}
 
-
-void Recorder::sendVideoFrames()
+void Recorder::sendVideoFrame(const QImage &image)
 {
-    bool sent = true;
-    while (!images.isEmpty() && sent)
+    QVideoFrame frame(image);
+
+    frame.setStreamFrameRate(fps);
+    qint64 start = static_cast<qint64>(frameNumber * 1000000 / fps);
+    qint64 end = static_cast<qint64>((frameNumber + 1) * 1000000 / fps);
+    frame.setStartTime(start);
+    frame.setEndTime(end);
+
+    bool sent = videoInput.sendVideoFrame(frame);
+    if (sent)
     {
-        QVideoFrame frame(images.first());
-        frame.setStreamFrameRate(fps);
-        qint64 start = static_cast<qint64>(frameNumber * 1000000 / fps);
-        qint64 end = static_cast<qint64>((frameNumber + 1) * 1000000 / fps);
-        frame.setStartTime(start);
-        frame.setEndTime(end);
-        sent = videoInput.sendVideoFrame(frame);
-        if (sent)
-        {
-            images.removeFirst();
-            frameNumber++;
-            emit frameRecorded();
-        }
-        else
-        {
-            videoFrameInputReady = false;
-        }
+        frameNumber++;
+        emit frameRecorded();
+        //qDebug() << frameNumber;
+    }
+    else
+    {
+        videoFrameInputReady = false;
+        //qDebug() << "Busy";
     }
 }
