@@ -26,6 +26,8 @@
 #include "parameter.h"
 #include "seed.h"
 #include "blender.h"
+#include "texformat.h"
+
 #include "fbo.h"
 #include <QObject>
 #include <QVector>
@@ -147,6 +149,8 @@ public:
     GLuint** getOutputTextureID() { return outputTextureID; };
 
     QImage outputImage();
+
+    void setTextureFormat(TextureFormat format);
 
     void pasteOperations();
 

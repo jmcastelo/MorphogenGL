@@ -645,6 +645,18 @@ void ControlWidget::constructDisplayOptionsWidget()
     windowHeightLineEdit->setValidator(windowHeightIntValidator);
     //windowHeightLineEdit->setText(QString::number(heart->getMorphoWidgetHeight()));
 
+    texFormatComboBox = new QComboBox;
+    texFormatComboBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+
+    texFormatComboBox->addItem(textureFormatToString(TextureFormat::RGBA8), static_cast<int>(TextureFormat::RGBA8));
+    texFormatComboBox->addItem(textureFormatToString(TextureFormat::RGBA16), static_cast<int>(TextureFormat::RGBA16));
+    texFormatComboBox->addItem(textureFormatToString(TextureFormat::RGBA16F), static_cast<int>(TextureFormat::RGBA16F));
+    texFormatComboBox->addItem(textureFormatToString(TextureFormat::RGBA32F), static_cast<int>(TextureFormat::RGBA32F));
+    texFormatComboBox->addItem(textureFormatToString(TextureFormat::RGBA32I), static_cast<int>(TextureFormat::RGBA32I));
+    texFormatComboBox->addItem(textureFormatToString(TextureFormat::RGBA32UI), static_cast<int>(TextureFormat::RGBA32UI));
+
+    texFormatComboBox->setCurrentIndex(0);
+
     QCheckBox* updateCheckBox = new QCheckBox;
     updateCheckBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
     updateCheckBox->setChecked(true);
@@ -656,6 +668,7 @@ void ControlWidget::constructDisplayOptionsWidget()
     //formLayout->addRow("Image height (px):", imageHeightLineEdit);
     formLayout->addRow("Width (px):", windowWidthLineEdit);
     formLayout->addRow("Height (px):", windowHeightLineEdit);
+    formLayout->addRow("Format:", texFormatComboBox);
 
     QGroupBox* displayGroupBox = new QGroupBox("Display options");
     displayGroupBox->setLayout(formLayout);
@@ -721,6 +734,26 @@ void ControlWidget::constructDisplayOptionsWidget()
     {
         windowHeightLineEdit->setText(QString::number(heart->getMorphoWidgetHeight()));
     });
+
+    connect(texFormatComboBox, &QComboBox::currentIndexChanged, this, [&](int index)
+    {
+        int selectedValue = texFormatComboBox->itemData(index).toInt();
+        TextureFormat selectedFormat = static_cast<TextureFormat>(selectedValue);
+        generator->setTextureFormat(selectedFormat);
+    });
+}
+
+QString ControlWidget::textureFormatToString(TextureFormat format) {
+    switch (format)
+    {
+        case TextureFormat::RGBA8: return "RGBA8 (8 bits)";
+        case TextureFormat::RGBA16: return "RGBA16 (16 bits)";
+        case TextureFormat::RGBA16F: return "RGBA16F (16 bits float)";
+        case TextureFormat::RGBA32F: return "RGBA32F (32 bits float)";
+        case TextureFormat::RGBA32I: return "RGBA32I (32 bits signed int)";
+        case TextureFormat::RGBA32UI: return "RGBA32UI (32 bits unsigned int)";
+        default: return "Unknown Format";
+    }
 }
 
 void ControlWidget::constructRecordingOptionsWidget()

@@ -27,6 +27,7 @@
 #include "operationswidget.h"
 #include "graphwidget.h"
 #include "plotswidget.h"
+
 #include <QWidget>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -145,6 +146,8 @@ private:
     FocusLineEdit* windowWidthLineEdit;
     FocusLineEdit* windowHeightLineEdit;
 
+    QComboBox* texFormatComboBox;
+
     QLabel* videoCaptureElapsedTimeLabel;
 
     QMap<QUuid, OperationsWidget*> operationsWidgets;
@@ -159,6 +162,8 @@ private:
     void constructDisplayOptionsWidget();
     void constructRecordingOptionsWidget();
     void constructSortedOperationsWidget();
+
+    QString textureFormatToString(TextureFormat format);
 
     void updateIterationNumberLabel();
     void updateMetricsLabels(std::chrono::microseconds time, unsigned int its);

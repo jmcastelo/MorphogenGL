@@ -22,6 +22,8 @@
 
 #pragma once
 
+#include "texformat.h"
+
 #include <QOpenGLExtraFunctions>
 #include <QOpenGLVertexArrayObject>
 #include <QOpenGLBuffer>
@@ -41,6 +43,8 @@ public:
     static GLuint width;
     static GLuint height;
 
+    static TextureFormat texFormat;
+
     QOpenGLShaderProgram* program;
 
     QMatrix4x4 transformationMatrix;
@@ -55,6 +59,7 @@ public:
     void generateFramebuffer(GLuint& framebuffer, GLuint& texture);
 
     void setMinMagFilter(GLenum filter);
+    void setTextureFormat();
 
     void makeCurrent();
     void doneCurrent();

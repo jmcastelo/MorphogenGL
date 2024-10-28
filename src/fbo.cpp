@@ -26,6 +26,8 @@
 GLuint FBO::width = 1024;
 GLuint FBO::height = 1024;
 
+TextureFormat FBO::texFormat = TextureFormat::RGBA8;
+
 FBO::FBO(QString vertexShader, QString fragmentShader, QOpenGLContext* mainContext)
 {
     context = new QOpenGLContext();
@@ -191,6 +193,51 @@ void FBO::setMinMagFilter(GLenum filter)
     context->doneCurrent();
 }
 
+void FBO::setTextureFormat()
+{
+    context->makeCurrent(surface);
+
+    // FBO
+
+    GLuint fbo2;
+    GLuint textureID2;
+    generateFramebuffer(fbo2, textureID2);
+
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, fbo);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo2);
+
+    glBlitFramebuffer(0, 0, width, height, 0, 0, width, height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    glDeleteFramebuffers(1, &fbo);
+    glDeleteTextures(1, &textureID);
+
+    textureID = textureID2;
+    fbo = fbo2;
+
+    // Blit FBO
+
+    GLuint fboBlit2;
+    GLuint textureBlit2;
+    generateFramebuffer(fboBlit2, textureBlit2);
+
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, fboBlit);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fboBlit2);
+
+    glBlitFramebuffer(0, 0, width, height, 0, 0, width, height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    glDeleteFramebuffers(1, &fboBlit);
+    glDeleteTextures(1, &textureBlit);
+
+    textureBlit = textureBlit2;
+    fboBlit = fboBlit2;
+
+    context->doneCurrent();
+}
+
 void FBO::generateFramebuffer(GLuint& framebuffer, GLuint& texture)
 {
     glGenFramebuffers(1, &framebuffer);
@@ -198,8 +245,7 @@ void FBO::generateFramebuffer(GLuint& framebuffer, GLuint& texture)
 
     glGenTextures(1, &texture);
     glBindTexture(GL_TEXTURE_2D, texture);
-    //glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_FLOAT, nullptr);
+    glTexImage2D(GL_TEXTURE_2D, 0, static_cast<GLint>(FBO::texFormat), width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glBindTexture(GL_TEXTURE_2D, 0);
@@ -468,7 +514,7 @@ QImage FBO::outputImage()
 
     glViewport(0, 0, width, height);
 
-    QImage image(width, height, QImage::Format_RGB32);
+    QImage image(width, height, QImage::Format_RGBA8888);
 
     glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, image.bits());
 

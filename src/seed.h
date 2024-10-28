@@ -22,7 +22,8 @@
 
 #pragma once
 
-#include "fbo.h"
+#include "texformat.h"
+
 #include <random>
 #include <QOpenGLExtraFunctions>
 #include <QOpenGLVertexArrayObject>
@@ -47,6 +48,9 @@ public:
     void loadImage(QString filename);
 
     void generateFramebuffer(GLuint& framebuffer, GLuint& texture);
+
+    void setTextureFormat();
+    void setTextureFormat(GLuint &fbo, GLuint &texture);
 
     void resize();
 

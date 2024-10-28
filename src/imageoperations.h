@@ -24,6 +24,7 @@
 
 #include "fbo.h"
 #include "blender.h"
+
 #include <vector>
 #include <cmath>
 #include <QVector2D>
@@ -93,7 +94,9 @@ public:
     virtual void applyOperation();
     virtual void blit();
     virtual void clear();
+
     QImage outputImage(){ return fbo->outputImage(); }
+    void setTextureFormat(){ fbo->setTextureFormat(); }
 
 protected:
     bool enabled;

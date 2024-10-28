@@ -53,7 +53,8 @@ HEADERS += \
     src/plotswidget.h \
     src/recorder.h \
     src/rgbwidget.h \
-    src/seed.h
+    src/seed.h \
+    src/texformat.h
 
 SOURCES += \
     src/blender.cpp \

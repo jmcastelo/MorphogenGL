@@ -865,6 +865,19 @@ QImage GeneratorGL::outputImage()
     }
 }
 
+void GeneratorGL::setTextureFormat(TextureFormat format)
+{
+    FBO::texFormat = format;
+
+    foreach (Seed* seed, seeds)
+        seed->setTextureFormat();
+
+    foreach (ImageOperationNode* node, operationNodes)
+        node->operation->setTextureFormat();
+
+    setOutput(outputID);
+}
+
 void GeneratorGL::resize(GLuint width, GLuint height)
 {
     FBO::width = width;

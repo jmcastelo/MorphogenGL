@@ -21,7 +21,7 @@
 */
 
 #include "seed.h"
-#include "morphowidget.h"
+#include "fbo.h"
 
 Seed::Seed(QOpenGLContext* mainContext)
 {
@@ -386,7 +386,7 @@ void Seed::generateFramebuffer(GLuint& framebuffer, GLuint& texture)
 
     glGenTextures(1, &texture);
     glBindTexture(GL_TEXTURE_2D, texture);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, FBO::width, FBO::height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+    glTexImage2D(GL_TEXTURE_2D, 0, static_cast<GLint>(FBO::texFormat), FBO::width, FBO::height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glBindTexture(GL_TEXTURE_2D, 0);
@@ -396,6 +396,36 @@ void Seed::generateFramebuffer(GLuint& framebuffer, GLuint& texture)
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
         qDebug() << "Framebuffer is not complete.\n";
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+void Seed::setTextureFormat(GLuint &fbo, GLuint &texture)
+{
+    context->makeCurrent(surface);
+
+    GLuint fbo2;
+    GLuint textureID2;
+    generateFramebuffer(fbo2, textureID2);
+
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, fbo);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo2);
+
+    glBlitFramebuffer(0, 0, FBO::width, FBO::height, 0, 0, FBO::width, FBO::height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    glDeleteFramebuffers(1, &fbo);
+    glDeleteTextures(1, &texture);
+
+    context->doneCurrent();
+
+    texture = textureID2;
+    fbo = fbo2;
+}
+
+void Seed::setTextureFormat()
+{
+    setTextureFormat(fboRandom, texRandom);
+    setTextureFormat(fboImage, texImage);
 }
 
 void Seed::resizeFBO(GLuint &fbo, GLuint &texture)
