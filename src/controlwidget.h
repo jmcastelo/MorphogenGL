@@ -88,6 +88,7 @@ signals:
     void selectedPointChanged(QPoint point);
     //void closing();
     void updateStateChanged(bool state);
+    void detach();
 
 public slots:
     void updateWindowSizeLineEdits(int width, int height);

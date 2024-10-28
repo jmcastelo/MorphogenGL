@@ -61,5 +61,6 @@
         <file>icons/emblem-synchronized.png</file>
         <file>shaders/power.frag</file>
         <file>shaders/median.frag</file>
+        <file>icons/mail-attachment.png</file>
     </qresource>
 </RCC>

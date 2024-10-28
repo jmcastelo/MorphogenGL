@@ -35,6 +35,7 @@ MainWidget::MainWidget(Heart* heart, QWidget* parent) : QWidget(parent)
     connect(morphoWidget, &MorphoWidget::selectedPointChanged, controlWidget, &ControlWidget::selectedPointChanged);
 
     connect(controlWidget, &ControlWidget::updateStateChanged, morphoWidget, &MorphoWidget::setUpdate);
+    connect(controlWidget, &ControlWidget::detach, this, &MainWidget::detachControlWidget);
 
     connect(controlWidget->generator, &GeneratorGL::outputTextureChanged, morphoWidget, &MorphoWidget::updateOutputTextureID);
     connect(controlWidget->generator, &GeneratorGL::outputTextureChanged, this, &MainWidget::outputTextureChanged);
@@ -92,4 +93,39 @@ void MainWidget::keyPressEvent(QKeyEvent* event)
     if (event->key() == Qt::Key_Tab && event->modifiers() == Qt::ControlModifier)
         controlWidget->setVisible(!controlWidget->isVisible());
     event->accept();
+}
+
+void MainWidget::detachControlWidget()
+{
+    if (controlWidget->parentWidget() == this)
+    {
+        oldControlWidgetWidth = controlWidget->width();
+
+        controlWidget->setParent(nullptr);
+
+        controlWidget->setWindowFlag(Qt::Window, true);
+        controlWidget->setWindowFlag(Qt::WindowCloseButtonHint, false);
+        controlWidget->setWindowTitle("Control panel");
+
+        controlWidget->setMinimumHeight(0);
+        controlWidget->setMaximumHeight(QWIDGETSIZE_MAX);
+
+        controlWidget->setMaximumWidth(QWIDGETSIZE_MAX);
+
+        //controlWidget->grip->setVisible(false);
+    }
+    else
+    {
+        controlWidget->setParent(this);
+
+        controlWidget->setFixedHeight(height());
+        controlWidget->setMaximumWidth(width());
+
+        //QResizeEvent event(QSize(width(), height()), QSize(width(), height()));
+        //resizeEvent(&event);
+
+        //controlWidget->grip->setVisible(true);
+    }
+
+    controlWidget->show();
 }

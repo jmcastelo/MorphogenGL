@@ -226,24 +226,41 @@ void ControlWidget::resizeEvent(QResizeEvent* event)
 void ControlWidget::constructSystemToolBar()
 {
     systemToolBar = new QToolBar;
+
     iterateAction = systemToolBar->addAction(QIcon(QPixmap(":/icons/media-playback-start.png")), "Start/pause feedback loop");
     iterateAction->setCheckable(true);
+
     QAction* resetAction = systemToolBar->addAction(QIcon(QPixmap(":/icons/view-refresh.png")), "Reset");
+
     systemToolBar->addSeparator();
+
     screenshotAction = systemToolBar->addAction(QIcon(QPixmap(":/icons/digikam.png")), "Take screenshot");
+
     recordAction = systemToolBar->addAction(QIcon(QPixmap(":/icons/media-record.png")), "Record video");
     recordAction->setCheckable(true);
+
     systemToolBar->addSeparator();
+
     displayOptionsAction = systemToolBar->addAction(QIcon(QPixmap(":/icons/video-display.png")), "Display options");
+
     recordingOptionsAction = systemToolBar->addAction(QIcon(QPixmap(":/icons/emblem-videos.png")), "Recording options");
+
     systemToolBar->addSeparator();
+
     systemToolBar->addAction(QIcon(QPixmap(":/icons/format-list-ordered.png")), "List sorted operations", this, &ControlWidget::toggleSortedOperationsWidget);
+
     systemToolBar->addSeparator();
+
     systemToolBar->addAction(QIcon(QPixmap(":/icons/office-chart-area-stacked.png")), "Show plots", this, &ControlWidget::plotsActionTriggered);
+
     systemToolBar->addSeparator();
+
     loadConfigAction = systemToolBar->addAction(QIcon(QPixmap(":/icons/document-open.png")), "Load configuration");
     saveConfigAction = systemToolBar->addAction(QIcon(QPixmap(":/icons/document-save.png")), "Save configuration");
+
     systemToolBar->addSeparator();
+
+    QAction* detachAction = systemToolBar->addAction(QIcon(QPixmap(":/icons/mail-attachment.png")), "Detach/attach panel");
     QAction* aboutAction = systemToolBar->addAction(QIcon(QPixmap(":/icons/help-about.png")), "About");
 
     connect(iterateAction, &QAction::triggered, this, &ControlWidget::iterate);
@@ -254,6 +271,7 @@ void ControlWidget::constructSystemToolBar()
     connect(recordingOptionsAction, &QAction::triggered, this, &ControlWidget::toggleRecordingOptionsWidget);
     connect(loadConfigAction, &QAction::triggered, this, &ControlWidget::loadConfig);
     connect(saveConfigAction, &QAction::triggered, this, &ControlWidget::saveConfig);
+    connect(detachAction, &QAction::triggered, this, &ControlWidget::detach);
     connect(aboutAction, &QAction::triggered, this, &ControlWidget::about);
 }
 
