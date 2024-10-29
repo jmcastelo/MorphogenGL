@@ -29,6 +29,7 @@ MainWidget::MainWidget(Heart* heart, QWidget* parent) : QWidget(parent)
         controlWidget->initPlotsWidget(morphoWidget->context());
         emit morphoWidgetInitialized();
     });
+    connect(morphoWidget, &MorphoWidget::supportedTexFormats, controlWidget, &ControlWidget::populateTexFormatComboBox);
     connect(morphoWidget, &MorphoWidget::screenSizeChanged, controlWidget, &ControlWidget::updateWindowSizeLineEdits);
     connect(morphoWidget, &MorphoWidget::screenSizeChanged, controlWidget->generator, &GeneratorGL::resize);
     connect(morphoWidget, &MorphoWidget::selectedPointChanged, controlWidget, &ControlWidget::selectedPointChanged);

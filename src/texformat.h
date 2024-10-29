@@ -1,20 +1,27 @@
 #ifndef TEXFORMAT_H
 #define TEXFORMAT_H
 
-#include <GL/gl.h> // Include the OpenGL header
+#include <GL/gl.h>
 
+// 4 Channels
 enum class TextureFormat {
-    // 8-bit formats
-    RGBA8 = GL_RGBA8,           // 8 bits per channel, 4 channels
-
-    // 16-bit formats
-    RGBA16 = GL_RGBA16,         // 16 bits per channel, 4 channels
-    RGBA16F = GL_RGBA16F,       // 16 bits floating point, 4 channels
-
-    // 32-bit formats
-    RGBA32F = GL_RGBA32F,       // 32 bits floating point, 4 channels
-    RGBA32I = GL_RGBA32I,       // 32 bits signed integer, 4 channels
-    RGBA32UI = GL_RGBA32UI,     // 32 bits unsigned integer, 4 channels
+    RGBA2 = GL_RGBA2,
+    RGBA4 = GL_RGBA4,
+    RGBA8 = GL_RGBA8,
+    RGBA8_SNORM = GL_RGBA8_SNORM,
+    RGB10_A2 = GL_RGB10_A2,
+    RGB10_A2UI = GL_RGB10_A2UI,
+    RGBA12 = GL_RGBA12,
+    SRGB8_ALPHA8 = GL_SRGB8_ALPHA8,
+    RGBA16 = GL_RGBA16,
+    RGBA16F = GL_RGBA16F,
+    RGBA32F = GL_RGBA32F,
+    RGBA8I = GL_RGBA8I,
+    RGBA8UI = GL_RGBA8UI,
+    RGBA16I = GL_RGBA16I,
+    RGBA16UI = GL_RGBA16UI,
+    RGBA32I = GL_RGBA32I,
+    RGBA32UI = GL_RGBA32UI
 };
 
 #endif // TEXFORMAT_H

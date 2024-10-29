@@ -21,7 +21,11 @@
 */
 
 #include "morphowidget.h"
+
 #include <QSurfaceFormat>
+#include <QOpenGLFunctions>
+
+
 
 MorphoWidget::MorphoWidget(QWidget* parent) : QOpenGLWidget(parent)
 {
@@ -40,6 +44,8 @@ MorphoWidget::MorphoWidget(QWidget* parent) : QOpenGLWidget(parent)
     //setGeometry(QStyle::alignedRect(Qt::LeftToRight, Qt::AlignCenter, size(), QGuiApplication::screens().first()->geometry()));
 }
 
+
+
 MorphoWidget::~MorphoWidget()
 {
     makeCurrent();
@@ -53,16 +59,22 @@ MorphoWidget::~MorphoWidget()
     delete program;
 }
 
+
+
 /*void MorphoWidget::closeEvent(QCloseEvent* event)
 {
     emit closing();
     event->accept();
 }*/
 
+
+
 void MorphoWidget::setUpdate(bool state)
 {
     setUpdatesEnabled(state);
 }
+
+
 
 void MorphoWidget::wheelEvent(QWheelEvent* event)
 {
@@ -107,6 +119,8 @@ void MorphoWidget::wheelEvent(QWheelEvent* event)
     event->accept();
 }
 
+
+
 void MorphoWidget::mouseMoveEvent(QMouseEvent* event)
 {
     if (event->buttons() == Qt::LeftButton)
@@ -147,6 +161,8 @@ void MorphoWidget::mouseMoveEvent(QMouseEvent* event)
     event->accept();
 }
 
+
+
 void MorphoWidget::mousePressEvent(QMouseEvent* event)
 {
     if (event->buttons() == Qt::LeftButton)
@@ -167,6 +183,8 @@ void MorphoWidget::mousePressEvent(QMouseEvent* event)
     event->accept();
 }
 
+
+
 void MorphoWidget::keyPressEvent(QKeyEvent* event)
 {
     if (event->key() == Qt::Key_Alt)
@@ -178,6 +196,8 @@ void MorphoWidget::keyPressEvent(QKeyEvent* event)
         event->ignore();
 }
 
+
+
 void MorphoWidget::keyReleaseEvent(QKeyEvent* event)
 {
     if (event->key() == Qt::Key_Alt)
@@ -185,6 +205,8 @@ void MorphoWidget::keyReleaseEvent(QKeyEvent* event)
         drawingCursor = false;
     }
 }
+
+
 
 void MorphoWidget::setSelectedPoint(QPointF pos)
 {
@@ -221,6 +243,8 @@ void MorphoWidget::setSelectedPoint(QPointF pos)
     cursor.setY(2.0 * (0.5 - clickedPoint.y()));
     updateCursor();
 }
+
+
 
 void MorphoWidget::resetZoom(int newWidth, int newHeight)
 {
@@ -261,10 +285,14 @@ void MorphoWidget::resetZoom(int newWidth, int newHeight)
     emit selectedPointChanged(point);
 }
 
+
+
 void MorphoWidget::updateOutputTextureID(GLuint id)
 {
     outputTextureID = id;
 }
+
+
 
 void MorphoWidget::updateCursor()
 {
@@ -304,6 +332,50 @@ void MorphoWidget::updateCursor()
     doneCurrent();
 }
 
+
+
+void MorphoWidget::getSupportedTexFormats()
+{
+    QList<TextureFormat> allFormats =
+    {
+        TextureFormat::RGBA2,
+        TextureFormat::RGBA4,
+        TextureFormat::RGBA8,
+        TextureFormat::RGBA8_SNORM,
+        TextureFormat::RGB10_A2,
+        TextureFormat::RGB10_A2UI,
+        TextureFormat::RGBA12,
+        TextureFormat::SRGB8_ALPHA8,
+        TextureFormat::RGBA16,
+        TextureFormat::RGBA16F,
+        TextureFormat::RGBA32F,
+        TextureFormat::RGBA8I,
+        TextureFormat::RGBA8UI,
+        TextureFormat::RGBA16I,
+        TextureFormat::RGBA16UI,
+        TextureFormat::RGBA32I,
+        TextureFormat::RGBA32UI
+    };
+    QList<TextureFormat> supportedFormats;
+
+    GLint supported = GL_FALSE;
+
+    makeCurrent();
+
+    foreach (TextureFormat format, allFormats)
+    {
+        glGetInternalformativ(GL_TEXTURE_2D, static_cast<GLenum>(format), GL_INTERNALFORMAT_SUPPORTED, 1, &supported);
+        if (supported == GL_TRUE)
+            supportedFormats.append(format);
+    }
+
+    doneCurrent();
+
+    emit supportedTexFormats(supportedFormats);
+}
+
+
+
 void MorphoWidget::initializeGL()
 {
     initializeOpenGLFunctions();
@@ -312,7 +384,7 @@ void MorphoWidget::initializeGL()
 
     // Setup
 
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glClearColor(0.0, 0.0, 0.0, 1.0);
 
     glGenFramebuffers(1, &fbo);
 
@@ -332,9 +404,12 @@ void MorphoWidget::initializeGL()
     vbo->setUsagePattern(QOpenGLBuffer::DynamicDraw);
 
     updateCursor();
+    getSupportedTexFormats();
 
     emit openGLInitialized();
 }
+
+
 
 void MorphoWidget::paintGL()
 {

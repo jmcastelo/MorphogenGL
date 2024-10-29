@@ -92,6 +92,7 @@ signals:
 
 public slots:
     void updateWindowSizeLineEdits(int width, int height);
+    void populateTexFormatComboBox(QList<TextureFormat> formats);
 
 protected:
     void closeEvent(QCloseEvent* event) override;

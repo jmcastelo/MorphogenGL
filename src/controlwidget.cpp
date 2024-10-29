@@ -25,6 +25,7 @@
 #include "node.h"
 #include "controlwidget.h"
 #include "focuslineedit.h"
+
 #include <QTimer>
 #include <QActionGroup>
 #include <QHeaderView>
@@ -418,7 +419,7 @@ void ControlWidget::about()
 
     aboutBox->setText(text);
 
-    aboutBox->setInformativeText("Copyright 2024 Jose Maria Castelo Ares\njose.maria.castelo@gmail.com\nLicense: GPLv3");
+    aboutBox->setInformativeText("Copyright 2024 Jose Maria Castelo Ares\nLicense: GPLv3");
 
     aboutBox->exec();
 }
@@ -666,15 +667,6 @@ void ControlWidget::constructDisplayOptionsWidget()
     texFormatComboBox = new QComboBox;
     texFormatComboBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
 
-    texFormatComboBox->addItem(textureFormatToString(TextureFormat::RGBA8), static_cast<int>(TextureFormat::RGBA8));
-    texFormatComboBox->addItem(textureFormatToString(TextureFormat::RGBA16), static_cast<int>(TextureFormat::RGBA16));
-    texFormatComboBox->addItem(textureFormatToString(TextureFormat::RGBA16F), static_cast<int>(TextureFormat::RGBA16F));
-    texFormatComboBox->addItem(textureFormatToString(TextureFormat::RGBA32F), static_cast<int>(TextureFormat::RGBA32F));
-    texFormatComboBox->addItem(textureFormatToString(TextureFormat::RGBA32I), static_cast<int>(TextureFormat::RGBA32I));
-    texFormatComboBox->addItem(textureFormatToString(TextureFormat::RGBA32UI), static_cast<int>(TextureFormat::RGBA32UI));
-
-    texFormatComboBox->setCurrentIndex(0);
-
     QCheckBox* updateCheckBox = new QCheckBox;
     updateCheckBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
     updateCheckBox->setChecked(true);
@@ -753,7 +745,7 @@ void ControlWidget::constructDisplayOptionsWidget()
         windowHeightLineEdit->setText(QString::number(heart->getMorphoWidgetHeight()));
     });
 
-    connect(texFormatComboBox, &QComboBox::currentIndexChanged, this, [&](int index)
+    connect(texFormatComboBox, &QComboBox::activated, this, [&](int index)
     {
         int selectedValue = texFormatComboBox->itemData(index).toInt();
         TextureFormat selectedFormat = static_cast<TextureFormat>(selectedValue);
@@ -764,13 +756,36 @@ void ControlWidget::constructDisplayOptionsWidget()
 QString ControlWidget::textureFormatToString(TextureFormat format) {
     switch (format)
     {
-        case TextureFormat::RGBA8: return "RGBA8 (8 bits)";
-        case TextureFormat::RGBA16: return "RGBA16 (16 bits)";
-        case TextureFormat::RGBA16F: return "RGBA16F (16 bits float)";
-        case TextureFormat::RGBA32F: return "RGBA32F (32 bits float)";
-        case TextureFormat::RGBA32I: return "RGBA32I (32 bits signed int)";
-        case TextureFormat::RGBA32UI: return "RGBA32UI (32 bits unsigned int)";
-        default: return "Unknown Format";
+        case TextureFormat::RGBA2: return "RGBA2";
+        case TextureFormat::RGBA4: return "RGBA4";
+        case TextureFormat::RGBA8: return "RGBA8";
+        case TextureFormat::RGBA8_SNORM: return "RGBA8_SNORM";
+        case TextureFormat::RGB10_A2: return "RGB10_A2";
+        case TextureFormat::RGB10_A2UI: return "RGB10_A2";
+        case TextureFormat::RGBA12: return "RGBA12";
+        case TextureFormat::SRGB8_ALPHA8: return "SRGB8_ALPHA8";
+        case TextureFormat::RGBA16: return "RGBA16";
+        case TextureFormat::RGBA16F: return "RGBA16F";
+        case TextureFormat::RGBA32F: return "RGBA32F";
+        case TextureFormat::RGBA8I: return "RGBA8I";
+        case TextureFormat::RGBA8UI: return "RGBA8UI";
+        case TextureFormat::RGBA16I: return "RGBA16I";
+        case TextureFormat::RGBA16UI: return "RGBA16UI";
+        case TextureFormat::RGBA32I: return "RGBA32I";
+        case TextureFormat::RGBA32UI: return "RGBA32UI";
+        default: return "Unknown";
+    }
+}
+
+void ControlWidget::populateTexFormatComboBox(QList<TextureFormat> formats)
+{
+    int index = 0;
+    foreach (TextureFormat format, formats)
+    {
+        texFormatComboBox->addItem(textureFormatToString(format), QVariant(static_cast<int>(format)));
+        if (format == FBO::texFormat)
+            texFormatComboBox->setCurrentIndex(index);
+        index++;
     }
 }
 

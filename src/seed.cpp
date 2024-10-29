@@ -586,6 +586,7 @@ void Seed::drawRandom(bool grayscale)
     glBindFramebuffer(GL_FRAMEBUFFER, fboRandom);
 
     glViewport(0, 0, FBO::width, FBO::height);
+    glClearColor(0.0, 0.0, 0.0, 1.0);
     glClear(GL_COLOR_BUFFER_BIT);
 
     randomProgram->bind();
@@ -642,6 +643,7 @@ void Seed::clear()
     glBindFramebuffer(GL_FRAMEBUFFER, fboRandom);
 
     glViewport(0, 0, FBO::width, FBO::height);
+    glClearColor(0.0, 0.0, 0.0, 1.0);
     glClear(GL_COLOR_BUFFER_BIT);
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);

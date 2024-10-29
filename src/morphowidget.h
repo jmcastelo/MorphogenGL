@@ -22,6 +22,8 @@
 
 #pragma once
 
+#include "texformat.h"
+
 #include <cmath>
 #include <QOpenGLWidget>
 #include <QOpenGLExtraFunctions>
@@ -52,6 +54,7 @@ public:
     void resizeGL(int width, int height) override;
 
 signals:
+    void supportedTexFormats(QList<TextureFormat> formats);
     void openGLInitialized();
     void screenSizeChanged(int width, int height);
     void selectedPointChanged(QPoint point);
@@ -93,4 +96,5 @@ private:
 
     void setSelectedPoint(QPointF pos);
     void updateCursor();
+    void getSupportedTexFormats();
 };
