@@ -213,7 +213,7 @@ void ControlWidget::closeEvent(QCloseEvent* event)
 
     graphWidget->closeWidgets();
 
-    //emit closing();
+    emit closing();
     event->accept();
 }
 

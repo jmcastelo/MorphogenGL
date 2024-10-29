@@ -86,7 +86,7 @@ public:
 signals:
     void seedDrawn();
     void selectedPointChanged(QPoint point);
-    //void closing();
+    void closing();
     void updateStateChanged(bool state);
     void detach();
 

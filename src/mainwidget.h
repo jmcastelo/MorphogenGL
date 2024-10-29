@@ -44,8 +44,6 @@ private:
     int oldWidth;
     int oldHeight;
 
-    int oldControlWidgetWidth;
-
 private slots:
     void detachControlWidget();
 };
