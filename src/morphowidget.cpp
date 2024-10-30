@@ -21,6 +21,7 @@
 */
 
 #include "morphowidget.h"
+#include "fbo.h"
 
 #include <QSurfaceFormat>
 #include <QOpenGLFunctions>
@@ -343,18 +344,18 @@ void MorphoWidget::getSupportedTexFormats()
         TextureFormat::RGBA8,
         TextureFormat::RGBA8_SNORM,
         TextureFormat::RGB10_A2,
-        TextureFormat::RGB10_A2UI,
+        //TextureFormat::RGB10_A2UI,
         TextureFormat::RGBA12,
-        TextureFormat::SRGB8_ALPHA8,
+        //TextureFormat::SRGB8_ALPHA8,
         TextureFormat::RGBA16,
         TextureFormat::RGBA16F,
-        TextureFormat::RGBA32F,
-        TextureFormat::RGBA8I,
-        TextureFormat::RGBA8UI,
-        TextureFormat::RGBA16I,
-        TextureFormat::RGBA16UI,
-        TextureFormat::RGBA32I,
-        TextureFormat::RGBA32UI
+        TextureFormat::RGBA32F
+        //TextureFormat::RGBA8I,
+        //TextureFormat::RGBA8UI,
+        //TextureFormat::RGBA16I,
+        //TextureFormat::RGBA16UI,
+        //TextureFormat::RGBA32I,
+        //TextureFormat::RGBA32UI
     };
     QList<TextureFormat> supportedFormats;
 
@@ -441,6 +442,8 @@ void MorphoWidget::paintGL()
 
         glDisable(GL_BLEND);
     }
+
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
 }
 
 void MorphoWidget::resizeGL(int width, int height)

@@ -379,6 +379,28 @@ void Seed::loadImage(QString filename)
     imageFilename = filename;
 }
 
+GLenum Seed::getFormat(GLenum format)
+{
+    GLint redType, greenType, blueType, alphaType;
+
+    glGetInternalformativ(GL_TEXTURE_2D, format, GL_INTERNALFORMAT_RED_TYPE, 1, &redType);
+    glGetInternalformativ(GL_TEXTURE_2D, format, GL_INTERNALFORMAT_GREEN_TYPE, 1, &greenType);
+    glGetInternalformativ(GL_TEXTURE_2D, format, GL_INTERNALFORMAT_BLUE_TYPE, 1, &blueType);
+    glGetInternalformativ(GL_TEXTURE_2D, format, GL_INTERNALFORMAT_ALPHA_TYPE, 1, &alphaType);
+
+    if (redType == GL_INT || redType == GL_UNSIGNED_INT ||
+        greenType == GL_INT || greenType == GL_UNSIGNED_INT ||
+        blueType == GL_INT || blueType == GL_UNSIGNED_INT ||
+        alphaType == GL_INT || alphaType == GL_UNSIGNED_INT)
+    {
+        return GL_RGBA_INTEGER;
+    }
+    else
+    {
+        return GL_RGBA;
+    }
+}
+
 void Seed::generateFramebuffer(GLuint& framebuffer, GLuint& texture)
 {
     glGenFramebuffers(1, &framebuffer);
@@ -386,7 +408,7 @@ void Seed::generateFramebuffer(GLuint& framebuffer, GLuint& texture)
 
     glGenTextures(1, &texture);
     glBindTexture(GL_TEXTURE_2D, texture);
-    glTexImage2D(GL_TEXTURE_2D, 0, static_cast<GLint>(FBO::texFormat), FBO::width, FBO::height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+    glTexImage2D(GL_TEXTURE_2D, 0, static_cast<GLenum>(FBO::texFormat), FBO::width, FBO::height, 0, getFormat(static_cast<GLenum>(FBO::texFormat)), GL_UNSIGNED_BYTE, nullptr);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glBindTexture(GL_TEXTURE_2D, 0);

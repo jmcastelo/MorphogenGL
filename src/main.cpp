@@ -29,7 +29,7 @@ int main(int argc, char* argv[])
     QSurfaceFormat format;
     format.setRenderableType(QSurfaceFormat::OpenGL);
     format.setProfile(QSurfaceFormat::CoreProfile);
-    format.setVersion(4, 3);
+    format.setVersion(4, 5);
     format.setSwapInterval(0);
     QSurfaceFormat::setDefaultFormat(format);
 

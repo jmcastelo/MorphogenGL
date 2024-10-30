@@ -100,4 +100,5 @@ protected:
 
 private:
     void resizeVertices();
+    GLenum getFormat(GLenum format);
 };

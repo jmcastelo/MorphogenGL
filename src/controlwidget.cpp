@@ -761,18 +761,18 @@ QString ControlWidget::textureFormatToString(TextureFormat format) {
         case TextureFormat::RGBA8: return "RGBA8";
         case TextureFormat::RGBA8_SNORM: return "RGBA8_SNORM";
         case TextureFormat::RGB10_A2: return "RGB10_A2";
-        case TextureFormat::RGB10_A2UI: return "RGB10_A2";
+        //case TextureFormat::RGB10_A2UI: return "RGB10_A2";
         case TextureFormat::RGBA12: return "RGBA12";
-        case TextureFormat::SRGB8_ALPHA8: return "SRGB8_ALPHA8";
+        //case TextureFormat::SRGB8_ALPHA8: return "SRGB8_ALPHA8";
         case TextureFormat::RGBA16: return "RGBA16";
         case TextureFormat::RGBA16F: return "RGBA16F";
         case TextureFormat::RGBA32F: return "RGBA32F";
-        case TextureFormat::RGBA8I: return "RGBA8I";
-        case TextureFormat::RGBA8UI: return "RGBA8UI";
-        case TextureFormat::RGBA16I: return "RGBA16I";
-        case TextureFormat::RGBA16UI: return "RGBA16UI";
-        case TextureFormat::RGBA32I: return "RGBA32I";
-        case TextureFormat::RGBA32UI: return "RGBA32UI";
+        //case TextureFormat::RGBA8I: return "RGBA8I";
+        //case TextureFormat::RGBA8UI: return "RGBA8UI";
+        //case TextureFormat::RGBA16I: return "RGBA16I";
+        //case TextureFormat::RGBA16UI: return "RGBA16UI";
+        //case TextureFormat::RGBA32I: return "RGBA32I";
+        //case TextureFormat::RGBA32UI: return "RGBA32UI";
         default: return "Unknown";
     }
 }
