@@ -493,6 +493,8 @@ void GraphWidget::insertNodeBetween(QAction* action, Edge* edge)
 {
     Node *node = new OperationNode(this, action->text());
 
+    emit showOperationParameters(node->id);
+
     generator->connectOperations(edge->sourceNode()->id, node->id, generator->blendFactor(edge->sourceNode()->id, edge->destNode()->id));
     generator->connectOperations(node->id, edge->destNode()->id, generator->blendFactor(edge->sourceNode()->id, edge->destNode()->id));
 
@@ -508,8 +510,6 @@ void GraphWidget::insertNodeBetween(QAction* action, Edge* edge)
     scene()->addItem(output);
 
     edge->remove();
-
-    emit showOperationParameters(node->id);
 }
 
 void GraphWidget::updateOperation(QUuid id)

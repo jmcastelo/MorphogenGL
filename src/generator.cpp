@@ -238,7 +238,7 @@ void GeneratorGL::sortOperations()
 {
     sortedOperations.clear();
 
-    QVector<QPair<QUuid, QString>> sortedOperationsData;
+    QList<QPair<QUuid, QString>> sortedOperationsData;
 
     QMap<QUuid, ImageOperationNode*> pendingNodes = operationNodes;
 

@@ -191,7 +191,8 @@ private slots:
     void saveConfig();
     void about();
 
-    void populateSortedOperationsTable(QVector<QPair<QUuid, QString>> data);
+    void populateSortedOperationsTable(QList<QPair<QUuid, QString>> data);
+    void populateScrollLayout(QList<QPair<QUuid, QString>> data);
     void selectNodesToMark();
 
     void createParametersWidget(QUuid id);

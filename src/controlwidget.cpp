@@ -388,6 +388,8 @@ void ControlWidget::loadConfig()
         foreach (QUuid id, opIDs)
             createParametersWidget(id);
 
+        generator->sortOperations();
+
         // ToDo: connect with graph widget
 
         generator->resetIterationNumer();
@@ -934,10 +936,11 @@ void ControlWidget::constructSortedOperationsWidget()
      sortedOperationsWidget->setVisible(false);
 
      connect(generator, &GeneratorGL::sortedOperationsChanged, this, &ControlWidget::populateSortedOperationsTable);
+     connect(generator, &GeneratorGL::sortedOperationsChanged, this, &ControlWidget::populateScrollLayout);
      connect(sortedOperationsTable, &QTableWidget::itemSelectionChanged, this, &ControlWidget::selectNodesToMark);
 }
 
-void ControlWidget::populateSortedOperationsTable(QVector<QPair<QUuid, QString>> data)
+void ControlWidget::populateSortedOperationsTable(QList<QPair<QUuid, QString>> data)
 {
     sortedOperationsTable->clearContents();
     sortedOperationsTable->setRowCount(data.size());
@@ -962,6 +965,37 @@ void ControlWidget::selectNodesToMark()
     graphWidget->markNodes(nodeIds);
 }
 
+void ControlWidget::populateScrollLayout(QList<QPair<QUuid, QString>> data)
+{
+    QWidget *widget = nullptr;
+
+    for (int i = 0; i < data.size(); i++)
+    {
+        QUuid id = data[i].first;
+        if (operationsWidgets.contains(id) && operationsWidgets.value(id)->isFocused())
+            widget = operationsWidgets.value(id);
+    }
+
+    QList<QWidget*> children = scrollWidget->findChildren<QWidget*>(QString(), Qt::FindDirectChildrenOnly);
+    foreach (QWidget* child, children)
+        scrollLayout->removeWidget(child);
+
+    for (int i = data.size() - 1; i >= 0; i--)
+    {
+        QUuid id = data[i].first;
+        if (operationsWidgets.contains(id))
+            scrollLayout->addWidget(operationsWidgets.value(id));
+    }
+
+    if (widget)
+    {
+        scrollArea->ensureWidgetVisible(widget);
+        widget->setFocus();
+    }
+
+    updateScrollArea();
+}
+
 void ControlWidget::createParametersWidget(QUuid id)
 {
     if (generator->hasOperationParamaters(id) && !operationsWidgets.contains(id))
@@ -976,12 +1010,9 @@ void ControlWidget::createParametersWidget(QUuid id)
         connect(operationsWidgets.value(id), &OperationsWidget::focusOut, this, &ControlWidget::removeOneParametersWidgetBorder);
         connect(operationsWidgets.value(id), &OperationsWidget::focusIn, this, &ControlWidget::updateParametersWidgetsBorder);
 
-        operationsWidgets.value(id)->setVisible(true);
-        //updateScrollLayout(operationsWidgets.value(id));
-        scrollLayout->addWidget(operationsWidgets.value(id));
+        scrollLayout->insertWidget(0, operationsWidgets.value(id));
         scrollArea->ensureWidgetVisible(operationsWidgets.value(id));
-        //operationsWidgets.value(id)->setFocus();
-        updateScrollArea();
+        operationsWidgets.value(id)->setFocus();
     }
 }
 
