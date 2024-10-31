@@ -502,7 +502,6 @@ void FBO::clear()
     glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 
     glViewport(0, 0, width, height);
-    glClearColor(0.0, 0.0, 0.0, 1.0);
     glClear(GL_COLOR_BUFFER_BIT);
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -533,7 +532,7 @@ QImage FBO::outputImage()
 
     glDeleteSync(fence);
 
-    glBindFramebuffer(GL_READ_FRAMEBUFFER, fboBlit);
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, fbo);
 
     glViewport(0, 0, width, height);
 

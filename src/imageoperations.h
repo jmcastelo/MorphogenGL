@@ -62,6 +62,8 @@ public:
     bool isEnabled() { return enabled; }
     virtual void enable(bool on) { enabled = on; }
 
+    void enableBlit(bool on) { blitEnabled = on; }
+
     bool hasParameters() { return !noParameters; }
 
     virtual QString getName() = 0;
@@ -100,6 +102,7 @@ public:
 
 protected:
     bool enabled;
+    bool blitEnabled;
     bool noParameters = false;
     QOpenGLContext* context;
     FBO* fbo;
@@ -471,7 +474,7 @@ public:
     std::vector<FloatParameter*> getFloatParameters() { std::vector<FloatParameter*> parameters = { blendFactor, decayFactor }; return parameters; };
 
 private:
-    QVector<FBO*> fbos;
+    QList<FBO*> fbos;
     Blender* blenderOut;
     FBO* fboOut;
 

@@ -109,9 +109,15 @@ void ImageOperationNode::setInputType(QUuid id, InputType type)
     inputs[id]->type = type;
 
     if (type == InputType::Normal)
+    {
         inputs[id]->textureID = inputNodes.value(id)->operation->getTextureID();
+        inputNodes.value(id)->operation->enableBlit(false);
+    }
     else if (type == InputType::Blit)
+    {
         inputs[id]->textureID = inputNodes.value(id)->operation->getTextureBlit();
+        inputNodes.value(id)->operation->enableBlit(true);
+    }
 }
 
 bool ImageOperationNode::allInputsComputed()
@@ -171,9 +177,15 @@ void ImageOperationNode::setOperation(ImageOperation *newOperation)
     foreach (ImageOperationNode* node, outputNodes)
     {
         if (node->inputs.value(id)->type == InputType::Normal)
+        {
             node->inputs[id]->textureID = operation->getTextureID();
+            operation->enableBlit(false);
+        }
         else if (node->inputs.value(id)->type == InputType::Blit)
+        {
             node->inputs[id]->textureID = operation->getTextureBlit();
+            operation->enableBlit(false);
+        }
     }
 }
 
@@ -317,7 +329,8 @@ void GeneratorGL::setOutput(QUuid id)
     if (operationNodes.contains(id))
     {
         outputID = id;
-        outputTextureID = operationNodes.value(id)->operation->getTextureBlit();
+        //outputTextureID = operationNodes.value(id)->operation->getTextureBlit();
+        outputTextureID = operationNodes.value(id)->operation->getTextureID();
         emit outputTextureChanged(**outputTextureID);
     }
     else if (seeds.contains(id))
@@ -486,7 +499,8 @@ void GeneratorGL::setOperation(QUuid id, QString operationName)
     // If it's output node, set new output texture id
 
     if (id == outputID)
-        outputTextureID = operation->getTextureBlit();
+        //outputTextureID = operation->getTextureBlit();
+        outputTextureID = operation->getTextureID();
 
     sortOperations();
 }
@@ -540,9 +554,15 @@ void GeneratorGL::connectLoadedOperations(QMap<QUuid, QMap<QUuid, InputData*>> c
                InputData* inputData = src.value();
 
                if (inputData->type == InputType::Normal)
+               {
                    inputData->textureID = loadedOperationNodes.value(src.key())->operation->getTextureID();
+                   loadedOperationNodes.value(src.key())->operation->enableBlit(false);
+               }
                else if (inputData->type == InputType::Blit)
+               {
                    inputData->textureID = loadedOperationNodes.value(src.key())->operation->getTextureBlit();
+                   loadedOperationNodes.value(src.key())->operation->enableBlit(true);
+               }
 
                loadedOperationNodes.value(dst.key())->addInput(loadedOperationNodes.value(src.key()), inputData);
                loadedOperationNodes.value(src.key())->addOutput(loadedOperationNodes.value(dst.key()));

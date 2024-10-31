@@ -57,7 +57,8 @@ void ImageOperation::applyOperation()
 
 void ImageOperation::blit()
 {
-    fbo->blit();
+    if (blitEnabled)
+        fbo->blit();
 }
 
 void ImageOperation::clear()
@@ -1202,7 +1203,7 @@ void Memory::setBlenderOutInputData()
 
     float factor = blendFactor->number->value;
 
-    for (FBO* oneFBO : fbos)
+    foreach (FBO* oneFBO, fbos)
     {
         inputs.push_back(new InputData(InputType::Normal, oneFBO->getTextureID(), factor));
         factor *= decayFactor->number->value;
@@ -1224,7 +1225,7 @@ void Memory::resize()
 {
     blender->resize();
     fbo->resize();
-    for (FBO* oneFBO : fbos)
+    foreach (FBO* oneFBO, fbos)
         oneFBO->resize();
     blenderOut->resize();
     fboOut->resize();
@@ -1239,9 +1240,14 @@ void Memory::applyOperation()
     if (enabled)
     {
         fbo->draw();
+
         for (int i = fbos.size() - 1; i >= 0; i--)
             fbos[i]->draw();
+
+        fbo->blit();
+
         blenderOut->blend();
+
         fboOut->draw();
     }
     else
