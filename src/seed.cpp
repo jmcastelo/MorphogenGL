@@ -177,7 +177,7 @@ Seed::Seed(QOpenGLContext* mainContext)
     maintainAspectRatio();
 }
 
-Seed::Seed(const Seed& seed) :
+Seed::Seed(const Seed& seed) : QOpenGLExtraFunctions(),
     type { seed.type },
     fixed { seed.fixed },
     imageFilename { seed.imageFilename }

@@ -149,7 +149,7 @@ void GraphWidget::reconnectNodes(Node* node)
         {
             // Avoid connecting already connected nodes
 
-            for (Edge* edge: input->sourceNode()->edges())
+            foreach (Edge* edge, input->sourceNode()->edges())
             {
                 if (edge->destNode() == output->destNode())
                     return;
@@ -173,7 +173,7 @@ void GraphWidget::selectNode(QUuid id, bool selected)
 {
     const QList<QGraphicsItem*> items = scene()->items();
 
-    for (QGraphicsItem* item : items)
+    foreach (QGraphicsItem* item, items)
     {
         if (OperationNode *node = qgraphicsitem_cast<OperationNode*>(item))
             if (node->id == id)
@@ -185,7 +185,7 @@ void GraphWidget::removeNode(Node *node)
 {
     reconnectNodes(node);
 
-    for (Edge *edge: node->edges())
+    foreach (Edge *edge, node->edges())
     {
         if (edge->sourceNode())
             edge->sourceNode()->removeEdge(edge);
@@ -235,7 +235,7 @@ bool GraphWidget::moreThanOneNode()
 
     const QList<QGraphicsItem*> items = scene()->items();
 
-    for (QGraphicsItem* item : items)
+    foreach (QGraphicsItem* item, items)
     {
         if (OperationNode *node = qgraphicsitem_cast<OperationNode*>(item))
             nodes << node;
@@ -263,7 +263,7 @@ bool GraphWidget::singleOperationNodeSelected()
 
 bool GraphWidget::isOperationNodeSelected(QUuid id)
 {
-    for (OperationNode* node : selectedOperationNodes)
+    foreach (OperationNode* node, selectedOperationNodes)
         if (node->id == id)
             return true;
     return false;
@@ -286,13 +286,13 @@ int GraphWidget::seedNodesSelected()
 
 void GraphWidget::drawSelectedSeeds()
 {
-    for (SeedNode* node : selectedSeedNodes)
+    foreach (SeedNode* node, selectedSeedNodes)
         generator->drawSeed(node->id);
 }
 
 void GraphWidget::enableSelectedOperations()
 {
-    for (OperationNode* node : selectedOperationNodes)
+    foreach (OperationNode* node, selectedOperationNodes)
     {
         generator->enableOperation(node->id, true);
         emit operationEnabled(node->id, true);
@@ -301,7 +301,7 @@ void GraphWidget::enableSelectedOperations()
 
 void GraphWidget::disableSelectedOperations()
 {
-    for (OperationNode* node : selectedOperationNodes)
+    foreach (OperationNode* node, selectedOperationNodes)
     {
         generator->enableOperation(node->id, false);
         emit operationEnabled(node->id, false);
@@ -310,7 +310,7 @@ void GraphWidget::disableSelectedOperations()
 
 void GraphWidget::equalizeSelectedBlendFactors()
 {
-    for (OperationNode* node : selectedOperationNodes)
+    foreach (OperationNode* node, selectedOperationNodes)
         generator->equalizeBlendFactors(node->id);
 
     updateNodes();
@@ -318,7 +318,7 @@ void GraphWidget::equalizeSelectedBlendFactors()
 
 void GraphWidget::clearSelectedOperationNodes()
 {
-    for (OperationNode* node : selectedOperationNodes)
+    foreach (OperationNode* node, selectedOperationNodes)
         generator->clearOperation(node->id);
 
 }
@@ -364,10 +364,10 @@ void GraphWidget::makeNodeSnapshot()
 {
     copiedNodes[0].clear();
 
-    for (OperationNode* node : selectedOperationNodes)
+    foreach (OperationNode* node, selectedOperationNodes)
         copiedNodes[0].insert(node->id, node);
 
-    for (SeedNode* node : selectedSeedNodes)
+    foreach (SeedNode* node, selectedSeedNodes)
         copiedNodes[0].insert(node->id, node);
 
     copyNodes(true);
@@ -420,7 +420,7 @@ void GraphWidget::copyNodes(bool connectionA)
 
     foreach (Node* node, copiedNodes[0])
     {
-        for (Edge* edge : node->edges())
+        foreach (Edge* edge, node->edges())
         {
             QUuid sourceId = edge->sourceNode()->id;
             QUuid destId = edge->destNode()->id;
@@ -463,7 +463,7 @@ void GraphWidget::pasteCopiedNodes()
         emit showOperationParameters(node->id);
     }
 
-    for (Edge* edge : qAsConst(newEdges))
+    foreach (Edge* edge, newEdges)
     {
         scene()->addItem(edge);
         edge->adjust();
@@ -819,9 +819,9 @@ void GraphWidget::mouseMoveEvent(QMouseEvent* event)
 {
     if (event->modifiers() == Qt::ControlModifier && event->buttons() == Qt::LeftButton)
     {
-        if (!pointIntersectsItem(mapToScene(mapFromGlobal(event->globalPos()))))
+        if (!pointIntersectsItem(mapToScene(mapFromGlobal(event->globalPosition().toPoint()))))
         {
-            QPointF delta = event->localPos() - prevPos;
+            QPointF delta = event->position() - prevPos;
             center -= delta / scaleFactor;
             centerOn(center);
 
@@ -829,7 +829,7 @@ void GraphWidget::mouseMoveEvent(QMouseEvent* event)
 
             resetCachedContent();
 
-            prevPos = event->localPos();
+            prevPos = event->position();
         }
     }
 
@@ -840,11 +840,11 @@ void GraphWidget::mousePressEvent(QMouseEvent* event)
 {
     if (event->modifiers() == Qt::ControlModifier && event->buttons() == Qt::LeftButton)
     {
-        if (!pointIntersectsItem(mapToScene(mapFromGlobal(event->globalPos()))))
-            prevPos = event->localPos();
+        if (!pointIntersectsItem(mapToScene(mapFromGlobal(event->globalPosition().toPoint()))))
+            prevPos = event->position();
     }
 
-    if (!pointIntersectsItem(mapToScene(mapFromGlobal(event->globalPos()))))
+    if (!pointIntersectsItem(mapToScene(mapFromGlobal(event->globalPosition().toPoint()))))
     {
         deselectNodeToConnect();
         setFocus();
@@ -860,7 +860,7 @@ void GraphWidget::searchElementaryCycles()
 
     const QList<QGraphicsItem *> items = scene()->items();
 
-    for (QGraphicsItem* item : items)
+    foreach (QGraphicsItem* item, items)
     {
         if (OperationNode* node = qgraphicsitem_cast<OperationNode*>(item))
             nodes << node;
@@ -881,7 +881,7 @@ void GraphWidget::searchElementaryCycles()
     QVector<bool> row(nodes.size(), false);
     QVector<QVector<bool>> adjacencyMatrix(nodes.size(), row);
 
-    for (Edge* edge : edges)
+    foreach (Edge* edge, edges)
     {
         int i = nodes.indexOf(edge->sourceNode());
         int j = nodes.indexOf(edge->destNode());
@@ -891,7 +891,7 @@ void GraphWidget::searchElementaryCycles()
     ElementaryCyclesSearch ecs(adjacencyMatrix, nodes);
     QVector<QVector<Node*>> cycles = ecs.getElementaryCycles();
 
-    for (QVector<Node*> nodeCycle : cycles)
+    foreach (QVector<Node*> nodeCycle, cycles)
     {
         Cycle* cycle = new Cycle(this, nodeCycle);
         scene()->addItem(cycle);

@@ -22,15 +22,16 @@
 
 #pragma once
 
-//#include "fbo.h"
 #include "mainwidget.h"
-//#include "ffmpegencoder.h"
+
 #include "recorder.h"
 #include <chrono>
 #include <QObject>
 #include <QChronoTimer>
 #include <QImage>
 #include <QString>
+
+
 
 class Heart : public QObject
 {
@@ -67,11 +68,7 @@ signals:
     void screenSizeChanged();
 
 private:
-    //MorphoWidget* morphoWidget;
-    //ControlWidget* controlWidget;
-    //PlotsWidget* plotsWidget;
     MainWidget* mainWidget;
-    //FFmpegEncoder* encoder = nullptr;
     Recorder* recorder = nullptr;
 
     QChronoTimer* timer;

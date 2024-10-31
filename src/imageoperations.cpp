@@ -23,6 +23,8 @@
 #include "imageoperations.h"
 #include "parameter.h"
 
+
+
 // Image operation base class
 
 ImageOperation::ImageOperation(bool on, QOpenGLContext* mainContext) : enabled { on }
@@ -30,6 +32,8 @@ ImageOperation::ImageOperation(bool on, QOpenGLContext* mainContext) : enabled {
     context = mainContext;
     blender = new Blender(":/shaders/screen.vert", ":/shaders/blend.frag", mainContext);
 }
+
+
 
 ImageOperation::ImageOperation(const ImageOperation& operation) :
     enabled { operation.enabled },
@@ -39,15 +43,20 @@ ImageOperation::ImageOperation(const ImageOperation& operation) :
     blender = new Blender(":/shaders/screen.vert", ":/shaders/blend.frag", context);
 }
 
+
+
 ImageOperation::~ImageOperation()
 {
     delete blender;
     delete fbo;
 }
 
+
+
 void ImageOperation::applyOperation()
 {
-    blender->blend();
+    if (blenderEnabled)
+        blender->blend();
 
     if (enabled)
         fbo->draw();
@@ -55,21 +64,39 @@ void ImageOperation::applyOperation()
         fbo->identity();
 }
 
+
+
 void ImageOperation::blit()
 {
     if (blitEnabled)
         fbo->blit();
 }
 
+
+
 void ImageOperation::clear()
 {
     fbo->clear();
 }
 
-void ImageOperation::setInputData(QVector<InputData *> data)
+
+
+void ImageOperation::setInputData(QList<InputData *> data)
 {
-    blender->setInputData(data);
+    if (data.size() == 1)
+    {
+        blenderEnabled = false;
+        fbo->setInputTextureID(*data[0]->textureID);
+    }
+    else
+    {
+        blenderEnabled = true;
+        fbo->setInputTextureID(*blender->getTextureID());
+        blender->setInputData(data);
+    }
 }
+
+
 
 void ImageOperation::adjustMinMax(float value, float minValue, float maxValue, float& min, float& max)
 {
@@ -79,6 +106,8 @@ void ImageOperation::adjustMinMax(float value, float minValue, float maxValue, f
     if (value > maxValue) max = value;
     else max = maxValue;
 }
+
+
 
 // Bilateral filter
 
@@ -103,11 +132,9 @@ BilateralFilter::BilateralFilter(bool on, QOpenGLContext* mainContext, int theNu
 
     adjustMinMax(theOpacity, 0.0f, 1.0f, min, max);
     opacity = new FloatParameter("Opacity", 3, this, theOpacity, min, max, 0.0f, 1.0f);
-
-    setIntParameter(0, theNumSideElements);
-    setFloatParameter(2, theRangeSigma);
-    setFloatParameter(3, theOpacity);
 }
+
+
 
 BilateralFilter::BilateralFilter(const BilateralFilter& operation) : ImageOperation(operation)
 {
@@ -128,11 +155,9 @@ BilateralFilter::BilateralFilter(const BilateralFilter& operation) : ImageOperat
 
     opacity = new FloatParameter(*operation.opacity);
     opacity->setOperation(this);
-
-    setIntParameter(0, numSideElements->number->value);
-    setFloatParameter(2, rangeSigma->number->value);
-    setFloatParameter(3, opacity->number->value);
 }
+
+
 
 BilateralFilter::~BilateralFilter()
 {
@@ -143,55 +168,70 @@ BilateralFilter::~BilateralFilter()
     delete opacity;
 }
 
+
+
+void BilateralFilter::setParameters()
+{
+    setIntParameter(0, numSideElements->value());
+    setFloatParameter(2, rangeSigma->value());
+    setFloatParameter(3, opacity->value());
+}
+
+
+
 void BilateralFilter::computeOffsets()
 {
-    QVector2D *offset = new QVector2D[numSideElements->number->value * numSideElements->number->value];
+    QVector2D *offset = new QVector2D[numSideElements->value() * numSideElements->value()];
 
-    for (int i = 0; i < numSideElements->number->value; i++)
+    for (int i = 0; i < numSideElements->value(); i++)
     {
-        float x = size->number->value * (-0.5f + i / (numSideElements->number->value - 1.0f)) / fbo->width;
+        float x = size->value() * (-0.5f + i / (numSideElements->value() - 1.0f)) / fbo->width;
 
-        for (int j = 0; j < numSideElements->number->value; j++)
+        for (int j = 0; j < numSideElements->value(); j++)
         {
-            float y = size->number->value * (-0.5f + j / (numSideElements->number->value - 1.0f)) / fbo->height;
+            float y = size->value() * (-0.5f + j / (numSideElements->value() - 1.0f)) / fbo->height;
 
-            offset[i * numSideElements->number->value + j] = QVector2D(x, y);
+            offset[i * numSideElements->value() + j] = QVector2D(x, y);
         }
     }
 
     fbo->makeCurrent();
     fbo->program->bind();
-    fbo->program->setUniformValueArray("offset", offset, numSideElements->number->value * numSideElements->number->value);
+    fbo->program->setUniformValueArray("offset", offset, numSideElements->value() * numSideElements->value());
     fbo->program->release();
     fbo->doneCurrent();
 
     delete [] offset;
 }
 
+
+
 void BilateralFilter::computeSpatialKernel()
 {
-    float* spatialKernel = new float[numSideElements->number->value * numSideElements->number->value];
+    float* spatialKernel = new float[numSideElements->value() * numSideElements->value()];
 
-    for (int i = 0; i < numSideElements->number->value; i++)
+    for (int i = 0; i < numSideElements->value(); i++)
     {
-        float x = size->number->value * (-0.5f + i / (numSideElements->number->value - 1.0f)) / fbo->width;
+        float x = size->value() * (-0.5f + i / (numSideElements->value() - 1.0f)) / fbo->width;
 
-        for (int j = 0; j < numSideElements->number->value; j++)
+        for (int j = 0; j < numSideElements->value(); j++)
         {
-            float y = size->number->value * (-0.5f + j / (numSideElements->number->value - 1.0f)) / fbo->height;
+            float y = size->value() * (-0.5f + j / (numSideElements->value() - 1.0f)) / fbo->height;
 
-            spatialKernel[i * numSideElements->number->value + j] = exp(-0.5f * fbo->width * fbo->height * (x * x + y * y) / (spatialSigma->number->value * spatialSigma->number->value));
+            spatialKernel[i * numSideElements->value() + j] = exp(-0.5f * fbo->width * fbo->height * (x * x + y * y) / (spatialSigma->value() * spatialSigma->value()));
         }
     }
 
     fbo->makeCurrent();
     fbo->program->bind();
-    fbo->program->setUniformValueArray("spatialKernel", spatialKernel, numSideElements->number->value * numSideElements->number->value, 1);
+    fbo->program->setUniformValueArray("spatialKernel", spatialKernel, numSideElements->value() * numSideElements->value(), 1);
     fbo->program->release();
     fbo->doneCurrent();
 
     delete [] spatialKernel;
 }
+
+
 
 void BilateralFilter::setIntParameter(int index, int value)
 {
@@ -207,6 +247,8 @@ void BilateralFilter::setIntParameter(int index, int value)
         computeSpatialKernel();
     }
 }
+
+
 
 void BilateralFilter::setFloatParameter(int index, float value)
 {
@@ -237,6 +279,8 @@ void BilateralFilter::setFloatParameter(int index, float value)
     }
 }
 
+
+
 // Brightness
 
 QString Brightness::name = "Brightness";
@@ -252,10 +296,9 @@ Brightness::Brightness(bool on, QOpenGLContext* mainContext, float theBrightness
 
     adjustMinMax(theOpacity, 0.0f, 1.0f, min, max);
     opacity = new FloatParameter("Opacity", 1, this, theOpacity, min, max, 0.0f, 1.0f);
-
-    setFloatParameter(0, theBrightness);
-    setFloatParameter(1, theOpacity);
 }
+
+
 
 Brightness::Brightness(const Brightness& operation) : ImageOperation(operation)
 {
@@ -267,16 +310,25 @@ Brightness::Brightness(const Brightness& operation) : ImageOperation(operation)
 
     opacity = new FloatParameter(*operation.opacity);
     opacity->setOperation(this);
-
-    setFloatParameter(0, brightness->number->value);
-    setFloatParameter(1, opacity->number->value);
 }
+
+
 
 Brightness::~Brightness()
 {
     delete brightness;
     delete opacity;
 }
+
+
+
+void Brightness::setParameters()
+{
+    setFloatParameter(0, brightness->value());
+    setFloatParameter(1, opacity->value());
+}
+
+
 
 void Brightness::setFloatParameter(int index, float value)
 {
@@ -298,6 +350,8 @@ void Brightness::setFloatParameter(int index, float value)
     }
 }
 
+
+
 // Color mix
 
 QString ColorMix::name = "Color mix";
@@ -312,10 +366,9 @@ ColorMix::ColorMix(bool on, QOpenGLContext* mainContext, std::vector<float> theM
     float min, max;
     adjustMinMax(theOpacity, 0.0f, 1.0f, min, max);
     opacity = new FloatParameter("Opacity", 0, this, theOpacity, min, max, 0.0f, 1.0f);
-
-    setMatrixParameter(rgbMatrix->numbers);
-    setFloatParameter(0, theOpacity);
 }
+
+
 
 ColorMix::ColorMix(const ColorMix& operation) : ImageOperation(operation)
 {
@@ -327,16 +380,24 @@ ColorMix::ColorMix(const ColorMix& operation) : ImageOperation(operation)
 
     opacity = new FloatParameter(*operation.opacity);
     opacity->setOperation(this);
-
-    setMatrixParameter(rgbMatrix->numbers);
-    setFloatParameter(0, opacity->number->value);
 }
+
+
 
 ColorMix::~ColorMix()
 {
     delete rgbMatrix;
     delete opacity;
 }
+
+
+void ColorMix::setParameters()
+{
+    setMatrixParameter(rgbMatrix->numbers);
+    setFloatParameter(0, opacity->value());
+}
+
+
 
 void ColorMix::setMatrixParameter(std::vector<Number<float>*> numbers)
 {
@@ -356,6 +417,8 @@ void ColorMix::setMatrixParameter(std::vector<Number<float>*> numbers)
     fbo->doneCurrent();
 }
 
+
+
 void ColorMix::setFloatParameter(int index, float value)
 {
     if (index == 0)
@@ -367,6 +430,8 @@ void ColorMix::setFloatParameter(int index, float value)
         fbo->doneCurrent();
     }
 }
+
+
 
 // Color quantization
 
@@ -384,13 +449,9 @@ ColorQuantization::ColorQuantization(bool on, QOpenGLContext* mainContext, int t
     float min, max;
     adjustMinMax(theOpacity, 0.0f, 1.0f, min, max);
     opacity = new FloatParameter("Opacity", 0, this, theOpacity, min, max, 0.0f, 1.0f);
-
-    setIntParameter(0, theRedLevels);
-    setIntParameter(1, theGreenLevels);
-    setIntParameter(2, theBlueLevels);
-
-    setFloatParameter(0, theOpacity);
 }
+
+
 
 ColorQuantization::ColorQuantization(const ColorQuantization& operation) : ImageOperation(operation)
 {
@@ -408,13 +469,9 @@ ColorQuantization::ColorQuantization(const ColorQuantization& operation) : Image
 
     opacity = new FloatParameter(*operation.opacity);
     opacity->setOperation(this);
-
-    setIntParameter(0, redLevels->number->value);
-    setIntParameter(1, greenLevels->number->value);
-    setIntParameter(2, blueLevels->number->value);
-
-    setFloatParameter(0, opacity->number->value);
 }
+
+
 
 ColorQuantization::~ColorQuantization()
 {
@@ -423,6 +480,19 @@ ColorQuantization::~ColorQuantization()
     delete blueLevels;
     delete opacity;
 }
+
+
+
+void ColorQuantization::setParameters()
+{
+    setIntParameter(0, redLevels->value());
+    setIntParameter(1, greenLevels->value());
+    setIntParameter(2, blueLevels->value());
+
+    setFloatParameter(0, opacity->value());
+}
+
+
 
 void ColorQuantization::setIntParameter(int index, int value)
 {
@@ -452,6 +522,8 @@ void ColorQuantization::setIntParameter(int index, int value)
     }
 }
 
+
+
 void ColorQuantization::setFloatParameter(int index, float value)
 {
     if (index == 0)
@@ -463,6 +535,8 @@ void ColorQuantization::setFloatParameter(int index, float value)
         fbo->doneCurrent();
     }
 }
+
+
 
 // Contrast
 
@@ -479,10 +553,9 @@ Contrast::Contrast(bool on, QOpenGLContext* mainContext, float theContrast, floa
 
     adjustMinMax(theOpacity, 0.0f, 1.0f, min, max);
     opacity = new FloatParameter("Opacity", 1, this, theOpacity, min, max, 0.0f, 1.0f);
-
-    setFloatParameter(0, theContrast);
-    setFloatParameter(1, theOpacity);
 }
+
+
 
 Contrast::Contrast(const Contrast& operation) : ImageOperation(operation)
 {
@@ -494,16 +567,25 @@ Contrast::Contrast(const Contrast& operation) : ImageOperation(operation)
 
     opacity = new FloatParameter(*operation.opacity);
     opacity->setOperation(this);
-
-    setFloatParameter(0, contrast->number->value);
-    setFloatParameter(1, opacity->number->value);
 }
+
+
 
 Contrast::~Contrast()
 {
     delete contrast;
     delete opacity;
 }
+
+
+
+void Contrast::setParameters()
+{
+    setFloatParameter(0, contrast->value());
+    setFloatParameter(1, opacity->value());
+}
+
+
 
 void Contrast::setFloatParameter(int index, float value)
 {
@@ -525,6 +607,8 @@ void Contrast::setFloatParameter(int index, float value)
     }
 }
 
+
+
 // Convolution
 
 QString Convolution::name = "Convolution";
@@ -545,11 +629,9 @@ Convolution::Convolution(bool on, QOpenGLContext* mainContext, std::vector<float
 
     adjustMinMax(theOpacity, 0.0f, 1.0f, min, max);
     opacity = new FloatParameter("Opacity", 2, this, theOpacity, min, max, 0.0f, 1.0f);
-
-    setFloatParameter(0, theFactor);
-    setFloatParameter(1, theSize);
-    setFloatParameter(2, theOpacity);
 }
+
+
 
 Convolution::Convolution(const Convolution &operation) : ImageOperation(operation)
 {
@@ -567,11 +649,9 @@ Convolution::Convolution(const Convolution &operation) : ImageOperation(operatio
 
     opacity = new FloatParameter(*operation.opacity);
     opacity->setOperation(this);
-
-    setFloatParameter(0, factor->number->value);
-    setFloatParameter(1, size->number->value);
-    setFloatParameter(2, opacity->number->value);
 }
+
+
 
 Convolution::~Convolution()
 {
@@ -581,12 +661,23 @@ Convolution::~Convolution()
     delete opacity;
 }
 
+
+
+void Convolution::setParameters()
+{
+    setFloatParameter(0, factor->value());
+    setFloatParameter(1, size->value());
+    setFloatParameter(2, opacity->value());
+}
+
+
+
 void Convolution::setKernelParameter(std::vector<Number<float>*> numbers)
 {
     std::vector<float> values;
 
     for (Number<float>* number : numbers)
-        values.push_back(number->value * factor->number->value);
+        values.push_back(number->value * factor->value());
 
     fbo->makeCurrent();
     fbo->program->bind();
@@ -594,6 +685,8 @@ void Convolution::setKernelParameter(std::vector<Number<float>*> numbers)
     fbo->program->release();
     fbo->doneCurrent();
 }
+
+
 
 void Convolution::setFloatParameter(int index, float value)
 {
@@ -634,6 +727,8 @@ void Convolution::setFloatParameter(int index, float value)
     }
 }
 
+
+
 // Dilation
 
 QString Dilation::name = "Dilation";
@@ -649,10 +744,9 @@ Dilation::Dilation(bool on, QOpenGLContext* mainContext, float theSize, float th
 
     adjustMinMax(theOpacity, 0.0f, 1.0f, min, max);
     opacity = new FloatParameter("Opacity", 1, this, theOpacity, min, max, 0.0f, 1.0f);
-
-    setFloatParameter(0, theSize);
-    setFloatParameter(1, theOpacity);
 }
+
+
 
 Dilation::Dilation(const Dilation& operation) : ImageOperation(operation)
 {
@@ -664,16 +758,25 @@ Dilation::Dilation(const Dilation& operation) : ImageOperation(operation)
 
     opacity = new FloatParameter(*operation.opacity);
     opacity->setOperation(this);
-
-    setFloatParameter(0, size->number->value);
-    setFloatParameter(1, opacity->number->value);
 }
+
+
 
 Dilation::~Dilation()
 {
     delete size;
     delete opacity;
 }
+
+
+
+void Dilation::setParameters()
+{
+    setFloatParameter(0, size->value());
+    setFloatParameter(1, opacity->value());
+}
+
+
 
 void Dilation::setFloatParameter(int index, float value)
 {
@@ -710,6 +813,8 @@ void Dilation::setFloatParameter(int index, float value)
     }
 }
 
+
+
 // Erosion
 
 QString Erosion::name = "Erosion";
@@ -725,10 +830,9 @@ Erosion::Erosion(bool on, QOpenGLContext* mainContext, float theSize, float theO
 
     adjustMinMax(theOpacity, 0.0f, 1.0f, min, max);
     opacity = new FloatParameter("Opacity", 1, this, theOpacity, min, max, 0.0f, 1.0f);
-
-    setFloatParameter(0, theSize);
-    setFloatParameter(1, theOpacity);
 }
+
+
 
 Erosion::Erosion(const Erosion& operation) : ImageOperation(operation)
 {
@@ -740,16 +844,25 @@ Erosion::Erosion(const Erosion& operation) : ImageOperation(operation)
 
     opacity = new FloatParameter(*operation.opacity);
     opacity->setOperation(this);
-
-    setFloatParameter(0, size->number->value);
-    setFloatParameter(1, opacity->number->value);
 }
+
+
 
 Erosion::~Erosion()
 {
     delete size;
     delete opacity;
 }
+
+
+
+void Erosion::setParameters()
+{
+    setFloatParameter(0, size->value());
+    setFloatParameter(1, opacity->value());
+}
+
+
 
 void Erosion::setFloatParameter(int index, float value)
 {
@@ -786,6 +899,8 @@ void Erosion::setFloatParameter(int index, float value)
     }
 }
 
+
+
 // Gamma correction
 
 QString GammaCorrection::name = "Gamma correction";
@@ -807,11 +922,6 @@ GammaCorrection::GammaCorrection(bool on, QOpenGLContext* mainContext, float the
     
     adjustMinMax(theOpacity, 0.0f, 1.0f, min, max);
     opacity = new FloatParameter("Opacity", 3, this, theOpacity, min, max, 0.0f, 1.0f);
-
-    setFloatParameter(0, theGammaRed);
-    setFloatParameter(1, theGammaGreen);
-    setFloatParameter(2, theGammaBlue);
-    setFloatParameter(3, theOpacity);
 }
 
 GammaCorrection::GammaCorrection(const GammaCorrection& operation) : ImageOperation(operation)
@@ -830,13 +940,9 @@ GammaCorrection::GammaCorrection(const GammaCorrection& operation) : ImageOperat
 
     opacity = new FloatParameter(*operation.opacity);
     opacity->setOperation(this);
-
-    setFloatParameter(0, gammaRed->number->value);
-    setFloatParameter(1, gammaGreen->number->value);
-    setFloatParameter(2, gammaBlue->number->value);
-    setFloatParameter(3, opacity->number->value);
-
 }
+
+
 
 GammaCorrection::~GammaCorrection()
 {
@@ -846,11 +952,23 @@ GammaCorrection::~GammaCorrection()
     delete opacity;
 }
 
+
+
+void GammaCorrection::setParameters()
+{
+    setFloatParameter(0, gammaRed->value());
+    setFloatParameter(1, gammaGreen->value());
+    setFloatParameter(2, gammaBlue->value());
+    setFloatParameter(3, opacity->value());
+}
+
+
+
 void GammaCorrection::setFloatParameter(int index, float value)
 {
     if (index == 0 || index == 1 || index == 2)
     {
-        QVector3D gamma = { gammaRed->number->value, gammaGreen->number->value, gammaBlue->number->value };
+        QVector3D gamma = { gammaRed->value(), gammaGreen->value(), gammaBlue->value() };
 
         fbo->makeCurrent();
         fbo->program->bind();
@@ -868,6 +986,8 @@ void GammaCorrection::setFloatParameter(int index, float value)
     }
 }
 
+
+
 // Hue shift
 
 QString HueShift::name = "Hue shift";
@@ -883,10 +1003,9 @@ HueShift::HueShift(bool on, QOpenGLContext* mainContext, float theShift, float t
 
     adjustMinMax(theOpacity, 0.0f, 1.0f, min, max);
     opacity = new FloatParameter("Opacity", 1, this, theOpacity, min, max, 0.0f, 1.0f);
-
-    setFloatParameter(0, theShift);
-    setFloatParameter(1, theOpacity);
 }
+
+
 
 HueShift::HueShift(const HueShift& operation) : ImageOperation(operation)
 {
@@ -898,16 +1017,25 @@ HueShift::HueShift(const HueShift& operation) : ImageOperation(operation)
 
     opacity = new FloatParameter(*operation.opacity);
     opacity->setOperation(this);
-
-    setFloatParameter(0, shift->number->value);
-    setFloatParameter(1, opacity->number->value);
 }
+
+
 
 HueShift::~HueShift()
 {
     delete shift;
     delete opacity;
 }
+
+
+
+void HueShift::setParameters()
+{
+    setFloatParameter(0, shift->value());
+    setFloatParameter(1, opacity->value());
+}
+
+
 
 void HueShift::setFloatParameter(int index, float value)
 {
@@ -929,6 +1057,8 @@ void HueShift::setFloatParameter(int index, float value)
     }
 }
 
+
+
 // Mask
 
 QString Identity::name = "Identity";
@@ -941,6 +1071,8 @@ Identity::Identity(bool on, QOpenGLContext* mainContext) : ImageOperation(on, ma
     noParameters = true;
 }
 
+
+
 Identity::Identity(const Identity& operation) : ImageOperation(operation)
 {
     fbo = new FBO(":/shaders/screen.vert", ":/shaders/screen.frag", context);
@@ -949,7 +1081,11 @@ Identity::Identity(const Identity& operation) : ImageOperation(operation)
     noParameters = true;
 }
 
+
+
 Identity::~Identity(){}
+
+
 
 // Logistic
 
@@ -966,10 +1102,9 @@ Logistic::Logistic(bool on, QOpenGLContext* mainContext, float R, float theOpaci
 
     adjustMinMax(theOpacity, 0.0f, 1.0f, min, max);
     opacity = new FloatParameter("Opacity", 1, this, theOpacity, min, max, 0.0f, 1.0f);
-
-    setFloatParameter(0, R);
-    setFloatParameter(1, theOpacity);
 }
+
+
 
 Logistic::Logistic(const Logistic& operation) : ImageOperation(operation)
 {
@@ -981,16 +1116,25 @@ Logistic::Logistic(const Logistic& operation) : ImageOperation(operation)
 
     opacity = new FloatParameter(*operation.opacity);
     opacity->setOperation(this);
-
-    setFloatParameter(0, r->number->value);
-    setFloatParameter(1, opacity->number->value);
 }
+
+
 
 Logistic::~Logistic()
 {
     delete r;
     delete opacity;
 }
+
+
+
+void Logistic::setParameters()
+{
+    setFloatParameter(0, r->value());
+    setFloatParameter(1, opacity->value());
+}
+
+
 
 void Logistic::setFloatParameter(int index, float value)
 {
@@ -1012,6 +1156,8 @@ void Logistic::setFloatParameter(int index, float value)
     }
 }
 
+
+
 // Mask
 
 QString Mask::name = "Mask";
@@ -1028,7 +1174,9 @@ Mask::Mask(bool on, QOpenGLContext* mainContext) : ImageOperation(on, mainContex
     noParameters = true;
 }
 
-Mask::Mask(const Mask& operation) : ImageOperation(operation)
+
+
+Mask::Mask(const Mask& operation) : QObject(nullptr), ImageOperation(operation)
 {
     fbo = new FBO(":/shaders/screen.vert", ":/shaders/mask.frag", context);
     fbo->setInputTextureID(*blender->getTextureID());
@@ -1040,7 +1188,11 @@ Mask::Mask(const Mask& operation) : ImageOperation(operation)
     noParameters = true;
 }
 
+
+
 Mask::~Mask(){}
+
+
 
 void Mask::setScale()
 {
@@ -1054,6 +1206,8 @@ void Mask::setScale()
     fbo->program->release();
     fbo->doneCurrent();
 }
+
+
 
 // Median
 
@@ -1070,10 +1224,9 @@ Median::Median(bool on, QOpenGLContext* mainContext, float theSize, float theOpa
 
     adjustMinMax(theOpacity, 0.0f, 1.0f, min, max);
     opacity = new FloatParameter("Opacity", 1, this, theOpacity, min, max, 0.0f, 1.0f);
-
-    setFloatParameter(0, theSize);
-    setFloatParameter(1, theOpacity);
 }
+
+
 
 Median::Median(const Median& operation) : ImageOperation(operation)
 {
@@ -1085,16 +1238,25 @@ Median::Median(const Median& operation) : ImageOperation(operation)
 
     opacity = new FloatParameter(*operation.opacity);
     opacity->setOperation(this);
-
-    setFloatParameter(0, size->number->value);
-    setFloatParameter(1, opacity->number->value);
 }
+
+
 
 Median::~Median()
 {
     delete size;
     delete opacity;
 }
+
+
+
+void Median::setParameters()
+{
+    setFloatParameter(0, size->value());
+    setFloatParameter(1, opacity->value());
+}
+
+
 
 void Median::setFloatParameter(int index, float value)
 {
@@ -1131,6 +1293,8 @@ void Median::setFloatParameter(int index, float value)
     }
 }
 
+
+
 // Memory
 
 QString Memory::name = "Memory";
@@ -1166,6 +1330,8 @@ Memory::Memory(bool on, QOpenGLContext* mainContext, int theFrames, float theBle
     enable(on);
 }
 
+
+
 Memory::Memory(const Memory& operation) : ImageOperation(operation)
 {
     fbo = new FBO(":/shaders/screen.vert", ":/shaders/screen.frag", context);
@@ -1195,21 +1361,38 @@ Memory::Memory(const Memory& operation) : ImageOperation(operation)
     enable(operation.enabled);
 }
 
+
+
+Memory::~Memory()
+{
+    delete blendFactor;
+    delete decayFactor;
+    foreach (FBO* oneFBO, fbos)
+        delete oneFBO;
+    fbos.clear();
+    delete blenderOut;
+    delete fboOut;
+}
+
+
+
 void Memory::setBlenderOutInputData()
 {
     QVector<InputData*> inputs;
 
     inputs.push_back(new InputData(InputType::Normal, fbo->getTextureID(), 1.0f));
 
-    float factor = blendFactor->number->value;
+    float factor = blendFactor->value();
 
     foreach (FBO* oneFBO, fbos)
     {
         inputs.push_back(new InputData(InputType::Normal, oneFBO->getTextureID(), factor));
-        factor *= decayFactor->number->value;
+        factor *= decayFactor->value();
     }
     blenderOut->setInputData(inputs);
 }
+
+
 
 void Memory::enable(bool on)
 {
@@ -1220,6 +1403,8 @@ void Memory::enable(bool on)
 
     enabled = on;
 }
+
+
 
 void Memory::resize()
 {
@@ -1233,9 +1418,12 @@ void Memory::resize()
     setBlenderOutInputData();
 }
 
+
+
 void Memory::applyOperation()
 {
-    blender->blend();
+    if (blenderEnabled)
+        blender->blend();
 
     if (enabled)
     {
@@ -1257,19 +1445,25 @@ void Memory::applyOperation()
     }
 }
 
+
+
 void Memory::blit()
 {
     fbo->blit();
     fboOut->blit();
 }
 
+
+
 void Memory::clear()
 {
     fbo->clear();
-    for (FBO* oneFBO : fbos)
+    foreach (FBO* oneFBO, fbos)
         oneFBO->clear();
     fboOut->clear();
 }
+
+
 
 void Memory::setIntParameter(int index, int value)
 {
@@ -1297,6 +1491,8 @@ void Memory::setIntParameter(int index, int value)
     }
 }
 
+
+
 void Memory::setFloatParameter(int index, float)
 {
     if (index == 0 || index == 1)
@@ -1305,7 +1501,7 @@ void Memory::setFloatParameter(int index, float)
     }
 }
 
-Memory::~Memory(){}
+
 
 // Morphological gradient
 
@@ -1325,11 +1521,9 @@ MorphologicalGradient::MorphologicalGradient(bool on, QOpenGLContext* mainContex
 
     adjustMinMax(theOpacity, 0.0f, 1.0f, min, max);
     opacity = new FloatParameter("Opacity", 2, this, theOpacity, min, max, 0.0f, 1.0f);
-
-    setFloatParameter(0, theDilationSize);
-    setFloatParameter(1, theErosionSize);
-    setFloatParameter(2, theOpacity);
 }
+
+
 
 MorphologicalGradient::MorphologicalGradient(const MorphologicalGradient& operation) : ImageOperation(operation)
 {
@@ -1344,11 +1538,9 @@ MorphologicalGradient::MorphologicalGradient(const MorphologicalGradient& operat
 
     opacity = new FloatParameter(*operation.opacity);
     opacity->setOperation(this);
-
-    setFloatParameter(0, dilationSize->number->value);
-    setFloatParameter(1, erosionSize->number->value);
-    setFloatParameter(2, opacity->number->value);
 }
+
+
 
 MorphologicalGradient::~MorphologicalGradient()
 {
@@ -1356,6 +1548,17 @@ MorphologicalGradient::~MorphologicalGradient()
     delete erosionSize;
     delete opacity;
 }
+
+
+
+void MorphologicalGradient::setParameters()
+{
+    setFloatParameter(0, dilationSize->value());
+    setFloatParameter(1, erosionSize->value());
+    setFloatParameter(2, opacity->value());
+}
+
+
 
 void MorphologicalGradient::setFloatParameter(int index, float value)
 {
@@ -1400,7 +1603,9 @@ void MorphologicalGradient::setFloatParameter(int index, float value)
     }
 }
 
-// Morphological gradient
+
+
+// Pixelation
 
 QString Pixelation::name = "Pixelation";
 
@@ -1416,15 +1621,14 @@ Pixelation::Pixelation(bool on, QOpenGLContext* mainContext, float theSize, floa
     adjustMinMax(theOpacity, 0.0f, 1.0f, min, max);
     opacity = new FloatParameter("Opacity", 1, this, theOpacity, min, max, 0.0f, 1.0f);
 
-    setFloatParameter(0, theSize);
-    setFloatParameter(1, theOpacity);
-
     connect(fbo, &FBO::sizeChanged, this, &Pixelation::setWidthAndHeight);
 
     setWidthAndHeight();
 }
 
-Pixelation::Pixelation(const Pixelation& operation) : ImageOperation(operation)
+
+
+Pixelation::Pixelation(const Pixelation& operation) : QObject(nullptr), ImageOperation(operation)
 {
     fbo = new FBO(":/shaders/screen.vert", ":/shaders/pixelation.frag", context);
     fbo->setInputTextureID(*blender->getTextureID());
@@ -1435,19 +1639,28 @@ Pixelation::Pixelation(const Pixelation& operation) : ImageOperation(operation)
     opacity = new FloatParameter(*operation.opacity);
     opacity->setOperation(this);
 
-    setFloatParameter(0, size->number->value);
-    setFloatParameter(1, opacity->number->value);
-
     connect(fbo, &FBO::sizeChanged, this, &Pixelation::setWidthAndHeight);
 
     setWidthAndHeight();
 }
+
+
 
 Pixelation::~Pixelation()
 {
     delete size;
     delete opacity;
 }
+
+
+
+void Pixelation::setParameters()
+{
+    setFloatParameter(0, size->value());
+    setFloatParameter(1, opacity->value());
+}
+
+
 
 void Pixelation::setFloatParameter(int index, float value)
 {
@@ -1469,6 +1682,8 @@ void Pixelation::setFloatParameter(int index, float value)
     }
 }
 
+
+
 void Pixelation::setWidthAndHeight()
 {
     fbo->makeCurrent();
@@ -1478,6 +1693,8 @@ void Pixelation::setWidthAndHeight()
     fbo->program->release();
     fbo->doneCurrent();
 }
+
+
 
 // Polar convolution
 
@@ -1493,10 +1710,9 @@ PolarConvolution::PolarConvolution(bool on, QOpenGLContext* mainContext, std::ve
     float min, max;
     adjustMinMax(theOpacity, 0.0f, 1.0f, min, max);
     opacity = new FloatParameter("Opacity", 0, this, theOpacity, min, max, 0.0f, 1.0f);
-
-    setPolarKernelParameter();
-    setFloatParameter(0, theOpacity);
 }
+
+
 
 PolarConvolution::PolarConvolution(const PolarConvolution& operation) : ImageOperation(operation)
 {
@@ -1508,16 +1724,24 @@ PolarConvolution::PolarConvolution(const PolarConvolution& operation) : ImageOpe
 
     opacity = new FloatParameter(*operation.opacity);
     opacity->setOperation(this);
-
-    setPolarKernelParameter();
-    setFloatParameter(0, opacity->number->value);
 }
+
+
 
 PolarConvolution::~PolarConvolution()
 {
     delete polarKernelParameter;
     delete opacity;
 }
+
+
+void PolarConvolution::setParameters()
+{
+    setPolarKernelParameter();
+    setFloatParameter(0, opacity->value());
+}
+
+
 
 void PolarConvolution::setPolarKernelParameter()
 {
@@ -1568,6 +1792,8 @@ void PolarConvolution::setPolarKernelParameter()
     delete [] kernels;
 }
 
+
+
 void PolarConvolution::setFloatParameter(int index, float value)
 {
     if (index == 0)
@@ -1579,6 +1805,8 @@ void PolarConvolution::setFloatParameter(int index, float value)
         fbo->doneCurrent();
     }
 }
+
+
 
 // Power
 
@@ -1595,10 +1823,9 @@ Power::Power(bool on, QOpenGLContext* mainContext, float theExponent, float theO
 
     adjustMinMax(theOpacity, 0.0f, 1.0f, min, max);
     opacity = new FloatParameter("Opacity", 1, this, theOpacity, min, max, 0.0f, 1.0f);
-
-    setFloatParameter(0, theExponent);
-    setFloatParameter(1, theOpacity);
 }
+
+
 
 Power::Power(const Power& operation) : ImageOperation(operation)
 {
@@ -1610,16 +1837,25 @@ Power::Power(const Power& operation) : ImageOperation(operation)
 
     opacity = new FloatParameter(*operation.opacity);
     opacity->setOperation(this);
-
-    setFloatParameter(0, exponent->number->value);
-    setFloatParameter(1, opacity->number->value);
 }
+
+
 
 Power::~Power()
 {
     delete exponent;
     delete opacity;
 }
+
+
+
+void Power::setParameters()
+{
+    setFloatParameter(0, exponent->value());
+    setFloatParameter(1, opacity->value());
+}
+
+
 
 void Power::setFloatParameter(int index, float theValue)
 {
@@ -1641,6 +1877,8 @@ void Power::setFloatParameter(int index, float theValue)
     }
 }
 
+
+
 // Rotation
 
 QString Rotation::name = "Rotation";
@@ -1654,14 +1892,12 @@ Rotation::Rotation(bool on, QOpenGLContext* mainContext, float theAngle, GLenum 
     adjustMinMax(theAngle, -360.0f, 360.0f, min, max);
     angle = new FloatParameter("Angle", 0, this, theAngle, min, max, -1.0e6, 1.0e6);
 
-    setFloatParameter(0, theAngle);
-
     std::vector<QString> valueNames = { "Nearest neighbor", "Linear" };
     std::vector<GLenum> values = { GL_NEAREST, GL_LINEAR };
     minMagFilter = new OptionsParameter<GLenum>("Interpolation", 0, this, valueNames, values, theMinMagFilter);
-
-    setOptionsParameter(0, theMinMagFilter);
 }
+
+
 
 Rotation::Rotation(const Rotation& operation) : ImageOperation(operation)
 {
@@ -1671,19 +1907,27 @@ Rotation::Rotation(const Rotation& operation) : ImageOperation(operation)
     angle = new FloatParameter(*operation.angle);
     angle->setOperation(this);
 
-    setFloatParameter(0, angle->number->value);
-
     minMagFilter = new OptionsParameter<GLenum>(*operation.minMagFilter);
     minMagFilter->setOperation(this);
-
-    setOptionsParameter(0, minMagFilter->value);
 }
+
+
 
 Rotation::~Rotation()
 {
     delete angle;
     delete minMagFilter;
 }
+
+
+
+void Rotation::setParameters()
+{
+    setFloatParameter(0, angle->value());
+    setOptionsParameter(0, minMagFilter->value());
+}
+
+
 
 void Rotation::setFloatParameter(int index, float value)
 {
@@ -1705,6 +1949,8 @@ void Rotation::setFloatParameter(int index, float value)
     }
 }
 
+
+
 void Rotation::setOptionsParameter(int index, GLenum value)
 {
     if (index == 0)
@@ -1714,6 +1960,8 @@ void Rotation::setOptionsParameter(int index, GLenum value)
         fbo->setMinMagFilter(value);
     }
 }
+
+
 
 // Saturation
 
@@ -1730,10 +1978,9 @@ Saturation::Saturation(bool on, QOpenGLContext* mainContext, float theSaturation
 
     adjustMinMax(theOpacity, 0.0f, 1.0f, min, max);
     opacity = new FloatParameter("Opacity", 1, this, theOpacity, min, max, 0.0f, 1.0f);
-
-    setFloatParameter(0, theSaturation);
-    setFloatParameter(1, theOpacity);
 }
+
+
 
 Saturation::Saturation(const Saturation& operation) : ImageOperation(operation)
 {
@@ -1745,16 +1992,24 @@ Saturation::Saturation(const Saturation& operation) : ImageOperation(operation)
 
     opacity = new FloatParameter(*operation.opacity);
     opacity->setOperation(this);
-
-    setFloatParameter(0, saturation->number->value);
-    setFloatParameter(1, opacity->number->value);
 }
+
+
 
 Saturation::~Saturation()
 {
     delete saturation;
     delete opacity;
 }
+
+
+
+void Saturation::setParameters()
+{
+    setFloatParameter(0, saturation->value());
+    setFloatParameter(1, opacity->value());
+}
+
 
 void Saturation::setFloatParameter(int index, float value)
 {
@@ -1776,6 +2031,8 @@ void Saturation::setFloatParameter(int index, float value)
     }
 }
 
+
+
 // Scale
 
 QString Scale::name = "Scale";
@@ -1789,14 +2046,12 @@ Scale::Scale(bool on, QOpenGLContext* mainContext, float theScaleFactor, GLenum 
     adjustMinMax(theScaleFactor, 0.0f, 2.0f, min, max);
     scaleFactor = new FloatParameter("Scale factor", 0, this, theScaleFactor, min, max, -1.0e6, 1.0e6);
 
-    setFloatParameter(0, theScaleFactor);
-
     std::vector<QString> valueNames = { "Nearest neighbor", "Linear" };
     std::vector<GLenum> values = { GL_NEAREST, GL_LINEAR };
     minMagFilter = new OptionsParameter<GLenum>("Interpolation", 0, this, valueNames, values, theMinMagFilter);
-
-    setOptionsParameter(0, theMinMagFilter);
 }
+
+
 
 Scale::Scale(const Scale& operation) : ImageOperation(operation)
 {
@@ -1806,19 +2061,27 @@ Scale::Scale(const Scale& operation) : ImageOperation(operation)
     scaleFactor = new FloatParameter(*operation.scaleFactor);
     scaleFactor->setOperation(this);
 
-    setFloatParameter(0, scaleFactor->number->value);
-
     minMagFilter = new OptionsParameter<GLenum>(*operation.minMagFilter);
     minMagFilter->setOperation(this);
-
-    setOptionsParameter(0, minMagFilter->value);
 }
+
+
 
 Scale::~Scale()
 {
     delete scaleFactor;
     delete minMagFilter;
 }
+
+
+
+void Scale::setParameters()
+{
+    setFloatParameter(0, scaleFactor->value());
+    setOptionsParameter(0, minMagFilter->value());
+}
+
+
 
 void Scale::setFloatParameter(int index, float value)
 {
@@ -1844,6 +2107,8 @@ void Scale::setFloatParameter(int index, float value)
     }
 }
 
+
+
 void Scale::setOptionsParameter(int index, GLenum value)
 {
     if (index == 0)
@@ -1853,6 +2118,8 @@ void Scale::setOptionsParameter(int index, GLenum value)
         fbo->setMinMagFilter(value);
     }
 }
+
+
 
 // Value
 
@@ -1869,10 +2136,9 @@ Value::Value(bool on, QOpenGLContext* mainContext, float theValue, float theOpac
 
     adjustMinMax(theOpacity, 0.0f, 1.0f, min, max);
     opacity = new FloatParameter("Opacity", 1, this, theOpacity, min, max, 0.0f, 1.0f);
-
-    setFloatParameter(0, theValue);
-    setFloatParameter(1, theOpacity);
 }
+
+
 
 Value::Value(const Value& operation) : ImageOperation(operation)
 {
@@ -1884,16 +2150,24 @@ Value::Value(const Value& operation) : ImageOperation(operation)
 
     opacity = new FloatParameter(*operation.opacity);
     opacity->setOperation(this);
-
-    setFloatParameter(0, value->number->value);
-    setFloatParameter(1, opacity->number->value);
 }
+
+
 
 Value::~Value()
 {
     delete value;
     delete opacity;
 }
+
+
+
+void Value::setParameters()
+{
+    setFloatParameter(0, value->value());
+    setFloatParameter(1, opacity->value());
+}
+
 
 void Value::setFloatParameter(int index, float theValue)
 {

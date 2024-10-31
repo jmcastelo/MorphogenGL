@@ -77,7 +77,7 @@ QVector<Edge *> Node::edges() const
 
 bool Node::connectedTo(Node *node)
 {
-    for (Edge *edge : qAsConst(edgeList))
+    foreach (Edge *edge, edgeList)
         if (edge->destNode() == node)
             return true;
 
@@ -169,7 +169,7 @@ QVariant Node::itemChange(GraphicsItemChange change, const QVariant &value)
     }
     else if (change == ItemPositionHasChanged)
     {
-        for (Edge *edge : qAsConst(edgeList))
+        foreach (Edge *edge, edgeList)
             edge->adjust();
 
         // Draw graph's background
@@ -218,7 +218,7 @@ OperationNode::~OperationNode()
 
 bool OperationNode::hasInputs()
 {
-    for (Edge* edge : qAsConst(edgeList))
+    foreach (Edge* edge, edgeList)
         if (edge->destNode() == this)
             return true;
 
@@ -229,7 +229,7 @@ void OperationNode::renameOperation(QString newName)
 {
     name = newName;
 
-    for (Edge *edge : qAsConst(edgeList))
+    foreach (Edge *edge, edgeList)
     {
         edge->setBlendFactorGroupBoxTitle();
         edge->adjust();
@@ -245,7 +245,7 @@ void OperationNode::setOperation(QAction *action)
 
     name = action->text();
 
-    for (Edge *edge : qAsConst(edgeList))
+    foreach (Edge *edge, edgeList)
         edge->adjust();
 
     update();
@@ -265,7 +265,7 @@ void OperationNode::equalizeBlendFactors()
 {
     graph->generator->equalizeBlendFactors(id);
 
-    for (Edge* edge : qAsConst(edgeList))
+    foreach (Edge* edge, edgeList)
     {
         edge->update();
         edge->updateBlendFactor();
@@ -329,7 +329,7 @@ void OperationNode::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
     {
         QMenu *operationsMenu = menu.addMenu("Set operation");
 
-        for (QString opName : qAsConst(graph->generator->availableOperations))
+        foreach (QString opName, graph->generator->availableOperations)
             operationsMenu->addAction(opName);
 
         connect(operationsMenu, &QMenu::triggered, this, &OperationNode::setOperation);
@@ -365,7 +365,7 @@ QVariant OperationNode::itemChange(GraphicsItemChange change, const QVariant &va
 {
     if ((change == ItemSelectedChange && value.toBool() == true) || change == ItemPositionChange)
     {
-        for (Edge* edge : qAsConst(edgeList))
+        foreach (Edge* edge, edgeList)
         {
             if (edge->destNode() == this)
             {

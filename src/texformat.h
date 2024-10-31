@@ -1,7 +1,11 @@
 #ifndef TEXFORMAT_H
 #define TEXFORMAT_H
 
-#include <GL/gl.h>
+
+
+#include <QOpenGLFunctions>
+
+
 
 // 4 Channels
 enum class TextureFormat {
@@ -23,5 +27,7 @@ enum class TextureFormat {
     //RGBA32I = GL_RGBA32I,
     //RGBA32UI = GL_RGBA32UI
 };
+
+
 
 #endif // TEXFORMAT_H

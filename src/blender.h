@@ -23,7 +23,6 @@
 #pragma once
 
 #include "fbo.h"
-#include <vector>
 #include <QUuid>
 #include <QOpenGLContext>
 

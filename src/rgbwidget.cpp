@@ -119,8 +119,8 @@ void RGBWidget::computeTransformMatrix()
     projection.setToIdentity();
     projection.perspective(60.0f, static_cast<float>(width()) / static_cast<float>(height()), 0.01f, 10.0f);
     
-    QVector3D eye = rotation * QVector3D(0.0f, 0.0f, 2.0f);
-    QVector3D up = rotation * QVector3D(0.0f, 1.0f, 0.0f);
+    QVector3D eye = rotation.map(QVector3D(0.0f, 0.0f, 2.0f));
+    QVector3D up = rotation.map(QVector3D(0.0f, 1.0f, 0.0f));
 
     QMatrix4x4 view;
     view.setToIdentity();

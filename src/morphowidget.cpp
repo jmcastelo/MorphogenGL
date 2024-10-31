@@ -130,7 +130,7 @@ void MorphoWidget::mouseMoveEvent(QMouseEvent* event)
         {
             // Frame
 
-            QPointF delta = QTransform().scale(static_cast<qreal>(image.width()) / width(), static_cast<qreal>(image.height()) / height()).map(prevPos - event->localPos());
+            QPointF delta = QTransform().scale(static_cast<qreal>(image.width()) / width(), static_cast<qreal>(image.height()) / height()).map(prevPos - event->position());
 
             frame = frameTransform.translate(delta.x(), delta.y()).mapRect(image);
 
@@ -155,7 +155,7 @@ void MorphoWidget::mouseMoveEvent(QMouseEvent* event)
         }
         else if (event->modifiers() == Qt::AltModifier)
         {
-            setSelectedPoint(event->localPos());
+            setSelectedPoint(event->position());
         }
     }
 
@@ -172,12 +172,12 @@ void MorphoWidget::mousePressEvent(QMouseEvent* event)
 
         if (event->modifiers() == Qt::NoModifier)
         {
-            prevPos = event->localPos();
+            prevPos = event->position();
             prevFrame = frame;
         }
         else if (event->modifiers() == Qt::AltModifier)
         {
-            setSelectedPoint(event->localPos());
+            setSelectedPoint(event->position());
         }
     }
 

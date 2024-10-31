@@ -37,6 +37,8 @@
 #include <QOffscreenSurface>
 #include <QObject>
 
+
+
 template <class T>
 class Number;
 class IntParameter;
@@ -47,6 +49,8 @@ class KernelParameter;
 class MatrixParameter;
 struct PolarKernel;
 class PolarKernelParameter;
+
+
 
 // Base image operation class
 
@@ -71,7 +75,7 @@ public:
     virtual GLuint** getTextureBlit() { return fbo->getTextureBlit(); }
     virtual GLuint** getTextureID() { return fbo->getTextureID(); }
 
-    void setInputData(QVector<InputData*> data);
+    void setInputData(QList<InputData*> data);
 
     virtual void resize() { blender->resize(); fbo->resize(); }
 
@@ -83,13 +87,14 @@ public:
     virtual KernelParameter* getKernelParameter() { return nullptr; }
     virtual PolarKernelParameter* getPolarKernelParameter() { return nullptr; }
     
-    virtual void setIntParameter(int, int) {}
-    virtual void setFloatParameter(int, float) {}
-    virtual void setOptionsParameter(int, GLenum) {}
-    virtual void setOptionsParameter(int, int) {}
-    virtual void setMatrixParameter(std::vector<Number<float>*>) {}
-    virtual void setKernelParameter(std::vector<Number<float>*>) {}
-    virtual void setPolarKernelParameter() {}
+    virtual void setParameters() = 0;
+    virtual void setIntParameter(int, int) {};
+    virtual void setFloatParameter(int, float) {};
+    virtual void setOptionsParameter(int, GLenum) {};
+    virtual void setOptionsParameter(int, int) {};
+    virtual void setMatrixParameter(std::vector<Number<float>*>) {};
+    virtual void setKernelParameter(std::vector<Number<float>*>) {};
+    virtual void setPolarKernelParameter() {};
 
     void adjustMinMax(float value, float minValue, float maxValue, float& min, float& max);
 
@@ -102,12 +107,15 @@ public:
 
 protected:
     bool enabled;
-    bool blitEnabled;
+    bool blenderEnabled = false;
+    bool blitEnabled = false;
     bool noParameters = false;
     QOpenGLContext* context;
     FBO* fbo;
     Blender* blender;
 };
+
+
 
 // Bilateral filter
 
@@ -123,6 +131,7 @@ public:
     static QString name;
     QString getName() { return name; };
 
+    void setParameters();
     void setIntParameter(int index, int value);
     void setFloatParameter(int index, float value);
 
@@ -142,6 +151,8 @@ private:
     void setParametersOperation(BilateralFilter* operation);
 };
 
+
+
 // Brightness
 
 class Brightness : public ImageOperation
@@ -156,6 +167,7 @@ public:
     static QString name;
     QString getName() { return name; };
 
+    void setParameters();
     void setFloatParameter(int index, float value);
 
     std::vector<FloatParameter*> getFloatParameters() { std::vector<FloatParameter*> parameters = { brightness, opacity }; return parameters; }
@@ -164,6 +176,8 @@ private:
     FloatParameter* brightness;
     FloatParameter* opacity;
 };
+
+
 
 // Color mix
 
@@ -179,6 +193,7 @@ public:
     static QString name;
     QString getName() { return name; };
 
+    void setParameters();
     void setMatrixParameter(std::vector<Number<float>*> numbers);
     void setFloatParameter(int index, float value);
 
@@ -189,6 +204,8 @@ private:
     MatrixParameter* rgbMatrix;
     FloatParameter* opacity;
 };
+
+
 
 // Color quantization
 
@@ -204,6 +221,7 @@ public:
     static QString name;
     QString getName() { return name; };
 
+    void setParameters();
     void setIntParameter(int index, int value);
     void setFloatParameter(int index, float value);
 
@@ -216,6 +234,8 @@ private:
     IntParameter* blueLevels;
     FloatParameter* opacity;
 };
+
+
 
 // Contrast
 
@@ -231,6 +251,7 @@ public:
     static QString name;
     QString getName() { return name; };
 
+    void setParameters();
     void setFloatParameter(int index, float value);
 
     std::vector<FloatParameter*> getFloatParameters() { std::vector<FloatParameter*> parameters = { contrast, opacity }; return parameters; };
@@ -239,6 +260,8 @@ private:
     FloatParameter* contrast;
     FloatParameter* opacity;
 };
+
+
 
 // Convolution
 
@@ -254,6 +277,7 @@ public:
     static QString name;
     QString getName() { return name; };
 
+    void setParameters();
     void setKernelParameter(std::vector<Number<float>*> numbers);
     void setFloatParameter(int index, float value);
 
@@ -266,6 +290,8 @@ private:
     FloatParameter* size;
     FloatParameter* opacity;
 };
+
+
 
 // Dilation
 
@@ -281,6 +307,7 @@ public:
     static QString name;
     QString getName() { return name; };
 
+    void setParameters();
     void setFloatParameter(int index, float value);
 
     std::vector<FloatParameter*> getFloatParameters() { std::vector<FloatParameter*> parameters = { size, opacity }; return parameters; };
@@ -289,6 +316,8 @@ private:
     FloatParameter* size;
     FloatParameter* opacity;
 };
+
+
 
 // Erosion
 
@@ -304,6 +333,7 @@ public:
     static QString name;
     QString getName() { return name; };
 
+    void setParameters();
     void setFloatParameter(int index, float value);
 
     std::vector<FloatParameter*> getFloatParameters() { std::vector<FloatParameter*> parameters = { size, opacity }; return parameters; };
@@ -312,6 +342,8 @@ private:
     FloatParameter* size;
     FloatParameter* opacity;
 };
+
+
 
 // Gamma correction
 
@@ -327,6 +359,7 @@ public:
     static QString name;
     QString getName() { return name; };
 
+    void setParameters();
     void setFloatParameter(int index, float value);
 
     std::vector<FloatParameter*> getFloatParameters() { std::vector<FloatParameter*> parameters = { gammaRed, gammaGreen, gammaBlue, opacity }; return parameters; };
@@ -337,6 +370,8 @@ private:
     FloatParameter* gammaBlue;
     FloatParameter* opacity;
 };
+
+
 
 // Hue shift
 
@@ -350,8 +385,9 @@ public:
     ImageOperation* clone() { return new HueShift(*this); }
 
     static QString name;
-    QString getName() { return name; };
+    QString getName() { return name; }
 
+    void setParameters();
     void setFloatParameter(int index, float value);
 
     std::vector<FloatParameter*> getFloatParameters() { std::vector<FloatParameter*> parameters = { shift, opacity }; return parameters; };
@@ -360,6 +396,8 @@ private:
     FloatParameter* shift;
     FloatParameter* opacity;
 };
+
+
 
 // Identity
 
@@ -370,11 +408,14 @@ public:
     Identity(const Identity& operation);
     ~Identity();
 
+    void setParameters() {}
     ImageOperation* clone() { return new Identity(*this); }
 
     static QString name;
     QString getName() { return name; };
 };
+
+
 
 // Logistic
 
@@ -390,6 +431,7 @@ public:
     static QString name;
     QString getName() { return name; };
 
+    void setParameters();
     void setFloatParameter(int index, float value);
 
     std::vector<FloatParameter*> getFloatParameters() { std::vector<FloatParameter*> parameters = { r, opacity }; return parameters; };
@@ -398,6 +440,8 @@ private:
     FloatParameter* r;
     FloatParameter* opacity;
 };
+
+
 
 // Mask
 
@@ -413,11 +457,15 @@ public:
     ImageOperation* clone() { return new Mask(*this); }
 
     static QString name;
-    QString getName() { return name; };
+    QString getName() { return name; }
+
+    void setParameters() {}
 
 private slots:
     void setScale();
 };
+
+
 
 // Median
 
@@ -433,6 +481,7 @@ public:
     static QString name;
     QString getName() { return name; };
 
+    void setParameters();
     void setFloatParameter(int index, float value);
 
     std::vector<FloatParameter*> getFloatParameters() { std::vector<FloatParameter*> parameters = { size, opacity }; return parameters; };
@@ -441,6 +490,8 @@ private:
     FloatParameter* size;
     FloatParameter* opacity;
 };
+
+
 
 // Memory
 
@@ -467,6 +518,7 @@ public:
     void blit();
     void clear();
 
+    void setParameters() {};
     void setIntParameter(int index, int value);
     void setFloatParameter(int index, float value);
 
@@ -485,6 +537,8 @@ private:
     void setBlenderOutInputData();
 };
 
+
+
 // Morphological gradient
 
 class MorphologicalGradient : public ImageOperation
@@ -499,6 +553,7 @@ public:
     static QString name;
     QString getName() { return name; };
 
+    void setParameters();
     void setFloatParameter(int index, float value);
 
     std::vector<FloatParameter*> getFloatParameters() { std::vector<FloatParameter*> parameters = { dilationSize, erosionSize, opacity }; return parameters; };
@@ -525,6 +580,7 @@ public:
     static QString name;
     QString getName() { return name; };
 
+    void setParameters();
     void setFloatParameter(int index, float value);
 
     std::vector<FloatParameter*> getFloatParameters() { std::vector<FloatParameter*> parameters = { size, opacity }; return parameters; };
@@ -536,6 +592,8 @@ private:
 private slots:
     void setWidthAndHeight();
 };
+
+
 
 // Polar convolution
 
@@ -551,6 +609,7 @@ public:
     static QString name;
     QString getName() { return name; }
 
+    void setParameters();
     void setPolarKernelParameter();
     void setFloatParameter(int index, float value);
 
@@ -561,6 +620,8 @@ private:
     PolarKernelParameter* polarKernelParameter;
     FloatParameter* opacity;
 };
+
+
 
 // Power
 
@@ -576,6 +637,7 @@ public:
     static QString name;
     QString getName() { return name; };
 
+    void setParameters();
     void setFloatParameter(int index, float value);
 
     std::vector<FloatParameter*> getFloatParameters() { std::vector<FloatParameter*> parameters = { exponent, opacity }; return parameters; };
@@ -585,9 +647,11 @@ private:
     FloatParameter* opacity;
 };
 
+
+
 // Rotation
 
-class Rotation: public QObject, public ImageOperation
+class Rotation: public ImageOperation
 {
 public:
     Rotation(bool on, QOpenGLContext* mainContext, float theAngle, GLenum theMinMagFilter);
@@ -599,6 +663,7 @@ public:
     static QString name;
     QString getName() { return name; };
 
+    void setParameters();
     void setFloatParameter(int index, float value);
     void setOptionsParameter(int index, GLenum value);
 
@@ -609,6 +674,8 @@ private:
     FloatParameter* angle;
     OptionsParameter<GLenum>* minMagFilter;
 };
+
+
 
 // Saturation
 
@@ -624,6 +691,7 @@ public:
     static QString name;
     QString getName() { return name; };
 
+    void setParameters();
     void setFloatParameter(int index, float value);
 
     std::vector<FloatParameter*> getFloatParameters() { std::vector<FloatParameter*> parameters = { saturation, opacity }; return parameters; };
@@ -632,6 +700,8 @@ private:
     FloatParameter* saturation;
     FloatParameter* opacity;
 };
+
+
 
 // Scale
 
@@ -647,6 +717,7 @@ public:
     static QString name;
     QString getName() { return name; };
 
+    void setParameters();
     void setFloatParameter(int index, float value);
     void setOptionsParameter(int index, GLenum value);
 
@@ -657,6 +728,8 @@ private:
     FloatParameter* scaleFactor;
     OptionsParameter<GLenum>* minMagFilter;
 };
+
+
 
 // Value
 
@@ -672,6 +745,7 @@ public:
     static QString name;
     QString getName() { return name; };
 
+    void setParameters();
     void setFloatParameter(int index, float value);
 
     std::vector<FloatParameter*> getFloatParameters() { std::vector<FloatParameter*> parameters = { value, opacity }; return parameters; };

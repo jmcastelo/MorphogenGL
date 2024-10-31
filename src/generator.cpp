@@ -432,9 +432,14 @@ void GeneratorGL::pasteOperations()
 
 void GeneratorGL::swapTwoOperations(QUuid id1, QUuid id2)
 {
-    ImageOperation* operation = operationNodes.value(id1)->operation->clone();
-    operationNodes.value(id1)->setOperation(operationNodes.value(id2)->operation->clone());
-    operationNodes.value(id2)->setOperation(operation);
+    ImageOperation* operation1 = operationNodes.value(id1)->operation->clone();
+    operation1->setParameters();
+
+    ImageOperation* operation2 = operationNodes.value(id2)->operation->clone();
+    operation2->setParameters();
+
+    operationNodes.value(id1)->setOperation(operation2);
+    operationNodes.value(id2)->setOperation(operation1);
 
     sortOperations();
 
@@ -480,6 +485,7 @@ QUuid GeneratorGL::addOperation(QString operationName)
 QUuid GeneratorGL::copyOperation(QUuid srcId)
 {
     ImageOperation* operation = operationNodes.value(srcId)->operation->clone();
+    operation->setParameters();
 
     QUuid id = QUuid::createUuid();
 
@@ -499,7 +505,6 @@ void GeneratorGL::setOperation(QUuid id, QString operationName)
     // If it's output node, set new output texture id
 
     if (id == outputID)
-        //outputTextureID = operation->getTextureBlit();
         outputTextureID = operation->getTextureID();
 
     sortOperations();
@@ -682,6 +687,9 @@ ImageOperation* GeneratorGL::newOperation(QString operationName)
         operation = new Value(false, sharedContext, 0.5f, 1.0f);
     }
 
+    if (operation)
+        operation->setParameters();
+
     return operation;
 }
 
@@ -790,6 +798,9 @@ ImageOperation* GeneratorGL::loadImageOperation(
     {
         operation = new Value(enabled, sharedContext, floatParameters[0], floatParameters[1]);
     }
+
+    if (operation)
+        operation->setParameters();
 
     return operation;
 }

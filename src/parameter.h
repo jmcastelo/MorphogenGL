@@ -41,6 +41,8 @@ signals:
     void currentIndexChanged(int currentIndex);
 };
 
+
+
 template <class T>
 class Number : public NumberSignals
 {
@@ -56,7 +58,7 @@ public:
         sup { theSup }
     {}
 
-    Number(const Number& number)
+    Number(const Number& number): NumberSignals(nullptr)
     {
         value = number.value;
         min = number.min;
@@ -99,6 +101,8 @@ public:
     }
 };
 
+
+
 class Parameter
 {
 public:
@@ -116,27 +120,33 @@ public:
     ImageOperation* operation;
 };
 
+
+
 template <class T>
 class OptionsParameter : public Parameter
 {
 public:
     std::vector<QString> valueNames;
     std::vector<T> values;
-    T value;
+    T value_;
 
     OptionsParameter(QString theName, int theIndex, ImageOperation* theOperation, std::vector<QString> theValueNames, std::vector<T> theValues, T theValue) :
         Parameter(theName, theIndex, theOperation),
         valueNames { theValueNames },
         values { theValues },
-        value { theValue }
+        value_ { theValue }
     {}
 
     void setValue(int valueIndex)
     {
-        value = values[valueIndex];
-        operation->setOptionsParameter(index, value);
+        value_ = values[valueIndex];
+        operation->setOptionsParameter(index, value_);
     }
+
+    T value(){ return value_; }
 };
+
+
 
 class IntParameter : public Parameter
 {
@@ -166,7 +176,11 @@ public:
     {
         operation->setIntParameter(index, theValue);
     }
+
+    int value() { return number->value; }
 };
+
+
 
 class FloatParameter : public Parameter
 {
@@ -194,7 +208,11 @@ public:
     {
         operation->setFloatParameter(index, theValue);
     }
+
+    float value() { return number->value; }
 };
+
+
 
 class ArrayParameter : public Parameter
 {
@@ -231,6 +249,8 @@ public:
     virtual void setValues() = 0;
 };
 
+
+
 class KernelParameter : public ArrayParameter
 {
 public:
@@ -253,6 +273,8 @@ public:
     }
 };
 
+
+
 class MatrixParameter : public ArrayParameter
 {
 public:
@@ -269,6 +291,8 @@ public:
         operation->setMatrixParameter(numbers);
     }
 };
+
+
 
 struct PolarKernel
 {
@@ -290,6 +314,8 @@ struct PolarKernel
         maximum { theMaximum }
     {}
 };
+
+
 
 class PolarKernelParameter : public Parameter
 {

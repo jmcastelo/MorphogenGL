@@ -25,8 +25,8 @@
 #include "parameter.h"
 #include "focuslineedit.h"
 #include "imageoperations.h"
+
 #include <vector>
-#include <string>
 #include <cmath>
 #include <QWidget>
 #include <QFrame>
@@ -42,6 +42,8 @@
 #include <QVBoxLayout>
 #include <QCloseEvent>
 #include <QGroupBox>
+
+
 
 // Parameter widget base class
 
@@ -65,6 +67,8 @@ protected:
     QWidget* focusedWidget;
 };
 
+
+
 // Options parameter widget: QComboBox
 
 template <class T>
@@ -79,7 +83,7 @@ public:
 
         int index = 0;
         for (size_t i = 0; i < optionsParameter->values.size(); i++)
-            if (optionsParameter->value == optionsParameter->values[i])
+            if (optionsParameter->value() == optionsParameter->values[i])
                 index = static_cast<int>(i);
 
         comboBox = new FocusComboBox;
@@ -105,6 +109,8 @@ private:
     OptionsParameter<T>* optionsParameter;
 };
 
+
+
 // Integer parameter widget
 
 class IntParameterWidget : public ParameterWidget
@@ -123,15 +129,15 @@ public:
         lineEdit->setValidator(validator);
         lineEdit->setText(QString::number(intParameter->number->value));
 
-        connect(lineEdit, &FocusLineEdit::returnPressed, this, [=]()
+        connect(lineEdit, &FocusLineEdit::editingFinished, this, [=]()
         {
             intParameter->number->setValue(lineEdit->text().toInt());
             intParameter->number->setIndex();
         });
-        connect(lineEdit, &FocusLineEdit::focusOut, this, [=]()
+        /*connect(lineEdit, &FocusLineEdit::focusOut, this, [=]()
         {
             lineEdit->setText(QString::number(intParameter->number->value));
-        });
+        });*/
         connect(lineEdit, &FocusLineEdit::focusIn, this, [=](){ emit focusIn(intParameter->number); });
         connect(lineEdit, &FocusLineEdit::focusIn, this, QOverload<>::of(&ParameterWidget::focusIn));
         connect(lineEdit, &FocusLineEdit::focusOut, this, &ParameterWidget::focusOut);
@@ -150,6 +156,8 @@ public:
 private:
     IntParameter* intParameter;
 };
+
+
 
 // Odd integer parameter widget
 
@@ -167,7 +175,7 @@ public:
         lineEdit->setValidator(validator);
         lineEdit->setText(QString::number(intParameter->number->value));
 
-        connect(lineEdit, &FocusLineEdit::returnPressed, this, [=]()
+        connect(lineEdit, &FocusLineEdit::editingFinished, this, [=]()
         {
             int value = lineEdit->text().toInt();
             if (value > 0 && value % 2 == 0)
@@ -178,10 +186,10 @@ public:
             intParameter->number->setValue(value);
             intParameter->number->setIndex();
         });
-        connect(lineEdit, &FocusLineEdit::focusOut, this, [=]()
+        /*connect(lineEdit, &FocusLineEdit::focusOut, this, [=]()
         {
             lineEdit->setText(QString::number(intParameter->number->value));
-        });
+        });*/
         connect(lineEdit, &FocusLineEdit::focusIn, this, [=](){ emit focusIn(intParameter->number); });
         connect(lineEdit, &FocusLineEdit::focusIn, this, QOverload<>::of(&ParameterWidget::focusIn));
         connect(lineEdit, &FocusLineEdit::focusOut, this, &ParameterWidget::focusOut);
@@ -200,6 +208,8 @@ public:
 private:
     IntParameter* intParameter;
 };
+
+
 
 // Float parameter widget
 
@@ -224,15 +234,15 @@ public:
         lineEdit->setValidator(validator);
         lineEdit->setText(QString::number(floatParameter->number->value));
 
-        connect(lineEdit, &FocusLineEdit::returnPressed, this, [&]()
+        connect(lineEdit, &FocusLineEdit::editingFinished, this, [&]()
         {
             floatParameter->number->setValue(lineEdit->text().toFloat());
             floatParameter->number->setIndex();
         });
-        connect(lineEdit, &FocusLineEdit::focusOut, this, [=]()
+        /*connect(lineEdit, &FocusLineEdit::focusOut, this, [=]()
         {
             lineEdit->setText(QString::number(floatParameter->number->value));
-        });
+        });*/
         connect(lineEdit, &FocusLineEdit::focusIn, this, [=](){ emit focusIn(floatParameter->number); });
         connect(lineEdit, &FocusLineEdit::focusIn, this, QOverload<>::of(&ParameterWidget::focusIn));
         connect(lineEdit, &FocusLineEdit::focusOut, this, &ParameterWidget::focusOut);
@@ -251,6 +261,8 @@ public:
 private:
     FloatParameter* floatParameter;
 };
+
+
 
 // Array parameter widget
 
@@ -292,16 +304,16 @@ public:
         }
         for (size_t i = 0; i < arrayParameter->numbers.size(); i++)
         {
-            connect(lineEdits[i], &FocusLineEdit::returnPressed, this, [=]()
+            connect(lineEdits[i], &FocusLineEdit::editingFinished, this, [=]()
             {
                 arrayParameter->numbers[i]->setValue(lineEdits[i]->text().toFloat());
                 arrayParameter->numbers[i]->setIndex();
                 arrayParameter->setValues();
             });
-            connect(lineEdits[i], &FocusLineEdit::focusOut, this, [=]()
+            /*connect(lineEdits[i], &FocusLineEdit::focusOut, this, [=]()
             {
                 lineEdits[i]->setText(QString::number(arrayParameter->numbers[i]->value));
-            });
+            });*/
             connect(lineEdits[i], &FocusLineEdit::focusIn, this, [=](){ focusedWidget = lineEdits[i]; });
             connect(lineEdits[i], &FocusLineEdit::focusIn, this, [=](){ emit focusIn(arrayParameter->numbers[i]); });
             connect(lineEdits[i], &FocusLineEdit::focusIn, this, QOverload<>::of(&ParameterWidget::focusIn));
@@ -322,6 +334,8 @@ protected:
     ArrayParameter* arrayParameter;
     std::vector<FocusLineEdit*> lineEdits;
 };
+
+
 
 // Kernel parameter widget
 
@@ -403,6 +417,8 @@ private:
     std::vector<std::vector<float>> presets;
 };
 
+
+
 // Matrix parameter widget
 
 class MatrixParameterWidget : public ArrayParameterWidget
@@ -456,6 +472,8 @@ private:
     MatrixParameter* matrixParameter;
     std::vector<std::vector<float>> presets;
 };
+
+
 
 // Polar kernel parameter widget
 
@@ -737,6 +755,8 @@ private:
     }*/
 };
 
+
+
 // Operations widget
 
 class OperationsWidget : public QFrame
@@ -872,7 +892,7 @@ public:
 
             mainLayout->addWidget(selectedParameterGroupBox);
 
-            for (auto widget : qAsConst(slideableFloatParameterWidgets))
+            foreach (auto widget, slideableFloatParameterWidgets)
             {
                 connect(widget, QOverload<Number<float>*>::of(&ParameterWidget::focusIn), this, [=](Number<float>* number)
                 {
@@ -888,7 +908,7 @@ public:
                 });
             }
 
-            for (auto widget : qAsConst(slideableIntParameterWidgets))
+            foreach (auto widget, slideableIntParameterWidgets)
             {
                 connect(widget, QOverload<Number<int>*>::of(&ParameterWidget::focusIn), this, [=](Number<int>* number)
                 {
@@ -909,7 +929,7 @@ public:
 
         if (!parameterWidgets.isEmpty())
         {
-            for (auto widget : qAsConst(parameterWidgets))
+            foreach (auto widget, parameterWidgets)
             {
                 connect(widget, QOverload<>::of(&ParameterWidget::focusIn), this, [=](){
                     setLineWidth(1);

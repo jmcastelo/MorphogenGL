@@ -155,7 +155,7 @@ void ConfigurationParser::writeOperationNode(ImageOperationNode* node)
         stream.writeStartElement("parameter");
         stream.writeAttribute("name", parameter->name);
         stream.writeAttribute("type", "int");
-        stream.writeCharacters(QString::number(parameter->value));
+        stream.writeCharacters(QString::number(parameter->value()));
         stream.writeEndElement();
     }
 
@@ -164,7 +164,7 @@ void ConfigurationParser::writeOperationNode(ImageOperationNode* node)
         stream.writeStartElement("parameter");
         stream.writeAttribute("name", parameter->name);
         stream.writeAttribute("type", "interpolationflag");
-        stream.writeCharacters(QString::number(parameter->value));
+        stream.writeCharacters(QString::number(parameter->value()));
         stream.writeEndElement();
     }
 

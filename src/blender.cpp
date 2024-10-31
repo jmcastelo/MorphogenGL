@@ -54,7 +54,7 @@ void Blender::blend()
 {
     float outFactor = 0.0f;
 
-    for (InputData* inData : inputs)
+    foreach (InputData* inData, inputs)
     {
         context->makeCurrent(surface);
 

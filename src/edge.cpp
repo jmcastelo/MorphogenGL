@@ -394,7 +394,7 @@ void Edge::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
         {
             bool showAcion = true;
 
-            for (Cycle* cycle : qAsConst(cycleList))
+            foreach (Cycle* cycle, cycleList)
             {
                 if (cycle->numPredges() == 1)
                 {
@@ -412,7 +412,7 @@ void Edge::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
 
     QMenu *operationsMenu = menu.addMenu("Insert operation");
 
-    for (QString opName : qAsConst(graph->generator->availableOperations))
+    foreach (QString opName, graph->generator->availableOperations)
     {
         QAction* action = operationsMenu->addAction(opName);
         action->setData(QVariant(QCursor::pos()));
