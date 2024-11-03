@@ -22,7 +22,8 @@
 
 #pragma once
 
-#include "fbo.h"
+
+
 #include <cmath>
 #include <QOpenGLWidget>
 #include <QOpenGLExtraFunctions>
@@ -38,6 +39,8 @@
 #include <QWheelEvent>
 #include <QMouseEvent>
 
+
+
 class RGBWidget : public QOpenGLWidget, protected QOpenGLExtraFunctions
 {
     Q_OBJECT
@@ -50,7 +53,9 @@ public:
     void paintGL() override;
     void resizeGL(int width, int height) override;
 
-    void setPixels(GLfloat *pixels);
+    void setPixels(GLfloat* pixels);
+    void setLines(QList<GLfloat> vertices);
+    void setNumVertices(QList<GLuint> nv){ numVertices = nv; }
 
     void updatePlot();
 
@@ -67,6 +72,12 @@ private:
     QOpenGLShaderProgram* program = nullptr;
     QOpenGLVertexArrayObject* vao = nullptr;
     QOpenGLBuffer* vbo = nullptr;
+
+    QOpenGLShaderProgram* program3D = nullptr;
+    QOpenGLVertexArrayObject* vao3D = nullptr;
+    QOpenGLBuffer* vbo3D = nullptr;
+
+    QList<GLuint> numVertices;
 
     float scale = 1.0f;
     QMatrix4x4 rotation;

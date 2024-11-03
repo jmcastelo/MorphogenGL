@@ -30,19 +30,13 @@
 
 MorphoWidget::MorphoWidget(QWidget* parent) : QOpenGLWidget(parent)
 {
+    resize(FBO::width, FBO::height);
+
     image = QRect(0, 0, width(), height());
     frame = image;
 
     selectedPoint = QPointF(width() / 2, height() / 2);
     cursor = QPointF(0.0, 0.0);
-
-    //setWindowIcon(QIcon(":/icons/morphogengl.png"));
-    
-    //resize(width, height);
-
-    // Set widget on screen center
-
-    //setGeometry(QStyle::alignedRect(Qt::LeftToRight, Qt::AlignCenter, size(), QGuiApplication::screens().first()->geometry()));
 }
 
 
@@ -126,7 +120,7 @@ void MorphoWidget::mouseMoveEvent(QMouseEvent* event)
 {
     if (event->buttons() == Qt::LeftButton)
     {
-        if (event->modifiers() == Qt::NoModifier)
+        if (event->modifiers() == Qt::ControlModifier)
         {
             // Frame
 
@@ -153,7 +147,7 @@ void MorphoWidget::mouseMoveEvent(QMouseEvent* event)
                 prevFrame = frame;
             }
         }
-        else if (event->modifiers() == Qt::AltModifier)
+        else if (drawingCursor)
         {
             setSelectedPoint(event->position());
         }
@@ -170,12 +164,12 @@ void MorphoWidget::mousePressEvent(QMouseEvent* event)
     {
         setFocus();
 
-        if (event->modifiers() == Qt::NoModifier)
+        if (event->modifiers() == Qt::ControlModifier)
         {
             prevPos = event->position();
             prevFrame = frame;
         }
-        else if (event->modifiers() == Qt::AltModifier)
+        else if (drawingCursor)
         {
             setSelectedPoint(event->position());
         }
@@ -186,7 +180,7 @@ void MorphoWidget::mousePressEvent(QMouseEvent* event)
 
 
 
-void MorphoWidget::keyPressEvent(QKeyEvent* event)
+/*void MorphoWidget::keyPressEvent(QKeyEvent* event)
 {
     if (event->key() == Qt::Key_Alt)
     {
@@ -195,17 +189,17 @@ void MorphoWidget::keyPressEvent(QKeyEvent* event)
     }
     else
         event->ignore();
-}
+}*/
 
 
 
-void MorphoWidget::keyReleaseEvent(QKeyEvent* event)
+/*void MorphoWidget::keyReleaseEvent(QKeyEvent* event)
 {
     if (event->key() == Qt::Key_Alt)
     {
         drawingCursor = false;
     }
-}
+}*/
 
 
 
@@ -247,6 +241,16 @@ void MorphoWidget::setSelectedPoint(QPointF pos)
 
 
 
+void MorphoWidget::setCursor(QPoint selPoint)
+{
+    QPointF point = selectedPointTransform.map(selPoint);
+    cursor.setX(2.0 * ((point.x() - frame.left()) / frame.width() - 0.5));
+    cursor.setY(2.0 * (0.5 - (point.y() - frame.top()) / frame.height()));
+    updateCursor();
+}
+
+
+
 void MorphoWidget::resetZoom(int newWidth, int newHeight)
 {
     QRect oldImage = image;
@@ -260,7 +264,8 @@ void MorphoWidget::resetZoom(int newWidth, int newHeight)
 
     frame = frameTransform.mapRect(image);
 
-    selectedPoint = QTransform().scale(scaleX, scaleY).map(selectedPoint);
+    QTransform scaleTransform = QTransform().scale(scaleX, scaleY);
+    /*selectedPoint = scaleTransform.map(selectedPoint);
 
     selectedPointTransform.setMatrix(1.0, 0.0, 0.0, 0.0, 1.0, 0.0, scaleX * selectedPointTransform.dx(), scaleY * selectedPointTransform.dy(), 1.0);
 
@@ -283,7 +288,8 @@ void MorphoWidget::resetZoom(int newWidth, int newHeight)
     if (point.y() > image.bottom())
         point.setY(image.bottom());
 
-    emit selectedPointChanged(point);
+    emit selectedPointChanged(point);*/
+    emit scaleTransformChanged(scaleTransform);
 }
 
 
@@ -445,6 +451,8 @@ void MorphoWidget::paintGL()
 
     glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
 }
+
+
 
 void MorphoWidget::resizeGL(int width, int height)
 {

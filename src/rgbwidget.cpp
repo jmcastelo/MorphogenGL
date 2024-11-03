@@ -21,23 +21,42 @@
 */
 
 #include "rgbwidget.h"
+#include "fbo.h"
+
+
 
 RGBWidget::RGBWidget(QWidget* parent) : QOpenGLWidget(parent)
 {
-    setWindowIcon(QIcon(":/icons/morphogengl.png"));
-    setWindowTitle("RGB Plot");
+    //setWindowIcon(QIcon(":/icons/morphogengl.png"));
+    //setWindowTitle("RGB Plot");
     resize(512, 512);
 }
 
+
+
 RGBWidget::~RGBWidget()
 {
-    if (vao && vao->isCreated()) vao->destroy();
-    if (vbo && vbo->isCreated()) vbo->destroy();
+    if (vao && vao->isCreated())
+        vao->destroy();
+
+    if (vbo && vbo->isCreated())
+        vbo->destroy();
+
+    if (vao3D && vao3D->isCreated())
+        vao3D->destroy();
+
+    if (vbo3D && vbo3D->isCreated())
+        vbo3D->destroy();
 
     if (program) delete program;
+    if (program3D) delete program3D;
     if (vao) delete vao;
     if (vbo) delete vbo;
+    if (vao3D) delete vao3D;
+    if (vbo3D) delete vbo3D;
 }
+
+
 
 void RGBWidget::initializeGL()
 {
@@ -53,6 +72,14 @@ void RGBWidget::initializeGL()
     if (!program->link())
         qDebug() << "Shader link error:\n" << program->log();
 
+    program3D = new QOpenGLShaderProgram();
+    if (!program3D->addShaderFromSourceFile(QOpenGLShader::Vertex, ":/shaders/3d.vert"))
+        qDebug() << "Vertex shader error:\n" << program3D->log();
+    if (!program3D->addShaderFromSourceFile(QOpenGLShader::Fragment, ":/shaders/3d.frag"))
+        qDebug() << "Fragment shader error:\n" << program3D->log();
+    if (!program3D->link())
+        qDebug() << "Shader link error:\n" << program3D->log();
+
     vao = new QOpenGLVertexArrayObject();
     vao->create();
 
@@ -60,8 +87,17 @@ void RGBWidget::initializeGL()
     vbo->create();
     vbo->setUsagePattern(QOpenGLBuffer::DynamicDraw);
 
+    vao3D = new QOpenGLVertexArrayObject();
+    vao3D->create();
+
+    vbo3D = new QOpenGLBuffer(QOpenGLBuffer::VertexBuffer);
+    vbo3D->create();
+    vbo3D->setUsagePattern(QOpenGLBuffer::DynamicDraw);
+
     computeTransformMatrix();
 }
+
+
 
 void RGBWidget::paintGL()
 {
@@ -75,7 +111,22 @@ void RGBWidget::paintGL()
 
     vao->release();
     program->release();
+
+    program3D->bind();
+    vao3D->bind();
+
+    GLint first = 0;
+    foreach (GLuint nv, numVertices)
+    {
+        glDrawArrays(GL_LINES, first, nv);
+        first += nv;
+    }
+
+    vao3D->release();
+    program3D->release();
 }
+
+
 
 void RGBWidget::resizeGL(int width, int height)
 {
@@ -85,7 +136,9 @@ void RGBWidget::resizeGL(int width, int height)
     computeTransformMatrix();
 }
 
-void RGBWidget::setPixels(GLfloat *pixels)
+
+
+void RGBWidget::setPixels(GLfloat* pixels)
 {
     makeCurrent();
 
@@ -109,10 +162,40 @@ void RGBWidget::setPixels(GLfloat *pixels)
     update();
 }
 
+
+
+void RGBWidget::setLines(QList<GLfloat> vertices)
+{
+    makeCurrent();
+
+    vao3D->bind();
+
+    vbo3D->bind();
+    vbo3D->allocate(vertices.data(), vertices.size() * sizeof(GLfloat));
+
+    program3D->bind();
+
+    int posLocation = program3D->attributeLocation("pos");
+    program3D->enableAttributeArray(posLocation);
+    program3D->setAttributeBuffer(posLocation, GL_FLOAT, 0, 3);
+
+    program3D->release();
+    vbo3D->release();
+    vao3D->release();
+
+    doneCurrent();
+
+    update();
+}
+
+
+
 void RGBWidget::updatePlot()
 {
     update();
 }
+
+
 
 void RGBWidget::computeTransformMatrix()
 {
@@ -139,16 +222,24 @@ void RGBWidget::computeTransformMatrix()
     program->setUniformValue("transform", transform);
     program->release();
 
+    program3D->bind();
+    program3D->setUniformValue("transform", transform);
+    program3D->release();
+
     doneCurrent();
 
     update();
 }
+
+
 
 void RGBWidget::closeEvent(QCloseEvent* event)
 {
     emit closing();
     event->accept();
 }
+
+
 
 void RGBWidget::wheelEvent(QWheelEvent* event)
 {
@@ -157,6 +248,8 @@ void RGBWidget::wheelEvent(QWheelEvent* event)
     computeTransformMatrix();
 }
 
+
+
 void RGBWidget::mousePressEvent(QMouseEvent* event)
 {
     if (event->buttons() == Qt::LeftButton)
@@ -164,6 +257,8 @@ void RGBWidget::mousePressEvent(QMouseEvent* event)
         prevPos = event->pos();
     }
 }
+
+
 
 void RGBWidget::mouseMoveEvent(QMouseEvent* event)
 {
@@ -185,6 +280,8 @@ void RGBWidget::mouseMoveEvent(QMouseEvent* event)
         prevPos = event->pos();
     }
 }
+
+
 
 QVector3D RGBWidget::getArcBallVector(const QPoint& screenPoint)
 {

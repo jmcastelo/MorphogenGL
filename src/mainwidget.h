@@ -2,6 +2,8 @@
 
 #include "morphowidget.h"
 #include "controlwidget.h"
+#include "plotswidget.h"
+
 #include <QWidget>
 #include <QImage>
 
@@ -18,7 +20,6 @@ public:
 
     GeneratorGL* generator(){ return controlWidget->generator; }
 
-    void computePlots();
     QImage grabMorphoWidgetFramebuffer();
     QOpenGLContext* morphoWidgetContext(){ return morphoWidget->context(); }
     int morphoWidgetWidth(){ return morphoWidget->width(); }
@@ -40,6 +41,7 @@ protected:
 private:
     MorphoWidget* morphoWidget;
     ControlWidget* controlWidget;
+    PlotsWidget* plotsWidget;
 
     int oldWidth;
     int oldHeight;

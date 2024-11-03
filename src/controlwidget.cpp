@@ -31,7 +31,10 @@
 #include <QHeaderView>
 #include <QScrollBar>
 
-ControlWidget::ControlWidget(Heart* theHeart, QWidget *parent) : QWidget(parent), heart { theHeart }
+ControlWidget::ControlWidget(Heart* theHeart, PlotsWidget *thePlotsWidget, QWidget *parent) :
+    QWidget(parent),
+    heart { theHeart },
+    plotsWidget { thePlotsWidget }
 {
     // Generator
 
@@ -63,11 +66,6 @@ ControlWidget::ControlWidget(Heart* theHeart, QWidget *parent) : QWidget(parent)
     constructSortedOperationsWidget();
 
     updateScrollArea();
-
-    // Plots widget
-
-    plotsWidget = new PlotsWidget(FBO::width, FBO::height);
-    plotsWidget->setVisible(false);
 
     // Graph widget
 
@@ -172,14 +170,12 @@ ControlWidget::ControlWidget(Heart* theHeart, QWidget *parent) : QWidget(parent)
     // Signals + Slots
 
     connect(heart, &Heart::iterationPerformed, this, &ControlWidget::updateIterationNumberLabel);
+    connect(heart, &Heart::iterationPerformed, plotsWidget, &PlotsWidget::updatePlots);
     connect(heart, &Heart::iterationTimeMeasured, this, &ControlWidget::updateMetricsLabels);
     connect(parser, &ConfigurationParser::updateImageSize, this, [&](int width, int height)
     {
         generator->resize(width, height);
-        //imageWidthLineEdit->setText(QString::number(width));
-        //imageHeightLineEdit->setText(QString::number(height));
     });
-    connect(this, &ControlWidget::selectedPointChanged, plotsWidget, &PlotsWidget::setSelectedPoint);
     connect(generator, &GeneratorGL::outputTextureChanged, plotsWidget, &PlotsWidget::setTextureID);
     connect(generator, &GeneratorGL::imageSizeChanged, plotsWidget, &PlotsWidget::setImageSize);
 }
@@ -193,12 +189,6 @@ ControlWidget::~ControlWidget()
     delete graphWidget;
     delete generator;
     qDeleteAll(operationsWidgets);
-}
-
-void ControlWidget::computePlots()
-{
-    if (generator->active && plotsWidget->plotsActive())
-        plotsWidget->getPixels();
 }
 
 void ControlWidget::closeEvent(QCloseEvent* event)

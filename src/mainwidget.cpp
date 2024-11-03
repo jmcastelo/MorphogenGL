@@ -1,6 +1,9 @@
 #include "heart.h"
 #include "mainwidget.h"
+
 #include <QDebug>
+
+
 
 MainWidget::MainWidget(Heart* heart, QWidget* parent) : QWidget(parent)
 {
@@ -8,10 +11,15 @@ MainWidget::MainWidget(Heart* heart, QWidget* parent) : QWidget(parent)
 
     morphoWidget = new MorphoWidget(this);
 
+    // PlotsWidget
+
+    plotsWidget = new PlotsWidget(FBO::width, FBO::height);
+    plotsWidget->setVisible(false);
+
     // ControlWidget
 
-    controlWidget = new ControlWidget(heart, this);
-    controlWidget->setGeometry(682, 0, 342, 1024);
+    controlWidget = new ControlWidget(heart, plotsWidget, this);
+    controlWidget->setGeometry(FBO::width / 2, 0, FBO::width / 2, FBO::height);
 
     QVBoxLayout* mainLayout = new QVBoxLayout;
     mainLayout->setContentsMargins(0, 0, 0, 0);
@@ -26,13 +34,17 @@ MainWidget::MainWidget(Heart* heart, QWidget* parent) : QWidget(parent)
     connect(morphoWidget, &MorphoWidget::openGLInitialized, this, [=]()
     {
         controlWidget->generator->init(morphoWidget->context());
-        controlWidget->initPlotsWidget(morphoWidget->context());
+        plotsWidget->init(morphoWidget->context());
         emit morphoWidgetInitialized();
     });
     connect(morphoWidget, &MorphoWidget::supportedTexFormats, controlWidget, &ControlWidget::populateTexFormatComboBox);
     connect(morphoWidget, &MorphoWidget::screenSizeChanged, controlWidget, &ControlWidget::updateWindowSizeLineEdits);
     connect(morphoWidget, &MorphoWidget::screenSizeChanged, controlWidget->generator, &GeneratorGL::resize);
-    connect(morphoWidget, &MorphoWidget::selectedPointChanged, controlWidget, &ControlWidget::selectedPointChanged);
+
+    connect(morphoWidget, &MorphoWidget::scaleTransformChanged, plotsWidget, &PlotsWidget::transformSources);
+    connect(morphoWidget, &MorphoWidget::selectedPointChanged, plotsWidget, &PlotsWidget::setSelectedPoint);
+    connect(plotsWidget, &PlotsWidget::selectedPointChanged, morphoWidget, &MorphoWidget::setCursor);
+    connect(plotsWidget, &PlotsWidget::drawCursor, morphoWidget, &MorphoWidget::setDrawingCursor);
 
     connect(controlWidget, &ControlWidget::updateStateChanged, morphoWidget, &MorphoWidget::setUpdate);
     connect(controlWidget, &ControlWidget::detach, this, &MainWidget::detachControlWidget);
@@ -43,26 +55,30 @@ MainWidget::MainWidget(Heart* heart, QWidget* parent) : QWidget(parent)
     connect(controlWidget->generator, &GeneratorGL::imageSizeChanged, morphoWidget, &MorphoWidget::resetZoom);
 }
 
+
+
 MainWidget::~MainWidget()
 {
     delete morphoWidget;
+    delete plotsWidget;
     delete controlWidget;
 }
+
+
 
 void MainWidget::updateMorphoWidget()
 {
     morphoWidget->update();
 }
 
+
+
 QImage MainWidget::grabMorphoWidgetFramebuffer()
 {
     return morphoWidget->grabFramebuffer();
 }
 
-void MainWidget::computePlots()
-{
-    controlWidget->computePlots();
-}
+
 
 void MainWidget::closeEvent(QCloseEvent* event)
 {
@@ -71,6 +87,8 @@ void MainWidget::closeEvent(QCloseEvent* event)
     emit closing();
     event->accept();
 }
+
+
 
 void MainWidget::resizeEvent(QResizeEvent* event)
 {
@@ -90,6 +108,8 @@ void MainWidget::resizeEvent(QResizeEvent* event)
     event->accept();
 }
 
+
+
 void MainWidget::keyPressEvent(QKeyEvent* event)
 {
     if (event->key() == Qt::Key_Tab && event->modifiers() == Qt::ControlModifier)
@@ -97,6 +117,8 @@ void MainWidget::keyPressEvent(QKeyEvent* event)
 
     event->accept();
 }
+
+
 
 void MainWidget::detachControlWidget()
 {

@@ -58,20 +58,23 @@ signals:
     void openGLInitialized();
     void screenSizeChanged(int width, int height);
     void selectedPointChanged(QPoint point);
+    void scaleTransformChanged(QTransform transform);
     //void closing();
 
 public slots:
     void updateOutputTextureID(GLuint id);
     void resetZoom(int width, int height);
     void setUpdate(bool state);
+    void setDrawingCursor(bool on){ drawingCursor = on; }
+    void setCursor(QPoint point);
 
 protected:
     //void closeEvent(QCloseEvent* event) override;
     void wheelEvent(QWheelEvent* event) override;
     void mouseMoveEvent(QMouseEvent* event) override;
     void mousePressEvent(QMouseEvent* event) override;
-    void keyPressEvent(QKeyEvent *event) override;
-    void keyReleaseEvent(QKeyEvent *event) override;
+    //void keyPressEvent(QKeyEvent *event) override;
+    //void keyReleaseEvent(QKeyEvent *event) override;
 
 private:
     GLuint outputTextureID = 0;

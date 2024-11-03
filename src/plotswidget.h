@@ -22,38 +22,45 @@
 
 #pragma once
 
+
+
 #include "rgbwidget.h"
+#include "colorpath.h"
+
 #include <QWidget>
-#include <QTabWidget>
-#include <QVBoxLayout>
 #include <QOpenGLExtraFunctions>
 #include <QOpenGLContext>
 #include <QOffscreenSurface>
+#include <QComboBox>
+#include <QLineEdit>
+#include <QIntValidator>
+#include <QTransform>
+
+
 
 class PlotsWidget : public QWidget, protected QOpenGLExtraFunctions
 {
     Q_OBJECT
 
 public:
-    PlotsWidget(int width, int height, QWidget* parent = nullptr);
+    PlotsWidget(GLuint width, GLuint height, QWidget* parent = nullptr);
     ~PlotsWidget();
 
     void init(QOpenGLContext* mainContext);
 
-    bool plotsActive();
-    void getPixels();
-
 signals:
-    void setSelectedPoint(QPoint point);
+    void selectedPointChanged(QPoint point);
+    void drawCursor(bool on);
 
 public slots:
+    void updatePlots();
     void setTextureID(GLuint id);
     void setImageSize(int width, int height);
+    void setSelectedPoint(QPoint point);
+    void transformSources(QTransform transform);
 
 private:
     RGBWidget* rgbWidget;
-
-    QTabWidget* tabWidget;
 
     QOpenGLContext* context;
     QOffscreenSurface* surface;
@@ -61,6 +68,37 @@ private:
     GLuint textureID = 0;
 
     GLfloat* pixels = nullptr;
+    GLfloat* vertices = nullptr;
 
-    void allocatePixelsArray(int width, int height);
+    GLuint imageWidth, imageHeight;
+
+    QPoint cursor;
+
+    bool enabled = false;
+
+    QList<ColorPath> colorPaths;
+    QList<GLfloat> allVertices;
+    QList<GLuint> numVertices;
+
+    int numIts = 100;
+
+    QComboBox* selectPathComboBox;
+    QLineEdit* xCoordLineEdit;
+    QLineEdit* yCoordLineEdit;
+    QIntValidator* xCoordValidator;
+    QIntValidator* yCoordValidator;
+    QLineEdit* numItsLineEdit;
+
+    void allocatePixelsArray(GLuint width, GLuint height);
+    void getPixels();
+
+    void checkPoint(QPoint &point);
+    void addColorPoint();
+    void setVertices();
+
+private slots:
+    void addColorPath();
+    void removeColorPath();
+    void setControls(int index);
+    void setNumIts();
 };

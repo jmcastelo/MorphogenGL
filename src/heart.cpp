@@ -103,10 +103,6 @@ void Heart::iterate()
 
     if (mainWidget->generator()->active)
         emit iterationPerformed();
-
-    // Compute plots
-
-    mainWidget->computePlots();
 }
 
 

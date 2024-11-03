@@ -51,7 +51,6 @@
 #include <QSlider>
 #include <QMessageBox>
 #include <QFileDialog>
-#include <QScrollArea>
 #include <QTime>
 #include <QMessageBox>
 #include <QRect>
@@ -77,15 +76,11 @@ public:
     GeneratorGL* generator;
     QSizeGrip* grip;
 
-    ControlWidget(Heart* theHeart, QWidget *parent = nullptr);
+    ControlWidget(Heart* theHeart, PlotsWidget* thePlotsWidget, QWidget *parent = nullptr);
     ~ControlWidget();
-
-    void computePlots();
-    void initPlotsWidget(QOpenGLContext* context){ plotsWidget->init(context); }
 
 signals:
     void seedDrawn();
-    void selectedPointChanged(QPoint point);
     void closing();
     void updateStateChanged(bool state);
     void detach();
