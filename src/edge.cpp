@@ -48,7 +48,7 @@ Edge::Edge(GraphWidget *graphWidget, Node *sourceNode, Node *destNode)
 
     adjust();
 
-    for (Edge* edge: dest->edges())
+    foreach (Edge* edge, dest->edges())
         if (edge->destNode() == source)
             edge->adjust();
 
@@ -69,7 +69,7 @@ void Edge::remove()
     source->removeEdge(this);
     dest->removeEdge(this);
 
-    for (Edge* edge: dest->edges())
+    foreach (Edge* edge, dest->edges())
         if (edge->destNode() == source)
             edge->adjust();
 
@@ -186,7 +186,7 @@ void Edge::setLinkOffset()
 {
     linkOffset = 0;
 
-    for (Edge* edge: dest->edges())
+    foreach (Edge* edge, dest->edges())
     {
         if (edge->destNode() == source)
         {

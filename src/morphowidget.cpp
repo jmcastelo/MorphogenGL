@@ -29,16 +29,11 @@
 
 MorphoWidget::MorphoWidget(int w, int h, QWidget* parent) : QOpenGLWidget(parent)
 {
-    //resize(width_, height_);
-
     image = QRect(0, 0, w, h);
     frame = image;
 
     selectedPoint = QPointF(w / 2, h / 2);
     cursor = QPointF(0.0, 0.0);
-
-    //setWindowFlags(Qt::SubWindow);
-    //resize(w, h);
 }
 
 
@@ -182,29 +177,6 @@ void MorphoWidget::mousePressEvent(QMouseEvent* event)
 
 
 
-/*void MorphoWidget::keyPressEvent(QKeyEvent* event)
-{
-    if (event->key() == Qt::Key_Alt)
-    {
-        drawingCursor = true;
-        event->accept();
-    }
-    else
-        event->ignore();
-}*/
-
-
-
-/*void MorphoWidget::keyReleaseEvent(QKeyEvent* event)
-{
-    if (event->key() == Qt::Key_Alt)
-    {
-        drawingCursor = false;
-    }
-}*/
-
-
-
 void MorphoWidget::setSelectedPoint(QPointF pos)
 {
     QPointF clickedPoint = QTransform().scale(1.0 / width(), 1.0 / height()).map(pos);
@@ -250,13 +222,6 @@ void MorphoWidget::setCursor(QPoint selPoint)
     cursor.setY(2.0 * (0.5 - (point.y() - frame.top()) / frame.height()));
     updateCursor();
 }
-
-
-
-/*void MorphoWidget::setSize(int w, int h)
-{
-    resize(w, h);
-}*/
 
 
 
@@ -463,29 +428,8 @@ void MorphoWidget::paintGL()
 
 
 
-/*void MorphoWidget::resizeEvent(QResizeEvent* event)
-{
-    //setUpdatesEnabled(false);
-    QOpenGLWidget::resizeEvent(event);
-    //setUpdatesEnabled(true);
-
-    FBO::width = event->size().width();
-    FBO::height = event->size().height();
-
-    qDebug() << "Event:" << event->size();
-    qDebug() << "MorphoWidget size:" << size();
-
-    emit sizeChanged(event->size().width(), event->size().height());
-
-    //updateGeometry();
-
-    //event->accept();
-}*/
-
-
 void MorphoWidget::resizeGL(int w, int h)
 {
-    //glViewport(0, 0, w, h);
     resetZoom(w, h);
     emit sizeChanged(w, h);
 }

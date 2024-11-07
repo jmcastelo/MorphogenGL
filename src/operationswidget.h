@@ -134,10 +134,6 @@ public:
             intParameter->number->setValue(lineEdit->text().toInt());
             intParameter->number->setIndex();
         });
-        /*connect(lineEdit, &FocusLineEdit::focusOut, this, [=]()
-        {
-            lineEdit->setText(QString::number(intParameter->number->value));
-        });*/
         connect(lineEdit, &FocusLineEdit::focusIn, this, [=](){ emit focusIn(intParameter->number); });
         connect(lineEdit, &FocusLineEdit::focusIn, this, QOverload<>::of(&ParameterWidget::focusIn));
         connect(lineEdit, &FocusLineEdit::focusOut, this, &ParameterWidget::focusOut);
@@ -186,10 +182,6 @@ public:
             intParameter->number->setValue(value);
             intParameter->number->setIndex();
         });
-        /*connect(lineEdit, &FocusLineEdit::focusOut, this, [=]()
-        {
-            lineEdit->setText(QString::number(intParameter->number->value));
-        });*/
         connect(lineEdit, &FocusLineEdit::focusIn, this, [=](){ emit focusIn(intParameter->number); });
         connect(lineEdit, &FocusLineEdit::focusIn, this, QOverload<>::of(&ParameterWidget::focusIn));
         connect(lineEdit, &FocusLineEdit::focusOut, this, &ParameterWidget::focusOut);
@@ -232,17 +224,13 @@ public:
         QDoubleValidator* validator = new QDoubleValidator(floatParameter->number->getInf(), floatParameter->number->getSup(), 10, lineEdit);
         validator->setLocale(QLocale::English);
         lineEdit->setValidator(validator);
-        lineEdit->setText(QString::number(floatParameter->number->value));
+        lineEdit->setText(QString::number(floatParameter->value()));
 
         connect(lineEdit, &FocusLineEdit::editingFinished, this, [&]()
         {
             floatParameter->number->setValue(lineEdit->text().toFloat());
             floatParameter->number->setIndex();
         });
-        /*connect(lineEdit, &FocusLineEdit::focusOut, this, [=]()
-        {
-            lineEdit->setText(QString::number(floatParameter->number->value));
-        });*/
         connect(lineEdit, &FocusLineEdit::focusIn, this, [=](){ emit focusIn(floatParameter->number); });
         connect(lineEdit, &FocusLineEdit::focusIn, this, QOverload<>::of(&ParameterWidget::focusIn));
         connect(lineEdit, &FocusLineEdit::focusOut, this, &ParameterWidget::focusOut);
@@ -310,10 +298,6 @@ public:
                 arrayParameter->numbers[i]->setIndex();
                 arrayParameter->setValues();
             });
-            /*connect(lineEdits[i], &FocusLineEdit::focusOut, this, [=]()
-            {
-                lineEdits[i]->setText(QString::number(arrayParameter->numbers[i]->value));
-            });*/
             connect(lineEdits[i], &FocusLineEdit::focusIn, this, [=](){ focusedWidget = lineEdits[i]; });
             connect(lineEdits[i], &FocusLineEdit::focusIn, this, [=](){ emit focusIn(arrayParameter->numbers[i]); });
             connect(lineEdits[i], &FocusLineEdit::focusIn, this, QOverload<>::of(&ParameterWidget::focusIn));
@@ -1051,14 +1035,15 @@ private:
         selectedParameterSlider->setRange(0, number->indexMax);
         selectedParameterSlider->setValue(number->getIndex());
 
-        connect(selectedParameterSlider, &QAbstractSlider::valueChanged, number, &Number<T>::setValueFromIndex);
+        connect(selectedParameterSlider, &QAbstractSlider::sliderMoved, number, &Number<T>::setValueFromIndex);
 
-        connect(number, &Number<T>::currentIndexChanged, this, [=](int currentIndex)
+        connect(number, &Number<T>::currentIndexChanged, selectedParameterSlider, &QAbstractSlider::setValue);
+        /*connect(number, &Number<T>::currentIndexChanged, this, [=](int currentIndex)
         {
-            disconnect(selectedParameterSlider, &QAbstractSlider::valueChanged, nullptr, nullptr);
+            //disconnect(selectedParameterSlider, &QAbstractSlider::valueChanged, nullptr, nullptr);
             selectedParameterSlider->setValue(currentIndex);
-            connect(selectedParameterSlider, &QAbstractSlider::valueChanged, number, &Number<T>::setValueFromIndex);
-        });
+            //connect(selectedParameterSlider, &QAbstractSlider::valueChanged, number, &Number<T>::setValueFromIndex);
+        });*/
 
         // Focus
 
@@ -1104,7 +1089,7 @@ private:
         selectedParameterMinLineEdit->disconnect();
         selectedParameterMinLineEdit->setText(QString::number(number->getMin()));
 
-        connect(selectedParameterMinLineEdit, &FocusLineEdit::returnPressed, this, [=]()
+        connect(selectedParameterMinLineEdit, &FocusLineEdit::editingFinished, this, [=]()
         {
             number->setMin(selectedParameterMinLineEdit->text().toDouble());
             number->setIndex();
@@ -1119,7 +1104,7 @@ private:
         selectedParameterMaxLineEdit->disconnect();
         selectedParameterMaxLineEdit->setText(QString::number(number->getMax()));
 
-        connect(selectedParameterMaxLineEdit, &FocusLineEdit::returnPressed, this, [=]()
+        connect(selectedParameterMaxLineEdit, &FocusLineEdit::editingFinished, this, [=]()
         {
             number->setMax(selectedParameterMaxLineEdit->text().toDouble());
             number->setIndex();

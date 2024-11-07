@@ -22,6 +22,8 @@
 
 #include "generator.h"
 
+
+
 // Image operation node
 
 ImageOperationNode::~ImageOperationNode()
@@ -38,11 +40,15 @@ ImageOperationNode::~ImageOperationNode()
         delete data;
 }
 
+
+
 void ImageOperationNode::addSeedInput(QUuid id, InputData* data)
 {
     inputs.insert(id, data);
     operation->setInputData(inputsVector());
 }
+
+
 
 void ImageOperationNode::removeSeedInput(QUuid id)
 {
@@ -55,6 +61,8 @@ void ImageOperationNode::removeSeedInput(QUuid id)
     }
 }
 
+
+
 void ImageOperationNode::addInput(ImageOperationNode *node, InputData* data)
 {
     inputNodes.insert(node->id, node);
@@ -62,6 +70,8 @@ void ImageOperationNode::addInput(ImageOperationNode *node, InputData* data)
 
     operation->setInputData(inputsVector());
 }
+
+
 
 void ImageOperationNode::removeInput(ImageOperationNode *node)
 {
@@ -73,10 +83,14 @@ void ImageOperationNode::removeInput(ImageOperationNode *node)
     operation->setInputData(inputsVector());
 }
 
+
+
 int ImageOperationNode::numInputs()
 {
     return inputs.size();
 }
+
+
 
 int ImageOperationNode::numNonNormalInputs()
 {
@@ -89,20 +103,28 @@ int ImageOperationNode::numNonNormalInputs()
     return count;
 }
 
+
+
 int ImageOperationNode::numOutputs()
 {
     return outputNodes.size();
 }
+
+
 
 void ImageOperationNode::addOutput(ImageOperationNode *node)
 {
     outputNodes.insert(node->id, node);
 }
 
+
+
 void ImageOperationNode::removeOutput(ImageOperationNode *node)
 {
     outputNodes.remove(node->id);
 }
+
+
 
 void ImageOperationNode::setInputType(QUuid id, InputType type)
 {
@@ -120,6 +142,8 @@ void ImageOperationNode::setInputType(QUuid id, InputType type)
     }
 }
 
+
+
 bool ImageOperationNode::allInputsComputed()
 {
     foreach (ImageOperationNode* node, inputNodes)
@@ -129,20 +153,28 @@ bool ImageOperationNode::allInputsComputed()
     return true;
 }
 
+
+
 void ImageOperationNode::setComputed(bool done)
 {
     computed = done;
 }
+
+
 
 float ImageOperationNode::blendFactor(QUuid id)
 {
     return inputs.value(id)->blendFactor;
 }
 
+
+
 void ImageOperationNode::setBlendFactor(QUuid id, float factor)
 {
     inputs[id]->blendFactor = factor;
 }
+
+
 
 void ImageOperationNode::equalizeBlendFactors()
 {
@@ -151,6 +183,8 @@ void ImageOperationNode::equalizeBlendFactors()
     foreach (InputData* data, inputs)
         data->blendFactor = 1.0 / numInputs;
 }
+
+
 
 QVector<InputData*> ImageOperationNode::inputsVector()
 {
@@ -161,6 +195,8 @@ QVector<InputData*> ImageOperationNode::inputsVector()
 
     return inputData;
 }
+
+
 
 void ImageOperationNode::setOperation(ImageOperation *newOperation)
 {
@@ -188,6 +224,8 @@ void ImageOperationNode::setOperation(ImageOperation *newOperation)
         }
     }
 }
+
+
 
 // GeneratorGL
 
@@ -220,10 +258,14 @@ GeneratorGL::GeneratorGL()
     };
 }
 
+
+
 void GeneratorGL::init(QOpenGLContext* mainContext)
 {
     sharedContext = mainContext;
 }
+
+
 
 GeneratorGL::~GeneratorGL()
 {
@@ -233,6 +275,8 @@ GeneratorGL::~GeneratorGL()
     foreach(ImageOperationNode* node, operationNodes)
         delete node;
 }
+
+
 
 void GeneratorGL::sortOperations()
 {

@@ -62,7 +62,7 @@ private:
     QStackedLayout* stackedLayout;
 
     QGraphicsOpacityEffect* opacityEffect;
-    qreal controlWidgetOpacity = 0.75;
+    qreal controlWidgetOpacity = 0.7;
 
 private slots:
     void beat();

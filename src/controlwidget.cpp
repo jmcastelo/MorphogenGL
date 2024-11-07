@@ -45,7 +45,6 @@ ControlWidget::ControlWidget(double fps, GeneratorGL *theGenerator, PlotsWidget 
 
     scrollLayout = new QHBoxLayout;
     scrollLayout->setSizeConstraint(QLayout::SetFixedSize);
-    //scrollLayout->setSizeConstraint(QLayout::SetNoConstraint);
     scrollLayout->setAlignment(Qt::AlignLeft);
     scrollLayout->setDirection(QBoxLayout::RightToLeft);
     scrollWidget->setLayout(scrollLayout);
@@ -53,7 +52,6 @@ ControlWidget::ControlWidget(double fps, GeneratorGL *theGenerator, PlotsWidget 
     scrollArea = new QScrollArea;
     scrollArea->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     scrollArea->setWidget(scrollWidget);
-    //scrollArea->hide();
 
     // Contruct nodes toolbar
 
@@ -164,6 +162,8 @@ ControlWidget::ControlWidget(double fps, GeneratorGL *theGenerator, PlotsWidget 
     connect(parser, &ConfigurationParser::newImageSizeRead, this, &ControlWidget::imageSizeChanged);
 }
 
+
+
 ControlWidget::~ControlWidget()
 {
     delete displayOptionsWidget;
@@ -173,6 +173,8 @@ ControlWidget::~ControlWidget()
     delete graphWidget;
     qDeleteAll(operationsWidgets);
 }
+
+
 
 void ControlWidget::closeEvent(QCloseEvent* event)
 {
@@ -190,13 +192,15 @@ void ControlWidget::closeEvent(QCloseEvent* event)
     event->accept();
 }
 
+
+
 void ControlWidget::resizeEvent(QResizeEvent* event)
 {
     QWidget::resizeEvent(event);
-    qDebug() << "Event:" << event->size();
-    qDebug() << "ControlWidget size:" << size();
     updateScrollArea();
 }
+
+
 
 void ControlWidget::constructSystemToolBar()
 {
@@ -252,23 +256,19 @@ void ControlWidget::constructSystemToolBar()
     connect(aboutAction, &QAction::triggered, this, &ControlWidget::about);
 }
 
+
+
 void ControlWidget::iterate()
 {
     if (iterateAction->isChecked())
-    {
         iterateAction->setIcon(QIcon(QPixmap(":/icons/media-playback-pause.png")));
-        //heart->setStartTime();
-        //heart->startTimer();
-        //generator->active = true;
-    }
     else
-    {
         iterateAction->setIcon(QIcon(QPixmap(":/icons/media-playback-start.png")));
-        //heart->stopTimer();
-        //generator->active = false;
-    }
+
     emit iterateStateChanged(iterateAction->isChecked());
 }
+
+
 
 void ControlWidget::reset()
 {
@@ -276,6 +276,8 @@ void ControlWidget::reset()
     generator->drawAllSeeds();
     generator->resetIterationNumer();
 }
+
+
 
 void ControlWidget::record()
 {
@@ -293,12 +295,15 @@ void ControlWidget::record()
     }
 }
 
+
+
 void ControlWidget::setScreenshotFilename()
 {   
-    //QImage screenshot = heart->grabMorphoWidgetFramebuffer();
     QString filename = QDir::toNativeSeparators(outputDir + '/' + QDateTime::currentDateTime().toString(Qt::ISODate) + ".png");
     emit takeScreenshot(filename);
 }
+
+
 
 void ControlWidget::toggleDisplayOptionsWidget()
 {
@@ -315,6 +320,8 @@ void ControlWidget::toggleDisplayOptionsWidget()
     updateScrollArea();
 }
 
+
+
 void ControlWidget::toggleRecordingOptionsWidget()
 {
     recordingOptionsWidget->setVisible(!recordingOptionsWidget->isVisible());
@@ -329,6 +336,8 @@ void ControlWidget::toggleRecordingOptionsWidget()
 
     updateScrollArea();
 }
+
+
 
 void ControlWidget::toggleSortedOperationsWidget()
 {
@@ -345,10 +354,14 @@ void ControlWidget::toggleSortedOperationsWidget()
     updateScrollArea();
 }
 
+
+
 void ControlWidget::plotsActionTriggered()
 {
     plotsWidget->setVisible(!plotsWidget->isVisible());
 }
+
+
 
 void ControlWidget::loadConfig()
 {
@@ -383,6 +396,8 @@ void ControlWidget::loadConfig()
     }
 }
 
+
+
 void ControlWidget::saveConfig()
 {
     QString filename = QFileDialog::getSaveFileName(this, "Save configuration", outputDir, "MorphogenGL configurations (*.morph)");
@@ -393,6 +408,8 @@ void ControlWidget::saveConfig()
         parser->write();
     }
 }
+
+
 
 void ControlWidget::about()
 {
@@ -418,10 +435,14 @@ void ControlWidget::about()
     aboutBox->exec();
 }
 
+
+
 void ControlWidget::updateIterationNumberLabel()
 {
     iterationNumberLabel->setText(QString("Frame: %1").arg(generator->getIterationNumber()));
 }
+
+
 
 void ControlWidget::updateMetricsLabels(std::chrono::microseconds iterationTime, unsigned int its)
 {
@@ -431,13 +452,15 @@ void ControlWidget::updateMetricsLabels(std::chrono::microseconds iterationTime,
     fpsLabel->setText(QString("FPS: %1").arg(its / sec));
 }
 
-// Public slots
+
 
 void ControlWidget::updateWindowSizeLineEdits(int width, int height)
 {
     windowWidthLineEdit->setText(QString::number(width));
     windowHeightLineEdit->setText(QString::number(height));
 }
+
+
 
 // Nodes toolbar: single node selected
 
@@ -542,11 +565,15 @@ void ControlWidget::constructSingleNodeToolBar(Node* node)
     }
 }
 
+
+
 void ControlWidget::setNodeOperation(QAction* action)
 {
     selectedOperationNode->setOperation(action);
     constructSingleNodeToolBar(selectedOperationNode);
 }
+
+
 
 void ControlWidget::enableNodeOperation(bool checked)
 {
@@ -556,6 +583,8 @@ void ControlWidget::enableNodeOperation(bool checked)
     constructSingleNodeToolBar(selectedOperationNode);
 }
 
+
+
 void ControlWidget::removeNodeOperation()
 {
     selectedOperationNode->remove();
@@ -563,11 +592,15 @@ void ControlWidget::removeNodeOperation()
     constructSingleNodeToolBar(nullptr);
 }
 
+
+
 void ControlWidget::setSeedNodeType()
 {
     QAction* action = qobject_cast<QAction*>(sender());
     generator->setSeedType(selectedSeedNode->id, action->data().toInt());
 }
+
+
 
 void ControlWidget::setSeedNodeFixed(bool checked)
 {
@@ -575,12 +608,16 @@ void ControlWidget::setSeedNodeFixed(bool checked)
     constructSingleNodeToolBar(selectedSeedNode);
 }
 
+
+
 void ControlWidget::removeSeedNode()
 {
     selectedSeedNode->remove();
     selectedSeedNode = nullptr;
     constructSingleNodeToolBar(nullptr);
 }
+
+
 
 // Nodes toolbar: multiple nodes selected
 
@@ -617,6 +654,8 @@ void ControlWidget::constructMultipleNodesToolBar()
         nodesToolBar->addAction(QIcon(QPixmap(":/icons/edit-delete.png")), "Remove", graphWidget, &GraphWidget::removeSelectedNodes);
     }
 }
+
+
 
 // Display
 
@@ -683,14 +722,10 @@ void ControlWidget::constructDisplayOptionsWidget(double fps)
 
     connect(windowWidthLineEdit, &FocusLineEdit::editingFinished, this, [=]()
     {
-        //heart->resizeMorphoWidget(windowWidthLineEdit->text().toInt(), windowHeightLineEdit->text().toInt());
-        //generator->resize(windowWidthLineEdit->text().toInt(), windowHeightLineEdit->text().toInt());
         emit imageSizeChanged(windowWidthLineEdit->text().toInt(), windowHeightLineEdit->text().toInt());
     });
     connect(windowHeightLineEdit, &FocusLineEdit::editingFinished, this, [=]()
     {
-        //heart->resizeMorphoWidget(windowWidthLineEdit->text().toInt(), windowHeightLineEdit->text().toInt());
-        //generator->resize(windowWidthLineEdit->text().toInt(), windowHeightLineEdit->text().toInt());
         emit imageSizeChanged(windowWidthLineEdit->text().toInt(), windowHeightLineEdit->text().toInt());
     });
 
@@ -701,6 +736,8 @@ void ControlWidget::constructDisplayOptionsWidget(double fps)
         generator->setTextureFormat(selectedFormat);
     });
 }
+
+
 
 QString ControlWidget::textureFormatToString(TextureFormat format) {
     switch (format)
@@ -726,6 +763,8 @@ QString ControlWidget::textureFormatToString(TextureFormat format) {
     }
 }
 
+
+
 void ControlWidget::populateTexFormatComboBox(QList<TextureFormat> formats)
 {
     int index = 0;
@@ -737,6 +776,8 @@ void ControlWidget::populateTexFormatComboBox(QList<TextureFormat> formats)
         index++;
     }
 }
+
+
 
 void ControlWidget::constructRecordingOptionsWidget()
 {
@@ -807,8 +848,9 @@ void ControlWidget::constructRecordingOptionsWidget()
     {
         framesPerSecond = fpsVideoLineEdit->text().toDouble();
     });
-    //connect(heart, &Heart::frameRecorded, this, &ControlWidget::setVideoCaptureElapsedTimeLabel);
 }
+
+
 
 void ControlWidget::populateFileFormatsComboBox()
 {
@@ -842,6 +884,8 @@ void ControlWidget::populateFileFormatsComboBox()
     }
 }
 
+
+
 void ControlWidget::populateVideoCodecsComboBox()
 {
     QString previousCodec = videoCodecsComboBox->currentText();
@@ -874,13 +918,17 @@ void ControlWidget::populateVideoCodecsComboBox()
     }
 }
 
+
+
 void ControlWidget::setOutputDir()
 {
-    QString dir = QFileDialog::getExistingDirectory(this, "Select output directory", QDir::homePath());
+    QString dir = QFileDialog::getExistingDirectory(this, "Select output directory", outputDir);
 
     if (!dir.isEmpty())
         outputDir = dir;
 }
+
+
 
 void ControlWidget::setVideoCaptureElapsedTimeLabel(int frameNumber)
 {
@@ -890,6 +938,8 @@ void ControlWidget::setVideoCaptureElapsedTimeLabel(int frameNumber)
 
     videoCaptureElapsedTimeLabel->setText(start.addMSecs(milliseconds).toString("hh:mm:ss.zzz"));
 }
+
+
 
 void ControlWidget::constructSortedOperationsWidget()
 {
@@ -914,6 +964,8 @@ void ControlWidget::constructSortedOperationsWidget()
      connect(sortedOperationsTable, &QTableWidget::itemSelectionChanged, this, &ControlWidget::selectNodesToMark);
 }
 
+
+
 void ControlWidget::populateSortedOperationsTable(QList<QPair<QUuid, QString>> data)
 {
     sortedOperationsTable->clearContents();
@@ -929,6 +981,8 @@ void ControlWidget::populateSortedOperationsTable(QList<QPair<QUuid, QString>> d
     sortedOperationsData = data;
 }
 
+
+
 void ControlWidget::selectNodesToMark()
 {
     QVector<QUuid> nodeIds;
@@ -938,6 +992,8 @@ void ControlWidget::selectNodesToMark()
 
     graphWidget->markNodes(nodeIds);
 }
+
+
 
 void ControlWidget::populateScrollLayout(QList<QPair<QUuid, QString>> data)
 {
@@ -961,14 +1017,16 @@ void ControlWidget::populateScrollLayout(QList<QPair<QUuid, QString>> data)
             scrollLayout->addWidget(operationsWidgets.value(id));
     }
 
+    updateScrollArea();
+
     if (widget)
     {
         scrollArea->ensureWidgetVisible(widget);
-        widget->setFocus();
+        //widget->setFocus();
     }
-
-    updateScrollArea();
 }
+
+
 
 void ControlWidget::createParametersWidget(QUuid id)
 {
@@ -989,6 +1047,8 @@ void ControlWidget::createParametersWidget(QUuid id)
         operationsWidgets.value(id)->setFocus();
     }
 }
+
+
 
 void ControlWidget::updateParametersWidgetsBorder(QWidget* widget)
 {
@@ -1013,11 +1073,15 @@ void ControlWidget::updateParametersWidgetsBorder(QWidget* widget)
     }
 }
 
+
+
 void ControlWidget::removeAllParametersWidgetsBorder()
 {
     foreach (OperationsWidget* widget, operationsWidgets)
         widget->setLastFocused(false);
 }
+
+
 
 void ControlWidget::removeOneParametersWidgetBorder(QWidget* widget)
 {
@@ -1032,6 +1096,8 @@ void ControlWidget::removeOneParametersWidgetBorder(QWidget* widget)
         }
     }
 }
+
+
 
 void ControlWidget::showParametersWidget(QUuid id)
 {
@@ -1055,6 +1121,8 @@ void ControlWidget::showParametersWidget(QUuid id)
     }
 }
 
+
+
 void ControlWidget::removeParametersWidget(QUuid id)
 {
     if (operationsWidgets.contains(id))
@@ -1068,6 +1136,8 @@ void ControlWidget::removeParametersWidget(QUuid id)
         operationsWidgets.remove(id);
     }
 }
+
+
 
 void ControlWidget::updateParametersWidget(QUuid id)
 {
@@ -1085,6 +1155,8 @@ void ControlWidget::updateParametersWidget(QUuid id)
     }
 }
 
+
+
 void ControlWidget::updateScrollLayout(QWidget* widget)
 {
     if (widget->isVisible())
@@ -1094,6 +1166,8 @@ void ControlWidget::updateScrollLayout(QWidget* widget)
 
     updateScrollArea();
 }
+
+
 
 void ControlWidget::updateScrollArea()
 {
@@ -1108,13 +1182,15 @@ void ControlWidget::updateScrollArea()
         }
     }
 
+    scrollWidget->updateGeometry();
     scrollWidget->adjustSize();
 
     if (visible)
     {
-        scrollArea->setFixedHeight(scrollWidget->height() + scrollLayout->contentsMargins().top());
         if (scrollArea->horizontalScrollBar()->isVisible())
             scrollArea->setFixedHeight(scrollWidget->height() + scrollLayout->contentsMargins().top() + scrollArea->horizontalScrollBar()->height());
+        else
+            scrollArea->setFixedHeight(scrollWidget->height() + scrollLayout->contentsMargins().top());
     }
     else
     {

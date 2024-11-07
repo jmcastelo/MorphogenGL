@@ -53,9 +53,6 @@ public:
     void paintGL() override;
     void resizeGL(int width, int height) override;
 
-    //QSize sizeHint() const override{ return QSize(FBO::width, FBO::height); }
-    //QSize minimumSizeHint() const override{ return QSize(256, 256); }
-
 signals:
     void supportedTexFormats(QList<TextureFormat> formats);
     void openGLInitialized();
@@ -77,9 +74,6 @@ protected:
     void wheelEvent(QWheelEvent* event) override;
     void mouseMoveEvent(QMouseEvent* event) override;
     void mousePressEvent(QMouseEvent* event) override;
-    //void keyPressEvent(QKeyEvent *event) override;
-    //void keyReleaseEvent(QKeyEvent *event) override;
-    //void resizeEvent(QResizeEvent* event) override;
 
 private:
     GLuint outputTextureID = 0;

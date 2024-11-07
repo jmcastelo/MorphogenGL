@@ -41,8 +41,6 @@ MainWindow::MainWindow()
 
     stackedLayout->setCurrentWidget(controlWidget);
 
-    //setLayout(stackedLayout);
-
     connect(timer, &QChronoTimer::timeout, this, &MainWindow::beat);
 
     connect(this, &MainWindow::iterationPerformed, controlWidget, &ControlWidget::updateIterationNumberLabel);
@@ -248,9 +246,6 @@ void MainWindow::resizeEvent(QResizeEvent* event)
         morphoWidget->resize(event->size());
     else
         controlWidget->resize(event->size());
-
-    qDebug() << "Event:" << event->size();
-    qDebug() << "MainWindow size:" << size();
 }
 
 
@@ -271,7 +266,7 @@ void MainWindow::keyPressEvent(QKeyEvent* event)
         }
         else if (event->key() == Qt::Key_PageUp)
         {
-            controlWidgetOpacity += 0.05;
+            controlWidgetOpacity += 0.1;
             if (controlWidgetOpacity > 1.0)
                 controlWidgetOpacity = 1.0;
             opacityEffect->setOpacity(controlWidgetOpacity);
@@ -279,7 +274,7 @@ void MainWindow::keyPressEvent(QKeyEvent* event)
         }
         else if (event->key() == Qt::Key_PageDown)
         {
-            controlWidgetOpacity -= 0.05;
+            controlWidgetOpacity -= 0.1;
             if (controlWidgetOpacity < 0.0)
                 controlWidgetOpacity = 0.0;
             opacityEffect->setOpacity(controlWidgetOpacity);

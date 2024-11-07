@@ -129,7 +129,7 @@ private:
     QAction* loadConfigAction;
 
     qreal framesPerSecond = 60.0;
-    QString outputDir = QDir::homePath();
+    QString outputDir = QDir::currentPath();
     QMediaFormat format;
     QList<QMediaFormat::VideoCodec> supportedVideoCodecs;
     QList<QMediaFormat::FileFormat> supportedFileFormats;
