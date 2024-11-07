@@ -352,9 +352,9 @@ void Edge::paint(QPainter *painter, const QStyleOptionGraphicsItem *, QWidget *)
     // Draw the line itself
 
     if (predge)
-        painter->setPen(QPen(Qt::black, 2.0, Qt::DotLine, Qt::RoundCap, Qt::RoundJoin));
+        painter->setPen(QPen(Qt::lightGray, 2.0, Qt::DotLine, Qt::RoundCap, Qt::RoundJoin));
     else
-        painter->setPen(QPen(Qt::black, 2.0, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+        painter->setPen(QPen(Qt::lightGray, 2.0, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
     painter->drawLine(line);
 
     if (line.length() > arrowSize)
@@ -365,8 +365,8 @@ void Edge::paint(QPainter *painter, const QStyleOptionGraphicsItem *, QWidget *)
         QPointF destArrowP1 = destPoint + QPointF(sin(angle - M_PI / 2.5) * arrowSize, cos(angle - M_PI / 2.5) * arrowSize);
         QPointF destArrowP2 = destPoint + QPointF(sin(angle - M_PI + M_PI / 2.5) * arrowSize, cos(angle - M_PI + M_PI / 2.5) * arrowSize);
 
-        painter->setPen(QPen(Qt::black, 2.0, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
-        painter->setBrush(Qt::black);
+        painter->setPen(QPen(Qt::lightGray, 2.0, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+        painter->setBrush(Qt::lightGray);
         painter->drawPolygon(QPolygonF() << line.p2() << destArrowP1 << destArrowP2);
     }
 

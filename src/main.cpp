@@ -20,7 +20,8 @@
 *  along with MorphogenGL.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include "heart.h"
+#include "mainwindow.h"
+
 #include <QApplication>
 #include <QSurfaceFormat>
 
@@ -39,7 +40,10 @@ int main(int argc, char* argv[])
 
     QApplication app(argc, argv);
     
-    Heart heart;
+    //Heart heart;
+
+    MainWindow window;
+    window.show();
 
     return app.exec();
 }

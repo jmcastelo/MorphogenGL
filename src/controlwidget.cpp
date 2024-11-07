@@ -20,7 +20,6 @@
 *  along with MorphogenGL.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include "heart.h"
 #include "configparser.h"
 #include "node.h"
 #include "controlwidget.h"
@@ -30,38 +29,41 @@
 #include <QActionGroup>
 #include <QHeaderView>
 #include <QScrollBar>
+#include <QDebug>
 
-ControlWidget::ControlWidget(Heart* theHeart, PlotsWidget *thePlotsWidget, QWidget *parent) :
+
+
+ControlWidget::ControlWidget(double fps, GeneratorGL *theGenerator, PlotsWidget *thePlotsWidget, QWidget *parent) :
     QWidget(parent),
-    heart { theHeart },
+    generator { theGenerator },
     plotsWidget { thePlotsWidget }
 {
-    // Generator
-
-    generator = new GeneratorGL();
-
     // Scroll area
 
     scrollWidget = new QWidget;
-    scrollWidget->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
+    scrollWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
     scrollLayout = new QHBoxLayout;
     scrollLayout->setSizeConstraint(QLayout::SetFixedSize);
+    //scrollLayout->setSizeConstraint(QLayout::SetNoConstraint);
     scrollLayout->setAlignment(Qt::AlignLeft);
     scrollLayout->setDirection(QBoxLayout::RightToLeft);
     scrollWidget->setLayout(scrollLayout);
 
     scrollArea = new QScrollArea;
+    scrollArea->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     scrollArea->setWidget(scrollWidget);
+    //scrollArea->hide();
 
     // Contruct nodes toolbar
 
     nodesToolBar = new QToolBar;
+    nodesToolBar->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     nodesToolBar->setOrientation(Qt::Vertical);
     nodesToolBar->hide();
 
     constructSystemToolBar();
-    constructDisplayOptionsWidget();
+    constructDisplayOptionsWidget(fps);
     constructRecordingOptionsWidget();
     constructSortedOperationsWidget();
 
@@ -69,7 +71,9 @@ ControlWidget::ControlWidget(Heart* theHeart, PlotsWidget *thePlotsWidget, QWidg
 
     // Graph widget
 
-    graphWidget = new GraphWidget(generator);
+    graphWidget = new GraphWidget(generator, this);
+    graphWidget->setMinimumSize(0, 0);
+    graphWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
     connect(graphWidget, &GraphWidget::singleNodeSelected, this, &ControlWidget::constructSingleNodeToolBar);
     connect(graphWidget, &GraphWidget::operationNodeSelected, this, &ControlWidget::showParametersWidget);
@@ -107,12 +111,12 @@ ControlWidget::ControlWidget(Heart* theHeart, PlotsWidget *thePlotsWidget, QWidg
 
     // Parser
 
-    parser = new ConfigurationParser(generator, graphWidget, heart);
+    parser = new ConfigurationParser(generator, graphWidget);
 
     // Status bar
 
     statusBar = new QStatusBar;
-    statusBar->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Maximum);
+    statusBar->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
     statusBar->setSizeGripEnabled(false);
 
     iterationNumberLabel = new QLabel("Frame: 0");
@@ -123,44 +127,32 @@ ControlWidget::ControlWidget(Heart* theHeart, PlotsWidget *thePlotsWidget, QWidg
     statusBar->insertWidget(1, timePerIterationLabel, 1);
     statusBar->insertWidget(2, fpsLabel, 1);
 
-    // Grip
-
-    grip = new QSizeGrip(this);
-    grip->setVisible(true);
-
-    // Style
-
-    QString pipelineButtonStyle = "QPushButton#pipelineButton{ color: #ffffff; background-color: #6600a6; } QPushButton:checked#pipelineButton { color: #000000; background-color: #fcff59; }";
-    QString statusBarStyle = "QStatusBar::item{ border: 0px solid black; }";
-    setStyleSheet(pipelineButtonStyle + statusBarStyle);
-
     // Main layout
 
     QHBoxLayout* hLayout = new QHBoxLayout;
+    hLayout->setSizeConstraint(QLayout::SetNoConstraint);
     hLayout->addWidget(graphWidget);
     hLayout->addWidget(nodesToolBar);
 
     QWidget* widget = new QWidget;
+    widget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     widget->setLayout(hLayout);
 
     QSplitter* splitter = new QSplitter;
+    splitter->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     splitter->setOrientation(Qt::Vertical);
     splitter->setChildrenCollapsible(true);
     splitter->addWidget(widget);
     splitter->addWidget(plotsWidget);
 
     QVBoxLayout* mainVBoxLayout = new QVBoxLayout;
+    mainVBoxLayout->setSizeConstraint(QLayout::SetNoConstraint);
     mainVBoxLayout->addWidget(systemToolBar);
     mainVBoxLayout->addWidget(splitter);
     mainVBoxLayout->addWidget(scrollArea);
     mainVBoxLayout->addWidget(statusBar);
-    mainVBoxLayout->addWidget(grip, 0, Qt::AlignLeft | Qt::AlignBottom);
 
     setLayout(mainVBoxLayout);
-
-    // Window icon
-
-    setWindowIcon(QIcon(":/icons/morphogengl.png"));
 
     // Needed over morphoWidget
 
@@ -169,15 +161,7 @@ ControlWidget::ControlWidget(Heart* theHeart, PlotsWidget *thePlotsWidget, QWidg
 
     // Signals + Slots
 
-    connect(heart, &Heart::iterationPerformed, this, &ControlWidget::updateIterationNumberLabel);
-    connect(heart, &Heart::iterationPerformed, plotsWidget, &PlotsWidget::updatePlots);
-    connect(heart, &Heart::iterationTimeMeasured, this, &ControlWidget::updateMetricsLabels);
-    connect(parser, &ConfigurationParser::updateImageSize, this, [&](int width, int height)
-    {
-        generator->resize(width, height);
-    });
-    connect(generator, &GeneratorGL::outputTextureChanged, plotsWidget, &PlotsWidget::setTextureID);
-    connect(generator, &GeneratorGL::imageSizeChanged, plotsWidget, &PlotsWidget::setImageSize);
+    connect(parser, &ConfigurationParser::newImageSizeRead, this, &ControlWidget::imageSizeChanged);
 }
 
 ControlWidget::~ControlWidget()
@@ -187,7 +171,6 @@ ControlWidget::~ControlWidget()
     delete sortedOperationsWidget;
     delete parser;
     delete graphWidget;
-    delete generator;
     qDeleteAll(operationsWidgets);
 }
 
@@ -204,19 +187,22 @@ void ControlWidget::closeEvent(QCloseEvent* event)
 
     graphWidget->closeWidgets();
 
-    emit closing();
     event->accept();
 }
 
 void ControlWidget::resizeEvent(QResizeEvent* event)
 {
+    QWidget::resizeEvent(event);
+    qDebug() << "Event:" << event->size();
+    qDebug() << "ControlWidget size:" << size();
     updateScrollArea();
-    event->accept();
 }
 
 void ControlWidget::constructSystemToolBar()
 {
     systemToolBar = new QToolBar;
+    systemToolBar->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Maximum);
+    systemToolBar->setMinimumSize(0, 0);
 
     iterateAction = systemToolBar->addAction(QIcon(QPixmap(":/icons/media-playback-start.png")), "Start/pause feedback loop");
     iterateAction->setCheckable(true);
@@ -256,7 +242,7 @@ void ControlWidget::constructSystemToolBar()
 
     connect(iterateAction, &QAction::triggered, this, &ControlWidget::iterate);
     connect(resetAction, &QAction::triggered, this, &ControlWidget::reset);
-    connect(screenshotAction, &QAction::triggered, this, &ControlWidget::takeScreenshot);
+    connect(screenshotAction, &QAction::triggered, this, &ControlWidget::setScreenshotFilename);
     connect(recordAction, &QAction::triggered, this, &ControlWidget::record);
     connect(displayOptionsAction, &QAction::triggered, this, &ControlWidget::toggleDisplayOptionsWidget);
     connect(recordingOptionsAction, &QAction::triggered, this, &ControlWidget::toggleRecordingOptionsWidget);
@@ -271,14 +257,17 @@ void ControlWidget::iterate()
     if (iterateAction->isChecked())
     {
         iterateAction->setIcon(QIcon(QPixmap(":/icons/media-playback-pause.png")));
-        heart->setStartTime();
-        generator->active = true;
+        //heart->setStartTime();
+        //heart->startTimer();
+        //generator->active = true;
     }
     else
     {
         iterateAction->setIcon(QIcon(QPixmap(":/icons/media-playback-start.png")));
-        generator->active = false;
+        //heart->stopTimer();
+        //generator->active = false;
     }
+    emit iterateStateChanged(iterateAction->isChecked());
 }
 
 void ControlWidget::reset()
@@ -295,20 +284,20 @@ void ControlWidget::record()
         recordAction->setIcon(QIcon(QPixmap(":/icons/media-playback-stop.png")));
         videoCaptureElapsedTimeLabel->setText("00:00:00.000");
         QString filename = QDir::toNativeSeparators(outputDir + '/' + QDateTime::currentDateTime().toString(Qt::ISODate));
-        heart->startRecording(filename, framesPerSecond, format);
+        emit startRecording(filename, framesPerSecond, format);
     }
     else
     {
         recordAction->setIcon(QIcon(QPixmap(":/icons/media-record.png")));
-        heart->stopRecording();
+        emit stopRecording();
     }
 }
 
-void ControlWidget::takeScreenshot()
+void ControlWidget::setScreenshotFilename()
 {   
-    QImage screenshot = heart->grabMorphoWidgetFramebuffer();
+    //QImage screenshot = heart->grabMorphoWidgetFramebuffer();
     QString filename = QDir::toNativeSeparators(outputDir + '/' + QDateTime::currentDateTime().toString(Qt::ISODate) + ".png");
-    screenshot.save(filename);
+    emit takeScreenshot(filename);
 }
 
 void ControlWidget::toggleDisplayOptionsWidget()
@@ -369,14 +358,18 @@ void ControlWidget::loadConfig()
     {
         QList<QUuid> opIDs = generator->getOperationNodesIDs();
         foreach (QUuid id, opIDs)
+        {
             removeParametersWidget(id);
+        }
 
         parser->setFilename(filename);
         parser->read();
 
         opIDs = generator->getOperationNodesIDs();
         foreach (QUuid id, opIDs)
+        {
             createParametersWidget(id);
+        }
 
         generator->sortOperations();
 
@@ -627,23 +620,23 @@ void ControlWidget::constructMultipleNodesToolBar()
 
 // Display
 
-void ControlWidget::constructDisplayOptionsWidget()
+void ControlWidget::constructDisplayOptionsWidget(double fps)
 {
     FocusLineEdit* fpsLineEdit = new FocusLineEdit;
     fpsLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
     QDoubleValidator* fpsDoubleValidator = new QDoubleValidator(1.0, 1000.0, 3, fpsLineEdit);
     fpsDoubleValidator->setLocale(QLocale::English);
     fpsLineEdit->setValidator(fpsDoubleValidator);
-    std::chrono::duration<double> intervalSeconds = std::chrono::duration<double>(heart->getTimerInterval());
+    std::chrono::duration<double> intervalSeconds = std::chrono::duration<double>(1.0 / fps);
     fpsLineEdit->setText(QString::number(1.0 / intervalSeconds.count()));
 
-    windowWidthLineEdit = new FocusLineEdit;
+    windowWidthLineEdit = new QLineEdit;
     windowWidthLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
     QIntValidator* windowWidthIntValidator = new QIntValidator(0, 8192, windowWidthLineEdit);
     windowWidthIntValidator->setLocale(QLocale::English);
     windowWidthLineEdit->setValidator(windowWidthIntValidator);
 
-    windowHeightLineEdit = new FocusLineEdit;
+    windowHeightLineEdit = new QLineEdit;
     windowHeightLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
     QIntValidator* windowHeightIntValidator = new QIntValidator(0, 8192, windowHeightLineEdit);
     windowHeightIntValidator->setLocale(QLocale::English);
@@ -678,36 +671,27 @@ void ControlWidget::constructDisplayOptionsWidget()
 
     // Signals + Slots
 
-    connect(fpsLineEdit, &FocusLineEdit::returnPressed, this, [=]()
+    connect(fpsLineEdit, &FocusLineEdit::editingFinished, this, [=]()
     {
         std::chrono::duration<double> intervalSeconds {1.0 / fpsLineEdit->text().toDouble()};
-        heart->setTimerInterval(std::chrono::duration_cast<std::chrono::nanoseconds>(intervalSeconds));
-    });
-    connect(fpsLineEdit, &FocusLineEdit::focusOut, this, [=]()
-    {
-        std::chrono::duration<double> intervalSeconds = std::chrono::duration<double>(heart->getTimerInterval());
-        fpsLineEdit->setText(QString::number(1.0 / intervalSeconds.count()));
+        emit timerIntervalChanged(std::chrono::duration_cast<std::chrono::nanoseconds>(intervalSeconds));
     });
 
     connect(updateCheckBox, &QCheckBox::checkStateChanged, this, [=](Qt::CheckState state){
         emit updateStateChanged(state == Qt::Checked);
     });
 
-    connect(windowWidthLineEdit, &FocusLineEdit::returnPressed, this, [=]()
+    connect(windowWidthLineEdit, &FocusLineEdit::editingFinished, this, [=]()
     {
-        heart->resizeMorphoWidget(windowWidthLineEdit->text().toInt(), windowHeightLineEdit->text().toInt());
+        //heart->resizeMorphoWidget(windowWidthLineEdit->text().toInt(), windowHeightLineEdit->text().toInt());
+        //generator->resize(windowWidthLineEdit->text().toInt(), windowHeightLineEdit->text().toInt());
+        emit imageSizeChanged(windowWidthLineEdit->text().toInt(), windowHeightLineEdit->text().toInt());
     });
-    connect(windowWidthLineEdit, &FocusLineEdit::focusOut, this, [=]()
+    connect(windowHeightLineEdit, &FocusLineEdit::editingFinished, this, [=]()
     {
-        windowWidthLineEdit->setText(QString::number(heart->getMorphoWidgetWidth()));
-    });
-    connect(windowHeightLineEdit, &FocusLineEdit::returnPressed, this, [=]()
-    {
-        heart->resizeMorphoWidget(windowWidthLineEdit->text().toInt(), windowHeightLineEdit->text().toInt());
-    });
-    connect(windowHeightLineEdit, &FocusLineEdit::focusOut, this, [=]()
-    {
-        windowHeightLineEdit->setText(QString::number(heart->getMorphoWidgetHeight()));
+        //heart->resizeMorphoWidget(windowWidthLineEdit->text().toInt(), windowHeightLineEdit->text().toInt());
+        //generator->resize(windowWidthLineEdit->text().toInt(), windowHeightLineEdit->text().toInt());
+        emit imageSizeChanged(windowWidthLineEdit->text().toInt(), windowHeightLineEdit->text().toInt());
     });
 
     connect(texFormatComboBox, &QComboBox::activated, this, [&](int index)
@@ -823,7 +807,7 @@ void ControlWidget::constructRecordingOptionsWidget()
     {
         framesPerSecond = fpsVideoLineEdit->text().toDouble();
     });
-    connect(heart, &Heart::frameRecorded, this, &ControlWidget::setVideoCaptureElapsedTimeLabel);
+    //connect(heart, &Heart::frameRecorded, this, &ControlWidget::setVideoCaptureElapsedTimeLabel);
 }
 
 void ControlWidget::populateFileFormatsComboBox()
@@ -898,9 +882,9 @@ void ControlWidget::setOutputDir()
         outputDir = dir;
 }
 
-void ControlWidget::setVideoCaptureElapsedTimeLabel()
+void ControlWidget::setVideoCaptureElapsedTimeLabel(int frameNumber)
 {
-    int milliseconds = static_cast<int>(1000.0 * heart->getFrameCount() / framesPerSecond);
+    int milliseconds = static_cast<int>(1000.0 * frameNumber / framesPerSecond);
 
     QTime start(0, 0, 0, 0);
 

@@ -23,7 +23,6 @@
 #pragma once
 
 #include "generator.h"
-#include "focuslineedit.h"
 #include "operationswidget.h"
 #include "graphwidget.h"
 #include "plotswidget.h"
@@ -63,7 +62,6 @@
 #include <QSizeGrip>
 #include <QMediaFormat>
 
-class Heart;
 class ConfigurationParser;
 
 // ControlWidget: contains MorphogenGL's controls
@@ -76,26 +74,32 @@ public:
     GeneratorGL* generator;
     QSizeGrip* grip;
 
-    ControlWidget(Heart* theHeart, PlotsWidget* thePlotsWidget, QWidget *parent = nullptr);
+    ControlWidget(double fps, GeneratorGL* theGenerator, PlotsWidget* thePlotsWidget, QWidget *parent = nullptr);
     ~ControlWidget();
 
 signals:
+    void iterateStateChanged(bool state);
     void seedDrawn();
-    void closing();
     void updateStateChanged(bool state);
     void detach();
+    void imageSizeChanged(int width, int height);
+    void startRecording(QString recordFilename, int framesPerSecond, QMediaFormat format);
+    void stopRecording();
+    void takeScreenshot(QString filename);
+    void timerIntervalChanged(std::chrono::nanoseconds interval);
 
 public slots:
     void updateWindowSizeLineEdits(int width, int height);
     void populateTexFormatComboBox(QList<TextureFormat> formats);
+    void updateIterationNumberLabel();
+    void updateMetricsLabels(std::chrono::microseconds time, unsigned int its);
+    void setVideoCaptureElapsedTimeLabel(int frameNumber);
 
 protected:
     void closeEvent(QCloseEvent* event) override;
     void resizeEvent(QResizeEvent* event) override;
 
 private:
-    Heart* heart;
-
     PlotsWidget* plotsWidget;
 
     ConfigurationParser* parser;
@@ -138,10 +142,8 @@ private:
     QLabel* timePerIterationLabel;
     QLabel* fpsLabel;
 
-    //QLineEdit* imageWidthLineEdit;
-    //QLineEdit* imageHeightLineEdit;
-    FocusLineEdit* windowWidthLineEdit;
-    FocusLineEdit* windowHeightLineEdit;
+    QLineEdit* windowWidthLineEdit;
+    QLineEdit* windowHeightLineEdit;
 
     QComboBox* texFormatComboBox;
 
@@ -156,16 +158,12 @@ private:
     QSplitter* splitter;
 
     void constructSystemToolBar();
-    void constructDisplayOptionsWidget();
+    void constructDisplayOptionsWidget(double fps);
     void constructRecordingOptionsWidget();
     void constructSortedOperationsWidget();
 
     QString textureFormatToString(TextureFormat format);
 
-    void updateIterationNumberLabel();
-    void updateMetricsLabels(std::chrono::microseconds time, unsigned int its);
-
-    void setVideoCaptureElapsedTimeLabel();
     void populateFileFormatsComboBox();
     void populateVideoCodecsComboBox();
 
@@ -176,7 +174,7 @@ private slots:
     void iterate();
     void reset();
     void record();
-    void takeScreenshot();
+    void setScreenshotFilename();
     void setOutputDir();
     void toggleDisplayOptionsWidget();
     void toggleRecordingOptionsWidget();

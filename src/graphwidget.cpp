@@ -758,9 +758,9 @@ void GraphWidget::wheelEvent(QWheelEvent *event)
 
 void GraphWidget::drawBackground(QPainter *painter, const QRectF &rect)
 {
-    QLinearGradient gradient(rect.topLeft(), rect.bottomRight());
-    gradient.setColorAt(0, Qt::white);
-    gradient.setColorAt(1, Qt::lightGray);
+    QLinearGradient gradient(rect.topLeft(), rect.bottomLeft());
+    gradient.setColorAt(0, Qt::black);
+    gradient.setColorAt(1, QColor(32, 32, 32));
     painter->fillRect(rect, gradient);
 
     QRectF bound = scene()->itemsBoundingRect();
@@ -780,7 +780,7 @@ void GraphWidget::drawBackground(QPainter *painter, const QRectF &rect)
         painter->save();
         painter->setTransform(QTransform(1, t.m12(), t.m13(), t.m21(), 1, t.m23(), t.m31(), t.m32(), t.m33()));
 
-        painter->setPen(QPen(Qt::darkGray, 3.0, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+        painter->setPen(QPen(Qt::lightGray, 3.0, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
 
         if (intersection.top() == rect.top() || bound.bottom() < rect.top())
         {

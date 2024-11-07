@@ -143,7 +143,7 @@ void Node::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
     if (marked)
         painter->setPen(QPen(Qt::cyan, penSize));
     else
-        painter->setPen(QPen(Qt::black, penSize));
+        painter->setPen(QPen(Qt::lightGray, penSize));
     painter->drawEllipse(textRect.adjusted(-ellipseMargin, -ellipseMargin, ellipseMargin, ellipseMargin));
 
     painter->setFont(scene()->font());

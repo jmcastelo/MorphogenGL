@@ -21,22 +21,24 @@
 */
 
 #include "morphowidget.h"
-#include "fbo.h"
 
 #include <QSurfaceFormat>
 #include <QOpenGLFunctions>
 
 
 
-MorphoWidget::MorphoWidget(QWidget* parent) : QOpenGLWidget(parent)
+MorphoWidget::MorphoWidget(int w, int h, QWidget* parent) : QOpenGLWidget(parent)
 {
-    resize(FBO::width, FBO::height);
+    //resize(width_, height_);
 
-    image = QRect(0, 0, width(), height());
+    image = QRect(0, 0, w, h);
     frame = image;
 
-    selectedPoint = QPointF(width() / 2, height() / 2);
+    selectedPoint = QPointF(w / 2, h / 2);
     cursor = QPointF(0.0, 0.0);
+
+    //setWindowFlags(Qt::SubWindow);
+    //resize(w, h);
 }
 
 
@@ -56,11 +58,11 @@ MorphoWidget::~MorphoWidget()
 
 
 
-/*void MorphoWidget::closeEvent(QCloseEvent* event)
+void MorphoWidget::closeEvent(QCloseEvent* event)
 {
     emit closing();
     event->accept();
-}*/
+}
 
 
 
@@ -248,6 +250,13 @@ void MorphoWidget::setCursor(QPoint selPoint)
     cursor.setY(2.0 * (0.5 - (point.y() - frame.top()) / frame.height()));
     updateCursor();
 }
+
+
+
+/*void MorphoWidget::setSize(int w, int h)
+{
+    resize(w, h);
+}*/
 
 
 
@@ -454,7 +463,29 @@ void MorphoWidget::paintGL()
 
 
 
-void MorphoWidget::resizeGL(int width, int height)
+/*void MorphoWidget::resizeEvent(QResizeEvent* event)
 {
-    emit screenSizeChanged(width, height);
+    //setUpdatesEnabled(false);
+    QOpenGLWidget::resizeEvent(event);
+    //setUpdatesEnabled(true);
+
+    FBO::width = event->size().width();
+    FBO::height = event->size().height();
+
+    qDebug() << "Event:" << event->size();
+    qDebug() << "MorphoWidget size:" << size();
+
+    emit sizeChanged(event->size().width(), event->size().height());
+
+    //updateGeometry();
+
+    //event->accept();
+}*/
+
+
+void MorphoWidget::resizeGL(int w, int h)
+{
+    //glViewport(0, 0, w, h);
+    resetZoom(w, h);
+    emit sizeChanged(w, h);
 }

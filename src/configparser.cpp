@@ -70,15 +70,6 @@ void ConfigurationParser::write()
     stream.writeEndElement();
     stream.writeEndElement();
 
-    stream.writeStartElement("window");
-    stream.writeStartElement("width");
-    stream.writeCharacters(QString::number(heart->getMorphoWidgetWidth()));
-    stream.writeEndElement();
-    stream.writeStartElement("height");
-    stream.writeCharacters(QString::number(heart->getMorphoWidgetHeight()));
-    stream.writeEndElement();
-    stream.writeEndElement();
-
     stream.writeStartElement("outputnode");
     stream.writeCharacters(generator->getOutput().toString());
     stream.writeEndElement();
@@ -300,6 +291,8 @@ void ConfigurationParser::read()
     if (xml.readNextStartElement() && xml.name() == "morphogengl")
     {
         QUuid outputNodeId;
+        int imageWidth = generator->getWidth();
+        int imageHeight = generator->getHeight();
 
         while (xml.readNextStartElement())
         {
@@ -421,9 +414,12 @@ void ConfigurationParser::read()
                             }
                         }
 
-                        generator->loadOperation(id, operation);
-                        connections.insert(id, inputs);
-                        operationNodeData.insert(id, QPair<QString, QPointF>(operation->getName(), position));
+                        if (operation)
+                        {
+                            generator->loadOperation(id, operation);
+                            connections.insert(id, inputs);
+                            operationNodeData.insert(id, QPair<QString, QPointF>(operation->getName(), position));
+                        }
                     }
                     else
                     {
@@ -462,8 +458,8 @@ void ConfigurationParser::read()
                 {
                     if (xml.name() == "image")
                     {
-                        int imageWidth = generator->getWidth();
-                        int imageHeight = generator->getHeight();
+                        //int imageWidth = generator->getWidth();
+                        //int imageHeight = generator->getHeight();
 
                         while (xml.readNextStartElement())
                         {
@@ -475,24 +471,7 @@ void ConfigurationParser::read()
                                 xml.skipCurrentElement();
                         }
 
-                        emit updateImageSize(imageWidth, imageHeight);
-                    }
-                    else if (xml.name() == "window")
-                    {
-                        int windowWidth = heart->getMorphoWidgetWidth();
-                        int windowHeight = heart->getMorphoWidgetHeight();
-
-                        while (xml.readNextStartElement())
-                        {
-                            if (xml.name() == "width")
-                                windowWidth = xml.readElementText().toInt();
-                            else if (xml.name() == "height")
-                                windowHeight = xml.readElementText().toInt();
-                            else
-                                xml.skipCurrentElement();
-                        }
-
-                        heart->resizeMorphoWidget(windowWidth, windowHeight);
+                        //emit newImageSizeRead(imageWidth, imageHeight);
                     }
                     else if (xml.name() == "outputnode")
                     {
@@ -512,6 +491,8 @@ void ConfigurationParser::read()
 
         if (!outputNodeId.isNull())
             generator->setOutput(outputNodeId);
+
+        emit newImageSizeRead(imageWidth, imageHeight);
     }
 
     if (xml.tokenType() == QXmlStreamReader::Invalid)

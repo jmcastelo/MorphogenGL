@@ -236,6 +236,8 @@ GeneratorGL::~GeneratorGL()
 
 void GeneratorGL::sortOperations()
 {
+    QList<ImageOperation*> tmpSortedOperations = sortedOperations;
+
     sortedOperations.clear();
 
     QList<QPair<QUuid, QString>> sortedOperationsData;
@@ -245,7 +247,9 @@ void GeneratorGL::sortOperations()
     // Set operations as non-computed (pending)
 
     foreach (ImageOperationNode* node, operationNodes)
+    {
         node->setComputed(false);
+    }
 
     // First operations are those whose inputs are all blit or seed, they do not depend on pending operations
     // Also operations with no inputs but with some outputs, sorting algorithm depends on operations having inputs
@@ -291,7 +295,8 @@ void GeneratorGL::sortOperations()
             break;
     }
 
-    emit sortedOperationsChanged(sortedOperationsData);
+    if (tmpSortedOperations != sortedOperations)
+        emit sortedOperationsChanged(sortedOperationsData);
 }
 
 void GeneratorGL::iterate()
@@ -922,5 +927,5 @@ void GeneratorGL::resize(GLuint width, GLuint height)
 
     setOutput(outputID);
 
-    emit imageSizeChanged(width, height);
+    //emit imageSizeChanged(width, height);
 }

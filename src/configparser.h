@@ -22,33 +22,38 @@
 
 #pragma once
 
+
+
 #include "generator.h"
 #include "graphwidget.h"
-#include "heart.h"
+
 #include <QObject>
 #include <QString>
 #include <QXmlStreamWriter>
 #include <QXmlStreamReader>
 
-class ConfigurationParser : public QObject
+
+
+class ConfigurationParser: public QObject
 {
     Q_OBJECT
 
 public:
-    ConfigurationParser(GeneratorGL* theGenerator, GraphWidget* graph, Heart* theHeart) :
+    ConfigurationParser(GeneratorGL* theGenerator, GraphWidget* graph) :
         generator { theGenerator },
-        graphWidget { graph },
-        heart { theHeart }
+        graphWidget { graph }
     {}
 
     void setFilename(QString theFilename) { filename = theFilename; }
     void write();
     void read();
 
+signals:
+    void newImageSizeRead(int width, int height);
+
 private:
     GeneratorGL* generator;
     GraphWidget* graphWidget;
-    Heart* heart;
     QString filename;
     QXmlStreamWriter stream;
     QXmlStreamReader xml;
@@ -56,7 +61,4 @@ private:
     void writeSeedNode(QUuid id, Seed* seed);
     void writeOperationNode(ImageOperationNode* node);
     ImageOperation* readImageOperation();
-
-signals:
-    void updateImageSize(int width, int height);
 };

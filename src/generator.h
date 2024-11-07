@@ -84,14 +84,15 @@ class GeneratorGL : public QObject
     Q_OBJECT
 
 public:
-    QList<QString> availableOperations;
-
-    bool active = false;
-
     GeneratorGL();
     ~GeneratorGL();
 
+    QList<QString> availableOperations;
+
     void init(QOpenGLContext* mainContext);
+
+    bool isActive() { return active; }
+    void setState(bool state) { active = state; }
 
     void connectOperations(QUuid srcId, QUuid dstId, float factor);
     void connectCopiedOperationsA(QUuid srcId0, QUuid dstId0, QUuid srcId1, QUuid dstId1);
@@ -196,10 +197,12 @@ private:
     QMap<QUuid, Seed*> copiedSeeds[2];
     QMap<QUuid, Seed*> loadedSeeds;
 
-    QVector<ImageOperation*> sortedOperations;
+    QList<ImageOperation*> sortedOperations;
 
     QOpenGLContext* sharedContext;
     QUuid outputID;
     GLuint** outputTextureID = nullptr;
     unsigned int iteration = 0;
+
+    bool active = false;
 };

@@ -23,6 +23,7 @@
 #pragma once
 
 #include "texformat.h"
+#include "fbo.h"
 
 #include <cmath>
 #include <QOpenGLWidget>
@@ -45,36 +46,40 @@ class MorphoWidget : public QOpenGLWidget, protected QOpenGLExtraFunctions
     Q_OBJECT
 
 public:
-    //MorphoWidget(int width, int height, QWidget* parent = nullptr);
-    MorphoWidget(QWidget* parent = nullptr);
+    MorphoWidget(int width_, int height_, QWidget* parent = nullptr);
     virtual ~MorphoWidget() override;
 
     void initializeGL() override;
     void paintGL() override;
     void resizeGL(int width, int height) override;
 
+    //QSize sizeHint() const override{ return QSize(FBO::width, FBO::height); }
+    //QSize minimumSizeHint() const override{ return QSize(256, 256); }
+
 signals:
     void supportedTexFormats(QList<TextureFormat> formats);
     void openGLInitialized();
-    void screenSizeChanged(int width, int height);
+    void sizeChanged(int width, int height);
     void selectedPointChanged(QPoint point);
     void scaleTransformChanged(QTransform transform);
-    //void closing();
+    void closing();
 
 public slots:
     void updateOutputTextureID(GLuint id);
+    //void setSize(int width, int height);
     void resetZoom(int width, int height);
     void setUpdate(bool state);
     void setDrawingCursor(bool on){ drawingCursor = on; }
     void setCursor(QPoint point);
 
 protected:
-    //void closeEvent(QCloseEvent* event) override;
+    void closeEvent(QCloseEvent* event) override;
     void wheelEvent(QWheelEvent* event) override;
     void mouseMoveEvent(QMouseEvent* event) override;
     void mousePressEvent(QMouseEvent* event) override;
     //void keyPressEvent(QKeyEvent *event) override;
     //void keyReleaseEvent(QKeyEvent *event) override;
+    //void resizeEvent(QResizeEvent* event) override;
 
 private:
     GLuint outputTextureID = 0;

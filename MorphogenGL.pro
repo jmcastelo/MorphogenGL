@@ -33,8 +33,8 @@ RESOURCES += resource.qrc
 #RC_ICONS = ./icons/morphogengl.ico
 
 HEADERS += \
-    colorpath.h \
     src/blender.h \
+    src/colorpath.h \
     src/configparser.h \
     src/controlwidget.h \
     src/cycle.h \
@@ -44,9 +44,8 @@ HEADERS += \
     src/focuslineedit.h \
     src/generator.h \
     src/graphwidget.h \
-    src/heart.h \
     src/imageoperations.h \
-    src/mainwidget.h \
+    src/mainwindow.h \
     src/morphowidget.h \
     src/node.h \
     src/operationswidget.h \
@@ -58,8 +57,8 @@ HEADERS += \
     src/texformat.h
 
 SOURCES += \
-    colorpath.cpp \
     src/blender.cpp \
+    src/colorpath.cpp \
     src/configparser.cpp \
     src/controlwidget.cpp \
     src/cycle.cpp \
@@ -68,10 +67,9 @@ SOURCES += \
     src/fbo.cpp \
     src/generator.cpp \
     src/graphwidget.cpp \
-    src/heart.cpp \
     src/imageoperations.cpp \
     src/main.cpp \
-    src/mainwidget.cpp \
+    src/mainwindow.cpp \
     src/morphowidget.cpp \
     src/node.cpp \
     src/plotswidget.cpp \

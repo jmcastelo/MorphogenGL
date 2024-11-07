@@ -68,7 +68,7 @@ void Recorder::sendVideoFrame(const QImage &image)
     if (sent)
     {
         frameNumber++;
-        emit frameRecorded();
+        emit frameRecorded(frameNumber);
         //qDebug() << frameNumber;
     }
     else

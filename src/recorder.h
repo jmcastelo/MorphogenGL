@@ -26,7 +26,7 @@ public:
     void sendVideoFrame(const QImage &image);
 
 signals:
-    void frameRecorded();
+    void frameRecorded(int number);
 
 private:
     QMediaCaptureSession session;
