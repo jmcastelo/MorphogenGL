@@ -373,12 +373,13 @@ void GeneratorGL::clearAllOperations()
         node->operation->clear();
 }
 
+
+
 void GeneratorGL::setOutput(QUuid id)
 {
     if (operationNodes.contains(id))
     {
         outputID = id;
-        //outputTextureID = operationNodes.value(id)->operation->getTextureBlit();
         outputTextureID = operationNodes.value(id)->operation->getTextureID();
         emit outputTextureChanged(**outputTextureID);
     }
@@ -389,6 +390,8 @@ void GeneratorGL::setOutput(QUuid id)
         emit outputTextureChanged(**outputTextureID);
     }
 }
+
+
 
 void GeneratorGL::connectOperations(QUuid srcId, QUuid dstId, float factor)
 {
@@ -970,6 +973,4 @@ void GeneratorGL::resize(GLuint width, GLuint height)
         node->operation->resize();
 
     setOutput(outputID);
-
-    //emit imageSizeChanged(width, height);
 }

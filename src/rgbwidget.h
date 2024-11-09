@@ -46,18 +46,17 @@ class RGBWidget : public QOpenGLWidget, protected QOpenGLExtraFunctions
     Q_OBJECT
 
 public:
-    RGBWidget(QWidget* parent = nullptr);
+    RGBWidget(int w, int h, QWidget* parent = nullptr);
     virtual ~RGBWidget() override;
 
     void initializeGL() override;
     void paintGL() override;
-    void resizeGL(int width, int height) override;
+    void resizeGL(int w, int h) override;
 
-    void setPixels(GLfloat* pixels);
+    void setupBuffer(int w, int h);
+    void setTextureID(GLuint id);
     void setLines(QList<GLfloat> vertices);
     void setNumVertices(QList<GLuint> nv){ numVertices = nv; }
-
-    void updatePlot();
 
 signals:
     void closing();
@@ -76,6 +75,10 @@ private:
     QOpenGLShaderProgram* program3D = nullptr;
     QOpenGLVertexArrayObject* vao3D = nullptr;
     QOpenGLBuffer* vbo3D = nullptr;
+
+    GLuint textureID;
+    int texWidth, texHeight;
+    int numPoints;
 
     QList<GLuint> numVertices;
 

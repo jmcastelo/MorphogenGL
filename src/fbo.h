@@ -74,6 +74,7 @@ public:
     void adjustTransform();
 
     QImage outputImage();
+    QList<QVector3D> pixelRGB(QList<QPoint> sources);
 
 signals:
     void sizeChanged();

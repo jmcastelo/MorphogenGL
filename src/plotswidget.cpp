@@ -30,9 +30,9 @@
 
 
 
-PlotsWidget::PlotsWidget(GLuint width, GLuint height, QWidget* parent) : QWidget(parent)
+PlotsWidget::PlotsWidget(GLuint w, GLuint h, QWidget* parent) : QWidget(parent)
 {
-    rgbWidget = new RGBWidget;
+    rgbWidget = new RGBWidget(w, h);
 
     selectPathComboBox = new QComboBox;
     selectPathComboBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
@@ -78,7 +78,10 @@ PlotsWidget::PlotsWidget(GLuint width, GLuint height, QWidget* parent) : QWidget
     layout->addLayout(controlsLayout);
     layout->addWidget(rgbWidget);
 
-    connect(enableButton, &QPushButton::toggled, this, [&](bool checked){ enabled = checked; });
+    connect(enableButton, &QPushButton::toggled, this, [&](bool checked){
+        rgbWidget->setUpdatesEnabled(checked);
+        enabled = checked;
+    });
     connect(addPathButton, &QPushButton::clicked, this, &PlotsWidget::addColorPath);
     connect(removePathButton, &QPushButton::clicked, this, &PlotsWidget::removeColorPath);
     connect(viewSourcePushButton, &QPushButton::toggled, this, &PlotsWidget::drawCursor);
@@ -86,10 +89,10 @@ PlotsWidget::PlotsWidget(GLuint width, GLuint height, QWidget* parent) : QWidget
 
     connect(numItsLineEdit, &QLineEdit::editingFinished, this, &PlotsWidget::setNumIts);
 
-    setImageSize(width, height);
+    setImageSize(w, h);
 
-    cursor.setX(width / 2);
-    cursor.setY(height / 2);
+    cursor.setX(w / 2);
+    cursor.setY(h / 2);
 
     addColorPath();
 
@@ -132,13 +135,6 @@ void PlotsWidget::updatePlots()
 {
     if (enabled)
     {
-        getPixels();
-
-        addColorPoint();
-        setVertices();
-
-        rgbWidget->setPixels(pixels);
-
         for (int index = 0; index < colorPaths.size(); index++)
         {
             if (!colorPaths[index].linesEmpty())
@@ -155,38 +151,25 @@ void PlotsWidget::updatePlots()
 void PlotsWidget::setTextureID(GLuint id)
 {
     textureID = id;
+    rgbWidget->setTextureID(id);
 }
 
 
 
-void PlotsWidget::allocatePixelsArray(GLuint width, GLuint height)
+void PlotsWidget::setImageSize(int w, int h)
 {
-    if (pixels) delete pixels;
-    pixels = new GLfloat[width * height * 3];
-}
+    imageWidth = w;
+    imageHeight = h;
 
+    xCoordValidator->setTop(w - 1);
+    yCoordValidator->setTop(h - 1);
 
-
-void PlotsWidget::setImageSize(int width, int height)
-{
-    imageWidth = width;
-    imageHeight = height;
-    allocatePixelsArray(width, height);
-    xCoordValidator->setTop(width - 1);
-    yCoordValidator->setTop(height - 1);
-}
-
-
-
-void PlotsWidget::getPixels()
-{
-    context->makeCurrent(surface);
-
-    glBindTexture(GL_TEXTURE_2D, textureID);
-    glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_FLOAT, pixels);
-    glBindTexture(GL_TEXTURE_2D, 0);
-
-    context->doneCurrent();
+    if (rgbWidget->isValid())
+    {
+        rgbWidget->makeCurrent();
+        rgbWidget->setupBuffer(w, h);
+        rgbWidget->doneCurrent();
+    }
 }
 
 
@@ -200,6 +183,7 @@ void PlotsWidget::setSelectedPoint(QPoint point)
     if (index >= 0)
     {
         colorPaths[index].setSource(point);
+        sources[index] = point;
         xCoordLineEdit->setText(QString::number(point.x()));
         yCoordLineEdit->setText(QString::number(point.y()));
     }
@@ -214,6 +198,12 @@ void PlotsWidget::transformSources(QTransform transform)
         QPoint source = transform.map(path.source());
         checkPoint(source);
         path.setSource(source);
+    }
+
+    for (QPoint &source : sources)
+    {
+        source = transform.map(source);
+        checkPoint(source);
     }
 
     setControls(selectPathComboBox->currentIndex());
@@ -239,6 +229,8 @@ void PlotsWidget::addColorPath()
 {
     colorPaths.append(ColorPath(cursor, numIts));
 
+    sources.append(cursor);
+
     selectPathComboBox->addItem(QString::number(colorPaths.size()));
     int index = selectPathComboBox->count() - 1;
     selectPathComboBox->setCurrentIndex(index);
@@ -251,12 +243,18 @@ void PlotsWidget::addColorPath()
 void PlotsWidget::removeColorPath()
 {
     int index = selectPathComboBox->currentIndex();
+
     if (index >= 0 && colorPaths.size() > 1)
     {
         selectPathComboBox->removeItem(index);
+
         colorPaths.removeAt(index);
+
+        sources.removeAt(index);
+
         for (int i = 0; i < colorPaths.size(); i++)
             selectPathComboBox->setItemText(i, QString::number(i + 1));
+
         setControls(selectPathComboBox->currentIndex());
     }
 }
@@ -285,15 +283,14 @@ void PlotsWidget::setNumIts()
 
 
 
-void PlotsWidget::addColorPoint()
+void PlotsWidget::setPixelRGB(QList<QVector3D> rgb)
 {
-    for (ColorPath &path : colorPaths)
+    for (int i = 0; i < colorPaths.size(); i++)
     {
-        int row = path.source().y() * imageWidth * 3;
-        int col = path.source().x() * 3;
-
-        path.addPoint(pixels[row + col], pixels[row + col + 1], pixels[row + col + 2]);
+        colorPaths[i].addPoint(rgb[i].x(), rgb[i].y(), rgb[i].z());
     }
+
+    setVertices();
 }
 
 

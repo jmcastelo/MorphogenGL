@@ -47,6 +47,9 @@ public:
     ~PlotsWidget();
 
     void init(QOpenGLContext* mainContext);
+    bool isEnabled(){ return enabled; }
+    QList<QPoint> pixelSources() { return sources; }
+    void setPixelRGB(QList<QVector3D> rgb);
 
 signals:
     void selectedPointChanged(QPoint point);
@@ -77,6 +80,7 @@ private:
     bool enabled = false;
 
     QList<ColorPath> colorPaths;
+    QList<QPoint> sources;
     QList<GLfloat> allVertices;
     QList<GLuint> numVertices;
 
@@ -89,11 +93,7 @@ private:
     QIntValidator* yCoordValidator;
     QLineEdit* numItsLineEdit;
 
-    void allocatePixelsArray(GLuint width, GLuint height);
-    void getPixels();
-
     void checkPoint(QPoint &point);
-    void addColorPoint();
     void setVertices();
 
 private slots:

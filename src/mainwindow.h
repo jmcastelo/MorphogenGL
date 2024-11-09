@@ -32,7 +32,6 @@ public:
     int getFrameCount();
 
 signals:
-    void morphoWidgetInitialized();
     void outputTextureChanged(GLuint id);
     void closing();
 

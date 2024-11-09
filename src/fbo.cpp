@@ -521,10 +521,7 @@ QImage FBO::outputImage()
     context->makeCurrent(surface);
 
     fence = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
-    //glFlush();
-    //glFinish();
-    //glClientWaitSync(fence, 0, GL_TIMEOUT_IGNORED);
-    //glClientWaitSync(fence, GL_SYNC_FLUSH_COMMANDS_BIT, GL_TIMEOUT_IGNORED);
+
     GLenum status;
     do {
         status = glClientWaitSync(fence, GL_SYNC_FLUSH_COMMANDS_BIT, 1000000);
@@ -545,4 +542,32 @@ QImage FBO::outputImage()
     context->doneCurrent();
 
     return image;
+}
+
+
+
+QList<QVector3D> FBO::pixelRGB(QList<QPoint> sources)
+{
+    QList<QVector3D> colors;
+
+    context->makeCurrent(surface);
+
+    glViewport(0, 0, width, height);
+
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, fbo);
+
+    foreach (QPoint source, sources)
+    {
+        float rgb[3];
+
+        glReadPixels(source.x(), source.y(), 1, 1, GL_RGB, GL_FLOAT, rgb);
+
+        colors.append(QVector3D(rgb[0], rgb[1], rgb[2]));
+    }
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    context->doneCurrent();
+
+    return colors;
 }

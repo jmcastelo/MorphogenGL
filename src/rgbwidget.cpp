@@ -20,16 +20,16 @@
 *  along with MorphogenGL.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+
+
 #include "rgbwidget.h"
-#include "fbo.h"
 
 
 
-RGBWidget::RGBWidget(QWidget* parent) : QOpenGLWidget(parent)
+RGBWidget::RGBWidget(int w, int h, QWidget* parent) : QOpenGLWidget(parent), texWidth { w }, texHeight{ h }
 {
-    //setWindowIcon(QIcon(":/icons/morphogengl.png"));
-    //setWindowTitle("RGB Plot");
     resize(512, 512);
+    setUpdatesEnabled(false);
 }
 
 
@@ -87,6 +87,8 @@ void RGBWidget::initializeGL()
     vbo->create();
     vbo->setUsagePattern(QOpenGLBuffer::DynamicDraw);
 
+    setupBuffer(texWidth, texHeight);
+
     vao3D = new QOpenGLVertexArrayObject();
     vao3D->create();
 
@@ -101,16 +103,23 @@ void RGBWidget::initializeGL()
 
 void RGBWidget::paintGL()
 {
-    glViewport(0, 0, width(), height());
-    glClear(GL_COLOR_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    // Draw RGB points
 
     program->bind();
+
+    glBindTexture(GL_TEXTURE_2D, textureID);
+
     vao->bind();
-
-    glDrawArrays(GL_POINTS, 0, FBO::width * FBO::height);
-
+    glDrawArrays(GL_POINTS, 0, numPoints);
     vao->release();
+
+    glBindTexture(GL_TEXTURE_2D, 0);
+
     program->release();
+
+    // Draw RGB lines
 
     program3D->bind();
     vao3D->bind();
@@ -128,38 +137,46 @@ void RGBWidget::paintGL()
 
 
 
-void RGBWidget::resizeGL(int width, int height)
+void RGBWidget::resizeGL(int w, int h)
 {
-    Q_UNUSED(width)
-    Q_UNUSED(height)
-
+    glViewport(0, 0, w, h);
     computeTransformMatrix();
 }
 
 
 
-void RGBWidget::setPixels(GLfloat* pixels)
+void RGBWidget::setTextureID(GLuint id)
 {
-    makeCurrent();
+    textureID = id;
+}
 
+
+
+void RGBWidget::setupBuffer(int w, int h)
+{
     vao->bind();
-    
     vbo->bind();
-    vbo->allocate(pixels, FBO::width * FBO::height * 3 * sizeof(GLfloat));
 
-    program->bind();
+    QList<QVector2D> texCoords;
 
-    int posLocation = program->attributeLocation("pos");
-    program->setAttributeBuffer(posLocation, GL_FLOAT, 0, 3);
-    program->enableAttributeArray(posLocation);
+    for (int y = 0; y < h; y++)
+    {
+        for (int x = 0; x < w; x++)
+        {
+            texCoords.append(QVector2D(x / static_cast<float>(w), y / static_cast<float>(h)));
+        }
+    }
 
-    vao->release();
+    vbo->allocate(texCoords.constData(), texCoords.size() * sizeof(QVector2D));
+
+    int texLocation = program->attributeLocation("texCoord");
+    program->enableAttributeArray(texLocation);
+    program->setAttributeBuffer(texLocation, GL_FLOAT, 0, 2);
+
     vbo->release();
-    program->release();
+    vao->release();
 
-    doneCurrent();
-
-    update();
+    numPoints = w * h;
 }
 
 
@@ -184,15 +201,6 @@ void RGBWidget::setLines(QList<GLfloat> vertices)
     vao3D->release();
 
     doneCurrent();
-
-    update();
-}
-
-
-
-void RGBWidget::updatePlot()
-{
-    update();
 }
 
 

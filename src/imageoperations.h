@@ -103,6 +103,7 @@ public:
     virtual void clear();
 
     QImage outputImage(){ return fbo->outputImage(); }
+    QList<QVector3D> pixelRGB(QList<QPoint> sources){ return fbo->pixelRGB(sources); }
     void setTextureFormat(){ fbo->setTextureFormat(); }
 
 protected:

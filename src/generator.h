@@ -147,9 +147,17 @@ public:
     void setOutput(QUuid id);
     QUuid getOutput() { return outputID; }
 
-    GLuint** getOutputTextureID() { return outputTextureID; };
+    GLuint** getOutputTextureID() { return outputTextureID; }
 
     QImage outputImage();
+
+    QList<QVector3D> pixelRGB(QList<QPoint> sources)
+    {
+        if (operationNodes.contains(outputID))
+            return operationNodes.value(outputID)->operation->pixelRGB(sources);
+        else
+            return QList<QVector3D>();
+    }
 
     void setTextureFormat(TextureFormat format);
 
@@ -185,7 +193,6 @@ public slots:
 
 signals:
     void outputTextureChanged(GLuint id);
-    void imageSizeChanged(int width, int height);
     void sortedOperationsChanged(QList<QPair<QUuid, QString>> data);
 
 private:

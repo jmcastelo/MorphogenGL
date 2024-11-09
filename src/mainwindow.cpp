@@ -52,7 +52,6 @@ MainWindow::MainWindow()
     {
         controlWidget->generator->init(morphoWidget->context());
         plotsWidget->init(morphoWidget->context());
-        emit morphoWidgetInitialized();
     });
     connect(morphoWidget, &MorphoWidget::supportedTexFormats, controlWidget, &ControlWidget::populateTexFormatComboBox);
     connect(morphoWidget, &MorphoWidget::sizeChanged, generator, &GeneratorGL::resize);
@@ -140,7 +139,12 @@ void MainWindow::iterate()
     }
 
     if (generator->isActive())
+    {
+        if (plotsWidget->isEnabled())
+            plotsWidget->setPixelRGB(generator->pixelRGB(plotsWidget->pixelSources()));
+
         emit iterationPerformed();
+    }
 }
 
 
