@@ -109,6 +109,109 @@ void ImageOperation::adjustMinMax(float value, float minValue, float maxValue, f
 
 
 
+// Convolution
+
+QString AverageBrightness::name = "Average brightness";
+
+AverageBrightness::AverageBrightness(bool on, QOpenGLContext* mainContext, int theSize, float theOpacity) : ImageOperation(on, mainContext)
+{
+    fbo = new FBO(":/shaders/screen.vert", ":/shaders/average-brightness.frag", mainContext);
+    fbo->setInputTextureID(*blender->getTextureID());
+
+    size = new IntParameter("Size (px)", 0, this, theSize, 1, 20, 1, 1000, false);
+
+    float min, max;
+    adjustMinMax(theOpacity, 0.0f, 1.0f, min, max);
+    opacity = new FloatParameter("Opacity", 1, this, theOpacity, min, max, 0.0f, 1.0f);
+}
+
+
+
+AverageBrightness::AverageBrightness(const AverageBrightness &operation) : ImageOperation(operation)
+{
+    fbo = new FBO(":/shaders/screen.vert", ":/shaders/average-brightness.frag", context);
+    fbo->setInputTextureID(*blender->getTextureID());
+
+    size = new IntParameter(*operation.size);
+    size->setOperation(this);
+
+    opacity = new FloatParameter(*operation.opacity);
+    opacity->setOperation(this);
+}
+
+
+
+AverageBrightness::~AverageBrightness()
+{
+    delete size;
+    delete opacity;
+}
+
+
+
+void AverageBrightness::setParameters()
+{
+    setIntParameter(0, size->value());
+    setFloatParameter(1, opacity->value());
+}
+
+
+
+void AverageBrightness::setIntParameter(int index, int value)
+{
+    if (index == 0)
+    {
+        //float x = (value - 0.5) / fbo->width;
+        //float y = (value - 0.5) / fbo->height;
+
+        /*QVector2D offset[] = {
+            QVector2D(-x, y),
+            QVector2D(0.0f, y),
+            QVector2D(x, y),
+            QVector2D(-x, 0.0f),
+            QVector2D(0.0f, 0.0f),
+            QVector2D(x, 0.0f),
+            QVector2D(-x, -y),
+            QVector2D(0.0f, -y),
+            QVector2D(x, -y)
+        };*/
+
+        QVector2D offset[25];
+
+        int element = 0;
+
+        for (int y = -2; y <= 2; y++)
+        {
+            for (int x = -2; x <= 2; x++)
+            {
+                offset[element++] = QVector2D(static_cast<float>(x * (value - 0.5)) / fbo->width, static_cast<float>(y * (value - 0.5)) / fbo->height);
+            }
+        }
+
+        fbo->makeCurrent();
+        fbo->program->bind();
+        fbo->program->setUniformValueArray("offset", offset, 25);
+        fbo->program->release();
+        fbo->doneCurrent();
+    }
+}
+
+
+
+void AverageBrightness::setFloatParameter(int index, float value)
+{
+    if (index == 1)
+    {
+        fbo->makeCurrent();
+        fbo->program->bind();
+        fbo->program->setUniformValue("opacity", value);
+        fbo->program->release();
+        fbo->doneCurrent();
+    }
+}
+
+
+
 // Bilateral filter
 
 QString BilateralFilter::name = "Bilateral filter";
@@ -624,8 +727,8 @@ Convolution::Convolution(bool on, QOpenGLContext* mainContext, std::vector<float
     adjustMinMax(theFactor, -10.0f, 10.0f, min, max);
     factor = new FloatParameter("Kernel factor", 0, this, theFactor, min, max, -1.0e3f, 1.0e3f);
 
-    adjustMinMax(theSize, 1.0f, 100.0f, min, max);
-    size = new FloatParameter("Size", 1, this, theSize, min, max, 1.0f, 1000.0f);
+    adjustMinMax(theSize, 1.0f, 20.0f, min, max);
+    size = new FloatParameter("Size (px)", 1, this, theSize, min, max, 1.0f, 1000.0f);
 
     adjustMinMax(theOpacity, 0.0f, 1.0f, min, max);
     opacity = new FloatParameter("Opacity", 2, this, theOpacity, min, max, 0.0f, 1.0f);
@@ -696,8 +799,8 @@ void Convolution::setFloatParameter(int index, float value)
     }
     else if (index == 1)
     {
-        float x = value / fbo->width;
-        float y = value / fbo->height;
+        float x = (value - 0.5) / fbo->width;
+        float y = (value - 0.5) / fbo->height;
 
         QVector2D offset[] = {
             QVector2D(-x, y),

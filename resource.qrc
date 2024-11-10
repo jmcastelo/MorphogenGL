@@ -66,5 +66,6 @@
         <file>shaders/3d.frag</file>
         <file>icons/list-add.png</file>
         <file>icons/list-remove.png</file>
+        <file>shaders/average-brightness.frag</file>
     </qresource>
 </RCC>

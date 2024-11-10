@@ -118,6 +118,34 @@ protected:
 
 
 
+// Average brightness
+
+class AverageBrightness : public ImageOperation
+{
+public:
+    AverageBrightness(bool on, QOpenGLContext* mainContext, int theSize, float theOpacity);
+    AverageBrightness(const AverageBrightness& operation);
+    ~AverageBrightness();
+
+    ImageOperation* clone() { return new AverageBrightness(*this); }
+
+    static QString name;
+    QString getName() { return name; };
+
+    void setParameters();
+    void setIntParameter(int index, int value);
+    void setFloatParameter(int index, float value);
+
+    std::vector<IntParameter*> getIntParameters() { std::vector<IntParameter*> parameters = { size }; return parameters; };
+    std::vector<FloatParameter*> getFloatParameters() { std::vector<FloatParameter*> parameters = { opacity }; return parameters; }
+
+private:
+    IntParameter* size;
+    FloatParameter* opacity;
+};
+
+
+
 // Bilateral filter
 
 class BilateralFilter : public ImageOperation
@@ -136,7 +164,7 @@ public:
     void setIntParameter(int index, int value);
     void setFloatParameter(int index, float value);
 
-    std::vector<IntParameter*> getIntParameters() { std::vector<IntParameter*> parameters = { numSideElements }; return parameters; };
+    std::vector<IntParameter*> getIntParameters() { std::vector<IntParameter*> parameters = { numSideElements }; return parameters; }
     std::vector<FloatParameter*> getFloatParameters() { std::vector<FloatParameter*> parameters = { size, spatialSigma, rangeSigma, opacity }; return parameters; }
 
 private:
