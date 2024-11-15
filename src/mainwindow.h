@@ -63,6 +63,7 @@ private slots:
     void beat();
     void iterate();
 
+    void computeFPS();
     void setTimerInterval(double newFPS);
 
     void setIterationState(bool state);

@@ -7,7 +7,6 @@ MainWindow::MainWindow()
     timer = new QChronoTimer(this);
     timer->setTimerType(Qt::PreciseTimer);
     timer->setSingleShot(true);
-    //timer->setInterval(std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::duration<double>{1.0 / fps}));
     setTimerInterval(fps);
 
     generator = new GeneratorGL();
@@ -43,6 +42,8 @@ MainWindow::MainWindow()
     stackedLayout->setCurrentWidget(controlWidget);
 
     connect(timer, &QChronoTimer::timeout, this, &MainWindow::beat);
+    connect(timer, &QChronoTimer::timeout, this, &MainWindow::computeFPS);
+
     //connect(morphoWidget, &QOpenGLWidget::frameSwapped, timer, &QChronoTimer::start);
     //connect(morphoWidget, &QOpenGLWidget::frameSwapped, this, &MainWindow::beat);
 
@@ -56,6 +57,7 @@ MainWindow::MainWindow()
         controlWidget->generator->init(morphoWidget->context());
         plotsWidget->init(morphoWidget->context());
 
+        numBeats = 0;
         start = std::chrono::steady_clock::now();
         timer->start();
     });
@@ -108,8 +110,18 @@ MainWindow::~MainWindow()
 
 void MainWindow::beat()
 {
-    //if (numBeats == -1)
-        //start = std::chrono::steady_clock::now();
+    // Compute beat time
+
+    /*if (numBeats >= numBeatsTrigger)
+    {
+        end = std::chrono::high_resolution_clock::now();
+        beatTime = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+        start = std::chrono::high_resolution_clock::now();
+
+        emit iterationTimeMeasured(beatTime.count() / numBeats, numBeats * 1'000'000.0 / beatTime.count());
+
+        numBeats = 0;
+    }*/
 
     if (recorder)
     {
@@ -126,20 +138,29 @@ void MainWindow::beat()
 
     morphoWidget->update();
 
+     //timer->start();
+}
+
+
+
+void MainWindow::computeFPS()
+{
+    end = std::chrono::steady_clock::now();
+    beatTime = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+
     numBeats++;
 
-    // Compute beat time
-
-    if (numBeats >= numBeatsTrigger)
+    if (beatTime.count() >= 1'000'000)
     {
-        end = std::chrono::steady_clock::now();
+        double uspf = static_cast<double>(beatTime.count()) / numBeats;
+        double fps = numBeats * 1'000'000.0 / beatTime.count();
 
-        beatTime = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+        emit iterationTimeMeasured(uspf, fps);
 
-        emit iterationTimeMeasured(beatTime.count() / numBeats, numBeats * 1000000.0 / beatTime.count());
+        //qDebug() << numBeats << beatTime.count();
+        //qDebug() << fps << uspf;
 
         numBeats = 0;
-
         start = std::chrono::steady_clock::now();
     }
 
@@ -175,9 +196,12 @@ void MainWindow::setTimerInterval(double newFPS)
     fps = newFPS;
     numBeatsTrigger = static_cast<int>(newFPS);
 
-    qDebug() << fps << numBeatsTrigger;
+    std::chrono::nanoseconds nanos = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::duration<double>(fps > 0 ? 1.0 / fps : 0));
+    //qDebug() << nanos.count();
 
-    std::chrono::nanoseconds nanos = std::chrono::nanoseconds{static_cast<std::chrono::nanoseconds::rep>(fps > 0 ? 1000000000.0 / fps : 0)};
+    numBeats = 0;
+    start = std::chrono::steady_clock::now();
+
     timer->setInterval(nanos);
 }
 
