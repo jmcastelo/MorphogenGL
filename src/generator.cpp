@@ -112,6 +112,17 @@ int ImageOperationNode::numOutputs()
 
 
 
+bool ImageOperationNode::isBlitConnected()
+{
+    foreach (ImageOperationNode* node, outputNodes)
+        foreach (InputData* input, node->inputs)
+            if (input->type == InputType::Blit)
+                return true;
+    return false;
+}
+
+
+
 void ImageOperationNode::addOutput(ImageOperationNode *node)
 {
     outputNodes.insert(node->id, node);
@@ -344,29 +355,32 @@ void GeneratorGL::sortOperations()
         emit sortedOperationsChanged(sortedOperationsData);
 }
 
+
+
 void GeneratorGL::iterate()
 {
-    if (active)
-    {
-        foreach(ImageOperation* operation, sortedOperations)
-            operation->applyOperation();
+    foreach(ImageOperation* operation, sortedOperations)
+        operation->blit();
 
-        foreach(ImageOperation* operation, sortedOperations)
-            operation->blit();
+    foreach(ImageOperation* operation, sortedOperations)
+        operation->applyOperation();
 
-        iteration++;
-    }
+    iteration++;
 
     foreach (Seed* seed, seeds)
         if (!seed->isFixed() && !seed->isCleared())
             seed->clear();
 }
 
+
+
 void GeneratorGL::clearOperation(QUuid id)
 {
     if (operationNodes.contains(id))
         operationNodes.value(id)->operation->clear();
 }
+
+
 
 void GeneratorGL::clearAllOperations()
 {
@@ -380,8 +394,18 @@ void GeneratorGL::setOutput(QUuid id)
 {
     if (operationNodes.contains(id))
     {
+        // Avoid disabling blit for output node if it is blit connected (predge)
+
+        if (outputTextureID != nullptr && !operationNodes.value(outputID)->isBlitConnected())
+            operationNodes.value(outputID)->operation->enableBlit(false);
+
         outputID = id;
-        outputTextureID = operationNodes.value(id)->operation->getTextureID();
+
+        // We enable blit for output node so that QOpenGLWidget renders the previous texture
+        // This kind of double buffering allows for smoother, flickerless rendering
+
+        operationNodes.value(id)->operation->enableBlit(true);
+        outputTextureID = operationNodes.value(id)->operation->getTextureBlit();
         emit outputTextureChanged(**outputTextureID);
     }
     else if (seeds.contains(id))
@@ -409,6 +433,8 @@ void GeneratorGL::connectOperations(QUuid srcId, QUuid dstId, float factor)
     sortOperations();
 }
 
+
+
 void GeneratorGL::connectCopiedOperationsA(QUuid srcId0, QUuid dstId0, QUuid srcId1, QUuid dstId1)
 {
     if (operationNodes.contains(srcId0))
@@ -424,6 +450,8 @@ void GeneratorGL::connectCopiedOperationsA(QUuid srcId0, QUuid dstId0, QUuid src
         copiedOperationNodes[0].value(dstId1)->addSeedInput(srcId1, new InputData(InputType::Seed, seeds.value(srcId0)->getTextureID(), factor));
     }
 }
+
+
 
 void GeneratorGL::connectCopiedOperationsB(QUuid srcId0, QUuid dstId0, QUuid srcId1, QUuid dstId1)
 {
@@ -441,6 +469,8 @@ void GeneratorGL::connectCopiedOperationsB(QUuid srcId0, QUuid dstId0, QUuid src
     }
 }
 
+
+
 void GeneratorGL::disconnectOperations(QUuid srcId, QUuid dstId)
 {
     if (operationNodes.contains(srcId))
@@ -456,6 +486,8 @@ void GeneratorGL::disconnectOperations(QUuid srcId, QUuid dstId)
     sortOperations();
 }
 
+
+
 void GeneratorGL::setOperationInputType(QUuid srcId, QUuid dstId, InputType type)
 {
     if (operationNodes.contains(srcId))
@@ -468,6 +500,8 @@ void GeneratorGL::setOperationInputType(QUuid srcId, QUuid dstId, InputType type
         copiedOperationNodes[0].value(dstId)->setInputType(srcId, type);
     }
 }
+
+
 
 void GeneratorGL::pasteOperations()
 {
@@ -482,6 +516,8 @@ void GeneratorGL::pasteOperations()
 
     sortOperations();
 }
+
+
 
 void GeneratorGL::swapTwoOperations(QUuid id1, QUuid id2)
 {
@@ -502,25 +538,35 @@ void GeneratorGL::swapTwoOperations(QUuid id1, QUuid id2)
         setOutput(id2);
 }
 
+
+
 float GeneratorGL::blendFactor(QUuid srcId, QUuid dstId)
 {
     return operationNodes.value(dstId)->blendFactor(srcId);
 }
+
+
 
 void GeneratorGL::setBlendFactor(QUuid srcId, QUuid dstId, float factor)
 {
     operationNodes.value(dstId)->setBlendFactor(srcId, factor);
 }
 
+
+
 void GeneratorGL::equalizeBlendFactors(QUuid id)
 {
     operationNodes.value(id)->equalizeBlendFactors();
 }
 
+
+
 ImageOperation* GeneratorGL::getOperation(QUuid id)
 {
     return operationNodes.contains(id) ? operationNodes.value(id)->operation : nullptr;
 }
+
+
 
 QUuid GeneratorGL::addOperation(QString operationName)
 {
@@ -534,6 +580,8 @@ QUuid GeneratorGL::addOperation(QString operationName)
 
     return id;
 }
+
+
 
 QUuid GeneratorGL::copyOperation(QUuid srcId)
 {
@@ -549,6 +597,8 @@ QUuid GeneratorGL::copyOperation(QUuid srcId)
     return id;
 }
 
+
+
 void GeneratorGL::setOperation(QUuid id, QString operationName)
 {
     ImageOperation* operation = newOperation(operationName);
@@ -563,6 +613,8 @@ void GeneratorGL::setOperation(QUuid id, QString operationName)
     sortOperations();
 }
 
+
+
 void GeneratorGL::removeOperation(QUuid id)
 {
     delete operationNodes.value(id);
@@ -574,20 +626,28 @@ void GeneratorGL::removeOperation(QUuid id)
     sortOperations();
 }
 
+
+
 void GeneratorGL::enableOperation(QUuid id, bool enabled)
 {
     operationNodes.value(id)->operation->enable(enabled);
 }
+
+
 
 bool GeneratorGL::isOperationEnabled(QUuid id)
 {
     return operationNodes.value(id)->operation->isEnabled();
 }
 
+
+
 bool GeneratorGL::hasOperationParamaters(QUuid id)
 {
     return operationNodes.value(id)->operation->hasParameters();
 }
+
+
 
 void GeneratorGL::loadOperation(QUuid id, ImageOperation* operation)
 {
@@ -596,6 +656,8 @@ void GeneratorGL::loadOperation(QUuid id, ImageOperation* operation)
 
     loadedOperationNodes.insert(id, node);
 }
+
+
 
 void GeneratorGL::connectLoadedOperations(QMap<QUuid, QMap<QUuid, InputData*>> connections)
 {
@@ -640,13 +702,15 @@ void GeneratorGL::connectLoadedOperations(QMap<QUuid, QMap<QUuid, InputData*>> c
     }
 }
 
+
+
 ImageOperation* GeneratorGL::newOperation(QString operationName)
 {
     ImageOperation* operation = nullptr;
 
     if (operationName == AverageBrightness::name)
     {
-        operation = new AverageBrightness(false, sharedContext, 1, 1.0f);
+        operation = new AverageBrightness(false, sharedContext, 1, 0.0f, 0.0f, 0.0f, 1.0f);
     }
     else if (operationName == BilateralFilter::name)
     {
@@ -750,6 +814,8 @@ ImageOperation* GeneratorGL::newOperation(QString operationName)
     return operation;
 }
 
+
+
 ImageOperation* GeneratorGL::loadImageOperation(
     QString operationName,
     bool enabled,
@@ -765,7 +831,7 @@ ImageOperation* GeneratorGL::loadImageOperation(
 
     if (operationName == AverageBrightness::name)
     {
-        operation = new AverageBrightness(enabled, sharedContext, intParameters[0], floatParameters[0]);
+        operation = new AverageBrightness(enabled, sharedContext, intParameters[0], floatParameters[0], floatParameters[1], floatParameters[2], floatParameters[3]);
     }
     else if (operationName == BilateralFilter::name)
     {
@@ -866,6 +932,8 @@ ImageOperation* GeneratorGL::loadImageOperation(
     return operation;
 }
 
+
+
 QUuid GeneratorGL::addSeed()
 {
     Seed* seed = new Seed(sharedContext);
@@ -875,6 +943,8 @@ QUuid GeneratorGL::addSeed()
 
     return id;
 }
+
+
 
 QUuid GeneratorGL::copySeed(QUuid srcId)
 {
@@ -886,6 +956,8 @@ QUuid GeneratorGL::copySeed(QUuid srcId)
     return id;
 }
 
+
+
 void GeneratorGL::removeSeed(QUuid id)
 {
     delete seeds.value(id);
@@ -894,6 +966,8 @@ void GeneratorGL::removeSeed(QUuid id)
     foreach (ImageOperationNode* node, operationNodes)
         node->removeSeedInput(id);
 }
+
+
 
 void GeneratorGL::loadSeed(QUuid id, int type, bool fixed)
 {
@@ -915,25 +989,35 @@ int GeneratorGL::getSeedType(QUuid id)
     return seeds.value(id)->getType();
 }
 
+
+
 void GeneratorGL::setSeedType(QUuid id, int set)
 {
     seeds.value(id)->setType(set);
 }
+
+
 
 bool GeneratorGL::isSeedFixed(QUuid id)
 {
     return seeds.value(id)->isFixed();
 }
 
+
+
 void GeneratorGL::setSeedFixed(QUuid id, bool fixed)
 {
     seeds.value(id)->setFixed(fixed);
 }
 
+
+
 void GeneratorGL::drawSeed(QUuid id)
 {
     seeds.value(id)->draw();
 }
+
+
 
 void GeneratorGL::drawAllSeeds()
 {
@@ -941,6 +1025,8 @@ void GeneratorGL::drawAllSeeds()
         if (!seed->isFixed())
             seed->draw();
 }
+
+
 
 QImage GeneratorGL::outputImage()
 {
@@ -957,6 +1043,8 @@ QImage GeneratorGL::outputImage()
     }
 }
 
+
+
 void GeneratorGL::setTextureFormat(TextureFormat format)
 {
     FBO::texFormat = format;
@@ -969,6 +1057,8 @@ void GeneratorGL::setTextureFormat(TextureFormat format)
 
     setOutput(outputID);
 }
+
+
 
 void GeneratorGL::resize(GLuint width, GLuint height)
 {

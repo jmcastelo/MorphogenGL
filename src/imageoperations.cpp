@@ -113,7 +113,7 @@ void ImageOperation::adjustMinMax(float value, float minValue, float maxValue, f
 
 QString AverageBrightness::name = "Average brightness";
 
-AverageBrightness::AverageBrightness(bool on, QOpenGLContext* mainContext, int theSize, float theOpacity) : ImageOperation(on, mainContext)
+AverageBrightness::AverageBrightness(bool on, QOpenGLContext* mainContext, int theSize, float theRedFactor, float theGreenFactor, float theBlueFactor, float theOpacity) : ImageOperation(on, mainContext)
 {
     fbo = new FBO(":/shaders/screen.vert", ":/shaders/average-brightness.frag", mainContext);
     fbo->setInputTextureID(*blender->getTextureID());
@@ -121,8 +121,17 @@ AverageBrightness::AverageBrightness(bool on, QOpenGLContext* mainContext, int t
     size = new IntParameter("Size (px)", 0, this, theSize, 1, 20, 1, 1000, false);
 
     float min, max;
+    adjustMinMax(theRedFactor, -2.0f, 2.0f, min, max);
+    redFactor = new FloatParameter("Red factor", 1, this, theRedFactor, min, max, -5.0f, 5.0f);
+
+    adjustMinMax(theGreenFactor, -2.0f, 2.0f, min, max);
+    greenFactor = new FloatParameter("Green factor", 2, this, theGreenFactor, min, max, -5.0f, 5.0f);
+
+    adjustMinMax(theBlueFactor, -2.0f, 2.0f, min, max);
+    blueFactor = new FloatParameter("Blue factor", 3, this, theGreenFactor, min, max, -5.0f, 5.0f);
+
     adjustMinMax(theOpacity, 0.0f, 1.0f, min, max);
-    opacity = new FloatParameter("Opacity", 1, this, theOpacity, min, max, 0.0f, 1.0f);
+    opacity = new FloatParameter("Opacity", 4, this, theOpacity, min, max, 0.0f, 1.0f);
 }
 
 
@@ -135,6 +144,15 @@ AverageBrightness::AverageBrightness(const AverageBrightness &operation) : Image
     size = new IntParameter(*operation.size);
     size->setOperation(this);
 
+    redFactor = new FloatParameter(*operation.redFactor);
+    redFactor->setOperation(this);
+
+    greenFactor = new FloatParameter(*operation.greenFactor);
+    greenFactor->setOperation(this);
+
+    blueFactor = new FloatParameter(*operation.blueFactor);
+    blueFactor->setOperation(this);
+
     opacity = new FloatParameter(*operation.opacity);
     opacity->setOperation(this);
 }
@@ -144,6 +162,9 @@ AverageBrightness::AverageBrightness(const AverageBrightness &operation) : Image
 AverageBrightness::~AverageBrightness()
 {
     delete size;
+    delete redFactor;
+    delete greenFactor;
+    delete blueFactor;
     delete opacity;
 }
 
@@ -152,7 +173,10 @@ AverageBrightness::~AverageBrightness()
 void AverageBrightness::setParameters()
 {
     setIntParameter(0, size->value());
-    setFloatParameter(1, opacity->value());
+    setFloatParameter(1, redFactor->value());
+    setFloatParameter(2, greenFactor->value());
+    setFloatParameter(3, blueFactor->value());
+    setFloatParameter(4, opacity->value());
 }
 
 
@@ -161,22 +185,7 @@ void AverageBrightness::setIntParameter(int index, int value)
 {
     if (index == 0)
     {
-        //float x = (value - 0.5) / fbo->width;
-        //float y = (value - 0.5) / fbo->height;
-
-        /*QVector2D offset[] = {
-            QVector2D(-x, y),
-            QVector2D(0.0f, y),
-            QVector2D(x, y),
-            QVector2D(-x, 0.0f),
-            QVector2D(0.0f, 0.0f),
-            QVector2D(x, 0.0f),
-            QVector2D(-x, -y),
-            QVector2D(0.0f, -y),
-            QVector2D(x, -y)
-        };*/
-
-        QVector2D offset[25];
+        QVector2D offset[24];
 
         int element = 0;
 
@@ -184,13 +193,14 @@ void AverageBrightness::setIntParameter(int index, int value)
         {
             for (int x = -2; x <= 2; x++)
             {
-                offset[element++] = QVector2D(static_cast<float>(x * (value - 0.5)) / fbo->width, static_cast<float>(y * (value - 0.5)) / fbo->height);
+                if (x != 0 || y != 0)
+                    offset[element++] = QVector2D(static_cast<float>(x * (value - 0.5)) / fbo->width, static_cast<float>(y * (value - 0.5)) / fbo->height);
             }
         }
 
         fbo->makeCurrent();
         fbo->program->bind();
-        fbo->program->setUniformValueArray("offset", offset, 25);
+        fbo->program->setUniformValueArray("offset", offset, 24);
         fbo->program->release();
         fbo->doneCurrent();
     }
@@ -200,7 +210,15 @@ void AverageBrightness::setIntParameter(int index, int value)
 
 void AverageBrightness::setFloatParameter(int index, float value)
 {
-    if (index == 1)
+    if (index == 1 || index == 2 || index == 3)
+    {
+        fbo->makeCurrent();
+        fbo->program->bind();
+        fbo->program->setUniformValue("factor", QVector3D(redFactor->value(), greenFactor->value(), blueFactor->value()));
+        fbo->program->release();
+        fbo->doneCurrent();
+    }
+    else if (index == 4)
     {
         fbo->makeCurrent();
         fbo->program->bind();

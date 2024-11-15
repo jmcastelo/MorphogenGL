@@ -64,6 +64,8 @@ struct ImageOperationNode
     int numNonNormalInputs();
     int numOutputs();
 
+    bool isBlitConnected();
+
     void addOutput(ImageOperationNode* node);
     void removeOutput(ImageOperationNode* node);
 

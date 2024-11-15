@@ -444,12 +444,10 @@ void ControlWidget::updateIterationNumberLabel()
 
 
 
-void ControlWidget::updateMetricsLabels(std::chrono::microseconds iterationTime, unsigned int its)
+void ControlWidget::updateMetricsLabels(double uspf, double fps)
 {
-    double mSec = std::chrono::duration<double, std::milli>{iterationTime}.count();
-    timePerIterationLabel->setText(QString("mSPF: %1").arg(mSec / its));
-    double sec = std::chrono::duration<double>{iterationTime}.count();
-    fpsLabel->setText(QString("FPS: %1").arg(its / sec));
+    timePerIterationLabel->setText(QString("uSPF: %1").arg(uspf));
+    fpsLabel->setText(QString("FPS: %1").arg(fps));
 }
 
 
@@ -712,8 +710,8 @@ void ControlWidget::constructDisplayOptionsWidget(double fps)
 
     connect(fpsLineEdit, &FocusLineEdit::editingFinished, this, [=]()
     {
-        std::chrono::duration<double> intervalSeconds {1.0 / fpsLineEdit->text().toDouble()};
-        emit timerIntervalChanged(std::chrono::duration_cast<std::chrono::nanoseconds>(intervalSeconds));
+        double fps = fpsLineEdit->text().toDouble();
+        emit fpsChanged(fps);
     });
 
     connect(updateCheckBox, &QCheckBox::checkStateChanged, this, [=](Qt::CheckState state){

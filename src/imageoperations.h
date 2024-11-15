@@ -123,7 +123,7 @@ protected:
 class AverageBrightness : public ImageOperation
 {
 public:
-    AverageBrightness(bool on, QOpenGLContext* mainContext, int theSize, float theOpacity);
+    AverageBrightness(bool on, QOpenGLContext* mainContext, int theSize, float theRedFactor, float theGreenFactor, float theBlueFactor, float theOpacity);
     AverageBrightness(const AverageBrightness& operation);
     ~AverageBrightness();
 
@@ -137,10 +137,13 @@ public:
     void setFloatParameter(int index, float value);
 
     std::vector<IntParameter*> getIntParameters() { std::vector<IntParameter*> parameters = { size }; return parameters; };
-    std::vector<FloatParameter*> getFloatParameters() { std::vector<FloatParameter*> parameters = { opacity }; return parameters; }
+    std::vector<FloatParameter*> getFloatParameters() { std::vector<FloatParameter*> parameters = { redFactor, greenFactor, blueFactor, opacity }; return parameters; }
 
 private:
     IntParameter* size;
+    FloatParameter* redFactor;
+    FloatParameter* greenFactor;
+    FloatParameter* blueFactor;
     FloatParameter* opacity;
 };
 

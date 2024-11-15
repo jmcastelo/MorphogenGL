@@ -21,12 +21,6 @@ public:
     MainWindow();
     ~MainWindow();
 
-    void setStartTime();
-    void startTimer();
-    void stopTimer();
-
-    void setTimerInterval(std::chrono::nanoseconds interval);
-
     void startRecording(QString recordFilename, int framesPerSecond, QMediaFormat format);
     void stopRecording();
     int getFrameCount();
@@ -36,7 +30,7 @@ signals:
     void closing();
 
     void iterationPerformed();
-    void iterationTimeMeasured(std::chrono::microseconds iterationTime, int numIterations);
+    void iterationTimeMeasured(double uspf, double currentFPS);
 
 protected:
     void closeEvent(QCloseEvent* event) override;
@@ -54,8 +48,10 @@ private:
     std::chrono::time_point<std::chrono::steady_clock> start;
     std::chrono::time_point<std::chrono::steady_clock> end;
 
-    unsigned int numIterations = 100;
+    int numBeats = 0;
+    int numBeatsTrigger = 60;
     double fps = 60.0;
+    std::chrono::microseconds beatTime;
 
     QWidget* stackedWidget;
     QStackedLayout* stackedLayout;
@@ -66,6 +62,8 @@ private:
 private slots:
     void beat();
     void iterate();
+
+    void setTimerInterval(double newFPS);
 
     void setIterationState(bool state);
 

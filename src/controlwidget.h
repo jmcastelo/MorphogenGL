@@ -86,13 +86,15 @@ signals:
     void startRecording(QString recordFilename, int framesPerSecond, QMediaFormat format);
     void stopRecording();
     void takeScreenshot(QString filename);
-    void timerIntervalChanged(std::chrono::nanoseconds interval);
+    //void timerIntervalChanged(std::chrono::nanoseconds interval);
+    void fpsChanged(double newFPS);
+
 
 public slots:
     void updateWindowSizeLineEdits(int width, int height);
     void populateTexFormatComboBox(QList<TextureFormat> formats);
     void updateIterationNumberLabel();
-    void updateMetricsLabels(std::chrono::microseconds time, unsigned int its);
+    void updateMetricsLabels(double uspf, double fps);
     void setVideoCaptureElapsedTimeLabel(int frameNumber);
 
 protected:
