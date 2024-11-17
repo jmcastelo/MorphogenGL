@@ -91,6 +91,7 @@ signals:
 
 
 public slots:
+    void reset();
     void updateWindowSizeLineEdits(int width, int height);
     void populateTexFormatComboBox(QList<TextureFormat> formats);
     void updateIterationNumberLabel();
@@ -176,7 +177,6 @@ private:
 
 private slots:
     void iterate();
-    void reset();
     void record();
     void setScreenshotFilename();
     void setOutputDir();

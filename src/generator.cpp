@@ -245,7 +245,6 @@ void ImageOperationNode::setOperation(ImageOperation *newOperation)
 GeneratorGL::GeneratorGL()
 {
     availableOperations = {
-        AverageBrightness::name,
         BilateralFilter::name,
         Brightness::name,
         ColorMix::name,
@@ -253,6 +252,7 @@ GeneratorGL::GeneratorGL()
         Contrast::name,
         Convolution::name,
         Dilation::name,
+        EqualizeHistogram::name,
         Erosion::name,
         GammaCorrection::name,
         HueShift::name,
@@ -710,11 +710,7 @@ ImageOperation* GeneratorGL::newOperation(QString operationName)
 {
     ImageOperation* operation = nullptr;
 
-    if (operationName == AverageBrightness::name)
-    {
-        operation = new AverageBrightness(false, sharedContext, 1, 0.0f, 0.0f, 0.0f, 1.0f);
-    }
-    else if (operationName == BilateralFilter::name)
+    if (operationName == BilateralFilter::name)
     {
         operation = new BilateralFilter(false, sharedContext, 3, 1.0f, 10.0f, 0.1f, 1.0f);
     }
@@ -743,6 +739,10 @@ ImageOperation* GeneratorGL::newOperation(QString operationName)
     else if (operationName == Dilation::name)
     {
         operation = new Dilation(false, sharedContext, 1.0f, 1.0f);
+    }
+    else if (operationName == EqualizeHistogram::name)
+    {
+        operation = new EqualizeHistogram(false, sharedContext, 1, 1.0f);
     }
     else if (operationName == Erosion::name)
     {
@@ -831,11 +831,7 @@ ImageOperation* GeneratorGL::loadImageOperation(
 {
     ImageOperation* operation = nullptr;
 
-    if (operationName == AverageBrightness::name)
-    {
-        operation = new AverageBrightness(enabled, sharedContext, intParameters[0], floatParameters[0], floatParameters[1], floatParameters[2], floatParameters[3]);
-    }
-    else if (operationName == BilateralFilter::name)
+    if (operationName == BilateralFilter::name)
     {
         operation = new BilateralFilter(enabled, sharedContext, intParameters[0], floatParameters[0], floatParameters[1], floatParameters[2], floatParameters[3]);
     }
@@ -862,6 +858,10 @@ ImageOperation* GeneratorGL::loadImageOperation(
     else if (operationName == Dilation::name)
     {
         operation = new Dilation(enabled, sharedContext, floatParameters[0], floatParameters[1]);
+    }
+    else if (operationName == EqualizeHistogram::name)
+    {
+        operation = new EqualizeHistogram(enabled, sharedContext, intParameters[0], floatParameters[0]);
     }
     else if (operationName == Erosion::name)
     {

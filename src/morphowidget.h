@@ -68,7 +68,6 @@ public slots:
     void setCursor(QPoint point);
 
 protected:
-    void closeEvent(QCloseEvent* event) override;
     void wheelEvent(QWheelEvent* event) override;
     void mouseMoveEvent(QMouseEvent* event) override;
     void mousePressEvent(QMouseEvent* event) override;

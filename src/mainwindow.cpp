@@ -46,7 +46,7 @@ MainWindow::MainWindow()
     connect(updateTimer, &TimerThread::timeout, this, &MainWindow::computeUpdateFPS);
 
     connect(this, &MainWindow::iterationPerformed, controlWidget, &ControlWidget::updateIterationNumberLabel);
-    connect(this, &MainWindow::iterationPerformed, plotsWidget, &PlotsWidget::updatePlots);
+    //connect(this, &MainWindow::iterationPerformed, plotsWidget, &PlotsWidget::updatePlots);
     connect(this, &MainWindow::iterationTimeMeasured, controlWidget, &ControlWidget::updateIterationMetricsLabels);
     connect(this, &MainWindow::updateTimeMeasured, controlWidget, &ControlWidget::updateUpdateMetricsLabels);
     //connect(this, &MainWindow::closing, controlWidget, &ControlWidget::close);
@@ -136,9 +136,12 @@ void MainWindow::iterate()
         generator->iterate();
 
         if (plotsWidget->isEnabled())
+        {
             plotsWidget->setPixelRGB(generator->pixelRGB(plotsWidget->pixelSources()));
+            plotsWidget->updatePlots();
+        }
 
-        emit iterationPerformed();
+        //emit iterationPerformed();
     }
 }
 
@@ -157,6 +160,7 @@ void MainWindow::computeIterationFPS()
         double fps = numIterations * 1'000'000.0 / iterationTime.count();
 
         emit iterationTimeMeasured(uspf, fps);
+        emit iterationPerformed();
 
         numIterations = 0;
         iterationStart = std::chrono::steady_clock::now();
@@ -290,13 +294,9 @@ void MainWindow::keyPressEvent(QKeyEvent* event)
         if (event->key() == Qt::Key_Tab)
         {
             if (stackedLayout->currentWidget() == controlWidget)
-            {
                 stackedLayout->setCurrentWidget(morphoWidget);
-            }
             else
-            {
                 stackedLayout->setCurrentWidget(controlWidget);
-            }
         }
         else if (event->key() == Qt::Key_PageUp)
         {
@@ -314,6 +314,10 @@ void MainWindow::keyPressEvent(QKeyEvent* event)
             opacityEffect->setOpacity(controlWidgetOpacity);
             morphoWidget->update();
         }
+    }
+    else if (event->key() == Qt::Key_Space)
+    {
+        controlWidget->reset();
     }
 
     event->accept();

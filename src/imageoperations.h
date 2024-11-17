@@ -118,37 +118,6 @@ protected:
 
 
 
-// Average brightness
-
-class AverageBrightness : public ImageOperation
-{
-public:
-    AverageBrightness(bool on, QOpenGLContext* mainContext, int theSize, float theRedFactor, float theGreenFactor, float theBlueFactor, float theOpacity);
-    AverageBrightness(const AverageBrightness& operation);
-    ~AverageBrightness();
-
-    ImageOperation* clone() { return new AverageBrightness(*this); }
-
-    static QString name;
-    QString getName() { return name; };
-
-    void setParameters();
-    void setIntParameter(int index, int value);
-    void setFloatParameter(int index, float value);
-
-    std::vector<IntParameter*> getIntParameters() { std::vector<IntParameter*> parameters = { size }; return parameters; };
-    std::vector<FloatParameter*> getFloatParameters() { std::vector<FloatParameter*> parameters = { redFactor, greenFactor, blueFactor, opacity }; return parameters; }
-
-private:
-    IntParameter* size;
-    FloatParameter* redFactor;
-    FloatParameter* greenFactor;
-    FloatParameter* blueFactor;
-    FloatParameter* opacity;
-};
-
-
-
 // Bilateral filter
 
 class BilateralFilter : public ImageOperation
@@ -346,6 +315,34 @@ public:
 
 private:
     FloatParameter* size;
+    FloatParameter* opacity;
+};
+
+
+
+// Equalize histogram
+
+class EqualizeHistogram : public ImageOperation
+{
+public:
+    EqualizeHistogram(bool on, QOpenGLContext* mainContext, int theSize, float theOpacity);
+    EqualizeHistogram(const EqualizeHistogram& operation);
+    ~EqualizeHistogram();
+
+    ImageOperation* clone() { return new EqualizeHistogram(*this); }
+
+    static QString name;
+    QString getName() { return name; };
+
+    void setParameters();
+    void setIntParameter(int index, int value);
+    void setFloatParameter(int index, float value);
+
+    std::vector<IntParameter*> getIntParameters() { std::vector<IntParameter*> parameters = { size }; return parameters; };
+    std::vector<FloatParameter*> getFloatParameters() { std::vector<FloatParameter*> parameters = { opacity }; return parameters; }
+
+private:
+    IntParameter* size;
     FloatParameter* opacity;
 };
 
