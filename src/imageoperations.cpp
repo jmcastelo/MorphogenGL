@@ -1586,6 +1586,15 @@ void Memory::clear()
 
 
 
+void Memory::setParameters()
+{
+    setIntParameter(0, frames->value());
+    setFloatParameter(0, blendFactor->value());
+    setFloatParameter(1, decayFactor->value());
+}
+
+
+
 void Memory::setIntParameter(int index, int value)
 {
     if (index == 0)

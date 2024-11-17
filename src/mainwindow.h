@@ -6,6 +6,7 @@
 #include "controlwidget.h"
 #include "plotswidget.h"
 #include "recorder.h"
+#include "timerthread.h"
 
 #include <QMainWindow>
 #include <QStackedLayout>
@@ -27,10 +28,10 @@ public:
 
 signals:
     void outputTextureChanged(GLuint id);
-    void closing();
 
     void iterationPerformed();
     void iterationTimeMeasured(double uspf, double currentFPS);
+    void updateTimeMeasured(double uspf, double currentFPS);
 
 protected:
     void closeEvent(QCloseEvent* event) override;
@@ -44,14 +45,21 @@ private:
     PlotsWidget* plotsWidget;
     Recorder* recorder = nullptr;
 
-    QChronoTimer* timer;
-    std::chrono::time_point<std::chrono::steady_clock> start;
-    std::chrono::time_point<std::chrono::steady_clock> end;
+    TimerThread* updateTimer;
+    std::chrono::time_point<std::chrono::steady_clock> updateStart;
+    std::chrono::time_point<std::chrono::steady_clock> updateEnd;
 
-    int numBeats = 0;
-    int numBeatsTrigger = 60;
-    double fps = 60.0;
-    std::chrono::microseconds beatTime;
+    TimerThread* iterationTimer;
+    std::chrono::time_point<std::chrono::steady_clock> iterationStart;
+    std::chrono::time_point<std::chrono::steady_clock> iterationEnd;
+
+    int numUpdates = 0;
+    double updateFPS = 60.0;
+    std::chrono::microseconds updateTime;
+
+    int numIterations = 0;
+    double iterationFPS = 60.0;
+    std::chrono::microseconds iterationTime;
 
     QWidget* stackedWidget;
     QStackedLayout* stackedLayout;
@@ -63,8 +71,11 @@ private slots:
     void beat();
     void iterate();
 
-    void computeFPS();
-    void setTimerInterval(double newFPS);
+    void computeUpdateFPS();
+    void computeIterationFPS();
+
+    void setUpdateTimerInterval(double newFPS);
+    void setIterationTimerInterval(double newFPS);
 
     void setIterationState(bool state);
 

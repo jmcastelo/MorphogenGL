@@ -33,7 +33,7 @@
 
 
 
-ControlWidget::ControlWidget(double fps, GeneratorGL *theGenerator, PlotsWidget *thePlotsWidget, QWidget *parent) :
+ControlWidget::ControlWidget(double itFPS, double updFPS, GeneratorGL *theGenerator, PlotsWidget *thePlotsWidget, QWidget *parent) :
     QWidget(parent),
     generator { theGenerator },
     plotsWidget { thePlotsWidget }
@@ -61,7 +61,7 @@ ControlWidget::ControlWidget(double fps, GeneratorGL *theGenerator, PlotsWidget 
     nodesToolBar->hide();
 
     constructSystemToolBar();
-    constructDisplayOptionsWidget(fps);
+    constructDisplayOptionsWidget(itFPS, updFPS);
     constructRecordingOptionsWidget();
     constructSortedOperationsWidget();
 
@@ -118,12 +118,16 @@ ControlWidget::ControlWidget(double fps, GeneratorGL *theGenerator, PlotsWidget 
     statusBar->setSizeGripEnabled(false);
 
     iterationNumberLabel = new QLabel("Frame: 0");
-    timePerIterationLabel = new QLabel("mSPF: 0");
-    fpsLabel = new QLabel("FPS: 0");
+    timePerIterationLabel = new QLabel("uSPF: 0");
+    iterationFPSLabel = new QLabel("FPS: 0");
+    timePerUpdateLabel = new QLabel("uSPF: 0");
+    updateFPSLabel = new QLabel("FPS: 0");
 
-    statusBar->insertWidget(0, iterationNumberLabel, 1);
+    statusBar->insertWidget(0, iterationNumberLabel, 4);
     statusBar->insertWidget(1, timePerIterationLabel, 1);
-    statusBar->insertWidget(2, fpsLabel, 1);
+    statusBar->insertWidget(2, iterationFPSLabel, 1);
+    statusBar->insertWidget(3, timePerUpdateLabel, 1);
+    statusBar->insertWidget(4, updateFPSLabel, 1);
 
     // Main layout
 
@@ -168,28 +172,10 @@ ControlWidget::~ControlWidget()
 {
     delete displayOptionsWidget;
     delete recordingOptionsWidget;
-    delete sortedOperationsWidget;
     delete parser;
     delete graphWidget;
+    delete sortedOperationsWidget;
     qDeleteAll(operationsWidgets);
-}
-
-
-
-void ControlWidget::closeEvent(QCloseEvent* event)
-{
-    displayOptionsWidget->close();
-    recordingOptionsWidget->close();
-
-    disconnect(generator, &GeneratorGL::sortedOperationsChanged, this, &ControlWidget::populateSortedOperationsTable);
-    sortedOperationsWidget->close();
-
-    foreach(OperationsWidget* opWidget, operationsWidgets)
-        opWidget->close();
-
-    graphWidget->closeWidgets();
-
-    event->accept();
 }
 
 
@@ -391,8 +377,8 @@ void ControlWidget::loadConfig()
         generator->resetIterationNumer();
 
         updateIterationNumberLabel();
-        timePerIterationLabel->setText(QString("mSPF: 0"));
-        fpsLabel->setText(QString("FPS: 0"));
+        updateIterationMetricsLabels(0, 0);
+        updateUpdateMetricsLabels(0, 0);
     }
 }
 
@@ -444,10 +430,18 @@ void ControlWidget::updateIterationNumberLabel()
 
 
 
-void ControlWidget::updateMetricsLabels(double uspf, double fps)
+void ControlWidget::updateIterationMetricsLabels(double uspf, double fps)
 {
     timePerIterationLabel->setText(QString("uSPF: %1").arg(uspf));
-    fpsLabel->setText(QString("FPS: %1").arg(fps));
+    iterationFPSLabel->setText(QString("FPS: %1").arg(fps));
+}
+
+
+
+void ControlWidget::updateUpdateMetricsLabels(double uspf, double fps)
+{
+    timePerUpdateLabel->setText(QString("uSPF: %1").arg(uspf));
+    updateFPSLabel->setText(QString("FPS: %1").arg(fps));
 }
 
 
@@ -657,15 +651,21 @@ void ControlWidget::constructMultipleNodesToolBar()
 
 // Display
 
-void ControlWidget::constructDisplayOptionsWidget(double fps)
+void ControlWidget::constructDisplayOptionsWidget(double itsFPS, double updFPS)
 {
-    FocusLineEdit* fpsLineEdit = new FocusLineEdit;
-    fpsLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
-    QDoubleValidator* fpsDoubleValidator = new QDoubleValidator(1.0, 1000.0, 3, fpsLineEdit);
-    fpsDoubleValidator->setLocale(QLocale::English);
-    fpsLineEdit->setValidator(fpsDoubleValidator);
-    std::chrono::duration<double> intervalSeconds = std::chrono::duration<double>(1.0 / fps);
-    fpsLineEdit->setText(QString::number(1.0 / intervalSeconds.count()));
+    FocusLineEdit* itsFPSLineEdit = new FocusLineEdit;
+    itsFPSLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+    QDoubleValidator* itsFPSDoubleValidator = new QDoubleValidator(1.0, 1000.0, 3, itsFPSLineEdit);
+    itsFPSDoubleValidator->setLocale(QLocale::English);
+    itsFPSLineEdit->setValidator(itsFPSDoubleValidator);
+    itsFPSLineEdit->setText(QString::number(itsFPS));
+
+    FocusLineEdit* updFPSLineEdit = new FocusLineEdit;
+    updFPSLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+    QDoubleValidator* updFPSDoubleValidator = new QDoubleValidator(1.0, 1000.0, 3, updFPSLineEdit);
+    updFPSDoubleValidator->setLocale(QLocale::English);
+    updFPSLineEdit->setValidator(updFPSDoubleValidator);
+    updFPSLineEdit->setText(QString::number(updFPS));
 
     windowWidthLineEdit = new QLineEdit;
     windowWidthLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
@@ -687,7 +687,8 @@ void ControlWidget::constructDisplayOptionsWidget(double fps)
     updateCheckBox->setChecked(true);
 
     QFormLayout* formLayout = new QFormLayout;
-    formLayout->addRow("FPS:", fpsLineEdit);
+    formLayout->addRow("Its FPS:", itsFPSLineEdit);
+    formLayout->addRow("Upd FPS:", updFPSLineEdit);
     formLayout->addRow("Update:", updateCheckBox);
     formLayout->addRow("Width (px):", windowWidthLineEdit);
     formLayout->addRow("Height (px):", windowHeightLineEdit);
@@ -708,10 +709,16 @@ void ControlWidget::constructDisplayOptionsWidget(double fps)
 
     // Signals + Slots
 
-    connect(fpsLineEdit, &FocusLineEdit::editingFinished, this, [=]()
+    connect(itsFPSLineEdit, &FocusLineEdit::editingFinished, this, [=]()
     {
-        double fps = fpsLineEdit->text().toDouble();
-        emit fpsChanged(fps);
+        double fps = itsFPSLineEdit->text().toDouble();
+        emit iterationFPSChanged(fps);
+    });
+
+    connect(updFPSLineEdit, &FocusLineEdit::editingFinished, this, [=]()
+    {
+        double fps = updFPSLineEdit->text().toDouble();
+        emit updateFPSChanged(fps);
     });
 
     connect(updateCheckBox, &QCheckBox::checkStateChanged, this, [=](Qt::CheckState state){

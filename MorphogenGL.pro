@@ -54,7 +54,8 @@ HEADERS += \
     src/recorder.h \
     src/rgbwidget.h \
     src/seed.h \
-    src/texformat.h
+    src/texformat.h \
+    src/timerthread.h
 
 SOURCES += \
     src/blender.cpp \
@@ -75,4 +76,5 @@ SOURCES += \
     src/plotswidget.cpp \
     src/recorder.cpp \
     src/rgbwidget.cpp \
-    src/seed.cpp
+    src/seed.cpp \
+    src/timerthread.cpp

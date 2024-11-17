@@ -39,24 +39,6 @@ void ConfigurationParser::write()
 
     stream.writeAttribute("version", generator->version);
 
-    // Nodes: seeds and operation nodes
-
-    stream.writeStartElement("nodes");
-
-    QMap<QUuid, Seed*>::const_iterator i = generator->getSeeds().constBegin();
-    while (i != generator->getSeeds().constEnd())
-    {
-        writeSeedNode(i.key(), i.value());
-        i++;
-    }
-
-    foreach (ImageOperationNode* node, generator->getOperationNodes())
-    {
-        writeOperationNode(node);
-    }
-
-    stream.writeEndElement();
-
     // Display
 
     stream.writeStartElement("display");
@@ -73,6 +55,24 @@ void ConfigurationParser::write()
     stream.writeStartElement("outputnode");
     stream.writeCharacters(generator->getOutput().toString());
     stream.writeEndElement();
+
+    stream.writeEndElement();
+
+    // Nodes: seeds and operation nodes
+
+    stream.writeStartElement("nodes");
+
+    QMap<QUuid, Seed*>::const_iterator i = generator->getSeeds().constBegin();
+    while (i != generator->getSeeds().constEnd())
+    {
+        writeSeedNode(i.key(), i.value());
+        i++;
+    }
+
+    foreach (ImageOperationNode* node, generator->getOperationNodes())
+    {
+        writeOperationNode(node);
+    }
 
     stream.writeEndElement();
 
@@ -458,9 +458,6 @@ void ConfigurationParser::read()
                 {
                     if (xml.name() == "image")
                     {
-                        //int imageWidth = generator->getWidth();
-                        //int imageHeight = generator->getHeight();
-
                         while (xml.readNextStartElement())
                         {
                             if (xml.name() == "width")
@@ -471,7 +468,7 @@ void ConfigurationParser::read()
                                 xml.skipCurrentElement();
                         }
 
-                        //emit newImageSizeRead(imageWidth, imageHeight);
+                        emit newImageSizeRead(imageWidth, imageHeight);
                     }
                     else if (xml.name() == "outputnode")
                     {
@@ -492,7 +489,7 @@ void ConfigurationParser::read()
         if (!outputNodeId.isNull())
             generator->setOutput(outputNodeId);
 
-        emit newImageSizeRead(imageWidth, imageHeight);
+        //emit newImageSizeRead(imageWidth, imageHeight);
     }
 
     if (xml.tokenType() == QXmlStreamReader::Invalid)

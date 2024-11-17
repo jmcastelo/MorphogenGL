@@ -74,7 +74,7 @@ public:
     GeneratorGL* generator;
     QSizeGrip* grip;
 
-    ControlWidget(double fps, GeneratorGL* theGenerator, PlotsWidget* thePlotsWidget, QWidget *parent = nullptr);
+    ControlWidget(double itFPS, double updFPS, GeneratorGL* theGenerator, PlotsWidget* thePlotsWidget, QWidget *parent = nullptr);
     ~ControlWidget();
 
 signals:
@@ -86,19 +86,19 @@ signals:
     void startRecording(QString recordFilename, int framesPerSecond, QMediaFormat format);
     void stopRecording();
     void takeScreenshot(QString filename);
-    //void timerIntervalChanged(std::chrono::nanoseconds interval);
-    void fpsChanged(double newFPS);
+    void iterationFPSChanged(double newFPS);
+    void updateFPSChanged(double newFPS);
 
 
 public slots:
     void updateWindowSizeLineEdits(int width, int height);
     void populateTexFormatComboBox(QList<TextureFormat> formats);
     void updateIterationNumberLabel();
-    void updateMetricsLabels(double uspf, double fps);
+    void updateIterationMetricsLabels(double uspf, double fps);
+    void updateUpdateMetricsLabels(double uspf, double fps);
     void setVideoCaptureElapsedTimeLabel(int frameNumber);
 
 protected:
-    void closeEvent(QCloseEvent* event) override;
     void resizeEvent(QResizeEvent* event) override;
 
 private:
@@ -142,7 +142,9 @@ private:
 
     QLabel* iterationNumberLabel;
     QLabel* timePerIterationLabel;
-    QLabel* fpsLabel;
+    QLabel* iterationFPSLabel;
+    QLabel* timePerUpdateLabel;
+    QLabel* updateFPSLabel;
 
     QLineEdit* windowWidthLineEdit;
     QLineEdit* windowHeightLineEdit;
@@ -160,7 +162,7 @@ private:
     QSplitter* splitter;
 
     void constructSystemToolBar();
-    void constructDisplayOptionsWidget(double fps);
+    void constructDisplayOptionsWidget(double itsFPS, double updFPS);
     void constructRecordingOptionsWidget();
     void constructSortedOperationsWidget();
 

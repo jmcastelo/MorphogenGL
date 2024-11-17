@@ -59,11 +59,9 @@ signals:
     void sizeChanged(int width, int height);
     void selectedPointChanged(QPoint point);
     void scaleTransformChanged(QTransform transform);
-    void closing();
 
 public slots:
     void updateOutputTextureID(GLuint id);
-    //void setSize(int width, int height);
     void resetZoom(int width, int height);
     void setUpdate(bool state);
     void setDrawingCursor(bool on){ drawingCursor = on; }

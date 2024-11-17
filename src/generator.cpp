@@ -199,7 +199,7 @@ void ImageOperationNode::equalizeBlendFactors()
 
 QVector<InputData*> ImageOperationNode::inputsVector()
 {
-    QVector<InputData*> inputData;
+    QList<InputData*> inputData;
 
     foreach(InputData* inData, inputs)
         inputData.push_back(inData);
@@ -226,12 +226,14 @@ void ImageOperationNode::setOperation(ImageOperation *newOperation)
         if (node->inputs.value(id)->type == InputType::Normal)
         {
             node->inputs[id]->textureID = operation->getTextureID();
+            node->operation->setInputData(node->inputsVector());
             operation->enableBlit(false);
         }
         else if (node->inputs.value(id)->type == InputType::Blit)
         {
             node->inputs[id]->textureID = operation->getTextureBlit();
-            operation->enableBlit(false);
+            node->operation->setInputData(node->inputsVector());
+            operation->enableBlit(true);
         }
     }
 }
@@ -292,7 +294,7 @@ GeneratorGL::~GeneratorGL()
 
 void GeneratorGL::sortOperations()
 {
-    QList<ImageOperation*> tmpSortedOperations = sortedOperations;
+    //QList<ImageOperation*> tmpSortedOperations = sortedOperations;
 
     sortedOperations.clear();
 
@@ -351,7 +353,7 @@ void GeneratorGL::sortOperations()
             break;
     }
 
-    if (tmpSortedOperations != sortedOperations)
+    //if (tmpSortedOperations != sortedOperations)
         emit sortedOperationsChanged(sortedOperationsData);
 }
 
@@ -396,7 +398,7 @@ void GeneratorGL::setOutput(QUuid id)
     {
         // Avoid disabling blit for output node if it is blit connected (predge)
 
-        if (outputTextureID != nullptr && !operationNodes.value(outputID)->isBlitConnected())
+        if (!outputID.isNull() && !operationNodes.value(outputID)->isBlitConnected())
             operationNodes.value(outputID)->operation->enableBlit(false);
 
         outputID = id;
@@ -607,8 +609,8 @@ void GeneratorGL::setOperation(QUuid id, QString operationName)
 
     // If it's output node, set new output texture id
 
-    if (id == outputID)
-        outputTextureID = operation->getTextureID();
+    if (isOutput(id))
+        setOutput(id);
 
     sortOperations();
 }
@@ -983,6 +985,8 @@ void GeneratorGL::loadSeedImage(QUuid id, QString filename)
 {
     seeds.value(id)->loadImage(filename);
 }
+
+
 
 int GeneratorGL::getSeedType(QUuid id)
 {

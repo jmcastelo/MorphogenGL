@@ -4,10 +4,8 @@
 
 MainWindow::MainWindow()
 {
-    timer = new QChronoTimer(this);
-    timer->setTimerType(Qt::PreciseTimer);
-    timer->setSingleShot(true);
-    setTimerInterval(fps);
+    iterationTimer = new TimerThread(iterationFPS, this);
+    updateTimer = new TimerThread(updateFPS, this);
 
     generator = new GeneratorGL();
 
@@ -18,7 +16,7 @@ MainWindow::MainWindow()
     plotsWidget = new PlotsWidget(FBO::width, FBO::height);
     plotsWidget->setVisible(false);
 
-    controlWidget = new ControlWidget(fps, generator, plotsWidget);
+    controlWidget = new ControlWidget(iterationFPS, updateFPS, generator, plotsWidget);
     controlWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     controlWidget->setMinimumSize(0, 0);
 
@@ -41,25 +39,31 @@ MainWindow::MainWindow()
 
     stackedLayout->setCurrentWidget(controlWidget);
 
-    connect(timer, &QChronoTimer::timeout, this, &MainWindow::beat);
-    connect(timer, &QChronoTimer::timeout, this, &MainWindow::computeFPS);
+    connect(iterationTimer, &TimerThread::timeout, this, &MainWindow::beat);
+    connect(iterationTimer, &TimerThread::timeout, this, &MainWindow::computeIterationFPS);
 
-    //connect(morphoWidget, &QOpenGLWidget::frameSwapped, timer, &QChronoTimer::start);
-    //connect(morphoWidget, &QOpenGLWidget::frameSwapped, this, &MainWindow::beat);
+    connect(updateTimer, &TimerThread::timeout, morphoWidget, QOverload<>::of(&MorphoWidget::update));
+    connect(updateTimer, &TimerThread::timeout, this, &MainWindow::computeUpdateFPS);
 
     connect(this, &MainWindow::iterationPerformed, controlWidget, &ControlWidget::updateIterationNumberLabel);
     connect(this, &MainWindow::iterationPerformed, plotsWidget, &PlotsWidget::updatePlots);
-    connect(this, &MainWindow::iterationTimeMeasured, controlWidget, &ControlWidget::updateMetricsLabels);
-    connect(this, &MainWindow::closing, controlWidget, &ControlWidget::close);
+    connect(this, &MainWindow::iterationTimeMeasured, controlWidget, &ControlWidget::updateIterationMetricsLabels);
+    connect(this, &MainWindow::updateTimeMeasured, controlWidget, &ControlWidget::updateUpdateMetricsLabels);
+    //connect(this, &MainWindow::closing, controlWidget, &ControlWidget::close);
 
     connect(morphoWidget, &MorphoWidget::openGLInitialized, this, [=]()
     {
         controlWidget->generator->init(morphoWidget->context());
         plotsWidget->init(morphoWidget->context());
 
-        numBeats = 0;
-        start = std::chrono::steady_clock::now();
-        timer->start();
+        numIterations = 0;
+        numUpdates = 0;
+
+        iterationStart = std::chrono::steady_clock::now();
+        updateStart = std::chrono::steady_clock::now();
+
+        iterationTimer->start();
+        updateTimer->start();
     });
     connect(morphoWidget, &MorphoWidget::supportedTexFormats, controlWidget, &ControlWidget::populateTexFormatComboBox);
     connect(morphoWidget, &MorphoWidget::sizeChanged, generator, &GeneratorGL::resize);
@@ -73,18 +77,16 @@ MainWindow::MainWindow()
 
     connect(controlWidget, &ControlWidget::iterateStateChanged, this, &MainWindow::setIterationState);
     connect(controlWidget, &ControlWidget::updateStateChanged, morphoWidget, &MorphoWidget::setUpdate);
-    //connect(controlWidget, &ControlWidget::closing, this, [&](){ close(); });
 
     connect(generator, &GeneratorGL::outputTextureChanged, morphoWidget, &MorphoWidget::updateOutputTextureID);
     connect(generator, &GeneratorGL::outputTextureChanged, plotsWidget, &PlotsWidget::setTextureID);
 
-    //connect(controlWidget, &ControlWidget::timerIntervalChanged, this, &MainWindow::setTimerInterval);
-    connect(controlWidget, &ControlWidget::fpsChanged, this, &MainWindow::setTimerInterval);
+    connect(controlWidget, &ControlWidget::iterationFPSChanged, this, &MainWindow::setIterationTimerInterval);
+    connect(controlWidget, &ControlWidget::updateFPSChanged, this, &MainWindow::setUpdateTimerInterval);
     connect(controlWidget, &ControlWidget::startRecording, this, &MainWindow::startRecording);
     connect(controlWidget, &ControlWidget::stopRecording, this, &MainWindow::stopRecording);
     connect(controlWidget, &ControlWidget::takeScreenshot, this, &MainWindow::takeScreenshot);
     connect(controlWidget, &ControlWidget::imageSizeChanged, this, &MainWindow::setSize);
-    //connect(controlWidget, &ControlWidget::imageSizeChanged, morphoWidget, &MorphoWidget::resetZoom);
 
     setWindowTitle("Morphogen");
     setWindowIcon(QIcon(":/icons/morphogengl.png"));
@@ -103,29 +105,17 @@ MainWindow::~MainWindow()
     delete generator;
     delete morphoWidget;
 
-    delete timer;
+    delete iterationTimer;
+    delete updateTimer;
 }
 
 
 
 void MainWindow::beat()
 {
-    // Compute beat time
-
-    /*if (numBeats >= numBeatsTrigger)
-    {
-        end = std::chrono::high_resolution_clock::now();
-        beatTime = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-        start = std::chrono::high_resolution_clock::now();
-
-        emit iterationTimeMeasured(beatTime.count() / numBeats, numBeats * 1'000'000.0 / beatTime.count());
-
-        numBeats = 0;
-    }*/
-
     if (recorder)
     {
-        if(recorder->isRecording())
+        if (recorder->isRecording())
         {
             iterate();
             recorder->sendVideoFrame(generator->outputImage());
@@ -135,36 +125,6 @@ void MainWindow::beat()
     {
         iterate();
     }
-
-    morphoWidget->update();
-
-     //timer->start();
-}
-
-
-
-void MainWindow::computeFPS()
-{
-    end = std::chrono::steady_clock::now();
-    beatTime = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-
-    numBeats++;
-
-    if (beatTime.count() >= 1'000'000)
-    {
-        double uspf = static_cast<double>(beatTime.count()) / numBeats;
-        double fps = numBeats * 1'000'000.0 / beatTime.count();
-
-        emit iterationTimeMeasured(uspf, fps);
-
-        //qDebug() << numBeats << beatTime.count();
-        //qDebug() << fps << uspf;
-
-        numBeats = 0;
-        start = std::chrono::steady_clock::now();
-    }
-
-    timer->start();
 }
 
 
@@ -184,6 +144,48 @@ void MainWindow::iterate()
 
 
 
+void MainWindow::computeIterationFPS()
+{
+    iterationEnd = std::chrono::steady_clock::now();
+    iterationTime = std::chrono::duration_cast<std::chrono::microseconds>(iterationEnd - iterationStart);
+
+    numIterations++;
+
+    if (iterationTime.count() >= 1'000'000)
+    {
+        double uspf = static_cast<double>(iterationTime.count()) / numIterations;
+        double fps = numIterations * 1'000'000.0 / iterationTime.count();
+
+        emit iterationTimeMeasured(uspf, fps);
+
+        numIterations = 0;
+        iterationStart = std::chrono::steady_clock::now();
+    }
+}
+
+
+
+void MainWindow::computeUpdateFPS()
+{
+    updateEnd = std::chrono::steady_clock::now();
+    updateTime = std::chrono::duration_cast<std::chrono::microseconds>(updateEnd - updateStart);
+
+    numUpdates++;
+
+    if (updateTime.count() >= 1'000'000)
+    {
+        double uspf = static_cast<double>(updateTime.count()) / numUpdates;
+        double fps = numUpdates * 1'000'000.0 / updateTime.count();
+
+        emit updateTimeMeasured(uspf, fps);
+
+        numUpdates = 0;
+        updateStart = std::chrono::steady_clock::now();
+    }
+}
+
+
+
 void MainWindow::setIterationState(bool state)
 {
     generator->setState(state);
@@ -191,18 +193,26 @@ void MainWindow::setIterationState(bool state)
 
 
 
-void MainWindow::setTimerInterval(double newFPS)
+void MainWindow::setIterationTimerInterval(double newFPS)
 {
-    fps = newFPS;
-    numBeatsTrigger = static_cast<int>(newFPS);
+    iterationFPS = newFPS;
 
-    std::chrono::nanoseconds nanos = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::duration<double>(fps > 0 ? 1.0 / fps : 0));
-    //qDebug() << nanos.count();
+    numIterations = 0;
+    iterationStart = std::chrono::steady_clock::now();
 
-    numBeats = 0;
-    start = std::chrono::steady_clock::now();
+    iterationTimer->setTimerInterval(newFPS);
+}
 
-    timer->setInterval(nanos);
+
+
+void MainWindow::setUpdateTimerInterval(double newFPS)
+{
+    updateFPS = newFPS;
+
+    numUpdates = 0;
+    updateStart = std::chrono::steady_clock::now();
+
+    updateTimer->setTimerInterval(newFPS);
 }
 
 
@@ -272,6 +282,7 @@ void MainWindow::resizeEvent(QResizeEvent* event)
 }
 
 
+
 void MainWindow::keyPressEvent(QKeyEvent* event)
 {
     if (event->modifiers() == Qt::ControlModifier)
@@ -312,8 +323,10 @@ void MainWindow::keyPressEvent(QKeyEvent* event)
 
 void MainWindow::closeEvent(QCloseEvent* event)
 {
-    timer->stop();
+    iterationTimer->stop();
+    updateTimer->stop();
+
     generator->setState(false);
-    emit closing();
+
     event->accept();
 }

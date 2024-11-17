@@ -53,14 +53,6 @@ MorphoWidget::~MorphoWidget()
 
 
 
-void MorphoWidget::closeEvent(QCloseEvent* event)
-{
-    emit closing();
-    event->accept();
-}
-
-
-
 void MorphoWidget::setUpdate(bool state)
 {
     setUpdatesEnabled(state);
@@ -239,30 +231,7 @@ void MorphoWidget::resetZoom(int newWidth, int newHeight)
     frame = frameTransform.mapRect(image);
 
     QTransform scaleTransform = QTransform().scale(scaleX, scaleY);
-    /*selectedPoint = scaleTransform.map(selectedPoint);
 
-    selectedPointTransform.setMatrix(1.0, 0.0, 0.0, 0.0, 1.0, 0.0, scaleX * selectedPointTransform.dx(), scaleY * selectedPointTransform.dy(), 1.0);
-
-    QPointF selPoint = selectedPointTransform.map(selectedPoint);
-    cursor.setX(2.0 * ((selPoint.x() - frame.left()) / frame.width() - 0.5));
-    cursor.setY(2.0 * (0.5 - (selPoint.y() - frame.top()) / frame.height()));
-    updateCursor();
-
-    QPoint point = QPoint(floor(selectedPoint.x()), floor(selectedPoint.y()));
-
-    // Check boundaries
-    // Note: right() = left() + width() - 1, bottom() = top() + height() - 1
-
-    if (point.x() < image.left())
-        point.setX(image.left());
-    if (point.x() > image.right())
-        point.setX(image.right());
-    if (point.y() < image.top())
-        point.setY(image.top());
-    if (point.y() > image.bottom())
-        point.setY(image.bottom());
-
-    emit selectedPointChanged(point);*/
     emit scaleTransformChanged(scaleTransform);
 }
 

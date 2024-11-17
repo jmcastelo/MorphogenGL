@@ -550,7 +550,7 @@ public:
     void blit();
     void clear();
 
-    void setParameters() {};
+    void setParameters();
     void setIntParameter(int index, int value);
     void setFloatParameter(int index, float value);
 
