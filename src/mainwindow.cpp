@@ -16,13 +16,17 @@ MainWindow::MainWindow()
     plotsWidget = new PlotsWidget(FBO::width, FBO::height);
     plotsWidget->setVisible(false);
 
+    plotsWidgetOpacityEffect = new QGraphicsOpacityEffect(plotsWidget);
+    plotsWidgetOpacityEffect->setOpacity(opacity);
+    plotsWidget->setGraphicsEffect(plotsWidgetOpacityEffect);
+
     controlWidget = new ControlWidget(iterationFPS, updateFPS, generator, plotsWidget);
     controlWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     controlWidget->setMinimumSize(0, 0);
 
-    opacityEffect = new QGraphicsOpacityEffect(controlWidget);
-    opacityEffect->setOpacity(controlWidgetOpacity);
-    controlWidget->setGraphicsEffect(opacityEffect);
+    controlWidgetOpacityEffect = new QGraphicsOpacityEffect(controlWidget);
+    controlWidgetOpacityEffect->setOpacity(opacity);
+    controlWidget->setGraphicsEffect(controlWidgetOpacityEffect);
 
     stackedWidget = new QWidget(this);
     stackedWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
@@ -292,18 +296,20 @@ void MainWindow::keyPressEvent(QKeyEvent* event)
         }
         else if (event->key() == Qt::Key_PageUp)
         {
-            controlWidgetOpacity += 0.1;
-            if (controlWidgetOpacity > 1.0)
-                controlWidgetOpacity = 1.0;
-            opacityEffect->setOpacity(controlWidgetOpacity);
+            opacity += 0.1;
+            if (opacity > 1.0)
+                opacity = 1.0;
+            controlWidgetOpacityEffect->setOpacity(opacity);
+            plotsWidgetOpacityEffect->setOpacity(opacity);
             morphoWidget->update();
         }
         else if (event->key() == Qt::Key_PageDown)
         {
-            controlWidgetOpacity -= 0.1;
-            if (controlWidgetOpacity < 0.0)
-                controlWidgetOpacity = 0.0;
-            opacityEffect->setOpacity(controlWidgetOpacity);
+            opacity -= 0.1;
+            if (opacity < 0.0)
+                opacity = 0.0;
+            controlWidgetOpacityEffect->setOpacity(opacity);
+            plotsWidgetOpacityEffect->setOpacity(opacity);
             morphoWidget->update();
         }
     }
