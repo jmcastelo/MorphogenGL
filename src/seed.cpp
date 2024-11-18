@@ -23,6 +23,8 @@
 #include "seed.h"
 #include "fbo.h"
 
+
+
 Seed::Seed(QOpenGLContext* mainContext)
 {
     context = new QOpenGLContext();
@@ -177,6 +179,8 @@ Seed::Seed(QOpenGLContext* mainContext)
     maintainAspectRatio();
 }
 
+
+
 Seed::Seed(const Seed& seed) : QOpenGLExtraFunctions(),
     type { seed.type },
     fixed { seed.fixed },
@@ -329,6 +333,8 @@ Seed::Seed(const Seed& seed) : QOpenGLExtraFunctions(),
     maintainAspectRatio();
 }
 
+
+
 Seed::~Seed()
 {
     context->makeCurrent(surface);
@@ -364,6 +370,8 @@ Seed::~Seed()
     delete surface;
 }
 
+
+
 void Seed::loadImage(QString filename)
 {
     context->makeCurrent(surface);
@@ -378,6 +386,8 @@ void Seed::loadImage(QString filename)
 
     imageFilename = filename;
 }
+
+
 
 GLenum Seed::getFormat(GLenum format)
 {
@@ -401,6 +411,8 @@ GLenum Seed::getFormat(GLenum format)
     }
 }
 
+
+
 void Seed::generateFramebuffer(GLuint& framebuffer, GLuint& texture)
 {
     glGenFramebuffers(1, &framebuffer);
@@ -419,6 +431,8 @@ void Seed::generateFramebuffer(GLuint& framebuffer, GLuint& texture)
         qDebug() << "Framebuffer is not complete.\n";
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
+
+
 
 void Seed::setTextureFormat(GLuint &fbo, GLuint &texture)
 {
@@ -444,11 +458,15 @@ void Seed::setTextureFormat(GLuint &fbo, GLuint &texture)
     fbo = fbo2;
 }
 
+
+
 void Seed::setTextureFormat()
 {
     setTextureFormat(fboRandom, texRandom);
     setTextureFormat(fboImage, texImage);
 }
+
+
 
 void Seed::resizeFBO(GLuint &fbo, GLuint &texture)
 {
@@ -473,6 +491,8 @@ void Seed::resizeFBO(GLuint &fbo, GLuint &texture)
     texture = textureID2;
     fbo = fbo2;
 }
+
+
 
 void Seed::resizeVertices()
 {
@@ -534,6 +554,8 @@ void Seed::resizeVertices()
     context->doneCurrent();
 }
 
+
+
 void Seed::maintainAspectRatio()
 {
     GLfloat left, right, bottom, top;
@@ -579,6 +601,8 @@ void Seed::maintainAspectRatio()
     context->doneCurrent();
 }
 
+
+
 void Seed::resize()
 {
     resizeVertices();
@@ -592,6 +616,8 @@ void Seed::resize()
     heightOld = FBO::height;
 }
 
+
+
 void Seed::draw()
 {
     if (type == 0) drawRandom(false);
@@ -600,6 +626,8 @@ void Seed::draw()
 
     cleared = false;
 }
+
+
 
 void Seed::drawRandom(bool grayscale)
 {
@@ -630,6 +658,8 @@ void Seed::drawRandom(bool grayscale)
     textureID = &texRandom;
 }
 
+
+
 void Seed::drawImage()
 {
     context->makeCurrent(surface);
@@ -656,6 +686,8 @@ void Seed::drawImage()
 
     textureID = &texImage;
 }
+
+
 
 void Seed::clear()
 {

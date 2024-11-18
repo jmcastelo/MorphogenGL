@@ -107,8 +107,6 @@ PlotsWidget::~PlotsWidget()
 
     delete context;
     delete surface;
-
-    if (pixels) delete pixels;
 }
 
 
@@ -135,14 +133,18 @@ void PlotsWidget::updatePlots()
 {
     if (enabled)
     {
-        for (int index = 0; index < colorPaths.size(); index++)
+        setPixelRGB();
+
+        foreach (ColorPath path, colorPaths)
         {
-            if (!colorPaths[index].linesEmpty())
+            if (!path.linesEmpty())
             {
                 rgbWidget->setNumVertices(numVertices);
                 rgbWidget->setLines(allVertices);
             }
         }
+
+        rgbWidget->update();
     }
 }
 
@@ -283,12 +285,26 @@ void PlotsWidget::setNumIts()
 
 
 
-void PlotsWidget::setPixelRGB(QList<QVector3D> rgb)
+void PlotsWidget::setPixelRGB()
 {
-    for (int i = 0; i < colorPaths.size(); i++)
+    context->makeCurrent(surface);
+
+    glViewport(0, 0, imageWidth, imageHeight);
+
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, fbo);
+
+    for (ColorPath &path : colorPaths)
     {
-        colorPaths[i].addPoint(rgb[i].x(), rgb[i].y(), rgb[i].z());
+        float rgb[3];
+
+        glReadPixels(path.source().x(), path.source().y(), 1, 1, GL_RGB, GL_FLOAT, rgb);
+
+        path.addPoint(rgb[0], rgb[1], rgb[2]);
     }
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    context->doneCurrent();
 
     setVertices();
 }
@@ -300,7 +316,7 @@ void PlotsWidget::setVertices()
     allVertices.clear();
     numVertices.clear();
 
-    foreach(ColorPath path, colorPaths)
+    foreach (ColorPath path, colorPaths)
     {
         allVertices += path.lines();
         numVertices.append(path.linesSize());

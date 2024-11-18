@@ -23,10 +23,14 @@
 #include "fbo.h"
 #include <QDebug>
 
+
+
 GLuint FBO::width = 1024;
 GLuint FBO::height = 1024;
 
 TextureFormat FBO::texFormat = TextureFormat::RGBA8;
+
+
 
 FBO::FBO(QString vertexShader, QString fragmentShader, QOpenGLContext* mainContext)
 {
@@ -157,6 +161,8 @@ FBO::FBO(QString vertexShader, QString fragmentShader, QOpenGLContext* mainConte
     adjustTransform();
 }
 
+
+
 FBO::~FBO()
 {
     context->makeCurrent(surface);
@@ -183,6 +189,8 @@ FBO::~FBO()
     delete surface;
 }
 
+
+
 void FBO::setMinMagFilter(GLenum filter)
 {
     minMagFilter = filter;
@@ -192,6 +200,8 @@ void FBO::setMinMagFilter(GLenum filter)
     glSamplerParameteri(samplerID, GL_TEXTURE_MAG_FILTER, minMagFilter);
     context->doneCurrent();
 }
+
+
 
 void FBO::setTextureFormat()
 {
@@ -238,6 +248,8 @@ void FBO::setTextureFormat()
     context->doneCurrent();
 }
 
+
+
 GLenum FBO::getFormat(GLenum format)
 {
     GLint redType, greenType, blueType, alphaType;
@@ -260,6 +272,8 @@ GLenum FBO::getFormat(GLenum format)
     }
 }
 
+
+
 void FBO::generateFramebuffer(GLuint& framebuffer, GLuint& texture)
 {
     glGenFramebuffers(1, &framebuffer);
@@ -279,15 +293,21 @@ void FBO::generateFramebuffer(GLuint& framebuffer, GLuint& texture)
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
+
+
 void FBO::makeCurrent()
 {
     context->makeCurrent(surface);
 }
 
+
+
 void FBO::doneCurrent()
 {
     context->doneCurrent();
 }
+
+
 
 void FBO::resizeVertices()
 {
@@ -331,6 +351,8 @@ void FBO::resizeVertices()
     context->doneCurrent();
 }
 
+
+
 void FBO::adjustTransform()
 {
     GLfloat left, right, bottom, top;
@@ -370,6 +392,8 @@ void FBO::adjustTransform()
 
     context->doneCurrent();
 }
+
+
 
 void FBO::resize()
 {
@@ -427,6 +451,8 @@ void FBO::resize()
     emit sizeChanged();
 }
 
+
+
 void FBO::draw()
 {
     context->makeCurrent(surface);
@@ -454,6 +480,8 @@ void FBO::draw()
     context->doneCurrent();
 }
 
+
+
 void FBO::blit()
 {
     context->makeCurrent(surface);
@@ -467,6 +495,8 @@ void FBO::blit()
 
     context->doneCurrent();
 }
+
+
 
 void FBO::identity()
 {
@@ -495,6 +525,8 @@ void FBO::identity()
     context->doneCurrent();
 }
 
+
+
 void FBO::clear()
 {
     context->makeCurrent(surface);
@@ -515,6 +547,8 @@ void FBO::clear()
 
     context->doneCurrent();
 }
+
+
 
 QImage FBO::outputImage()
 {
@@ -542,32 +576,4 @@ QImage FBO::outputImage()
     context->doneCurrent();
 
     return image;
-}
-
-
-
-QList<QVector3D> FBO::pixelRGB(QList<QPoint> sources)
-{
-    QList<QVector3D> colors;
-
-    context->makeCurrent(surface);
-
-    glViewport(0, 0, width, height);
-
-    glBindFramebuffer(GL_READ_FRAMEBUFFER, fbo);
-
-    foreach (QPoint source, sources)
-    {
-        float rgb[3];
-
-        glReadPixels(source.x(), source.y(), 1, 1, GL_RGB, GL_FLOAT, rgb);
-
-        colors.append(QVector3D(rgb[0], rgb[1], rgb[2]));
-    }
-
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-    context->doneCurrent();
-
-    return colors;
 }

@@ -28,6 +28,17 @@
 
 RGBWidget::RGBWidget(int w, int h, QWidget* parent) : QOpenGLWidget(parent), texWidth { w }, texHeight{ h }
 {
+    QSurfaceFormat format;
+    format.setDepthBufferSize(24);
+    format.setStencilBufferSize(8);
+    format.setSamples(4); // Anti-aliasing
+    format.setAlphaBufferSize(8); // Enable alpha channel
+    setFormat(format);
+
+    // Set attributes for transparency
+    setAttribute(Qt::WA_OpaquePaintEvent, false);
+    setAttribute(Qt::WA_NoSystemBackground, true);
+
     resize(512, 512);
     setUpdatesEnabled(false);
 }
@@ -62,7 +73,10 @@ void RGBWidget::initializeGL()
 {
     initializeOpenGLFunctions();
 
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    glClearColor(0.0f, 0.0f, 0.0f, 0.5f);
 
     program = new QOpenGLShaderProgram();
     if (!program->addShaderFromSourceFile(QOpenGLShader::Vertex, ":/shaders/rgb.vert"))

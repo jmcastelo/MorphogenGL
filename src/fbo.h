@@ -52,6 +52,7 @@ public:
     FBO(QString vertexShader, QString fragmentShader, QOpenGLContext* mainContext);
     virtual ~FBO();
 
+    GLuint getFBO() { return fboBlit; }
     GLuint** getTextureID() { return &texID; }
     GLuint** getTextureBlit() { return &texBlit; }
     void setInputTextureID(GLuint* id) { inputTextureID = id; }
@@ -74,7 +75,6 @@ public:
     void adjustTransform();
 
     QImage outputImage();
-    QList<QVector3D> pixelRGB(QList<QPoint> sources);
 
 signals:
     void sizeChanged();

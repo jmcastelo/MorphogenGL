@@ -148,18 +148,10 @@ public:
     bool isOutput(QUuid id) { return id == outputID; }
     void setOutput(QUuid id);
     QUuid getOutput() { return outputID; }
-
+    GLuint getOUtputFBO() { return outputFBO; }
     GLuint** getOutputTextureID() { return outputTextureID; }
 
     QImage outputImage();
-
-    QList<QVector3D> pixelRGB(QList<QPoint> sources)
-    {
-        if (operationNodes.contains(outputID))
-            return operationNodes.value(outputID)->operation->pixelRGB(sources);
-        else
-            return QList<QVector3D>();
-    }
 
     void setTextureFormat(TextureFormat format);
 
@@ -194,6 +186,7 @@ public slots:
     void resize(GLuint width, GLuint height);
 
 signals:
+    void outputFBOChanged(GLuint fbo);
     void outputTextureChanged(GLuint id);
     void sortedOperationsChanged(QList<QPair<QUuid, QString>> data);
 
@@ -209,6 +202,7 @@ private:
     QList<ImageOperation*> sortedOperations;
 
     QOpenGLContext* sharedContext;
+    GLuint outputFBO;
     QUuid outputID;
     GLuint** outputTextureID = nullptr;
     unsigned int iteration = 0;

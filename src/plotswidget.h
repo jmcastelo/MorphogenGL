@@ -48,15 +48,14 @@ public:
 
     void init(QOpenGLContext* mainContext);
     bool isEnabled(){ return enabled; }
-    QList<QPoint> pixelSources() { return sources; }
-    void setPixelRGB(QList<QVector3D> rgb);
+    void updatePlots();
 
 signals:
     void selectedPointChanged(QPoint point);
     void drawCursor(bool on);
 
 public slots:
-    void updatePlots();
+    void setFBO(GLuint theFBO) { fbo = theFBO; };
     void setTextureID(GLuint id);
     void setImageSize(int width, int height);
     void setSelectedPoint(QPoint point);
@@ -68,10 +67,8 @@ private:
     QOpenGLContext* context;
     QOffscreenSurface* surface;
 
+    GLuint fbo = 0;
     GLuint textureID = 0;
-
-    GLfloat* pixels = nullptr;
-    GLfloat* vertices = nullptr;
 
     GLuint imageWidth, imageHeight;
 
@@ -95,6 +92,7 @@ private:
 
     void checkPoint(QPoint &point);
     void setVertices();
+    void setPixelRGB();
 
 private slots:
     void addColorPath();

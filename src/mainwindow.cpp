@@ -46,10 +46,8 @@ MainWindow::MainWindow()
     connect(updateTimer, &TimerThread::timeout, this, &MainWindow::computeUpdateFPS);
 
     connect(this, &MainWindow::iterationPerformed, controlWidget, &ControlWidget::updateIterationNumberLabel);
-    //connect(this, &MainWindow::iterationPerformed, plotsWidget, &PlotsWidget::updatePlots);
     connect(this, &MainWindow::iterationTimeMeasured, controlWidget, &ControlWidget::updateIterationMetricsLabels);
     connect(this, &MainWindow::updateTimeMeasured, controlWidget, &ControlWidget::updateUpdateMetricsLabels);
-    //connect(this, &MainWindow::closing, controlWidget, &ControlWidget::close);
 
     connect(morphoWidget, &MorphoWidget::openGLInitialized, this, [=]()
     {
@@ -80,6 +78,7 @@ MainWindow::MainWindow()
 
     connect(generator, &GeneratorGL::outputTextureChanged, morphoWidget, &MorphoWidget::updateOutputTextureID);
     connect(generator, &GeneratorGL::outputTextureChanged, plotsWidget, &PlotsWidget::setTextureID);
+    connect(generator, &GeneratorGL::outputFBOChanged, plotsWidget, &PlotsWidget::setFBO);
 
     connect(controlWidget, &ControlWidget::iterationFPSChanged, this, &MainWindow::setIterationTimerInterval);
     connect(controlWidget, &ControlWidget::updateFPSChanged, this, &MainWindow::setUpdateTimerInterval);
@@ -134,14 +133,7 @@ void MainWindow::iterate()
     if (generator->isActive())
     {
         generator->iterate();
-
-        if (plotsWidget->isEnabled())
-        {
-            plotsWidget->setPixelRGB(generator->pixelRGB(plotsWidget->pixelSources()));
-            plotsWidget->updatePlots();
-        }
-
-        //emit iterationPerformed();
+        plotsWidget->updatePlots();
     }
 }
 

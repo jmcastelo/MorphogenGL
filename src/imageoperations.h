@@ -72,6 +72,8 @@ public:
 
     virtual QString getName() = 0;
 
+    GLuint getFBO() { return fbo->getFBO(); }
+
     virtual GLuint** getTextureBlit() { return fbo->getTextureBlit(); }
     virtual GLuint** getTextureID() { return fbo->getTextureID(); }
 
@@ -103,7 +105,6 @@ public:
     virtual void clear();
 
     QImage outputImage(){ return fbo->outputImage(); }
-    QList<QVector3D> pixelRGB(QList<QPoint> sources){ return fbo->pixelRGB(sources); }
     void setTextureFormat(){ fbo->setTextureFormat(); }
 
 protected:

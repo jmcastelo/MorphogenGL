@@ -43,6 +43,7 @@ public:
     Seed(const Seed& seed);
     ~Seed();
 
+    GLuint getFBO() { return type == 2 ? fboImage : fboRandom; }
     GLuint** getTextureID() { return &textureID; }
 
     void loadImage(QString filename);

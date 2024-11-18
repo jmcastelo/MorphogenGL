@@ -409,12 +409,14 @@ void GeneratorGL::setOutput(QUuid id)
         operationNodes.value(id)->operation->enableBlit(true);
         outputTextureID = operationNodes.value(id)->operation->getTextureBlit();
         emit outputTextureChanged(**outputTextureID);
+        emit outputFBOChanged(operationNodes.value(id)->operation->getFBO());
     }
     else if (seeds.contains(id))
     {
         outputID = id;
         outputTextureID = seeds.value(id)->getTextureID();
         emit outputTextureChanged(**outputTextureID);
+        emit outputFBOChanged(seeds.value(id)->getFBO());
     }
 }
 
