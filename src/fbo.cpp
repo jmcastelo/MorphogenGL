@@ -23,10 +23,15 @@
 #include "fbo.h"
 #include <QDebug>
 
+<<<<<<< Updated upstream
 
 
 GLuint FBO::width = 1024;
 GLuint FBO::height = 1024;
+=======
+GLuint FBO::width = 2048;
+GLuint FBO::height = 2048;
+>>>>>>> Stashed changes
 
 TextureFormat FBO::texFormat = TextureFormat::RGBA8;
 

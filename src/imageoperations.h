@@ -326,7 +326,7 @@ private:
 class EqualizeHistogram : public ImageOperation
 {
 public:
-    EqualizeHistogram(bool on, QOpenGLContext* mainContext, int theSize, float theOpacity);
+    EqualizeHistogram(bool on, QOpenGLContext* mainContext, int theSize, int levels, float theOpacity);
     EqualizeHistogram(const EqualizeHistogram& operation);
     ~EqualizeHistogram();
 
@@ -339,11 +339,12 @@ public:
     void setIntParameter(int index, int value);
     void setFloatParameter(int index, float value);
 
-    std::vector<IntParameter*> getIntParameters() { std::vector<IntParameter*> parameters = { size }; return parameters; };
+    std::vector<IntParameter*> getIntParameters() { std::vector<IntParameter*> parameters = { size, levels }; return parameters; };
     std::vector<FloatParameter*> getFloatParameters() { std::vector<FloatParameter*> parameters = { opacity }; return parameters; }
 
 private:
     IntParameter* size;
+    IntParameter* levels;
     FloatParameter* opacity;
 };
 
@@ -480,7 +481,7 @@ class Mask : public QObject, public ImageOperation
     Q_OBJECT
 
 public:
-    Mask(bool on, QOpenGLContext* mainContext);
+    Mask(bool on, QOpenGLContext* mainContext, float innerRadius, float outerRadius);
     Mask(const Mask& operation);
     ~Mask();
 
@@ -489,7 +490,14 @@ public:
     static QString name;
     QString getName() { return name; }
 
-    void setParameters() {}
+    void setParameters();
+    void setFloatParameter(int index, float value);
+
+    std::vector<FloatParameter*> getFloatParameters() { std::vector<FloatParameter*> parameters = { innerRadius, outerRadius }; return parameters; };
+
+private:
+    FloatParameter* innerRadius;
+    FloatParameter* outerRadius;
 
 private slots:
     void setScale();

@@ -113,16 +113,18 @@ void ImageOperation::adjustMinMax(float value, float minValue, float maxValue, f
 
 QString EqualizeHistogram::name = "Equalize histogram";
 
-EqualizeHistogram::EqualizeHistogram(bool on, QOpenGLContext* mainContext, int theSize, float theOpacity) : ImageOperation(on, mainContext)
+EqualizeHistogram::EqualizeHistogram(bool on, QOpenGLContext* mainContext, int theSize, int numLevels, float theOpacity) : ImageOperation(on, mainContext)
 {
     fbo = new FBO(":/shaders/screen.vert", ":/shaders/equalize-histogram.frag", mainContext);
     fbo->setInputTextureID(*blender->getTextureID());
 
     size = new IntParameter("Size (px)", 0, this, theSize, 1, 20, 1, 1000, false);
 
+    levels = new IntParameter("Levels", 1, this, numLevels, 4, 256, 4, 256, false);
+
     float min, max;
     adjustMinMax(theOpacity, 0.0f, 1.0f, min, max);
-    opacity = new FloatParameter("Opacity", 1, this, theOpacity, min, max, 0.0f, 1.0f);
+    opacity = new FloatParameter("Opacity", 0, this, theOpacity, min, max, 0.0f, 1.0f);
 }
 
 
@@ -135,6 +137,9 @@ EqualizeHistogram::EqualizeHistogram(const EqualizeHistogram &operation) : Image
     size = new IntParameter(*operation.size);
     size->setOperation(this);
 
+    levels = new IntParameter(*operation.levels);
+    levels->setOperation(this);
+
     opacity = new FloatParameter(*operation.opacity);
     opacity->setOperation(this);
 }
@@ -144,6 +149,7 @@ EqualizeHistogram::EqualizeHistogram(const EqualizeHistogram &operation) : Image
 EqualizeHistogram::~EqualizeHistogram()
 {
     delete size;
+    delete levels;
     delete opacity;
 }
 
@@ -152,7 +158,8 @@ EqualizeHistogram::~EqualizeHistogram()
 void EqualizeHistogram::setParameters()
 {
     setIntParameter(0, size->value());
-    setFloatParameter(1, opacity->value());
+    setIntParameter(1, levels->value());
+    setFloatParameter(0, opacity->value());
 }
 
 
@@ -175,13 +182,21 @@ void EqualizeHistogram::setIntParameter(int index, int value)
         fbo->program->release();
         fbo->doneCurrent();
     }
+    else if (index == 1)
+    {
+        fbo->makeCurrent();
+        fbo->program->bind();
+        fbo->program->setUniformValue("levels", value);
+        fbo->program->release();
+        fbo->doneCurrent();
+    }
 }
 
 
 
 void EqualizeHistogram::setFloatParameter(int index, float value)
 {
-    if (index == 1)
+    if (index == 0)
     {
         fbo->makeCurrent();
         fbo->program->bind();
@@ -1246,16 +1261,21 @@ void Logistic::setFloatParameter(int index, float value)
 
 QString Mask::name = "Mask";
 
-Mask::Mask(bool on, QOpenGLContext* mainContext) : ImageOperation(on, mainContext)
+Mask::Mask(bool on, QOpenGLContext* mainContext, float theInnerRadius, float theOuterRadius) : ImageOperation(on, mainContext)
 {
     fbo = new FBO(":/shaders/screen.vert", ":/shaders/mask.frag", mainContext);
     fbo->setInputTextureID(*blender->getTextureID());
 
+    float min, max;
+    adjustMinMax(theInnerRadius, 0.0f, 0.5f, min, max);
+    innerRadius = new FloatParameter("Inner radius", 0, this, theInnerRadius, min, max, 0.0f, 0.5f);
+
+    adjustMinMax(theOuterRadius, 0.0f, 0.5f, min, max);
+    outerRadius = new FloatParameter("Outer radius", 1, this, theOuterRadius, min, max, 0.0f, 0.5f);
+
     connect(fbo, &FBO::sizeChanged, this, &Mask::setScale);
 
     setScale();
-
-    noParameters = true;
 }
 
 
@@ -1265,16 +1285,54 @@ Mask::Mask(const Mask& operation) : QObject(nullptr), ImageOperation(operation)
     fbo = new FBO(":/shaders/screen.vert", ":/shaders/mask.frag", context);
     fbo->setInputTextureID(*blender->getTextureID());
 
+    innerRadius = new FloatParameter(*operation.innerRadius);
+    innerRadius->setOperation(this);
+
+    outerRadius = new FloatParameter(*operation.outerRadius);
+    outerRadius->setOperation(this);
+
     connect(fbo, &FBO::sizeChanged, this, &Mask::setScale);
 
     setScale();
-
-    noParameters = true;
 }
 
 
 
-Mask::~Mask(){}
+Mask::~Mask()
+{
+    delete innerRadius;
+    delete outerRadius;
+}
+
+
+
+void Mask::setParameters()
+{
+    setFloatParameter(0, innerRadius->value());
+    setFloatParameter(1, outerRadius->value());
+}
+
+
+
+void Mask::setFloatParameter(int index, float value)
+{
+    if (index == 0)
+    {
+        fbo->makeCurrent();
+        fbo->program->bind();
+        fbo->program->setUniformValue("innerRadius", value);
+        fbo->program->release();
+        fbo->doneCurrent();
+    }
+    else if (index == 1)
+    {
+        fbo->makeCurrent();
+        fbo->program->bind();
+        fbo->program->setUniformValue("outerRadius", value);
+        fbo->program->release();
+        fbo->doneCurrent();
+    }
+}
 
 
 

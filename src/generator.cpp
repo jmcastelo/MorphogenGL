@@ -744,7 +744,7 @@ ImageOperation* GeneratorGL::newOperation(QString operationName)
     }
     else if (operationName == EqualizeHistogram::name)
     {
-        operation = new EqualizeHistogram(false, sharedContext, 1, 1.0f);
+        operation = new EqualizeHistogram(false, sharedContext, 1, 64, 1.0f);
     }
     else if (operationName == Erosion::name)
     {
@@ -768,7 +768,7 @@ ImageOperation* GeneratorGL::newOperation(QString operationName)
     }
     else if (operationName == Mask::name)
     {
-        operation = new Mask(false, sharedContext);
+        operation = new Mask(false, sharedContext, 0.0f, 0.5f);
     }
     else if (operationName == Median::name)
     {
@@ -863,7 +863,7 @@ ImageOperation* GeneratorGL::loadImageOperation(
     }
     else if (operationName == EqualizeHistogram::name)
     {
-        operation = new EqualizeHistogram(enabled, sharedContext, intParameters[0], floatParameters[0]);
+        operation = new EqualizeHistogram(enabled, sharedContext, intParameters[0], intParameters[1], floatParameters[0]);
     }
     else if (operationName == Erosion::name)
     {
@@ -887,7 +887,7 @@ ImageOperation* GeneratorGL::loadImageOperation(
     }
     else if (operationName == Mask::name)
     {
-        operation = new Mask(enabled, sharedContext);
+        operation = new Mask(enabled, sharedContext, floatParameters[0], floatParameters[1]);
     }
     else if (operationName == Median::name)
     {
