@@ -404,6 +404,36 @@ private:
 
 
 
+// Geometry
+
+class Geometry: public ImageOperation
+{
+public:
+    Geometry(bool on, QOpenGLContext* mainContext, float theScaleX, float theScaleY, float theAngle, float theX, float theY, GLenum theMinMagFilter);
+    Geometry(const Geometry& operation);
+    ~Geometry();
+
+    ImageOperation* clone() { return new Geometry(*this); }
+
+    static QString name;
+    QString getName() { return name; };
+
+    void setParameters();
+    void setFloatParameter(int index, float value);
+    void setOptionsParameter(int index, GLenum value);
+
+    std::vector<FloatParameter*> getFloatParameters() { std::vector<FloatParameter*> parameters = { scaleX, scaleY, angle, X, Y }; return parameters; };
+    std::vector<OptionsParameter<GLenum>*> getOptionsGLenumParameters() { std::vector<OptionsParameter<GLenum>*> parameters = { minMagFilter }; return parameters; }
+
+private:
+    FloatParameter *scaleX, *scaleY;
+    FloatParameter* angle;
+    FloatParameter *X, *Y;
+    OptionsParameter<GLenum>* minMagFilter;
+};
+
+
+
 // Hue shift
 
 class HueShift : public ImageOperation

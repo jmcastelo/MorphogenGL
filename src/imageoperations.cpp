@@ -1087,6 +1087,112 @@ void GammaCorrection::setFloatParameter(int index, float value)
 
 
 
+// Geometry
+
+QString Geometry::name = "Geometry";
+
+Geometry::Geometry(bool on, QOpenGLContext* mainContext, float theScaleX, float theScaleY, float theAngle, float theX, float theY, GLenum theMinMagFilter) : ImageOperation(on, mainContext)
+{
+    fbo = new FBO(":/shaders/screen.vert", ":/shaders/screen.frag", mainContext);
+    fbo->setInputTextureID(*blender->getTextureID());
+
+    float min, max;
+    adjustMinMax(theScaleX, 0.0f, 2.0f, min, max);
+    scaleX = new FloatParameter("Scale X", 0, this, theScaleX, min, max, -1.0e6, 1.0e6);
+
+    adjustMinMax(theScaleY, 0.0f, 2.0f, min, max);
+    scaleY = new FloatParameter("Scale Y", 1, this, theScaleY, min, max, -1.0e6, 1.0e6);
+
+    adjustMinMax(theAngle, -360.0f, 360.0f, min, max);
+    angle = new FloatParameter("Angle", 2, this, theAngle, min, max, -1.0e6, 1.0e6);
+
+    adjustMinMax(theX, -2.0f, 2.0f, min, max);
+    X = new FloatParameter("X", 3, this, theX, min, max, -10.0, 10.0);
+
+    adjustMinMax(theY, -2.0f, 2.0f, min, max);
+    Y = new FloatParameter("Y", 4, this, theX, min, max, -10.0, 10.0);
+
+    std::vector<QString> valueNames = { "Nearest neighbor", "Linear" };
+    std::vector<GLenum> values = { GL_NEAREST, GL_LINEAR };
+    minMagFilter = new OptionsParameter<GLenum>("Interpolation", 0, this, valueNames, values, theMinMagFilter);
+}
+
+
+
+Geometry::Geometry(const Geometry& operation) : ImageOperation(operation)
+{
+    fbo = new FBO(":/shaders/screen.vert", ":/shaders/screen.frag", context);
+    fbo->setInputTextureID(*blender->getTextureID());
+
+    scaleX = new FloatParameter(*operation.scaleX);
+    scaleX->setOperation(this);
+
+    scaleY = new FloatParameter(*operation.scaleY);
+    scaleY->setOperation(this);
+
+    angle = new FloatParameter(*operation.angle);
+    angle->setOperation(this);
+
+    X = new FloatParameter(*operation.X);
+    X->setOperation(this);
+
+    Y = new FloatParameter(*operation.Y);
+    Y->setOperation(this);
+
+    minMagFilter = new OptionsParameter<GLenum>(*operation.minMagFilter);
+    minMagFilter->setOperation(this);
+}
+
+
+
+Geometry::~Geometry()
+{
+    delete scaleX;
+    delete scaleY;
+    delete angle;
+    delete X;
+    delete Y;
+    delete minMagFilter;
+}
+
+
+
+void Geometry::setParameters()
+{
+    setFloatParameter(0, scaleX->value());
+    setOptionsParameter(0, minMagFilter->value());
+}
+
+
+
+void Geometry::setFloatParameter(int index, float value)
+{
+    Q_UNUSED(value)
+
+    if (index >= 0 && index <= 4)
+    {
+        fbo->transformationMatrix.setToIdentity();
+        fbo->transformationMatrix.translate(X->value(), -Y->value());
+        fbo->transformationMatrix.rotate(angle->value(), 0.0f, 0.0f, 1.0f);
+        fbo->transformationMatrix.scale(scaleX->value(), scaleY->value());
+        fbo->adjustTransform();
+    }
+}
+
+
+
+void Geometry::setOptionsParameter(int index, GLenum value)
+{
+    if (index == 0)
+    {
+        // Set minifying and magnifying functions
+
+        fbo->setMinMagFilter(value);
+    }
+}
+
+
+
 // Hue shift
 
 QString HueShift::name = "Hue shift";

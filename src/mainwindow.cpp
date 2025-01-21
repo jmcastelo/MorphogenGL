@@ -53,7 +53,7 @@ MainWindow::MainWindow()
     connect(this, &MainWindow::iterationTimeMeasured, controlWidget, &ControlWidget::updateIterationMetricsLabels);
     connect(this, &MainWindow::updateTimeMeasured, controlWidget, &ControlWidget::updateUpdateMetricsLabels);
 
-    connect(morphoWidget, &MorphoWidget::openGLInitialized, this, [=]()
+    connect(morphoWidget, &MorphoWidget::openGLInitialized, this, [&]()
     {
         controlWidget->generator->init(morphoWidget->context());
         plotsWidget->init(morphoWidget->context());

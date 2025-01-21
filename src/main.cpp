@@ -39,8 +39,6 @@ int main(int argc, char* argv[])
     QCoreApplication::setAttribute(Qt::AA_ShareOpenGLContexts);
 
     QApplication app(argc, argv);
-    
-    //Heart heart;
 
     MainWindow window;
     window.show();

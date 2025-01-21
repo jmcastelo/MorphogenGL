@@ -22,11 +22,13 @@ TARGET = MorphogenGL
 
 TEMPLATE = app
 
-CONFIG += qt c++17
+CONFIG += qt c++20
 
-#QMAKE_CXXFLAGS = -fpermissive
+QMAKE_CXXFLAGS += -DLIBREMIDI_ALSA=1 -DLIBREMIDI_HEADER_ONLY=1 -pthread
 
-QT += widgets openglwidgets multimedia opengl graphs
+LIBS += -lasound -pthread
+
+QT += widgets openglwidgets multimedia opengl
 
 RESOURCES += resource.qrc
 

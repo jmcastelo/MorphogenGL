@@ -255,6 +255,7 @@ GeneratorGL::GeneratorGL()
         EqualizeHistogram::name,
         Erosion::name,
         GammaCorrection::name,
+        Geometry::name,
         HueShift::name,
         Identity::name,
         Logistic::name,
@@ -754,6 +755,10 @@ ImageOperation* GeneratorGL::newOperation(QString operationName)
     {
         operation = new GammaCorrection(false, sharedContext, 1.0f, 1.0f, 1.0f, 1.0f);
     }
+    else if (operationName == Geometry::name)
+    {
+        operation = new Geometry(false, sharedContext, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f, GL_NEAREST);
+    }
     else if (operationName == HueShift::name)
     {
         operation = new HueShift(false, sharedContext, 0.0f, 1.0f);
@@ -872,6 +877,10 @@ ImageOperation* GeneratorGL::loadImageOperation(
     else if (operationName == GammaCorrection::name)
     {
         operation = new GammaCorrection(enabled, sharedContext, floatParameters[0], floatParameters[1], floatParameters[2], floatParameters[3]);
+    }
+    else if (operationName == Geometry::name)
+    {
+        operation = new Geometry(enabled, sharedContext, floatParameters[0], floatParameters[1], floatParameters[2], floatParameters[3], floatParameters[4], interpolationParameters[0]);
     }
     else if (operationName == HueShift::name)
     {
