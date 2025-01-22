@@ -7,6 +7,8 @@
 #include "plotswidget.h"
 #include "recorder.h"
 #include "timerthread.h"
+#include "midicontrol.h"
+#include "midiwidget.h"
 
 #include <QMainWindow>
 #include <QStackedLayout>
@@ -44,6 +46,8 @@ private:
     ControlWidget* controlWidget;
     PlotsWidget* plotsWidget;
     Recorder* recorder = nullptr;
+    MidiControl midiControl;
+    MidiWidget* midiWidget;
 
     TimerThread* updateTimer;
     std::chrono::time_point<std::chrono::steady_clock> updateStart;

@@ -43,6 +43,13 @@ MainWindow::MainWindow()
 
     stackedLayout->setCurrentWidget(controlWidget);
 
+    midiWidget = new MidiWidget();
+
+    connect(&midiControl, &MidiControl::inputPortsChanged, midiWidget, &MidiWidget::populatePortsTable);
+
+    midiControl.setInputPorts();
+    midiWidget->show();
+
     connect(iterationTimer, &TimerThread::timeout, this, &MainWindow::beat);
     connect(iterationTimer, &TimerThread::timeout, this, &MainWindow::computeIterationFPS);
 
@@ -107,6 +114,8 @@ MainWindow::~MainWindow()
     delete controlWidget;
     delete generator;
     delete morphoWidget;
+
+    delete midiWidget;
 
     delete iterationTimer;
     delete updateTimer;

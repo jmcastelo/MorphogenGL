@@ -49,6 +49,8 @@ HEADERS += \
     src/histogramwidget.h \
     src/imageoperations.h \
     src/mainwindow.h \
+    src/midicontrol.h \
+    src/midiwidget.h \
     src/morphowidget.h \
     src/node.h \
     src/operationswidget.h \
@@ -75,6 +77,8 @@ SOURCES += \
     src/imageoperations.cpp \
     src/main.cpp \
     src/mainwindow.cpp \
+    src/midicontrol.cpp \
+    src/midiwidget.cpp \
     src/morphowidget.cpp \
     src/node.cpp \
     src/plotswidget.cpp \
