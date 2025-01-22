@@ -16,14 +16,6 @@ MidiControl::MidiControl(QObject *parent) : QObject(parent)
         {
             Q_UNUSED(port)
             setInputPorts();
-        },
-        .output_added = [&] (const libremidi::output_port& port)
-        {
-            Q_UNUSED(port)
-        },
-        .output_removed = [&] (const libremidi::output_port& port)
-        {
-            Q_UNUSED(port)
         }
     };
 
@@ -42,8 +34,10 @@ void MidiControl::setInputPorts()
     {
         portNames.push_back(port.port_name);
 
-        libremidi::input_configuration config {
-            .on_message = [&](const libremidi::message& message){
+        libremidi::input_configuration config
+        {
+            .on_message = [&](const libremidi::message& message)
+            {
                 for (size_t i = 0; i < message.size(); i++)
                     qDebug() << message[i];
             }
