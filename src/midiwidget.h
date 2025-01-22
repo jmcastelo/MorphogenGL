@@ -4,7 +4,7 @@
 
 
 #include <QWidget>
-#include <QTableWidget>
+#include <QListWidget>
 #include <QTableWidgetItem>
 
 
@@ -16,11 +16,14 @@ class MidiWidget : public QWidget
 public:
     explicit MidiWidget(QWidget *parent = nullptr);
 
+signals:
+    void portSelected(int port, bool state);
+
 public slots:
     void populatePortsTable(std::vector<std::string> portNames);
 
 private:
-    QTableWidget* portsTable;
+    QListWidget* portsTable;
 };
 
 #endif // MIDIWIDGET_H

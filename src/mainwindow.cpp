@@ -46,6 +46,7 @@ MainWindow::MainWindow()
     midiWidget = new MidiWidget();
 
     connect(&midiControl, &MidiControl::inputPortsChanged, midiWidget, &MidiWidget::populatePortsTable);
+    connect(midiWidget, &MidiWidget::portSelected, &midiControl, &MidiControl::openPort);
 
     midiControl.setInputPorts();
     midiWidget->show();
@@ -338,6 +339,8 @@ void MainWindow::closeEvent(QCloseEvent* event)
     updateTimer->stop();
 
     generator->setState(false);
+
+    midiWidget->close();
 
     event->accept();
 }

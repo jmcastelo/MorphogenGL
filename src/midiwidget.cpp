@@ -1,11 +1,13 @@
 #include "midiwidget.h"
+#include <QListWidgetItem>
+#include <QCheckBox>
 #include <QVBoxLayout>
 
 
 
 MidiWidget::MidiWidget(QWidget *parent): QWidget{parent}
 {
-    portsTable = new QTableWidget();
+    portsTable = new QListWidget();
 
     QVBoxLayout* layout = new QVBoxLayout();
     layout->addWidget(portsTable);
@@ -17,16 +19,19 @@ MidiWidget::MidiWidget(QWidget *parent): QWidget{parent}
 
 void MidiWidget::populatePortsTable(std::vector<std::string> portNames)
 {
-    portsTable->clearContents();
+    portsTable->clear();
 
-    portsTable->setRowCount(portNames.size());
-    portsTable->setColumnCount(1);
-
-    int row = 0;
+    int portId = 0;
 
     for (std::string name : portNames)
     {
-        QTableWidgetItem* item = new QTableWidgetItem(QString::fromStdString(name));
-        portsTable->setItem(row++, 0, item);
+        QListWidgetItem* item = new QListWidgetItem("", portsTable);
+        QCheckBox* checkBox = new QCheckBox(QString::fromStdString(name));
+        portsTable->setItemWidget(item, checkBox);
+        connect(checkBox, &QCheckBox::checkStateChanged, [=, this](Qt::CheckState state)
+        {
+            emit portSelected(portId, state == Qt::Checked);
+        });
+        portId++;
     }
 }

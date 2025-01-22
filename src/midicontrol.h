@@ -19,8 +19,12 @@ public:
 signals:
     void inputPortsChanged(std::vector<std::string> portNames);
 
+public slots:
+    void openPort(int portId, bool open);
+
 private:
     libremidi::observer observer;
+    std::vector<libremidi::midi_in> midiInputs;
 };
 
 
