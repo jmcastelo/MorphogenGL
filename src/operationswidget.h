@@ -92,12 +92,12 @@ public:
             comboBox->addItem(valueName);
         comboBox->setCurrentIndex(index);
 
-        connect(comboBox, QOverload<int>::of(&QComboBox::activated), this, [=](int index)
+        connect(comboBox, QOverload<int>::of(&QComboBox::activated), this, [=, this](int index)
         {
             optionsParameter->setValue(index);
         });
 
-        connect(comboBox, &FocusComboBox::focusIn, this, [=](){ emit focusIn(); });
+        connect(comboBox, &FocusComboBox::focusIn, this, [=, this](){ emit focusIn(); });
         connect(comboBox, &FocusComboBox::focusOut, this, &ParameterWidget::focusOut);
 
         focusedWidget = comboBox;
@@ -129,18 +129,18 @@ public:
         lineEdit->setValidator(validator);
         lineEdit->setText(QString::number(intParameter->number->value));
 
-        connect(lineEdit, &FocusLineEdit::editingFinished, this, [=]()
+        connect(lineEdit, &FocusLineEdit::editingFinished, this, [=, this]()
         {
             intParameter->number->setValue(lineEdit->text().toInt());
             intParameter->number->setIndex();
         });
-        connect(lineEdit, &FocusLineEdit::focusIn, this, [=](){ emit focusIn(intParameter->number); });
+        connect(lineEdit, &FocusLineEdit::focusIn, this, [=, this](){ emit focusIn(intParameter->number); });
         connect(lineEdit, &FocusLineEdit::focusIn, this, QOverload<>::of(&ParameterWidget::focusIn));
         connect(lineEdit, &FocusLineEdit::focusOut, this, &ParameterWidget::focusOut);
 
         focusedWidget = lineEdit;
 
-        connect(intParameter->number, QOverload<int>::of(&Number<int>::currentValueChanged), this, [=](int newValue)
+        connect(intParameter->number, QOverload<int>::of(&Number<int>::currentValueChanged), this, [=, this](int newValue)
         {
             intParameter->setValue(newValue);
             lineEdit->setText(QString::number(newValue));
@@ -171,7 +171,7 @@ public:
         lineEdit->setValidator(validator);
         lineEdit->setText(QString::number(intParameter->number->value));
 
-        connect(lineEdit, &FocusLineEdit::editingFinished, this, [=]()
+        connect(lineEdit, &FocusLineEdit::editingFinished, this, [=, this]()
         {
             int value = lineEdit->text().toInt();
             if (value > 0 && value % 2 == 0)
@@ -182,13 +182,13 @@ public:
             intParameter->number->setValue(value);
             intParameter->number->setIndex();
         });
-        connect(lineEdit, &FocusLineEdit::focusIn, this, [=](){ emit focusIn(intParameter->number); });
+        connect(lineEdit, &FocusLineEdit::focusIn, this, [=, this](){ emit focusIn(intParameter->number); });
         connect(lineEdit, &FocusLineEdit::focusIn, this, QOverload<>::of(&ParameterWidget::focusIn));
         connect(lineEdit, &FocusLineEdit::focusOut, this, &ParameterWidget::focusOut);
 
         focusedWidget = lineEdit;
 
-        connect(intParameter->number, QOverload<int>::of(&Number<int>::currentValueChanged), this, [=](int newValue)
+        connect(intParameter->number, QOverload<int>::of(&Number<int>::currentValueChanged), this, [=, this](int newValue)
         {
             intParameter->setValue(newValue);
             lineEdit->setText(QString::number(newValue));
@@ -231,13 +231,13 @@ public:
             floatParameter->number->setValue(lineEdit->text().toFloat());
             floatParameter->number->setIndex();
         });
-        connect(lineEdit, &FocusLineEdit::focusIn, this, [=](){ emit focusIn(floatParameter->number); });
+        connect(lineEdit, &FocusLineEdit::focusIn, this, [&](){ emit focusIn(floatParameter->number); });
         connect(lineEdit, &FocusLineEdit::focusIn, this, QOverload<>::of(&ParameterWidget::focusIn));
         connect(lineEdit, &FocusLineEdit::focusOut, this, &ParameterWidget::focusOut);
 
         focusedWidget = lineEdit;
 
-        connect(floatParameter->number, QOverload<float>::of(&Number<float>::currentValueChanged), this, [=](float newValue)
+        connect(floatParameter->number, QOverload<float>::of(&Number<float>::currentValueChanged), this, [=, this](float newValue)
         {
             floatParameter->setValue(newValue);
             lineEdit->setText(QString::number(newValue));
@@ -572,7 +572,7 @@ public:
             //setKernelValuesPlotData();
         });
 
-        connect(addKernelPushButton, &QPushButton::pressed, this, [=]()
+        connect(addKernelPushButton, &QPushButton::pressed, this, [=, this]()
         {
             if (polarKernelParameter->polarKernels.size() < 5)
             {
@@ -750,7 +750,7 @@ class OperationsWidget : public QFrame
 public:
     OperationsWidget(ImageOperation* operation, QWidget* parent) : QFrame(parent)
     {
-        setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
+        setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
 
         mainLayout = new QVBoxLayout;
         mainLayout->setAlignment(Qt::AlignCenter);
@@ -846,6 +846,12 @@ public:
             selectedParameterSlider->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
             selectedParameterSlider->setRange(0, 10000);
 
+            midiLinkButton = new QPushButton();
+            midiLinkButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+            midiLinkButton->setCheckable(true);
+            midiLinkButton->setStyleSheet("QPushButton{ qproperty-icon: url(:/icons/circle-grey.png); }");
+            midiLinkButton->hide();
+
             FocusLineEdit* selectedParameterMinLineEdit = new FocusLineEdit;
             selectedParameterMinLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
             selectedParameterMinLineEdit->setPlaceholderText("Minimum");
@@ -862,49 +868,64 @@ public:
             selectedParameterMaxValidator->setDecimals(10);
             selectedParameterMaxLineEdit->setValidator(selectedParameterMaxValidator);
 
-            QHBoxLayout* minMaxHBoxLayout = new QHBoxLayout;
-            minMaxHBoxLayout->setAlignment(Qt::AlignJustify);
-            minMaxHBoxLayout->addWidget(selectedParameterMinLineEdit);
-            minMaxHBoxLayout->addWidget(selectedParameterMaxLineEdit);
+            /*QGridLayout* selectedParameterLayout = new QGridLayout;
+            selectedParameterLayout->addWidget(selectedParameterSlider, 0, 0, 1, 5);
+            selectedParameterLayout->addWidget(midiLinkButton, 1, 0, 1, 1);
+            selectedParameterLayout->addWidget(selectedParameterMinLineEdit, 1, 1, 1, 2);
+            selectedParameterLayout->addWidget(selectedParameterMaxLineEdit, 1, 3, 1, 2);*/
+
+            QHBoxLayout* horizontalLayout = new QHBoxLayout;
+            horizontalLayout->setSizeConstraint(QLayout::SetFixedSize);
+            horizontalLayout->setAlignment(Qt::AlignJustify);
+            horizontalLayout->addWidget(midiLinkButton);
+            horizontalLayout->addWidget(selectedParameterMinLineEdit);
+            horizontalLayout->addWidget(selectedParameterMaxLineEdit);
 
             QVBoxLayout* selectedParameterVBoxLayout = new QVBoxLayout;
+            selectedParameterVBoxLayout->setSizeConstraint(QLayout::SetFixedSize);
             selectedParameterVBoxLayout->addWidget(selectedParameterSlider);
-            selectedParameterVBoxLayout->addLayout(minMaxHBoxLayout);
+            selectedParameterVBoxLayout->addLayout(horizontalLayout);
 
             QGroupBox* selectedParameterGroupBox = new QGroupBox("No parameter selected");
+            selectedParameterGroupBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
             selectedParameterGroupBox->setLayout(selectedParameterVBoxLayout);
+            //selectedParameterGroupBox->setLayout(selectedParameterLayout);
 
             mainLayout->addWidget(selectedParameterGroupBox);
 
             foreach (auto widget, slideableFloatParameterWidgets)
             {
-                connect(widget, QOverload<Number<float>*>::of(&ParameterWidget::focusIn), this, [=](Number<float>* number)
+                connect(widget, QOverload<Number<float>*>::of(&ParameterWidget::focusIn), this, [=, this](Number<float>* number)
                 {
                     updateSlideableParameterControls<float>(
-                            widget->getName(),
-                            number,
-                            selectedParameterSlider,
-                            selectedParameterMinLineEdit,
-                            selectedParameterMinValidator,
-                            selectedParameterMaxLineEdit,
-                            selectedParameterMaxValidator,
-                            selectedParameterGroupBox);
+                        widget->getName(),
+                        number,
+                        selectedParameterSlider,
+                        selectedParameterMinLineEdit,
+                        selectedParameterMinValidator,
+                        selectedParameterMaxLineEdit,
+                        selectedParameterMaxValidator,
+                        selectedParameterGroupBox);
+
+                    updateMidiButtons<float>(number);
                 });
             }
 
             foreach (auto widget, slideableIntParameterWidgets)
             {
-                connect(widget, QOverload<Number<int>*>::of(&ParameterWidget::focusIn), this, [=](Number<int>* number)
+                connect(widget, QOverload<Number<int>*>::of(&ParameterWidget::focusIn), this, [=, this](Number<int>* number)
                 {
                     updateSlideableParameterControls<int>(
-                            widget->getName(),
-                            number,
-                            selectedParameterSlider,
-                            selectedParameterMinLineEdit,
-                            selectedParameterMinValidator,
-                            selectedParameterMaxLineEdit,
-                            selectedParameterMaxValidator,
-                            selectedParameterGroupBox);
+                        widget->getName(),
+                        number,
+                        selectedParameterSlider,
+                        selectedParameterMinLineEdit,
+                        selectedParameterMinValidator,
+                        selectedParameterMaxLineEdit,
+                        selectedParameterMaxValidator,
+                        selectedParameterGroupBox);
+
+                    updateMidiButtons<int>(number);
                 });
             }
         }
@@ -915,13 +936,13 @@ public:
         {
             foreach (auto widget, parameterWidgets)
             {
-                connect(widget, QOverload<>::of(&ParameterWidget::focusIn), this, [=](){
+                connect(widget, QOverload<>::of(&ParameterWidget::focusIn), this, [=, this](){
                     setLineWidth(1);
                     lastFocusedWidget = widget->lastFocusedWidget();
                     lastFocused = true;
                     emit focusIn(this);
                 });
-                connect(widget, &ParameterWidget::focusOut, this, [=](){
+                connect(widget, &ParameterWidget::focusOut, this, [=, this](){
                     setLineWidth(0);
                     emit focusOut(this);
                 });
@@ -942,7 +963,7 @@ public:
         else
             enableButton->setStyleSheet("background-color: rgb(32, 32, 32); color: rgb(255, 255, 255)");
 
-        connect(enableButton, &QPushButton::toggled, this, [=](bool checked){
+        connect(enableButton, &QPushButton::toggled, this, [=, this](bool checked){
             operation->enable(checked);
             if (checked)
                 enableButton->setStyleSheet("background-color: rgb(0, 255, 0); color: rgb(255, 255, 255)");
@@ -950,13 +971,13 @@ public:
                 enableButton->setStyleSheet("background-color: rgb(32, 32, 32); color: rgb(255, 255, 255)");
             emit enableButtonToggled();
         });
-        connect(enableButton, &FocusPushButton::focusIn, this, [=](){
+        connect(enableButton, &FocusPushButton::focusIn, this, [=, this](){
             setLineWidth(1);
             lastFocusedWidget = enableButton;
             lastFocused = true;
             emit focusIn(this);
         });
-        connect(enableButton, &FocusPushButton::focusOut, this, [=](){
+        connect(enableButton, &FocusPushButton::focusOut, this, [=, this](){
             setLineWidth(0);
             emit focusOut(this);
         });
@@ -1001,10 +1022,19 @@ public:
         lastFocused = focus;
     }
 
+    void toggleMidiButtons(bool show)
+    {
+        midiLinkButton->setHidden(!show);
+    }
+
 signals:
     void enableButtonToggled();
     void focusIn(QWidget* widget);
     void focusOut(QWidget* widget);
+    void linkWait(Number<float>* number);
+    void linkWait(Number<int>* number);
+    void linkBreak(Number<float>* number);
+    void linkBreak(Number<int>* number);
 
 private:
     QVBoxLayout* mainLayout;
@@ -1012,6 +1042,8 @@ private:
     QVector<ParameterWidget*> parameterWidgets;
     QVector<ParameterWidget*> slideableFloatParameterWidgets;
     QVector<ParameterWidget*> slideableIntParameterWidgets;
+
+    QPushButton* midiLinkButton;
 
     FocusPushButton* enableButton;
 
@@ -1047,13 +1079,13 @@ private:
 
         // Focus
 
-        connect(selectedParameterSlider, &FocusSlider::focusIn, this, [=](){
+        connect(selectedParameterSlider, &FocusSlider::focusIn, this, [=, this](){
             setLineWidth(1);
             lastFocusedWidget = selectedParameterSlider;
             lastFocused = true;
             emit focusIn(this);
         });
-        connect(selectedParameterSlider, &FocusSlider::focusOut, this, [=](){
+        connect(selectedParameterSlider, &FocusSlider::focusOut, this, [=, this](){
             setLineWidth(0);
             emit focusOut(this);
         });
@@ -1124,24 +1156,24 @@ private:
 
         // Focus
 
-        connect(selectedParameterMinLineEdit, &FocusLineEdit::focusIn, this, [=](){
+        connect(selectedParameterMinLineEdit, &FocusLineEdit::focusIn, this, [=, this](){
             setLineWidth(1);
             lastFocusedWidget = selectedParameterMinLineEdit;
             lastFocused = true;
             emit focusIn(this);
         });
-        connect(selectedParameterMinLineEdit, &FocusLineEdit::focusOut, this, [=](){
+        connect(selectedParameterMinLineEdit, &FocusLineEdit::focusOut, this, [=, this](){
             setLineWidth(0);
             emit focusOut(this);
         });
 
-        connect(selectedParameterMaxLineEdit, &FocusLineEdit::focusIn, this, [=](){
+        connect(selectedParameterMaxLineEdit, &FocusLineEdit::focusIn, this, [=, this](){
             setLineWidth(1);
             lastFocusedWidget = selectedParameterMaxLineEdit;
             lastFocused = true;
             emit focusIn(this);
         });
-        connect(selectedParameterMaxLineEdit, &FocusLineEdit::focusOut, this, [=](){
+        connect(selectedParameterMaxLineEdit, &FocusLineEdit::focusOut, this, [=, this](){
             setLineWidth(0);
             emit focusOut(this);
         });
@@ -1149,6 +1181,42 @@ private:
         // Title
 
         selectedParameterGroupBox->setTitle("Selected parameter: " + name);
+    }
+
+    template <typename T>
+    void updateMidiButtons(Number<T>* number)
+    {
+        // MIDI Link button
+
+        midiLinkButton->disconnect();
+
+        midiLinkButton->setChecked(number->isMidiLinked());
+
+        if (number->isMidiLinked())
+            midiLinkButton->setStyleSheet("QPushButton{ qproperty-icon: url(:/icons/circle-green.png); }");
+        else
+            midiLinkButton->setStyleSheet("QPushButton{ qproperty-icon: url(:/icons/circle-grey.png); }");
+
+        connect(midiLinkButton, &QPushButton::clicked, this, [=, this](bool checked)
+        {
+            if (checked)
+            {
+                midiLinkButton->setStyleSheet("QPushButton{ qproperty-icon: url(:/icons/circle-orange.png); }");
+                emit linkWait(number);
+            }
+            else
+            {
+                midiLinkButton->setStyleSheet("QPushButton{ qproperty-icon: url(:/icons/circle-grey.png); }");
+                emit linkBreak(number);
+            }
+        });
+
+        connect(number, &Number<T>::linked, this, [=, this](bool set){
+            if (set)
+                midiLinkButton->setStyleSheet("QPushButton{ qproperty-icon: url(:/icons/circle-green.png); }");
+            else
+                midiLinkButton->setStyleSheet("QPushButton{ qproperty-icon: url(:/icons/circle-grey.png); }");
+        });
     }
 
     void focusInEvent(QFocusEvent *event) override

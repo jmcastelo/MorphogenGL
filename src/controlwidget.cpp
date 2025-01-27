@@ -40,17 +40,18 @@ ControlWidget::ControlWidget(double itFPS, double updFPS, GeneratorGL *theGenera
 {
     // Scroll area
 
-    scrollWidget = new QWidget;
-    scrollWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-
     scrollLayout = new QHBoxLayout;
     scrollLayout->setSizeConstraint(QLayout::SetFixedSize);
-    scrollLayout->setAlignment(Qt::AlignLeft);
+    scrollLayout->setAlignment(Qt::AlignBottom);
     scrollLayout->setDirection(QBoxLayout::RightToLeft);
+
+    scrollWidget = new QWidget;
+    scrollWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     scrollWidget->setLayout(scrollLayout);
 
     scrollArea = new QScrollArea;
     scrollArea->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    //scrollArea->setWidgetResizable(true);
     scrollArea->setWidget(scrollWidget);
 
     // Contruct nodes toolbar
@@ -227,7 +228,7 @@ void ControlWidget::constructSystemToolBar()
 
     systemToolBar->addSeparator();
 
-    QAction* detachAction = systemToolBar->addAction(QIcon(QPixmap(":/icons/mail-attachment.png")), "Detach/attach panel");
+    QAction* midiAction = systemToolBar->addAction(QIcon(QPixmap(":/icons/control-knob.png")), "MIDI Controller");
     QAction* aboutAction = systemToolBar->addAction(QIcon(QPixmap(":/icons/help-about.png")), "About");
 
     connect(iterateAction, &QAction::triggered, this, &ControlWidget::iterate);
@@ -238,7 +239,7 @@ void ControlWidget::constructSystemToolBar()
     connect(recordingOptionsAction, &QAction::triggered, this, &ControlWidget::toggleRecordingOptionsWidget);
     connect(loadConfigAction, &QAction::triggered, this, &ControlWidget::loadConfig);
     connect(saveConfigAction, &QAction::triggered, this, &ControlWidget::saveConfig);
-    connect(detachAction, &QAction::triggered, this, &ControlWidget::detach);
+    connect(midiAction, &QAction::triggered, this, &ControlWidget::showMidiWidget);
     connect(aboutAction, &QAction::triggered, this, &ControlWidget::about);
 }
 
@@ -709,27 +710,27 @@ void ControlWidget::constructDisplayOptionsWidget(double itsFPS, double updFPS)
 
     // Signals + Slots
 
-    connect(itsFPSLineEdit, &FocusLineEdit::editingFinished, this, [=]()
+    connect(itsFPSLineEdit, &FocusLineEdit::editingFinished, this, [=, this]()
     {
         double fps = itsFPSLineEdit->text().toDouble();
         emit iterationFPSChanged(fps);
     });
 
-    connect(updFPSLineEdit, &FocusLineEdit::editingFinished, this, [=]()
+    connect(updFPSLineEdit, &FocusLineEdit::editingFinished, this, [=, this]()
     {
         double fps = updFPSLineEdit->text().toDouble();
         emit updateFPSChanged(fps);
     });
 
-    connect(updateCheckBox, &QCheckBox::checkStateChanged, this, [=](Qt::CheckState state){
+    connect(updateCheckBox, &QCheckBox::checkStateChanged, this, [=, this](Qt::CheckState state){
         emit updateStateChanged(state == Qt::Checked);
     });
 
-    connect(windowWidthLineEdit, &FocusLineEdit::editingFinished, this, [=]()
+    connect(windowWidthLineEdit, &FocusLineEdit::editingFinished, this, [=, this]()
     {
         emit imageSizeChanged(windowWidthLineEdit->text().toInt(), windowHeightLineEdit->text().toInt());
     });
-    connect(windowHeightLineEdit, &FocusLineEdit::editingFinished, this, [=]()
+    connect(windowHeightLineEdit, &FocusLineEdit::editingFinished, this, [=, this]()
     {
         emit imageSizeChanged(windowWidthLineEdit->text().toInt(), windowHeightLineEdit->text().toInt());
     });
@@ -833,7 +834,7 @@ void ControlWidget::constructRecordingOptionsWidget()
     // Signals + Slots
 
     connect(videoFilenamePushButton, &QPushButton::clicked, this, &ControlWidget::setOutputDir);
-    connect(fileFormatsComboBox, &QComboBox::activated, this, [=](int index)
+    connect(fileFormatsComboBox, &QComboBox::activated, this, [=, this](int index)
     {
         if (index >= 0)
         {
@@ -841,7 +842,7 @@ void ControlWidget::constructRecordingOptionsWidget()
             populateVideoCodecsComboBox();
         }
     });
-    connect(videoCodecsComboBox, &QComboBox::activated, this, [=](int index)
+    connect(videoCodecsComboBox, &QComboBox::activated, this, [=, this](int index)
     {
         if (index >= 0)
         {
@@ -849,7 +850,7 @@ void ControlWidget::constructRecordingOptionsWidget()
             populateFileFormatsComboBox();
         }
     });
-    connect(fpsVideoLineEdit, &FocusLineEdit::editingFinished, this, [=]()
+    connect(fpsVideoLineEdit, &FocusLineEdit::editingFinished, this, [=, this]()
     {
         framesPerSecond = fpsVideoLineEdit->text().toDouble();
     });
@@ -971,19 +972,21 @@ void ControlWidget::constructSortedOperationsWidget()
 
 
 
-void ControlWidget::populateSortedOperationsTable(QList<QPair<QUuid, QString>> data)
+void ControlWidget::populateSortedOperationsTable(QList<QPair<QUuid, QString>> sortedData, QList<QUuid> unsortedData)
 {
-    sortedOperationsTable->clearContents();
-    sortedOperationsTable->setRowCount(data.size());
+    Q_UNUSED(unsortedData);
 
-    for (int row = 0; row < data.size(); row++)
+    sortedOperationsTable->clearContents();
+    sortedOperationsTable->setRowCount(sortedData.size());
+
+    for (int row = 0; row < sortedData.size(); row++)
     {
-        QTableWidgetItem* item = new QTableWidgetItem(data[row].second);
+        QTableWidgetItem* item = new QTableWidgetItem(sortedData[row].second);
         item->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEnabled);
         sortedOperationsTable->setItem(row, 0, item);
     }
 
-    sortedOperationsData = data;
+    sortedOperationsData = sortedData;
 }
 
 
@@ -1000,13 +1003,20 @@ void ControlWidget::selectNodesToMark()
 
 
 
-void ControlWidget::populateScrollLayout(QList<QPair<QUuid, QString>> data)
+void ControlWidget::populateScrollLayout(QList<QPair<QUuid, QString>> sortedData, QList<QUuid> unsortedData)
 {
     QWidget *widget = nullptr;
 
-    for (int i = 0; i < data.size(); i++)
+    for (int i = 0; i < sortedData.size(); i++)
     {
-        QUuid id = data[i].first;
+        QUuid id = sortedData[i].first;
+        if (operationsWidgets.contains(id) && operationsWidgets.value(id)->isFocused())
+            widget = operationsWidgets.value(id);
+    }
+
+    for (int i = 0; i < unsortedData.size(); i++)
+    {
+        QUuid id = unsortedData[i];
         if (operationsWidgets.contains(id) && operationsWidgets.value(id)->isFocused())
             widget = operationsWidgets.value(id);
     }
@@ -1015,11 +1025,18 @@ void ControlWidget::populateScrollLayout(QList<QPair<QUuid, QString>> data)
     foreach (QWidget* child, children)
         scrollLayout->removeWidget(child);
 
-    for (int i = data.size() - 1; i >= 0; i--)
+    for (int i = sortedData.size() - 1; i >= 0; i--)
     {
-        QUuid id = data[i].first;
+        QUuid id = sortedData[i].first;
         if (operationsWidgets.contains(id))
-            scrollLayout->addWidget(operationsWidgets.value(id));
+            scrollLayout->addWidget(operationsWidgets.value(id), 0, Qt::AlignLeft | Qt::AlignBottom);
+    }
+
+    for (int i = unsortedData.size() - 1; i >= 0; i--)
+    {
+        QUuid id = unsortedData[i];
+        if (operationsWidgets.contains(id))
+            scrollLayout->addWidget(operationsWidgets.value(id), 0, Qt::AlignLeft | Qt::AlignBottom);
     }
 
     updateScrollArea();
@@ -1033,21 +1050,166 @@ void ControlWidget::populateScrollLayout(QList<QPair<QUuid, QString>> data)
 
 
 
+void ControlWidget::setupMidi(QString portName, bool open)
+{
+    if (open)
+    {
+        if (!midiFloatLinks.contains(portName))
+            midiFloatLinks[portName] = QMap<int, Number<float>*>();
+
+        if (!midiIntLinks.contains(portName))
+            midiIntLinks[portName] = QMap<int, Number<int>*>();
+    }
+    else
+    {
+        midiFloatLinks.remove(portName);
+        midiIntLinks.remove(portName);
+    }
+
+    anyMidiPortOpen = !midiFloatLinks.isEmpty() || !midiIntLinks.isEmpty();
+    showMidiButtons(anyMidiPortOpen);
+}
+
+
+
+void ControlWidget::showMidiButtons(bool show)
+{
+    QMapIterator<QUuid, OperationsWidget*> it(operationsWidgets);
+    while (it.hasNext())
+    {
+        it.next();
+        it.value()->toggleMidiButtons(show);
+    }
+}
+
+
+
+void ControlWidget::updateMidiLinks(QString portName, int key, int value)
+{
+    if (linkingFloat != nullptr)
+    {
+        if (!midiFloatLinks.contains(portName))
+            midiFloatLinks[portName] = QMap<int, Number<float>*>();
+
+        if (midiFloatLinks[portName].contains(key))
+        {
+            midiFloatLinks[portName][key]->setMidiLinked(false);
+            midiFloatLinks[portName][key]->setIndexMax(100'000);
+            midiFloatLinks[portName].remove(key);
+        }
+
+        midiFloatLinks[portName][key] = linkingFloat;
+        midiFloatLinks[portName][key]->setIndexMax(127);
+
+        connect(linkingFloat, &Number<float>::deleting, this, [=, this]()
+        {
+            midiFloatLinks[portName].remove(key);
+        });
+
+        linkingFloat->setMidiLinked(true);
+
+        linkingFloat = nullptr;
+    }
+    else if (linkingInt != nullptr)
+    {
+        if (!midiIntLinks.contains(portName))
+            midiIntLinks[portName] = QMap<int, Number<int>*>();
+
+        if (midiIntLinks[portName].contains(key))
+        {
+            midiIntLinks[portName][key]->setMidiLinked(false);
+            midiIntLinks[portName][key]->setIndexMax(100'000);
+            midiIntLinks[portName].remove(key);
+        }
+
+        midiIntLinks[portName][key] = linkingInt;
+        midiIntLinks[portName][key]->setIndexMax(127);
+
+        connect(linkingInt, &Number<int>::deleting, this, [=, this]()
+        {
+            midiIntLinks[portName].remove(key);
+        });
+
+        linkingInt->setMidiLinked(true);
+
+        linkingInt = nullptr;
+    }
+    else
+    {
+        if (midiFloatLinks.contains(portName) && midiFloatLinks[portName].contains(key))
+        {
+            midiFloatLinks[portName][key]->setValueFromIndex(value);
+            midiFloatLinks[portName][key]->setIndex();
+        }
+        if (midiIntLinks.contains(portName) && midiIntLinks[portName].contains(key))
+        {
+            midiIntLinks[portName][key]->setValueFromIndex(value);
+            midiIntLinks[portName][key]->setIndex();
+        }
+    }
+}
+
+
+
 void ControlWidget::createParametersWidget(QUuid id)
 {
     if (generator->hasOperationParamaters(id) && !operationsWidgets.contains(id))
     {
         operationsWidgets.insert(id, new OperationsWidget(generator->getOperation(id), scrollWidget));
 
-        connect(operationsWidgets.value(id), &OperationsWidget::enableButtonToggled, this, [=]()
+        connect(operationsWidgets.value(id), &OperationsWidget::enableButtonToggled, this, [=, this]()
         {
             if (nodesToolBar->isVisible() && graphWidget->singleOperationNodeSelected() && graphWidget->isOperationNodeSelected(id))
                 constructSingleNodeToolBar(graphWidget->getNode(id));
         });
+
         connect(operationsWidgets.value(id), &OperationsWidget::focusOut, this, &ControlWidget::removeOneParametersWidgetBorder);
         connect(operationsWidgets.value(id), &OperationsWidget::focusIn, this, &ControlWidget::updateParametersWidgetsBorder);
 
-        scrollLayout->insertWidget(0, operationsWidgets.value(id));
+        connect(operationsWidgets.value(id), QOverload<Number<float>*>::of(&OperationsWidget::linkWait), this, [=, this](Number<float>* number)
+        {
+            linkingFloat = number;
+        });
+        connect(operationsWidgets.value(id), QOverload<Number<int>*>::of(&OperationsWidget::linkWait), this, [=, this](Number<int>* number)
+        {
+            linkingInt = number;
+        });
+
+        connect(operationsWidgets.value(id), QOverload<Number<float>*>::of(&OperationsWidget::linkBreak), this, [=, this](Number<float>* number)
+        {
+            for (auto [port, map] : midiFloatLinks.asKeyValueRange())
+            {
+                for (auto [key, n] : map.asKeyValueRange())
+                {
+                    if (n == number)
+                    {
+                        number->setMidiLinked(false);
+                        midiFloatLinks[port].remove(key);
+                        break;
+                    }
+                }
+            }
+        });
+        connect(operationsWidgets.value(id), QOverload<Number<int>*>::of(&OperationsWidget::linkBreak), this, [=, this](Number<int>* number)
+        {
+            for (auto [port, map] : midiIntLinks.asKeyValueRange())
+            {
+                for (auto [key, n] : map.asKeyValueRange())
+                {
+                    if (n == number)
+                    {
+                        number->setMidiLinked(false);
+                        midiFloatLinks[port].remove(key);
+                        break;
+                    }
+                }
+            }
+        });
+
+        operationsWidgets.value(id)->toggleMidiButtons(anyMidiPortOpen);
+
+        //scrollLayout->insertWidget(0, operationsWidgets.value(id));
+        scrollLayout->addWidget(operationsWidgets.value(id));
         scrollArea->ensureWidgetVisible(operationsWidgets.value(id));
         operationsWidgets.value(id)->setFocus();
     }
@@ -1134,11 +1296,11 @@ void ControlWidget::removeParametersWidget(QUuid id)
     {
         //operationsWidgets.value(id)->setVisible(false);
         //updateScrollLayout(operationsWidgets.value(id));
-        scrollLayout->removeWidget(operationsWidgets.value(id));
-        updateScrollArea();
 
+        //scrollLayout->removeWidget(operationsWidgets.value(id));
         operationsWidgets.value(id)->deleteLater();
         operationsWidgets.remove(id);
+        //updateScrollArea();
     }
 }
 
@@ -1150,13 +1312,20 @@ void ControlWidget::updateParametersWidget(QUuid id)
     {
         if (generator->getOperation(id)->hasParameters())
         {
+            //scrollLayout->removeWidget(operationsWidgets.value(id));
             operationsWidgets.value(id)->recreate(generator->getOperation(id));
+            //scrollLayout->addWidget(operationsWidgets.value(id));
 
-            if (operationsWidgets.value(id)->isVisible())
-                QTimer::singleShot(10, this, [&]{ updateScrollArea(); });
+            //scrollArea->ensureWidgetVisible(operationsWidgets.value(id));
+            //operationsWidgets.value(id)->setFocus();
+            //updateScrollArea();
+            //if (operationsWidgets.value(id)->isVisible())
+                //QTimer::singleShot(100, this, [&]{ updateScrollArea(); });
         }
         else
             removeParametersWidget(id);
+
+        updateScrollArea();
     }
 }
 
@@ -1176,29 +1345,31 @@ void ControlWidget::updateScrollLayout(QWidget* widget)
 
 void ControlWidget::updateScrollArea()
 {
-    int visible = false;
+    int maxHeight = 0;
     QList<QWidget*> children = scrollWidget->findChildren<QWidget*>(QString(), Qt::FindDirectChildrenOnly);
     foreach (QWidget* child, children)
     {
-        if (child->isVisible())
-        {
-            visible = true;
-            break;
-        }
+        //child->updateGeometry();
+        //child->adjustSize();
+        if (child->height() > maxHeight)
+            maxHeight = child->height();
     }
 
+    scrollLayout->update();
+    //scrollWidget->setFixedHeight(maxHeight);
     scrollWidget->updateGeometry();
     scrollWidget->adjustSize();
 
-    if (visible)
+
+    if (scrollArea->horizontalScrollBar()->isVisible())
     {
-        if (scrollArea->horizontalScrollBar()->isVisible())
-            scrollArea->setFixedHeight(scrollWidget->height() + scrollLayout->contentsMargins().top() + scrollArea->horizontalScrollBar()->height());
-        else
-            scrollArea->setFixedHeight(scrollWidget->height() + scrollLayout->contentsMargins().top());
+        scrollArea->setFixedHeight(scrollWidget->height() + scrollLayout->contentsMargins().top() + scrollArea->horizontalScrollBar()->height());
+        //scrollArea->setFixedHeight(maxHeight + scrollLayout->contentsMargins().top() + scrollArea->horizontalScrollBar()->height());
     }
     else
     {
-        scrollArea->setFixedHeight(0);
+        scrollArea->setFixedHeight(scrollWidget->height() + scrollLayout->contentsMargins().top());
+        //scrollArea->setFixedHeight(maxHeight + scrollLayout->contentsMargins().top());
     }
+    update();
 }

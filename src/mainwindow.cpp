@@ -46,10 +46,11 @@ MainWindow::MainWindow()
     midiWidget = new MidiWidget();
 
     connect(&midiControl, &MidiControl::inputPortsChanged, midiWidget, &MidiWidget::populatePortsTable);
+    connect(&midiControl, &MidiControl::inputPortOpen, controlWidget, &ControlWidget::setupMidi);
+    connect(&midiControl, &MidiControl::ccInputMessageReceived, controlWidget, &ControlWidget::updateMidiLinks);
     connect(midiWidget, &MidiWidget::portSelected, &midiControl, &MidiControl::openPort);
 
     midiControl.setInputPorts();
-    midiWidget->show();
 
     connect(iterationTimer, &TimerThread::timeout, this, &MainWindow::beat);
     connect(iterationTimer, &TimerThread::timeout, this, &MainWindow::computeIterationFPS);
@@ -98,6 +99,7 @@ MainWindow::MainWindow()
     connect(controlWidget, &ControlWidget::stopRecording, this, &MainWindow::stopRecording);
     connect(controlWidget, &ControlWidget::takeScreenshot, this, &MainWindow::takeScreenshot);
     connect(controlWidget, &ControlWidget::imageSizeChanged, this, &MainWindow::setSize);
+    connect(controlWidget, &ControlWidget::showMidiWidget, this, &MainWindow::showMidiWidget);
 
     setWindowTitle("Morphogen");
     setWindowIcon(QIcon(":/icons/morphogengl.png"));
@@ -259,6 +261,15 @@ void MainWindow::takeScreenshot(QString filename)
     screenshot.save(filename);
 }
 
+
+
+void MainWindow::showMidiWidget()
+{
+    if (midiWidget->isVisible())
+        midiWidget->hide();
+    else
+        midiWidget->show();
+}
 
 
 void MainWindow::setSize(int width, int height)

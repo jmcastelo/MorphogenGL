@@ -36,10 +36,13 @@ void MidiControl::setInputPorts()
 
         libremidi::input_configuration config
         {
-            .on_message = [&](const libremidi::message& message)
+            .on_message = [=, this](const libremidi::message& message)
             {
-                for (size_t i = 0; i < message.size(); i++)
-                    qDebug() << message[i];
+                if (message.get_message_type() == libremidi::message_type::CONTROL_CHANGE)
+                {
+                    int key = message[0] * 128 + message[1];
+                    emit ccInputMessageReceived(QString::fromStdString(port.port_name), key, message[2]);
+                }
             }
         };
 
@@ -56,8 +59,11 @@ void MidiControl::setInputPorts()
 void MidiControl::openPort(int portId, bool open)
 {
     auto inputPorts = observer.get_input_ports();
+
     if (open)
         midiInputs[portId].open_port(inputPorts[portId]);
     else
         midiInputs[portId].close_port();
+
+    emit inputPortOpen(QString::fromStdString(inputPorts[portId].port_name), midiInputs[portId].is_port_open());
 }

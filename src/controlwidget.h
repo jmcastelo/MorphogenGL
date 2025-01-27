@@ -59,7 +59,6 @@
 #include <QTableWidgetItem>
 #include <QSplitter>
 #include <QScrollArea>
-#include <QSizeGrip>
 #include <QMediaFormat>
 
 class ConfigurationParser;
@@ -72,7 +71,6 @@ class ControlWidget : public QWidget
 
 public:
     GeneratorGL* generator;
-    QSizeGrip* grip;
 
     ControlWidget(double itFPS, double updFPS, GeneratorGL* theGenerator, PlotsWidget* thePlotsWidget, QWidget *parent = nullptr);
     ~ControlWidget();
@@ -81,7 +79,7 @@ signals:
     void iterateStateChanged(bool state);
     void seedDrawn();
     void updateStateChanged(bool state);
-    void detach();
+    void showMidiWidget();
     void imageSizeChanged(int width, int height);
     void startRecording(QString recordFilename, int framesPerSecond, QMediaFormat format);
     void stopRecording();
@@ -98,6 +96,9 @@ public slots:
     void updateIterationMetricsLabels(double uspf, double fps);
     void updateUpdateMetricsLabels(double uspf, double fps);
     void setVideoCaptureElapsedTimeLabel(int frameNumber);
+    void setupMidi(QString portName, bool open);
+    void showMidiButtons(bool show);
+    void updateMidiLinks(QString portName, int key, int value);
 
 protected:
     void resizeEvent(QResizeEvent* event) override;
@@ -120,7 +121,7 @@ private:
     QWidget* sortedOperationsWidget;
 
     QTableWidget* sortedOperationsTable;
-    QVector<QPair<QUuid, QString>> sortedOperationsData;
+    QList<QPair<QUuid, QString>> sortedOperationsData;
 
     QAction* iterateAction;
     QAction* recordAction;
@@ -155,6 +156,11 @@ private:
     QLabel* videoCaptureElapsedTimeLabel;
 
     QMap<QUuid, OperationsWidget*> operationsWidgets;
+    QMap<QString, QMap<int, Number<float>*>> midiFloatLinks;
+    QMap<QString, QMap<int, Number<int>*>> midiIntLinks;
+    Number<float>* linkingFloat = nullptr;
+    Number<int>* linkingInt = nullptr;
+    bool anyMidiPortOpen = false;
 
     QScrollArea* scrollArea;
     QWidget* scrollWidget;
@@ -188,8 +194,8 @@ private slots:
     void saveConfig();
     void about();
 
-    void populateSortedOperationsTable(QList<QPair<QUuid, QString>> data);
-    void populateScrollLayout(QList<QPair<QUuid, QString>> data);
+    void populateSortedOperationsTable(QList<QPair<QUuid, QString>> sortedData, QList<QUuid> unsortedData);
+    void populateScrollLayout(QList<QPair<QUuid, QString>> data, QList<QUuid> unsortedData);
     void selectNodesToMark();
 
     void createParametersWidget(QUuid id);

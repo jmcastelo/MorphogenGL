@@ -33,12 +33,14 @@ class NumberSignals : public QObject
     Q_OBJECT
 
 public:
-       explicit NumberSignals(QObject *parent = nullptr) : QObject(parent) {}
+    explicit NumberSignals(QObject *parent = nullptr) : QObject(parent) {}
 
 signals:
     void currentValueChanged(float currentValue);
     void currentValueChanged(int currentValue);
     void currentIndexChanged(int currentIndex);
+    void linked(bool set);
+    void deleting();
 };
 
 
@@ -49,6 +51,7 @@ class Number : public NumberSignals
 public:
     T value, min, max, inf, sup;
     int indexMax = 100000;
+    bool midiLinked = false;
 
     Number(T theValue, T theMin, T theMax, T theInf, T theSup) :
         value { theValue },
@@ -66,6 +69,11 @@ public:
         inf = number.inf;
         sup = number.sup;
         indexMax = number.indexMax;
+    }
+
+    ~Number()
+    {
+        emit deleting();
     }
 
     void setMin(T theMin) { min = theMin; }
@@ -98,6 +106,22 @@ public:
     int getIndex()
     {
         return static_cast<int>(indexMax * static_cast<float>(value - min) / static_cast<float>(max - min));
+    }
+
+    void setIndexMax(int theIndexMax)
+    {
+        indexMax = theIndexMax;
+    }
+
+    bool isMidiLinked()
+    {
+        return midiLinked;
+    }
+
+    void setMidiLinked(bool set)
+    {
+        midiLinked = set;
+        emit linked(set);
     }
 };
 

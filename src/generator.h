@@ -188,7 +188,7 @@ public slots:
 signals:
     void outputFBOChanged(GLuint fbo);
     void outputTextureChanged(GLuint id);
-    void sortedOperationsChanged(QList<QPair<QUuid, QString>> data);
+    void sortedOperationsChanged(QList<QPair<QUuid, QString>> sortedData, QList<QUuid> unsortedData);
 
 private:
     QMap<QUuid, ImageOperationNode*> operationNodes;

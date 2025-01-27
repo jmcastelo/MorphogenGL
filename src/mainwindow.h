@@ -87,6 +87,8 @@ private slots:
     void takeScreenshot(QString filename);
 
     void setSize(int with, int height);
+
+    void showMidiWidget();
 };
 
 

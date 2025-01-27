@@ -300,6 +300,7 @@ void GeneratorGL::sortOperations()
     sortedOperations.clear();
 
     QList<QPair<QUuid, QString>> sortedOperationsData;
+    QList<QUuid> unsortedOperationsIds;
 
     QMap<QUuid, ImageOperationNode*> pendingNodes = operationNodes;
 
@@ -319,6 +320,7 @@ void GeneratorGL::sortOperations()
         if (node->numInputs() == 0 && node->numOutputs() == 0)
         {
             pendingNodes.remove(node->id);
+            unsortedOperationsIds.push_back(node->id);
         }
         else if ((node->numInputs() == 0 && node->numOutputs() > 0) ||
                  (node->numInputs() > 0 && node->numNonNormalInputs() == node->numInputs()))
@@ -355,7 +357,7 @@ void GeneratorGL::sortOperations()
     }
 
     //if (tmpSortedOperations != sortedOperations)
-        emit sortedOperationsChanged(sortedOperationsData);
+        emit sortedOperationsChanged(sortedOperationsData, unsortedOperationsIds);
 }
 
 

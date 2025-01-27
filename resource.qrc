@@ -61,11 +61,12 @@
         <file>icons/emblem-synchronized.png</file>
         <file>shaders/power.frag</file>
         <file>shaders/median.frag</file>
-        <file>icons/mail-attachment.png</file>
         <file>shaders/3d.vert</file>
         <file>shaders/3d.frag</file>
         <file>icons/list-add.png</file>
         <file>icons/list-remove.png</file>
         <file>shaders/equalize-histogram.frag</file>
+        <file>icons/control-knob.png</file>
+        <file>icons/circle-orange.png</file>
     </qresource>
 </RCC>

@@ -388,8 +388,8 @@ void GraphWidget::swapSelectedOperationNodes()
         selectedOperationNodes[0]->renameOperation(selectedOperationNodes[1]->name);
         selectedOperationNodes[1]->renameOperation(name);
 
-        emit updateOperationParameters(selectedOperationNodes[0]->id);
-        emit updateOperationParameters(selectedOperationNodes[1]->id);
+        //emit updateOperationParameters(selectedOperationNodes[0]->id);
+        //emit updateOperationParameters(selectedOperationNodes[1]->id);
     }
 }
 

@@ -18,6 +18,8 @@ public:
 
 signals:
     void inputPortsChanged(std::vector<std::string> portNames);
+    void inputPortOpen(QString portName, bool open);
+    void ccInputMessageReceived(QString portName, int key, int value);
 
 public slots:
     void openPort(int portId, bool open);
