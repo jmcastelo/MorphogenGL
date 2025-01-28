@@ -144,6 +144,7 @@ public:
         {
             intParameter->setValue(newValue);
             lineEdit->setText(QString::number(newValue));
+            emit focusIn();
         });
     }
 
@@ -192,6 +193,7 @@ public:
         {
             intParameter->setValue(newValue);
             lineEdit->setText(QString::number(newValue));
+            emit focusIn();
         });
     }
 
@@ -241,6 +243,7 @@ public:
         {
             floatParameter->setValue(newValue);
             lineEdit->setText(QString::number(newValue));
+            emit focusIn();
         });
     }
 
@@ -292,20 +295,21 @@ public:
         }
         for (size_t i = 0; i < arrayParameter->numbers.size(); i++)
         {
-            connect(lineEdits[i], &FocusLineEdit::editingFinished, this, [=]()
+            connect(lineEdits[i], &FocusLineEdit::editingFinished, this, [=, this]()
             {
                 arrayParameter->numbers[i]->setValue(lineEdits[i]->text().toFloat());
                 arrayParameter->numbers[i]->setIndex();
                 arrayParameter->setValues();
             });
-            connect(lineEdits[i], &FocusLineEdit::focusIn, this, [=](){ focusedWidget = lineEdits[i]; });
-            connect(lineEdits[i], &FocusLineEdit::focusIn, this, [=](){ emit focusIn(arrayParameter->numbers[i]); });
+            connect(lineEdits[i], &FocusLineEdit::focusIn, this, [=, this](){ focusedWidget = lineEdits[i]; });
+            connect(lineEdits[i], &FocusLineEdit::focusIn, this, [=, this](){ emit focusIn(arrayParameter->numbers[i]); });
             connect(lineEdits[i], &FocusLineEdit::focusIn, this, QOverload<>::of(&ParameterWidget::focusIn));
             connect(lineEdits[i], &FocusLineEdit::focusOut, this, &ParameterWidget::focusOut);
-            connect(arrayParameter->numbers[i], QOverload<float>::of(&Number<float>::currentValueChanged), this, [=](float newValue)
+            connect(arrayParameter->numbers[i], QOverload<float>::of(&Number<float>::currentValueChanged), this, [=, this](float newValue)
             {
                 arrayParameter->setValues();
                 lineEdits[i]->setText(QString::number(newValue));
+                emit focusIn();
             });
         }
 
@@ -340,7 +344,7 @@ public:
         normalizePushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
         normalizePushButton->setVisible(kernelParameter->normalize);
 
-        connect(normalizePushButton, &QPushButton::clicked, this, [=]()
+        connect(normalizePushButton, &QPushButton::clicked, this, [=, this]()
         {
             float sum = 0.0;
             for (auto element : kernelParameter->numbers)
@@ -357,7 +361,7 @@ public:
                 kernelParameter->setValues();
             }
         });
-        connect(normalizePushButton, &FocusPushButton::focusIn, this, [=](){ focusedWidget = normalizePushButton; });
+        connect(normalizePushButton, &FocusPushButton::focusIn, this, [=, this](){ focusedWidget = normalizePushButton; });
         connect(normalizePushButton, &FocusPushButton::focusIn, this, QOverload<>::of(&ParameterWidget::focusIn));
         connect(normalizePushButton, &FocusPushButton::focusOut, this, &ParameterWidget::focusOut);
 
@@ -380,7 +384,7 @@ public:
         presetsComboBox->addItem("Gaussian blur");
         presetsComboBox->setCurrentIndex(0);
 
-        connect(presetsComboBox, QOverload<int>::of(&QComboBox::activated), this, [=](int index)
+        connect(presetsComboBox, QOverload<int>::of(&QComboBox::activated), this, [=, this](int index)
         {
             for (size_t i = 0; i < presets[index].size(); i++)
             {
@@ -389,7 +393,7 @@ public:
             }
             kernelParameter->setValues();
         });
-        connect(presetsComboBox, &FocusComboBox::focusIn, this, [=](){ focusedWidget = presetsComboBox; });
+        connect(presetsComboBox, &FocusComboBox::focusIn, this, [=, this](){ focusedWidget = presetsComboBox; });
         connect(presetsComboBox, &FocusComboBox::focusIn, this, QOverload<>::of(&ParameterWidget::focusIn));
         connect(presetsComboBox, &FocusComboBox::focusOut, this, &ParameterWidget::focusOut);
     }
@@ -748,7 +752,7 @@ class OperationsWidget : public QFrame
     Q_OBJECT
 
 public:
-    OperationsWidget(ImageOperation* operation, QWidget* parent) : QFrame(parent)
+    OperationsWidget(ImageOperation* operation, bool midiEnabled, QWidget* parent) : QFrame(parent)
     {
         setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
 
@@ -760,10 +764,10 @@ public:
         setLineWidth(0);
         setMidLineWidth(0);
 
-        setup(operation);
+        setup(operation, midiEnabled);
     }
 
-    void setup(ImageOperation* operation)
+    void setup(ImageOperation* operation, bool midiEnabled)
     {
         QVBoxLayout* parametersLayout = new QVBoxLayout;
         parametersLayout->setAlignment(Qt::AlignCenter);
@@ -850,7 +854,7 @@ public:
             midiLinkButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
             midiLinkButton->setCheckable(true);
             midiLinkButton->setStyleSheet("QPushButton{ qproperty-icon: url(:/icons/circle-grey.png); }");
-            midiLinkButton->hide();
+            midiLinkButton->setVisible(midiEnabled);
 
             FocusLineEdit* selectedParameterMinLineEdit = new FocusLineEdit;
             selectedParameterMinLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
@@ -987,7 +991,7 @@ public:
         setLayout(mainLayout);
     }
 
-    void recreate(ImageOperation* operation)
+    void recreate(ImageOperation* operation, bool midiEnabled)
     {
         qDeleteAll(findChildren<QWidget*>(QString(), Qt::FindDirectChildrenOnly));
 
@@ -995,7 +999,7 @@ public:
         slideableFloatParameterWidgets.clear();
         slideableIntParameterWidgets.clear();
 
-        setup(operation);
+        setup(operation, midiEnabled);
     }
 
     void toggleEnableButton(bool checked)

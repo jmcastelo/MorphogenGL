@@ -1098,6 +1098,7 @@ void ControlWidget::updateMidiLinks(QString portName, int key, int value)
             midiFloatLinks[portName].remove(key);
         }
 
+        linkingFloat->setMidiLinked(true);
         midiFloatLinks[portName][key] = linkingFloat;
         midiFloatLinks[portName][key]->setIndexMax(127);
 
@@ -1106,7 +1107,7 @@ void ControlWidget::updateMidiLinks(QString portName, int key, int value)
             midiFloatLinks[portName].remove(key);
         });
 
-        linkingFloat->setMidiLinked(true);
+
 
         linkingFloat = nullptr;
     }
@@ -1122,6 +1123,7 @@ void ControlWidget::updateMidiLinks(QString portName, int key, int value)
             midiIntLinks[portName].remove(key);
         }
 
+        linkingInt->setMidiLinked(true);
         midiIntLinks[portName][key] = linkingInt;
         midiIntLinks[portName][key]->setIndexMax(127);
 
@@ -1129,8 +1131,6 @@ void ControlWidget::updateMidiLinks(QString portName, int key, int value)
         {
             midiIntLinks[portName].remove(key);
         });
-
-        linkingInt->setMidiLinked(true);
 
         linkingInt = nullptr;
     }
@@ -1155,7 +1155,7 @@ void ControlWidget::createParametersWidget(QUuid id)
 {
     if (generator->hasOperationParamaters(id) && !operationsWidgets.contains(id))
     {
-        operationsWidgets.insert(id, new OperationsWidget(generator->getOperation(id), scrollWidget));
+        operationsWidgets.insert(id, new OperationsWidget(generator->getOperation(id), anyMidiPortOpen, scrollWidget));
 
         connect(operationsWidgets.value(id), &OperationsWidget::enableButtonToggled, this, [=, this]()
         {
@@ -1313,7 +1313,7 @@ void ControlWidget::updateParametersWidget(QUuid id)
         if (generator->getOperation(id)->hasParameters())
         {
             //scrollLayout->removeWidget(operationsWidgets.value(id));
-            operationsWidgets.value(id)->recreate(generator->getOperation(id));
+            operationsWidgets.value(id)->recreate(generator->getOperation(id), anyMidiPortOpen);
             //scrollLayout->addWidget(operationsWidgets.value(id));
 
             //scrollArea->ensureWidgetVisible(operationsWidgets.value(id));
