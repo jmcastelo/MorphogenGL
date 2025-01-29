@@ -25,7 +25,7 @@
 #include "cycle.h"
 #include "graphwidget.h"
 #include "generator.h"
-#include "focuslineedit.h"
+#include "focuswidgets.h"
 
 #include <QPainter>
 #include <QtMath>
@@ -37,10 +37,13 @@
 #include <QGroupBox>
 #include <QPushButton>
 
-Edge::Edge(GraphWidget *graphWidget, Node *sourceNode, Node *destNode)
+
+
+Edge::Edge(GraphWidget *graphWidget, Node *sourceNode, Node *destNode, float factor)
     : graph { graphWidget },
-      source { sourceNode },
-      dest { destNode }
+    source { sourceNode },
+    dest { destNode },
+    blendFactor { factor }
 {
     setAcceptedMouseButtons(Qt::NoButton);
     source->addEdge(this);
@@ -52,17 +55,21 @@ Edge::Edge(GraphWidget *graphWidget, Node *sourceNode, Node *destNode)
         if (edge->destNode() == source)
             edge->adjust();
 
-    connect(this, &Edge::blendFactorWidgetCreated, graph, &GraphWidget::blendFactorWidgetCreated);
-    connect(this, &Edge::blendFactorWidgetToggled, graph, &GraphWidget::blendFactorWidgetToggled);
+    //connect(this, &Edge::blendFactorWidgetCreated, graph, &GraphWidget::blendFactorWidgetCreated);
+    //connect(this, &Edge::blendFactorWidgetToggled, graph, &GraphWidget::blendFactorWidgetToggled);
 
     if (graph->generator->isNode(source->id) && graph->generator->isNode(dest->id))
         constructBlendFactorWidget();
 }
 
+
+
 Edge::~Edge()
 {
     blendFactorWidget->deleteLater();
 }
+
+
 
 void Edge::remove()
 {
@@ -76,15 +83,21 @@ void Edge::remove()
     graph->removeEdge(this);
 }
 
+
+
 Node *Edge::sourceNode() const
 {
     return source;
 }
 
+
+
 Node *Edge::destNode() const
 {
     return dest;
 }
+
+
 
 void Edge::setPredge(bool set)
 {
@@ -97,6 +110,8 @@ void Edge::setPredge(bool set)
 
     update();
 }
+
+
 
 QPointF Edge::intersectionPoint(Node *node, Node *other, QPointF offset, QLineF line)
 {
@@ -149,6 +164,8 @@ QPointF Edge::intersectionPoint(Node *node, Node *other, QPointF offset, QLineF 
     }
 }
 
+
+
 void Edge::adjust()
 {
     if (!source || !dest)
@@ -182,6 +199,8 @@ void Edge::adjust()
     }
 }
 
+
+
 void Edge::setLinkOffset()
 {
     linkOffset = 0;
@@ -198,6 +217,8 @@ void Edge::setLinkOffset()
     }
 }
 
+
+
 void Edge::setAsPredge()
 {
     predge = true;
@@ -206,6 +227,8 @@ void Edge::setAsPredge()
 
     update();
 }
+
+
 
 void Edge::setAsEdge()
 {
@@ -216,10 +239,14 @@ void Edge::setAsEdge()
     update();
 }
 
+
+
 void Edge::insertNode(QAction* action)
 {
     graph->insertNodeBetween(action, this);
 }
+
+
 
 void Edge::constructBlendFactorWidget()
 {
@@ -231,7 +258,7 @@ void Edge::constructBlendFactorWidget()
     blendFactorLineEdit->setValidator(validator);
     blendFactorLineEdit->setText(QString::number(graph->generator->blendFactor(source->id, dest->id)));
 
-    connect(blendFactorLineEdit, &FocusLineEdit::focusOut, this, [=](){ blendFactorLineEdit->setText(QString::number(graph->generator->blendFactor(source->id, dest->id))); });
+    connect(blendFactorLineEdit, &FocusLineEdit::focusOut, this, [=, this](){ blendFactorLineEdit->setText(QString::number(graph->generator->blendFactor(source->id, dest->id))); });
 
     QFormLayout* formLayout = new QFormLayout;
     formLayout->setAlignment(Qt::AlignLeft);
@@ -242,7 +269,7 @@ void Edge::constructBlendFactorWidget()
     blendFactorSlider->setRange(0, 100000);
     blendFactorSlider->setSliderPosition(graph->generator->blendFactor(source->id, dest->id) * blendFactorSlider->maximum());
 
-    connect(blendFactorSlider, &QAbstractSlider::valueChanged, this, [=](int value)
+    connect(blendFactorSlider, &QAbstractSlider::valueChanged, this, [=, this](int value)
     {
         float factor = static_cast<float>(value) / blendFactorSlider->maximum();
         graph->generator->setBlendFactor(source->id, dest->id, factor);
@@ -250,7 +277,7 @@ void Edge::constructBlendFactorWidget()
         update();
     });
 
-    connect(blendFactorLineEdit, &FocusLineEdit::returnPressed, this, [=]()
+    connect(blendFactorLineEdit, &FocusLineEdit::editingFinished, this, [=, this]()
     {
         float factor = blendFactorLineEdit->text().toFloat();
         graph->generator->setBlendFactor(source->id, dest->id, factor);
@@ -259,7 +286,7 @@ void Edge::constructBlendFactorWidget()
         update();
     });
 
-    connect(this, &Edge::blendFactorChanged, this, [=]()
+    connect(this, &Edge::blendFactorChanged, this, [=, this]()
     {
         float factor = graph->generator->blendFactor(source->id, dest->id);
         blendFactorLineEdit->setText(QString::number(factor));
@@ -297,27 +324,37 @@ void Edge::constructBlendFactorWidget()
     emit blendFactorWidgetCreated(blendFactorWidget);
 }
 
+
+
 void Edge::setBlendFactorGroupBoxTitle()
 {
     blendFactorGroupBox->setTitle(source->name + " - " + dest->name);
 }
+
+
 
 void Edge::updateBlendFactor()
 {
     emit blendFactorChanged();
 }
 
-void Edge::setBlendFactor()
+
+
+void Edge::setBlendFactor(float factor)
 {
-    blendFactorWidget->setVisible(true);
-    emit blendFactorWidgetToggled(blendFactorWidget);
+    blendFactor = factor;
+    update();
 }
+
+
 
 void Edge::closeBlendFactorWidget()
 {
     if (blendFactorWidget)
         blendFactorWidget->close();
 }
+
+
 
 QRectF Edge::boundingRect() const
 {
@@ -326,6 +363,8 @@ QRectF Edge::boundingRect() const
 
     return QRectF(sourcePoint, QSizeF(destPoint.x() - sourcePoint.x(), destPoint.y() - sourcePoint.y())).normalized().adjusted(-10.0, -10.0, 10.0, 10.0);
 }
+
+
 
 QPainterPath Edge::shape() const
 {
@@ -339,6 +378,8 @@ QPainterPath Edge::shape() const
     path.closeSubpath();
     return path;
 }
+
+
 
 void Edge::paint(QPainter *painter, const QStyleOptionGraphicsItem *, QWidget *)
 {
@@ -372,7 +413,7 @@ void Edge::paint(QPainter *painter, const QStyleOptionGraphicsItem *, QWidget *)
 
     if (paintBlendFactor)
     {
-        QString text = QString::number(graph->generator->blendFactor(source->id, dest->id));
+        QString text = QString::number(blendFactor);
 
         QFontMetricsF fontMetrics(scene()->font());
         qreal textWidth = fontMetrics.boundingRect(text).width();
@@ -381,6 +422,8 @@ void Edge::paint(QPainter *painter, const QStyleOptionGraphicsItem *, QWidget *)
         painter->drawText(line.center() - QPointF(0.5 * textWidth, 0.0), text);
     }
 }
+
+
 
 void Edge::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
 {

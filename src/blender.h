@@ -22,9 +22,13 @@
 
 #pragma once
 
+
+
 #include "fbo.h"
 #include <QUuid>
 #include <QOpenGLContext>
+
+
 
 enum class InputType { Normal, Blit, Seed };
 

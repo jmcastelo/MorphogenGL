@@ -20,22 +20,32 @@
 *  along with MorphogenGL.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#pragma once
+
+
+#ifndef EDGE_H
+#define EDGE_H
+
+
 
 #include <QGraphicsObject>
 #include <QAction>
 #include <QGroupBox>
 
+
+
 class GraphWidget;
 class Node;
 class Cycle;
+class BlendFactorWidget;
+
+
 
 class Edge : public QGraphicsObject
 {
     Q_OBJECT
 
 public:
-    Edge(GraphWidget* graphWidget, Node *sourceNode, Node *destNode);
+    Edge(GraphWidget* graphWidget, Node *sourceNode, Node *destNode, float factor);
     ~Edge();
 
     Node *sourceNode() const;
@@ -58,6 +68,7 @@ public:
     void addCycle(Cycle* cycle) { cycleList.push_back(cycle); }
     void clearCycles() { cycleList.clear(); }
 
+    void setBlendFactor(float factor);
     void drawBlendFactor(bool draw) { paintBlendFactor = draw; }
     void updateBlendFactor();
     void closeBlendFactorWidget();
@@ -66,6 +77,12 @@ public:
     void constructBlendFactorWidget();
 
     QRectF boundingRect() const override;
+
+signals:
+    void blendFactorChanged();
+    void nodesConnected();
+    //void blendFactorWidgetCreated(QWidget* widget);
+    //void blendFactorWidgetToggled(QWidget* widget);
 
 public slots:
     void remove();
@@ -88,10 +105,10 @@ private:
 
     qreal arrowSize = 10;
 
+    float blendFactor;
     bool paintBlendFactor = false;
 
-    QWidget* blendFactorWidget;
-    QGroupBox* blendFactorGroupBox;
+    BlendFactorWidget* blendFactorWidget = nullptr;
 
     QPointF intersectionPoint(Node *node, Node *other, QPointF offset, QLineF line);
     void setLinkOffset();
@@ -99,13 +116,10 @@ private:
     void setAsPredge();
     void setAsEdge();
 
-    void setBlendFactor();
-
-signals:
-    void blendFactorChanged();
-    void blendFactorWidgetCreated(QWidget* widget);
-    void blendFactorWidgetToggled(QWidget* widget);
-
 private slots:
     void insertNode(QAction* action);
 };
+
+
+
+#endif // EDGE_H

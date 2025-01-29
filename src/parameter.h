@@ -20,13 +20,22 @@
 *  along with MorphogenGL.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#pragma once
+
+
+#ifndef PARAMETER_H
+#define PARAMETER_H
+
+
 
 #include "imageoperations.h"
 #include <vector>
 #include <QString>
 
+
+
 class ImageOperation;
+
+
 
 class NumberSignals : public QObject
 {
@@ -318,58 +327,4 @@ public:
 
 
 
-struct PolarKernel
-{
-    int numElements;
-    float radius;
-    float initialAngle;
-    float frequency;
-    float phase;
-    float minimum;
-    float maximum;
-
-    PolarKernel(int theNumElements, float theRadius, float theInitialAngle, float theFrequency, float thePhase, float theMinimum, float theMaximum) :
-        numElements { theNumElements },
-        radius { theRadius },
-        initialAngle { theInitialAngle },
-        frequency { theFrequency },
-        phase { thePhase },
-        minimum { theMinimum},
-        maximum { theMaximum }
-    {}
-};
-
-
-
-class PolarKernelParameter : public Parameter
-{
-public:
-    std::vector<PolarKernel*> polarKernels;
-    float centerElement;
-
-    PolarKernelParameter(QString theName, int theIndex, ImageOperation* theOperation, std::vector<PolarKernel*> thePolarKernels, float theCenterElement) :
-        Parameter(theName, theIndex, theOperation),
-        polarKernels { thePolarKernels },
-        centerElement { theCenterElement }
-    {}
-    PolarKernelParameter(const PolarKernelParameter& parameter) :
-        Parameter(parameter.name, parameter.index, parameter.operation),
-        centerElement { parameter.centerElement }
-    {
-        for (PolarKernel* kernel : parameter.polarKernels)
-            polarKernels.push_back(new PolarKernel(*kernel));
-    }
-
-   ~PolarKernelParameter()
-    {
-        for (auto& kernel : polarKernels)
-            delete kernel;
-
-        polarKernels.clear();
-    }
-
-    void setValues()
-    {
-        operation->setPolarKernelParameter();
-    }
-};
+#endif // PARAMETER_H

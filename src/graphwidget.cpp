@@ -174,7 +174,7 @@ void GraphWidget::reconnectNodes(Node* node)
 
             generator->connectOperations(input->sourceNode()->id, output->destNode()->id, generator->blendFactor(node->id, output->destNode()->id));
 
-            Edge* newEdge = new Edge(this, input->sourceNode(), output->destNode());
+            Edge* newEdge = new Edge(this, input->sourceNode(), output->destNode(), generator->blendFactor(input->sourceNode()->id, output->destNode()->id));
 
             if (input->isPredge() || output->isPredge())
                 newEdge->setPredge(true);
@@ -498,7 +498,7 @@ void GraphWidget::copyNodes(bool connectionA)
                 else
                     generator->connectCopiedOperationsB(sourceId, destId, newSourceId, newDestId);
 
-                Edge* newEdge = new Edge(this, copiedNodes[1].value(newSourceId), copiedNodes[1].value(newDestId));
+                Edge* newEdge = new Edge(this, copiedNodes[1].value(newSourceId), copiedNodes[1].value(newDestId), generator->blendFactor(newSourceId, newDestId));
                 newEdge->setPredge(edge->isPredge());
                 newEdges.push_back(newEdge);
             }
@@ -532,7 +532,7 @@ void GraphWidget::pasteCopiedNodes()
     {
         scene()->addItem(edge);
         edge->adjust();
-        edge->constructBlendFactorWidget();
+        //edge->constructBlendFactorWidget();
     }
 
     copiedNodes[0] = copiedNodes[1];
@@ -549,7 +549,7 @@ void GraphWidget::connectNodes(Node *node)
     if (!selectedNode->connectedTo(node))
     {
         generator->connectOperations(selectedNode->id, node->id, 1.0f);
-        scene()->addItem(new Edge(this, selectedNode, node));
+        scene()->addItem(new Edge(this, selectedNode, node, 1.0f));
         searchElementaryCycles();
     }
 
@@ -570,9 +570,9 @@ void GraphWidget::insertNodeBetween(QAction* action, Edge* edge)
     scene()->addItem(node);
     node->setPos(mapToScene(mapFromGlobal(action->data().toPoint())));
 
-    scene()->addItem(new Edge(this, edge->sourceNode(), node));
+    scene()->addItem(new Edge(this, edge->sourceNode(), node, generator->blendFactor(edge->sourceNode()->id, node->id)));
 
-    Edge* output = new Edge(this, node, edge->destNode());
+    Edge* output = new Edge(this, node, edge->destNode(), generator->blendFactor(node->id, edge->destNode()->id));
     if (edge->isPredge())
         output->setPredge(true);
 
@@ -739,7 +739,7 @@ void GraphWidget::connectNodes(QMap<QUuid, QMap<QUuid, InputData*>> connections)
 
                 if (srcNode)
                 {
-                    Edge* edge = new Edge(this, srcNode, dstNode);
+                    Edge* edge = new Edge(this, srcNode, dstNode, generator->blendFactor(srcNode->id, dstNode->id));
 
                     edge->setPredge(src.value()->type == InputType::Blit);
 

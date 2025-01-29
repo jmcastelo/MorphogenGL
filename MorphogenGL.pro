@@ -36,6 +36,7 @@ RESOURCES += resource.qrc
 
 HEADERS += \
     src/blender.h \
+    src/blendfactorwidget.h \
     src/colorpath.h \
     src/configparser.h \
     src/controlwidget.h \
@@ -43,7 +44,6 @@ HEADERS += \
     src/cyclesearch.h \
     src/edge.h \
     src/fbo.h \
-    src/focuslineedit.h \
     src/generator.h \
     src/graphwidget.h \
     src/histogramwidget.h \
@@ -60,7 +60,16 @@ HEADERS += \
     src/rgbwidget.h \
     src/seed.h \
     src/texformat.h \
-    src/timerthread.h
+    src/timerthread.h \
+    src/widgets/arraywidget.h \
+    src/widgets/floatwidget.h \
+    src/widgets/focuswidgets.h \
+    src/widgets/intoddwidget.h \
+    src/widgets/intwidget.h \
+    src/widgets/kernelwidget.h \
+    src/widgets/matrixwidget.h \
+    src/widgets/optionswidget.h \
+    src/widgets/parameterwidget.h
 
 SOURCES += \
     src/blender.cpp \

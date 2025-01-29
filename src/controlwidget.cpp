@@ -23,7 +23,7 @@
 #include "configparser.h"
 #include "node.h"
 #include "controlwidget.h"
-#include "focuslineedit.h"
+#include "focuswidgets.h"
 
 #include <QTimer>
 #include <QActionGroup>

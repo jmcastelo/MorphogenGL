@@ -27,6 +27,8 @@
 
 #include <QStyleOption>
 
+
+
 Cycle::Cycle(GraphWidget* graphWidget, QVector<Node*> nodes) : graph { graphWidget }
 {
     // Construct vector of edges
@@ -36,7 +38,7 @@ Cycle::Cycle(GraphWidget* graphWidget, QVector<Node*> nodes) : graph { graphWidg
 
     for (int i = 0; i < nodes.size(); i++)
     {
-        for (Edge* edge : nodes[i]->edges())
+        foreach (Edge* edge, nodes[i]->edges())
         {
             if (edge->destNode() == nodes[(i + 1) % nodes.size()])
             {
@@ -51,22 +53,26 @@ Cycle::Cycle(GraphWidget* graphWidget, QVector<Node*> nodes) : graph { graphWidg
     // Cycle must contain at least one predge
 
     if (!containsPredge)
-        edges.front()->setPredge(true);
+        edges.back()->setPredge(true);
 
     setAcceptedMouseButtons(Qt::NoButton);
     setZValue(-2);
 }
 
+
+
 int Cycle::numPredges()
 {
     int n = 0;
 
-    for (Edge* edge : edges)
+    foreach (Edge* edge, edges)
         if (edge->isPredge())
             n++;
 
     return n;
 }
+
+
 
 QRectF Cycle::boundingRect() const
 {
@@ -77,6 +83,8 @@ QRectF Cycle::boundingRect() const
 
     return whole;
 }
+
+
 
 QPainterPath Cycle::shape() const
 {
@@ -93,6 +101,8 @@ QPainterPath Cycle::shape() const
     path.closeSubpath();
     return path;
 }
+
+
 
 void Cycle::paint(QPainter* painter, const QStyleOptionGraphicsItem*, QWidget*)
 {

@@ -20,12 +20,19 @@
 *  along with MorphogenGL.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#pragma once
+
+
+#ifndef FOCUSWIDGETS_H
+#define FOCUSWIDGETS_H
+
+
 
 #include <QLineEdit>
 #include <QSlider>
 #include <QComboBox>
 #include <QPushButton>
+
+
 
 // A custom QLineEdit that signals focus out and in
 
@@ -131,3 +138,7 @@ signals:
     void focusOut();
     void focusIn();
 };
+
+
+
+#endif // FOCUSWIDGETS_H
