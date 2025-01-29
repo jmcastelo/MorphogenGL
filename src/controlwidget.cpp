@@ -22,8 +22,8 @@
 
 #include "configparser.h"
 #include "node.h"
+#include "blendfactorwidget.h"
 #include "controlwidget.h"
-#include "focuswidgets.h"
 
 #include <QTimer>
 #include <QActionGroup>
@@ -81,18 +81,43 @@ ControlWidget::ControlWidget(double itFPS, double updFPS, GeneratorGL *theGenera
     connect(graphWidget, &GraphWidget::showOperationParameters, this, &ControlWidget::createParametersWidget);
     connect(graphWidget, &GraphWidget::removeOperationParameters, this, &ControlWidget::removeParametersWidget);
     connect(graphWidget, &GraphWidget::updateOperationParameters, this, &ControlWidget::updateParametersWidget);
-    connect(graphWidget, &GraphWidget::blendFactorWidgetCreated, this, [&](QWidget* widget)
+    connect(graphWidget, &GraphWidget::blendFactorWidgetCreated, this, [=, this](BlendFactorWidget* widget)
     {
+        widget->toggleMidiButton(anyMidiPortOpen);
         widget->setParent(scrollWidget);
+
+        connect(widget, &BlendFactorWidget::linkWait, this, [=, this](Number<float>* number)
+        {
+            linkingFloat = number;
+        });
+
+        connect(widget, &BlendFactorWidget::linkBreak, this, [=, this](Number<float>* number)
+        {
+            for (auto [port, map] : midiFloatLinks.asKeyValueRange())
+            {
+                for (auto [key, n] : map.asKeyValueRange())
+                {
+                    if (n == number)
+                    {
+                        number->setMidiLinked(false);
+                        midiFloatLinks[port].remove(key);
+                        break;
+                    }
+                }
+            }
+        });
+
+        blendFactorWidgets.append(widget);
+
         updateScrollArea();
     });
-    connect(graphWidget, &GraphWidget::blendFactorWidgetToggled, this, [&](QWidget* widget)
+    connect(graphWidget, &GraphWidget::blendFactorWidgetToggled, this, [&](BlendFactorWidget* widget)
     {
         if (widget->isVisible())
         {
             if (scrollLayout->indexOf(widget) == -1)
             {
-                scrollLayout->addWidget(widget);
+                scrollLayout->addWidget(widget, 0, Qt::AlignLeft | Qt::AlignBottom);
                 updateScrollArea();
             }
             scrollArea->ensureWidgetVisible(widget);
@@ -102,6 +127,10 @@ ControlWidget::ControlWidget(double itFPS, double updFPS, GeneratorGL *theGenera
             scrollLayout->removeWidget(widget);
             updateScrollArea();
         }
+    });
+    connect(graphWidget, &GraphWidget::deletingBlendFactorWidget, this, [&](BlendFactorWidget* widget)
+    {
+        blendFactorWidgets.removeOne(widget);
     });
     connect(graphWidget, &GraphWidget::operationEnabled, this, [&](QUuid id, bool enabled){
         if (operationsWidgets.contains(id))
@@ -1078,7 +1107,12 @@ void ControlWidget::showMidiButtons(bool show)
     while (it.hasNext())
     {
         it.next();
-        it.value()->toggleMidiButtons(show);
+        it.value()->toggleMidiButton(show);
+    }
+
+    foreach (BlendFactorWidget* widget, blendFactorWidgets)
+    {
+        widget->toggleMidiButton(show);
     }
 }
 
@@ -1206,7 +1240,7 @@ void ControlWidget::createParametersWidget(QUuid id)
             }
         });
 
-        operationsWidgets.value(id)->toggleMidiButtons(anyMidiPortOpen);
+        operationsWidgets.value(id)->toggleMidiButton(anyMidiPortOpen);
 
         //scrollLayout->insertWidget(0, operationsWidgets.value(id));
         scrollLayout->addWidget(operationsWidgets.value(id));

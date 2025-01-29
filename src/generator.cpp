@@ -264,7 +264,6 @@ GeneratorGL::GeneratorGL()
         Memory::name,
         MorphologicalGradient::name,
         Pixelation::name,
-        PolarConvolution::name,
         Power::name,
         Rotation::name,
         Saturation::name,
@@ -793,11 +792,6 @@ ImageOperation* GeneratorGL::newOperation(QString operationName)
     {
         operation = new Pixelation(false, sharedContext, 1.0f, 1.0f);
     }
-    else if (operationName == PolarConvolution::name)
-    {
-        std::vector<PolarKernel*> polarKernels = { new PolarKernel(8, 0.01f, 0.0f, 1.0f, 0.0f, -1.0f, 1.0f) };
-        operation = new PolarConvolution(false, sharedContext, polarKernels, 1.0f, 1.0f);
-    }
     else if (operationName == Power::name)
     {
         operation = new Power(false, sharedContext, 1.0f, 1.0f);
@@ -835,8 +829,7 @@ ImageOperation* GeneratorGL::loadImageOperation(
     std::vector<float> floatParameters,
     std::vector<int> interpolationParameters,
     std::vector<float> kernelElements,
-    std::vector<float> matrixElements,
-    std::vector<PolarKernel*> polarKernels)
+    std::vector<float> matrixElements)
 {
     ImageOperation* operation = nullptr;
 
@@ -915,10 +908,6 @@ ImageOperation* GeneratorGL::loadImageOperation(
     else if (operationName == Pixelation::name)
     {
         operation = new Pixelation(enabled, sharedContext, floatParameters[0], floatParameters[1]);
-    }
-    else if (operationName == PolarConvolution::name)
-    {
-        operation = new PolarConvolution(enabled, sharedContext, polarKernels, floatParameters[0], floatParameters[1]);
     }
     else if (operationName == Power::name)
     {

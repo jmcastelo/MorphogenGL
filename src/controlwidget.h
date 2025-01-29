@@ -20,7 +20,10 @@
 *  along with MorphogenGL.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#pragma once
+#ifndef CONTROLWIDGET_H
+#define CONTROLWIDGET_H
+
+
 
 #include "generator.h"
 #include "operationswidget.h"
@@ -61,7 +64,11 @@
 #include <QScrollArea>
 #include <QMediaFormat>
 
+
+
 class ConfigurationParser;
+
+
 
 // ControlWidget: contains MorphogenGL's controls
 
@@ -162,6 +169,8 @@ private:
     Number<int>* linkingInt = nullptr;
     bool anyMidiPortOpen = false;
 
+    QList<BlendFactorWidget*> blendFactorWidgets;
+
     QScrollArea* scrollArea;
     QWidget* scrollWidget;
     QHBoxLayout* scrollLayout;
@@ -216,3 +225,7 @@ private slots:
     void setSeedNodeFixed(bool checked);
     void removeSeedNode();
 };
+
+
+
+#endif // CONTROLWIDGET_H

@@ -20,12 +20,14 @@
 *  along with MorphogenGL.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+
+
 #include "edge.h"
 #include "node.h"
 #include "cycle.h"
 #include "graphwidget.h"
 #include "generator.h"
-#include "focuswidgets.h"
+#include "blendfactorwidget.h"
 
 #include <QPainter>
 #include <QtMath>
@@ -55,8 +57,9 @@ Edge::Edge(GraphWidget *graphWidget, Node *sourceNode, Node *destNode, float fac
         if (edge->destNode() == source)
             edge->adjust();
 
-    //connect(this, &Edge::blendFactorWidgetCreated, graph, &GraphWidget::blendFactorWidgetCreated);
-    //connect(this, &Edge::blendFactorWidgetToggled, graph, &GraphWidget::blendFactorWidgetToggled);
+    connect(this, &Edge::blendFactorWidgetCreated, graph, &GraphWidget::blendFactorWidgetCreated);
+    connect(this, &Edge::blendFactorWidgetToggled, graph, &GraphWidget::blendFactorWidgetToggled);
+    connect(this, &Edge::deleting, graph, &GraphWidget::deletingBlendFactorWidget);
 
     if (graph->generator->isNode(source->id) && graph->generator->isNode(dest->id))
         constructBlendFactorWidget();
@@ -66,6 +69,7 @@ Edge::Edge(GraphWidget *graphWidget, Node *sourceNode, Node *destNode, float fac
 
 Edge::~Edge()
 {
+    emit deleting(blendFactorWidget);
     blendFactorWidget->deleteLater();
 }
 
@@ -250,77 +254,8 @@ void Edge::insertNode(QAction* action)
 
 void Edge::constructBlendFactorWidget()
 {
-    FocusLineEdit* blendFactorLineEdit = new FocusLineEdit;
-    blendFactorLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
-
-    QDoubleValidator* validator = new QDoubleValidator(0.0, 1.0, 6, blendFactorLineEdit);
-    validator->setLocale(QLocale::English);
-    blendFactorLineEdit->setValidator(validator);
-    blendFactorLineEdit->setText(QString::number(graph->generator->blendFactor(source->id, dest->id)));
-
-    connect(blendFactorLineEdit, &FocusLineEdit::focusOut, this, [=, this](){ blendFactorLineEdit->setText(QString::number(graph->generator->blendFactor(source->id, dest->id))); });
-
-    QFormLayout* formLayout = new QFormLayout;
-    formLayout->setAlignment(Qt::AlignLeft);
-    formLayout->addRow("Blend factor:", blendFactorLineEdit);
-
-    QSlider* blendFactorSlider = new QSlider(Qt::Horizontal);
-    blendFactorSlider->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
-    blendFactorSlider->setRange(0, 100000);
-    blendFactorSlider->setSliderPosition(graph->generator->blendFactor(source->id, dest->id) * blendFactorSlider->maximum());
-
-    connect(blendFactorSlider, &QAbstractSlider::valueChanged, this, [=, this](int value)
-    {
-        float factor = static_cast<float>(value) / blendFactorSlider->maximum();
-        graph->generator->setBlendFactor(source->id, dest->id, factor);
-        blendFactorLineEdit->setText(QString::number(factor));
-        update();
-    });
-
-    connect(blendFactorLineEdit, &FocusLineEdit::editingFinished, this, [=, this]()
-    {
-        float factor = blendFactorLineEdit->text().toFloat();
-        graph->generator->setBlendFactor(source->id, dest->id, factor);
-        int index = factor * blendFactorSlider->maximum();
-        blendFactorSlider->setSliderPosition(index);
-        update();
-    });
-
-    connect(this, &Edge::blendFactorChanged, this, [=, this]()
-    {
-        float factor = graph->generator->blendFactor(source->id, dest->id);
-        blendFactorLineEdit->setText(QString::number(factor));
-        int index = factor * blendFactorSlider->maximum();
-        blendFactorSlider->setSliderPosition(index);
-    });
-
-    QPushButton* closeButton = new QPushButton;
-    closeButton->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
-    closeButton->setFixedHeight(10);
-    closeButton->setStyleSheet("background-color: rgb(255, 0, 0); color: rgb(255, 255, 255)");
-
-    connect(closeButton, &QPushButton::clicked, this, [&]()
-    {
-        blendFactorWidget->setVisible(false);
-        emit blendFactorWidgetToggled(blendFactorWidget);
-    });
-
-    QVBoxLayout* layout = new QVBoxLayout;
-    layout->setSizeConstraint(QLayout::SetFixedSize);
-    layout->addLayout(formLayout);
-    layout->addWidget(blendFactorSlider);
-    layout->addWidget(closeButton);
-
-    blendFactorGroupBox = new QGroupBox(source->name + " - " + dest->name);
-    blendFactorGroupBox->setLayout(layout);
-
-    QVBoxLayout* mainLayout = new QVBoxLayout;
-    mainLayout->addWidget(blendFactorGroupBox);
-
-    blendFactorWidget = new QWidget;
-    blendFactorWidget->setLayout(mainLayout);
-    blendFactorWidget->setVisible(false);
-
+    blendFactorWidget = new BlendFactorWidget(this, blendFactor);
+    connect(blendFactorWidget, &BlendFactorWidget::toggled, graph, &GraphWidget::blendFactorWidgetToggled);
     emit blendFactorWidgetCreated(blendFactorWidget);
 }
 
@@ -328,14 +263,14 @@ void Edge::constructBlendFactorWidget()
 
 void Edge::setBlendFactorGroupBoxTitle()
 {
-    blendFactorGroupBox->setTitle(source->name + " - " + dest->name);
+    blendFactorWidget->setTitle(source->name + " - " + dest->name);
 }
 
 
 
 void Edge::updateBlendFactor()
 {
-    emit blendFactorChanged();
+    blendFactorWidget->setBlendFactor(graph->generator->blendFactor(source->id, dest->id));
 }
 
 
@@ -344,6 +279,13 @@ void Edge::setBlendFactor(float factor)
 {
     blendFactor = factor;
     update();
+}
+
+
+
+void Edge::showBlendFactorWidget()
+{
+    blendFactorWidget->toggle(true);
 }
 
 
@@ -451,7 +393,7 @@ void Edge::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
         }
     }
 
-    menu.addAction("Set blend factor", this, &Edge::setBlendFactor);
+    menu.addAction("Set blend factor", this, &Edge::showBlendFactorWidget);
 
     QMenu *operationsMenu = menu.addMenu("Insert operation");
 

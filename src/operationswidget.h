@@ -147,7 +147,7 @@ public:
         if (!slideableFloatParameterWidgets.empty() || !slideableIntParameterWidgets.empty())
         {
             FocusSlider* selectedParameterSlider = new FocusSlider(Qt::Horizontal);
-            selectedParameterSlider->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
+            selectedParameterSlider->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Maximum);
             selectedParameterSlider->setRange(0, 10000);
 
             midiLinkButton = new QPushButton();
@@ -157,7 +157,7 @@ public:
             midiLinkButton->setVisible(midiEnabled);
 
             FocusLineEdit* selectedParameterMinLineEdit = new FocusLineEdit;
-            selectedParameterMinLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+            selectedParameterMinLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
             selectedParameterMinLineEdit->setPlaceholderText("Minimum");
 
             QDoubleValidator* selectedParameterMinValidator = new QDoubleValidator(selectedParameterMinLineEdit);
@@ -165,27 +165,28 @@ public:
             selectedParameterMinLineEdit->setValidator(selectedParameterMinValidator);
 
             FocusLineEdit* selectedParameterMaxLineEdit = new FocusLineEdit;
-            selectedParameterMaxLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+            selectedParameterMaxLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
             selectedParameterMaxLineEdit->setPlaceholderText("Maximum");
 
             QDoubleValidator* selectedParameterMaxValidator = new QDoubleValidator(selectedParameterMaxLineEdit);
             selectedParameterMaxValidator->setDecimals(10);
             selectedParameterMaxLineEdit->setValidator(selectedParameterMaxValidator);
 
-            QHBoxLayout* horizontalLayout = new QHBoxLayout;
-            horizontalLayout->setSizeConstraint(QLayout::SetFixedSize);
-            horizontalLayout->setAlignment(Qt::AlignJustify);
-            horizontalLayout->addWidget(midiLinkButton);
-            horizontalLayout->addWidget(selectedParameterMinLineEdit);
-            horizontalLayout->addWidget(selectedParameterMaxLineEdit);
+            QHBoxLayout* sliderLayout = new QHBoxLayout;
+            sliderLayout->addWidget(midiLinkButton);
+            sliderLayout->addWidget(selectedParameterSlider);
+
+            QHBoxLayout* minMaxLayout = new QHBoxLayout;
+            minMaxLayout->setAlignment(Qt::AlignJustify);
+            minMaxLayout->addWidget(selectedParameterMinLineEdit);
+            minMaxLayout->addWidget(selectedParameterMaxLineEdit);
 
             QVBoxLayout* selectedParameterVBoxLayout = new QVBoxLayout;
-            selectedParameterVBoxLayout->setSizeConstraint(QLayout::SetFixedSize);
-            selectedParameterVBoxLayout->addWidget(selectedParameterSlider);
-            selectedParameterVBoxLayout->addLayout(horizontalLayout);
+            selectedParameterVBoxLayout->setSizeConstraint(QLayout::SetMaximumSize);
+            selectedParameterVBoxLayout->addLayout(sliderLayout);
+            selectedParameterVBoxLayout->addLayout(minMaxLayout);
 
             QGroupBox* selectedParameterGroupBox = new QGroupBox("No parameter selected");
-            selectedParameterGroupBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
             selectedParameterGroupBox->setLayout(selectedParameterVBoxLayout);
 
             mainLayout->addWidget(selectedParameterGroupBox);
@@ -319,9 +320,9 @@ public:
         lastFocused = focus;
     }
 
-    void toggleMidiButtons(bool show)
+    void toggleMidiButton(bool show)
     {
-        midiLinkButton->setHidden(!show);
+        midiLinkButton->setVisible(show);
     }
 
 signals:

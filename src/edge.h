@@ -81,8 +81,9 @@ public:
 signals:
     void blendFactorChanged();
     void nodesConnected();
-    //void blendFactorWidgetCreated(QWidget* widget);
-    //void blendFactorWidgetToggled(QWidget* widget);
+    void blendFactorWidgetCreated(BlendFactorWidget* widget);
+    void blendFactorWidgetToggled(BlendFactorWidget* widget);
+    void deleting(BlendFactorWidget* widget);
 
 public slots:
     void remove();
@@ -115,6 +116,8 @@ private:
 
     void setAsPredge();
     void setAsEdge();
+
+    void showBlendFactorWidget();
 
 private slots:
     void insertNode(QAction* action);

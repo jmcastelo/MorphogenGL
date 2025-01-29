@@ -20,11 +20,18 @@
 *  along with MorphogenGL.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#pragma once
+#ifndef GRAPHWIDGET_H
+#define GRAPHWIDGET_H
+
+
+
+#include "blendfactorwidget.h"
 
 #include <QGraphicsView>
 #include <QUuid>
 #include <QMap>
+
+
 
 class Node;
 class OperationNode;
@@ -32,6 +39,7 @@ class SeedNode;
 class Edge;
 class GeneratorGL;
 struct InputData;
+
 
 class GraphWidget : public QGraphicsView
 {
@@ -102,8 +110,9 @@ signals:
     void showOperationParameters(QUuid id);
     void removeOperationParameters(QUuid id);
     void updateOperationParameters(QUuid id);
-    void blendFactorWidgetCreated(QWidget* widget);
-    void blendFactorWidgetToggled(QWidget* widget);
+    void blendFactorWidgetCreated(BlendFactorWidget* widget);
+    void blendFactorWidgetToggled(BlendFactorWidget* widget);
+    void deletingBlendFactorWidget(BlendFactorWidget* widget);
     void operationEnabled(QUuid id, bool enabled);
 
 protected:
@@ -137,3 +146,7 @@ private slots:
     void addSeedNodeUnderCursor();
     void pasteCopiedNodes();
 };
+
+
+
+#endif // GRAPHWIDGET_H

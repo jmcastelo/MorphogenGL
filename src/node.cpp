@@ -34,6 +34,8 @@
 #include <QLabel>
 #include <QActionGroup>
 
+
+
 Node::Node(GraphWidget* graphWidget, QString text) :
     name { text },
     graph { graphWidget }
@@ -43,37 +45,53 @@ Node::Node(GraphWidget* graphWidget, QString text) :
     setZValue(-1);
 }
 
+
+
 Node::~Node(){}
+
+
 
 void Node::copy()
 {
     graph->copyNode(this);
 }
 
+
+
 void Node::remove()
 {
     graph->removeNode(this);
 }
+
+
 
 void Node::selectToConnect()
 {
     graph->selectNodeToConnect(this);
 }
 
+
+
 void Node::addEdge(Edge *edge)
 {
     edgeList << edge;
 }
+
+
 
 void Node::removeEdge(Edge *edge)
 {
     edgeList.removeOne(edge);
 }
 
+
+
 QVector<Edge *> Node::edges() const
 {
     return edgeList;
 }
+
+
 
 bool Node::connectedTo(Node *node)
 {
@@ -84,11 +102,15 @@ bool Node::connectedTo(Node *node)
     return false;
 }
 
+
+
 void Node::setAsOutput()
 {
     graph->generator->setOutput(id);
     graph->updateNodes();
 }
+
+
 
 QRectF Node::textBoundingRect() const
 {
@@ -101,10 +123,14 @@ QRectF Node::textBoundingRect() const
         return QRectF();
 }
 
+
+
 QRectF Node::boundingRect() const
 {
     return textBoundingRect().adjusted(-(ellipseMargin + penSize), -(ellipseMargin + penSize), ellipseMargin + penSize, ellipseMargin + penSize);
 }
+
+
 
 QPainterPath Node::shape() const
 {
@@ -112,6 +138,8 @@ QPainterPath Node::shape() const
     path.addEllipse(textBoundingRect().adjusted(-(ellipseMargin + penSize), -(ellipseMargin + penSize), ellipseMargin + penSize, ellipseMargin + penSize));
     return path;
 }
+
+
 
 void Node::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *)
 {
@@ -151,6 +179,8 @@ void Node::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
     painter->drawText(textRect, Qt::AlignCenter, name);
 }
 
+
+
 QVariant Node::itemChange(GraphicsItemChange change, const QVariant &value)
 {
     if (change == ItemPositionChange && scene())
@@ -187,11 +217,15 @@ QVariant Node::itemChange(GraphicsItemChange change, const QVariant &value)
     return QGraphicsObject::itemChange(change, value);
 }
 
+
+
 void Node::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
 {
     update();
     QGraphicsObject::mouseReleaseEvent(event);
 }
+
+
 
 // Operation node
 
@@ -200,21 +234,29 @@ OperationNode::OperationNode(GraphWidget* graphWidget, QString name) : Node(grap
     id = graph->generator->addOperation(name);
 }
 
+
+
 OperationNode::OperationNode(GraphWidget* graphWidget, QString name, QUuid uuid, QPointF pos) : Node(graphWidget, name)
 {
     id = uuid;
     setPos(pos);
 }
 
+
+
 OperationNode::OperationNode(const OperationNode& node) : Node(node.graph, node.name)
 {
     id = graph->generator->copyOperation(node.id);
 }
 
+
+
 OperationNode::~OperationNode()
 {
      graph->onDestroyOperationNode(id);
 }
+
+
 
 bool OperationNode::hasInputs()
 {
@@ -224,6 +266,8 @@ bool OperationNode::hasInputs()
 
     return false;
 }
+
+
 
 void OperationNode::renameOperation(QString newName)
 {
@@ -238,6 +282,8 @@ void OperationNode::renameOperation(QString newName)
     update();
     scene()->update();
 }
+
+
 
 void OperationNode::setOperation(QAction *action)
 {
@@ -254,12 +300,16 @@ void OperationNode::setOperation(QAction *action)
     graph->updateOperation(id);
 }
 
+
+
 void OperationNode::enableOperation(bool checked)
 {
     graph->generator->enableOperation(id, checked);
     if (isSelected())
         graph->newNodeSelected(this);
 }
+
+
 
 void OperationNode::equalizeBlendFactors()
 {
@@ -272,10 +322,14 @@ void OperationNode::equalizeBlendFactors()
     }
 }
 
+
+
 void OperationNode::clear()
 {
     graph->generator->clearOperation(id);
 }
+
+
 
 void OperationNode::mousePressEvent(QGraphicsSceneMouseEvent *event)
 {
@@ -290,6 +344,8 @@ void OperationNode::mousePressEvent(QGraphicsSceneMouseEvent *event)
     update();
     QGraphicsObject::mousePressEvent(event);
 }
+
+
 
 void OperationNode::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
 {
@@ -361,6 +417,8 @@ void OperationNode::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
     menu.exec(event->screenPos());
 }
 
+
+
 QVariant OperationNode::itemChange(GraphicsItemChange change, const QVariant &value)
 {
     if ((change == ItemSelectedChange && value.toBool() == true) || change == ItemPositionChange)
@@ -382,6 +440,8 @@ QVariant OperationNode::itemChange(GraphicsItemChange change, const QVariant &va
     return Node::itemChange(change, value);
 }
 
+
+
 // Seed node
 
 SeedNode::SeedNode(GraphWidget* graphWidget, QString name) : Node(graphWidget, name)
@@ -389,26 +449,36 @@ SeedNode::SeedNode(GraphWidget* graphWidget, QString name) : Node(graphWidget, n
     id = graph->generator->addSeed();
 }
 
+
+
 SeedNode::SeedNode(GraphWidget* graphWidget, QUuid uuid, QPointF pos, QString name) : Node(graphWidget, name)
 {
     id = uuid;
     setPos(pos);
 }
 
+
+
 SeedNode::SeedNode(const SeedNode& node) : Node(node.graph, node.name)
 {
     id = graph->generator->copySeed(node.id);
 }
+
+
 
 SeedNode::~SeedNode()
 {
     graph->onDestroySeedNode(id);
 }
 
+
+
 void SeedNode::draw()
 {
     graph->generator->drawSeed(id);
 }
+
+
 
 void SeedNode::setType(QAction* action)
 {
@@ -417,6 +487,8 @@ void SeedNode::setType(QAction* action)
     if (isSelected())
         graph->newNodeSelected(this);
 }
+
+
 
 void SeedNode::loadImage()
 {
@@ -428,6 +500,8 @@ void SeedNode::loadImage()
     }
 }
 
+
+
 void SeedNode::setFixed(bool fixed)
 {
     graph->generator->setSeedFixed(id, fixed);
@@ -435,6 +509,8 @@ void SeedNode::setFixed(bool fixed)
     if (isSelected())
         graph->newNodeSelected(this);
 }
+
+
 
 void SeedNode::mousePressEvent(QGraphicsSceneMouseEvent *event)
 {
@@ -446,6 +522,8 @@ void SeedNode::mousePressEvent(QGraphicsSceneMouseEvent *event)
     update();
     QGraphicsObject::mousePressEvent(event);
 }
+
+
 
 void SeedNode::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
 {

@@ -14,7 +14,7 @@ MidiControl::MidiControl(QObject *parent) : QObject(parent)
         },
         .input_removed = [&] (const libremidi::input_port& port)
         {
-            Q_UNUSED(port)
+            emit inputPortOpen(QString::fromStdString(port.port_name), false);
             setInputPorts();
         }
     };

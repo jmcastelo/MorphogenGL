@@ -6,11 +6,13 @@
 #include "edge.h"
 #include "node.h"
 #include "parameter.h"
-#include "focuswidgets.h"
-
 
 #include <QWidget>
 #include <QFormLayout>
+#include <QLineEdit>
+#include <QDoubleValidator>
+#include <QSlider>
+#include <QPushButton>
 
 
 
@@ -22,9 +24,9 @@ public:
     explicit BlendFactorWidget(Edge* edge, float factor, QWidget *parent = nullptr) :
         QWidget(parent)
     {
-        Number<float>* blendFactor = new Number<float>(factor, 0.0, 1.0, 0.0, 1.0);
+        blendFactor = new Number<float>(factor, 0.0, 1.0, 0.0, 1.0);
 
-        FocusLineEdit* lineEdit = new FocusLineEdit;
+        QLineEdit* lineEdit = new QLineEdit;
         lineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
 
         QDoubleValidator* validator = new QDoubleValidator(0.0, 1.0, 6, lineEdit);
@@ -41,22 +43,54 @@ public:
         slider->setRange(0, blendFactor->indexMax);
         slider->setValue(blendFactor->getIndex());
 
+        midiLinkButton = new QPushButton();
+        midiLinkButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+        midiLinkButton->setCheckable(true);
+        midiLinkButton->setStyleSheet("QPushButton{ qproperty-icon: url(:/icons/circle-grey.png); }");
+        midiLinkButton->setVisible(false);
+
+        connect(midiLinkButton, &QPushButton::clicked, this, [=, this](bool checked)
+        {
+            if (checked)
+            {
+                midiLinkButton->setStyleSheet("QPushButton{ qproperty-icon: url(:/icons/circle-orange.png); }");
+                emit linkWait(blendFactor);
+            }
+            else
+            {
+                midiLinkButton->setStyleSheet("QPushButton{ qproperty-icon: url(:/icons/circle-grey.png); }");
+                emit linkBreak(blendFactor);
+            }
+        });
+
+        connect(blendFactor, &Number<float>::linked, this, [=, this](bool set){
+            if (set)
+                midiLinkButton->setStyleSheet("QPushButton{ qproperty-icon: url(:/icons/circle-green.png); }");
+            else
+                midiLinkButton->setStyleSheet("QPushButton{ qproperty-icon: url(:/icons/circle-grey.png); }");
+        });
+
+        QHBoxLayout* sliderLayout = new QHBoxLayout;
+        sliderLayout->addWidget(midiLinkButton);
+        sliderLayout->addWidget(slider);
+
         connect(slider, &QAbstractSlider::sliderMoved, blendFactor, &Number<float>::setValueFromIndex);
 
         connect(blendFactor, &Number<float>::currentIndexChanged, slider, &QAbstractSlider::setValue);
 
         connect(blendFactor, QOverload<float>::of(&Number<float>::currentValueChanged), this, [=, this](float currentValue)
         {
+            lineEdit->setText(QString::number(currentValue));
+            slider->setValue(blendFactor->getIndex());
             edge->setBlendFactor(currentValue);
             emit blendFactorChanged(edge->sourceNode()->id, edge->destNode()->id, currentValue);
         });
 
-        connect(lineEdit, &FocusLineEdit::editingFinished, this, [=]()
+        connect(lineEdit, &QLineEdit::editingFinished, this, [=, this]()
         {
             blendFactor->setValue(lineEdit->text().toFloat());
             blendFactor->setIndex();
         });
-
 
         QPushButton* closeButton = new QPushButton;
         closeButton->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
@@ -65,14 +99,13 @@ public:
 
         connect(closeButton, &QPushButton::clicked, this, [&]()
         {
-            setVisible(false);
-            emit blendFactorWidgetToggled();
+            toggle(false);
         });
 
         QVBoxLayout* layout = new QVBoxLayout;
-        layout->setSizeConstraint(QLayout::SetFixedSize);
+        layout->setSizeConstraint(QLayout::SetMaximumSize);
         layout->addLayout(formLayout);
-        layout->addWidget(slider);
+        layout->addLayout(sliderLayout);
         layout->addWidget(closeButton);
 
         groupBox = new QGroupBox(edge->sourceNode()->name + " - " + edge->destNode()->name);
@@ -85,19 +118,41 @@ public:
         setVisible(false);
     }
 
+    ~BlendFactorWidget()
+    {
+        delete blendFactor;
+    }
+
     void setTitle(QString title)
     {
         groupBox->setTitle(title);
     }
 
+    void toggle(bool visible)
+    {
+        setVisible(visible);
+        emit toggled(this);
+    }
+
+    void setBlendFactor(float factor)
+    {
+        blendFactor->setValue(factor);
+    }
+
+    void toggleMidiButton(bool show)
+    {
+        midiLinkButton->setVisible(show);
+    }
+
 signals:
     void blendFactorChanged(QUuid srcId, QUuid dstId, float factor);
-    void blendFactorWidgetToggled();
-
-public slots:
-    void setBlendFactor();
+    void toggled(BlendFactorWidget* widget);
+    void linkWait(Number<float>* number);
+    void linkBreak(Number<float>* number);
 
 private:
+    Number<float>* blendFactor;
+    QPushButton* midiLinkButton;
     QGroupBox* groupBox;
 };
 

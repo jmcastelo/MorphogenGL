@@ -47,8 +47,6 @@ template <class T>
 class OptionsParameter;
 class KernelParameter;
 class MatrixParameter;
-struct PolarKernel;
-class PolarKernelParameter;
 
 
 
@@ -87,8 +85,7 @@ public:
     virtual std::vector<OptionsParameter<GLenum>*> getOptionsGLenumParameters() { std::vector<OptionsParameter<GLenum>*> parameters; return parameters; }
     virtual MatrixParameter* getMatrixParameter() { return nullptr; }
     virtual KernelParameter* getKernelParameter() { return nullptr; }
-    virtual PolarKernelParameter* getPolarKernelParameter() { return nullptr; }
-    
+
     virtual void setParameters() = 0;
     virtual void setIntParameter(int, int) {};
     virtual void setFloatParameter(int, float) {};
@@ -659,34 +656,6 @@ private:
 
 private slots:
     void setWidthAndHeight();
-};
-
-
-
-// Polar convolution
-
-class PolarConvolution : public ImageOperation
-{
-public:
-    PolarConvolution(bool on, QOpenGLContext* mainContext, std::vector<PolarKernel*> thePolarKernels, float theCenterElement, float theOpacity);
-    PolarConvolution(const PolarConvolution& operation);
-    ~PolarConvolution();
-
-    ImageOperation* clone() { return new PolarConvolution(*this); }
-
-    static QString name;
-    QString getName() { return name; }
-
-    void setParameters();
-    void setPolarKernelParameter();
-    void setFloatParameter(int index, float value);
-
-    PolarKernelParameter* getPolarKernelParameter() { return polarKernelParameter; }
-    std::vector<FloatParameter*> getFloatParameters() { std::vector<FloatParameter*> parameters = { opacity }; return parameters; };
-
-private:
-    PolarKernelParameter* polarKernelParameter;
-    FloatParameter* opacity;
 };
 
 

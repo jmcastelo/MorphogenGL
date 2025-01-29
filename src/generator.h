@@ -20,7 +20,10 @@
 *  along with MorphogenGL.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#pragma once
+#ifndef GENERATOR_H
+#define GENERATOR_H
+
+
 
 #include "imageoperations.h"
 #include "parameter.h"
@@ -36,6 +39,8 @@
 #include <QOpenGLContext>
 #include <QUuid>
 #include <QMap>
+
+
 
 struct ImageOperationNode
 {
@@ -80,6 +85,8 @@ struct ImageOperationNode
 
     QVector<InputData*> inputsVector();
 };
+
+
 
 class GeneratorGL : public QObject
 {
@@ -128,8 +135,7 @@ public:
         std::vector<float> floatParameters,
         std::vector<int> interpolationParameters,
         std::vector<float> kernelElements,
-        std::vector<float> matrixElements,
-        std::vector<PolarKernel*> polarKernels);
+        std::vector<float> matrixElements);
 
     QUuid addSeed();
     QUuid copySeed(QUuid srcId);
@@ -209,3 +215,7 @@ private:
 
     bool active = false;
 };
+
+
+
+#endif // GENERATOR_H
