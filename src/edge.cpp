@@ -276,6 +276,7 @@ void Edge::updateBlendFactor()
 void Edge::setBlendFactor(float factor)
 {
     graph->generator->setBlendFactor(source->id, dest->id, factor);
+    paintBlendFactor = true;
     update();
 }
 

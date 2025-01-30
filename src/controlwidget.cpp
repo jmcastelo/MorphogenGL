@@ -132,7 +132,8 @@ ControlWidget::ControlWidget(double itFPS, double updFPS, GeneratorGL *theGenera
     {
         blendFactorWidgets.removeOne(widget);
     });
-    connect(graphWidget, &GraphWidget::operationEnabled, this, [&](QUuid id, bool enabled){
+    connect(graphWidget, &GraphWidget::operationEnabled, this, [&](QUuid id, bool enabled)
+    {
         if (operationsWidgets.contains(id))
             operationsWidgets.value(id)->toggleEnableButton(enabled);
     });
@@ -206,6 +207,7 @@ ControlWidget::~ControlWidget()
     delete graphWidget;
     delete sortedOperationsWidget;
     qDeleteAll(operationsWidgets);
+    qDeleteAll(blendFactorWidgets);
 }
 
 
@@ -1128,22 +1130,20 @@ void ControlWidget::updateMidiLinks(QString portName, int key, int value)
 
         if (midiFloatLinks[portName].contains(key))
         {
-            midiFloatLinks[portName][key]->setMidiLinked(false);
             midiFloatLinks[portName][key]->setIndexMax(100'000);
+            midiFloatLinks[portName][key]->setMidiLinked(false);
             midiFloatLinks[portName].remove(key);
         }
 
+        linkingFloat->setIndexMax(127);
         linkingFloat->setMidiLinked(true);
-        midiFloatLinks[portName][key] = linkingFloat;
-        midiFloatLinks[portName][key]->setIndexMax(127);
 
         connect(linkingFloat, &Number<float>::deleting, this, [=, this]()
         {
             midiFloatLinks[portName].remove(key);
         });
 
-
-
+        midiFloatLinks[portName][key] = linkingFloat;
         linkingFloat = nullptr;
     }
     else if (linkingInt != nullptr)
@@ -1153,20 +1153,20 @@ void ControlWidget::updateMidiLinks(QString portName, int key, int value)
 
         if (midiIntLinks[portName].contains(key))
         {
-            midiIntLinks[portName][key]->setMidiLinked(false);
             midiIntLinks[portName][key]->setIndexMax(100'000);
+            midiIntLinks[portName][key]->setMidiLinked(false);
             midiIntLinks[portName].remove(key);
         }
 
+        linkingInt->setIndexMax(127);
         linkingInt->setMidiLinked(true);
-        midiIntLinks[portName][key] = linkingInt;
-        midiIntLinks[portName][key]->setIndexMax(127);
 
         connect(linkingInt, &Number<int>::deleting, this, [=, this]()
         {
             midiIntLinks[portName].remove(key);
         });
 
+        midiIntLinks[portName][key] = linkingInt;
         linkingInt = nullptr;
     }
     else

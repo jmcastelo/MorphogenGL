@@ -63,11 +63,14 @@ public:
             }
         });
 
-        connect(blendFactor, &Number<float>::linked, this, [=, this](bool set){
+        connect(blendFactor, &Number<float>::linked, this, [=, this](bool set)
+        {
             if (set)
                 midiLinkButton->setStyleSheet("QPushButton{ qproperty-icon: url(:/icons/circle-green.png); }");
             else
                 midiLinkButton->setStyleSheet("QPushButton{ qproperty-icon: url(:/icons/circle-grey.png); }");
+
+            slider->setRange(0, blendFactor->indexMax);
         });
 
         QHBoxLayout* sliderLayout = new QHBoxLayout;
@@ -81,9 +84,8 @@ public:
         connect(blendFactor, QOverload<float>::of(&Number<float>::currentValueChanged), this, [=, this](float currentValue)
         {
             lineEdit->setText(QString::number(currentValue));
-            slider->setValue(blendFactor->getIndex());
+            blendFactor->setIndex();
             edge->setBlendFactor(currentValue);
-            emit blendFactorChanged(edge->sourceNode()->id, edge->destNode()->id, currentValue);
         });
 
         connect(lineEdit, &QLineEdit::editingFinished, this, [=, this]()
@@ -145,7 +147,6 @@ public:
     }
 
 signals:
-    void blendFactorChanged(QUuid srcId, QUuid dstId, float factor);
     void toggled(BlendFactorWidget* widget);
     void linkWait(Number<float>* number);
     void linkBreak(Number<float>* number);

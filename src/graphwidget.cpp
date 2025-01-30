@@ -94,15 +94,9 @@ void GraphWidget::newSelectedNodes()
     for (QGraphicsItem* item : items)
     {
         if (OperationNode* node = qgraphicsitem_cast<OperationNode*>(item))
-        {
             selectedOperationNodes << node;
-            qDebug() << node->name << "sel";
-        }
         else if (SeedNode* node = qgraphicsitem_cast<SeedNode*>(item))
-        {
             selectedSeedNodes << node;
-            qDebug() << node->name << "sel";
-        }
     }
 
     if (selectedSeedNodes.size() + selectedOperationNodes.size() > 1)
