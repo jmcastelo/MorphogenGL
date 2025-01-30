@@ -37,12 +37,13 @@
 
 
 GraphWidget::GraphWidget(GeneratorGL* generatorGL, QWidget *parent)
-    : QGraphicsView(parent) , generator { generatorGL }
+    : QGraphicsView(parent),
+    generator { generatorGL }
 {
     QGraphicsScene *scene = new QGraphicsScene(this);
     scene->setItemIndexMethod(QGraphicsScene::NoIndex);
     scene->setFont(QFont("Arial", 8, QFont::Light));
-    scene->setSceneRect(0.0, 0.0, 10000.0, 10000.0);
+    scene->setSceneRect(0.0, 0.0, 10'000.0, 10'000.0);
     setScene(scene);
 
     connect(scene, &QGraphicsScene::selectionChanged, this, &GraphWidget::newSelectedNodes);
@@ -93,9 +94,15 @@ void GraphWidget::newSelectedNodes()
     for (QGraphicsItem* item : items)
     {
         if (OperationNode* node = qgraphicsitem_cast<OperationNode*>(item))
+        {
             selectedOperationNodes << node;
+            qDebug() << node->name << "sel";
+        }
         else if (SeedNode* node = qgraphicsitem_cast<SeedNode*>(item))
+        {
             selectedSeedNodes << node;
+            qDebug() << node->name << "sel";
+        }
     }
 
     if (selectedSeedNodes.size() + selectedOperationNodes.size() > 1)
@@ -174,7 +181,7 @@ void GraphWidget::reconnectNodes(Node* node)
 
             generator->connectOperations(input->sourceNode()->id, output->destNode()->id, generator->blendFactor(node->id, output->destNode()->id));
 
-            Edge* newEdge = new Edge(this, input->sourceNode(), output->destNode(), generator->blendFactor(input->sourceNode()->id, output->destNode()->id));
+            Edge* newEdge = new Edge(this, input->sourceNode(), output->destNode());
 
             if (input->isPredge() || output->isPredge())
                 newEdge->setPredge(true);
@@ -308,9 +315,9 @@ bool GraphWidget::isOperationNodeSelected(QUuid id)
 
 
 
-bool GraphWidget::operationNodesSelected()
+int GraphWidget::operationNodesSelected()
 {
-    return selectedOperationNodes.size() > 1;
+    return selectedOperationNodes.size();
 }
 
 
@@ -359,6 +366,16 @@ void GraphWidget::disableSelectedOperations()
 
 
 
+bool GraphWidget::selectedOperationNodesHaveInputs()
+{
+    foreach (OperationNode* node, selectedOperationNodes)
+        if (node->hasInputs())
+            return true;
+    return false;
+}
+
+
+
 void GraphWidget::equalizeSelectedBlendFactors()
 {
     foreach (OperationNode* node, selectedOperationNodes)
@@ -388,8 +405,8 @@ void GraphWidget::swapSelectedOperationNodes()
         selectedOperationNodes[0]->renameOperation(selectedOperationNodes[1]->name);
         selectedOperationNodes[1]->renameOperation(name);
 
-        //emit updateOperationParameters(selectedOperationNodes[0]->id);
-        //emit updateOperationParameters(selectedOperationNodes[1]->id);
+        emit updateOperationParameters(selectedOperationNodes[0]->id);
+        emit updateOperationParameters(selectedOperationNodes[1]->id);
     }
 }
 
@@ -498,7 +515,7 @@ void GraphWidget::copyNodes(bool connectionA)
                 else
                     generator->connectCopiedOperationsB(sourceId, destId, newSourceId, newDestId);
 
-                Edge* newEdge = new Edge(this, copiedNodes[1].value(newSourceId), copiedNodes[1].value(newDestId), generator->blendFactor(newSourceId, newDestId));
+                Edge* newEdge = new Edge(this, copiedNodes[1].value(newSourceId), copiedNodes[1].value(newDestId));
                 newEdge->setPredge(edge->isPredge());
                 newEdges.push_back(newEdge);
             }
@@ -525,14 +542,16 @@ void GraphWidget::pasteCopiedNodes()
     {
         scene()->addItem(node);
         node->setPos(origin + node->pos());
-        emit showOperationParameters(node->id);
+
+        if (OperationNode* opNode = qgraphicsitem_cast<OperationNode*>(node))
+            emit showOperationParameters(opNode->id);
     }
 
     foreach (Edge* edge, newEdges)
     {
         scene()->addItem(edge);
         edge->adjust();
-        //edge->constructBlendFactorWidget();
+        edge->constructBlendFactorWidget();
     }
 
     copiedNodes[0] = copiedNodes[1];
@@ -549,7 +568,7 @@ void GraphWidget::connectNodes(Node *node)
     if (!selectedNode->connectedTo(node))
     {
         generator->connectOperations(selectedNode->id, node->id, 1.0f);
-        scene()->addItem(new Edge(this, selectedNode, node, 1.0f));
+        scene()->addItem(new Edge(this, selectedNode, node));
         searchElementaryCycles();
     }
 
@@ -570,9 +589,9 @@ void GraphWidget::insertNodeBetween(QAction* action, Edge* edge)
     scene()->addItem(node);
     node->setPos(mapToScene(mapFromGlobal(action->data().toPoint())));
 
-    scene()->addItem(new Edge(this, edge->sourceNode(), node, generator->blendFactor(edge->sourceNode()->id, node->id)));
+    scene()->addItem(new Edge(this, edge->sourceNode(), node));
 
-    Edge* output = new Edge(this, node, edge->destNode(), generator->blendFactor(node->id, edge->destNode()->id));
+    Edge* output = new Edge(this, node, edge->destNode());
     if (edge->isPredge())
         output->setPredge(true);
 
@@ -739,7 +758,7 @@ void GraphWidget::connectNodes(QMap<QUuid, QMap<QUuid, InputData*>> connections)
 
                 if (srcNode)
                 {
-                    Edge* edge = new Edge(this, srcNode, dstNode, generator->blendFactor(srcNode->id, dstNode->id));
+                    Edge* edge = new Edge(this, srcNode, dstNode);
 
                     edge->setPredge(src.value()->type == InputType::Blit);
 
@@ -846,7 +865,7 @@ bool GraphWidget::pointIntersectsItem(QPointF point)
 
 void GraphWidget::wheelEvent(QWheelEvent *event)
 {
-    qreal factor = pow(2.0, -event->angleDelta().y() / 480.0);
+    qreal factor = pow(2.0, -event->angleDelta().y() / 880.0);
     scaleFactor = transform().scale(factor, factor).mapRect(QRectF(0, 0, 1, 1)).width();
 
     scale(factor, factor);
@@ -943,7 +962,7 @@ void GraphWidget::mouseMoveEvent(QMouseEvent* event)
 
 void GraphWidget::mousePressEvent(QMouseEvent* event)
 {
-    if (event->modifiers() == Qt::ControlModifier && event->buttons() == Qt::LeftButton)
+    if (event->modifiers() == Qt::ControlModifier && event->button() == Qt::LeftButton)
     {
         if (!pointIntersectsItem(mapToScene(mapFromGlobal(event->globalPosition().toPoint()))))
             prevPos = event->position();

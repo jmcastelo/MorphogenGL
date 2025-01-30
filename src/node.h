@@ -20,7 +20,10 @@
 *  along with MorphogenGL.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#pragma once
+#ifndef NODE_H
+#define NODE_H
+
+
 
 #include <QGraphicsObject>
 #include <QVector>
@@ -28,9 +31,13 @@
 #include <QAction>
 #include <QUuid>
 
+
+
 class GraphWidget;
 class Edge;
 class GeneratorGL;
+
+
 
 // Abstract node
 
@@ -67,7 +74,8 @@ public slots:
 
 protected:
     GraphWidget* graph;
-    QVector<Edge *> edgeList;
+    QVector<Edge*> edgeList;
+    bool menuOpen = false;
 
     QVariant itemChange(GraphicsItemChange change, const QVariant &value) override;
 
@@ -79,6 +87,8 @@ private:
     qreal ellipseMargin = 10.0;
     qreal penSize = 2.0;
 };
+
+
 
 // Operation node
 
@@ -111,6 +121,8 @@ protected:
     QVariant itemChange(GraphicsItemChange change, const QVariant &value) override;
 };
 
+
+
 // Seed node
 
 class SeedNode : public Node
@@ -136,3 +148,7 @@ protected:
     void mousePressEvent(QGraphicsSceneMouseEvent *event) override;
     void contextMenuEvent(QGraphicsSceneContextMenuEvent *event) override;
 };
+
+
+
+#endif // NODE_H

@@ -183,7 +183,7 @@ void Node::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
 
 QVariant Node::itemChange(GraphicsItemChange change, const QVariant &value)
 {
-    if (change == ItemPositionChange && scene())
+    if (change == QGraphicsItem::ItemPositionChange && scene())
     {
         QPointF newPos = value.toPointF();
 
@@ -197,7 +197,7 @@ QVariant Node::itemChange(GraphicsItemChange change, const QVariant &value)
             return newPos;
         }
     }
-    else if (change == ItemPositionHasChanged)
+    else if (change == QGraphicsItem::ItemPositionHasChanged)
     {
         foreach (Edge *edge, edgeList)
             edge->adjust();
@@ -206,9 +206,9 @@ QVariant Node::itemChange(GraphicsItemChange change, const QVariant &value)
 
         graph->resetCachedContent();
     }
-    else if (change == ItemSelectedChange)
+    else if (change == QGraphicsItem::ItemSelectedChange)
     {
-        if (value == true)
+        if (value.toBool() == true)
             setZValue(0);
         else
             setZValue(-1);
@@ -305,6 +305,7 @@ void OperationNode::setOperation(QAction *action)
 void OperationNode::enableOperation(bool checked)
 {
     graph->generator->enableOperation(id, checked);
+    emit graph->operationEnabled(id, checked);
     if (isSelected())
         graph->newNodeSelected(this);
 }
@@ -333,7 +334,7 @@ void OperationNode::clear()
 
 void OperationNode::mousePressEvent(QGraphicsSceneMouseEvent *event)
 {
-    if (event->buttons() == Qt::LeftButton)
+    if (event->button() == Qt::LeftButton)
     {
         if (graph->nodeSelectedToConnect())
             graph->connectNodes(this);
@@ -351,7 +352,7 @@ void OperationNode::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
 {
     QMenu menu;
 
-    if (isSelected() && (graph->seedNodesSelected() > 0 || graph->operationNodesSelected() || graph->nodesSelected()))
+    if (isSelected() && (graph->seedNodesSelected() > 0 || graph->operationNodesSelected() > 1 || graph->nodesSelected()))
     {
         if (graph->seedNodesSelected() > 0)
         {
@@ -359,11 +360,12 @@ void OperationNode::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
             menu.addSeparator();
         }
 
-        if (graph->operationNodesSelected())
+        if (graph->operationNodesSelected() > 1)
         {
             menu.addAction("Enable", graph, &GraphWidget::enableSelectedOperations);
             menu.addAction("Disable", graph, &GraphWidget::disableSelectedOperations);
-            menu.addAction("Equalize blend factors", graph, &GraphWidget::equalizeSelectedBlendFactors);
+            if (graph->selectedOperationNodesHaveInputs())
+                menu.addAction("Equalize blend factors", graph, &GraphWidget::equalizeSelectedBlendFactors);
             menu.addSeparator();
             menu.addAction("Clear", graph, &GraphWidget::clearSelectedOperationNodes);
             menu.addSeparator();
@@ -414,6 +416,17 @@ void OperationNode::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
         menu.addAction("Remove", this, &OperationNode::remove);
     }
 
+    // Backup scene's selected items
+    QList<QGraphicsItem*> selectedItems = scene()->selectedItems();
+
+    connect(&menu, &QMenu::aboutToHide, this, [selectedItems]()
+    {
+        // Restore the selection state
+        for (QGraphicsItem* item : selectedItems) {
+            item->setSelected(true);
+        }
+    });
+
     menu.exec(event->screenPos());
 }
 
@@ -421,7 +434,7 @@ void OperationNode::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
 
 QVariant OperationNode::itemChange(GraphicsItemChange change, const QVariant &value)
 {
-    if ((change == ItemSelectedChange && value.toBool() == true) || change == ItemPositionChange)
+    if ((change == QGraphicsItem::ItemSelectedChange && value.toBool() == true) || change == QGraphicsItem::ItemPositionChange)
     {
         foreach (Edge* edge, edgeList)
         {
@@ -432,7 +445,7 @@ QVariant OperationNode::itemChange(GraphicsItemChange change, const QVariant &va
             }
         }
     }
-    else if (change == ItemSelectedChange && value.toBool() == false)
+    else if (change == QGraphicsItem::ItemSelectedChange && value.toBool() == false)
     {
         graph->drawBlendFactors(false);
     }
@@ -529,7 +542,7 @@ void SeedNode::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
 {
     QMenu menu;
 
-    if (isSelected() && (graph->seedNodesSelected() > 0 || graph->operationNodesSelected() || graph->nodesSelected()))
+    if (isSelected() && (graph->seedNodesSelected() > 0 || graph->operationNodesSelected() > 1 || graph->nodesSelected()))
     {
         if (graph->seedNodesSelected() > 0)
         {
@@ -537,7 +550,7 @@ void SeedNode::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
             menu.addSeparator();
         }
 
-        if (graph->operationNodesSelected())
+        if (graph->operationNodesSelected() > 1)
         {
             menu.addAction("Enable", graph, &GraphWidget::enableSelectedOperations);
             menu.addAction("Disable", graph, &GraphWidget::disableSelectedOperations);
@@ -604,6 +617,17 @@ void SeedNode::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
         menu.addAction("Copy", this, &SeedNode::copy);
         menu.addAction("Remove", this, &SeedNode::remove);
     }
+
+    // Backup scene's selected items
+    QList<QGraphicsItem*> selectedItems = scene()->selectedItems();
+
+    connect(&menu, &QMenu::aboutToHide, this, [selectedItems]()
+    {
+        // Restore the selection state
+        for (QGraphicsItem* item : selectedItems) {
+            item->setSelected(true);
+        }
+    });
 
     menu.exec(event->screenPos());
 }

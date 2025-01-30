@@ -68,9 +68,10 @@ public:
     bool nodesSelected();
     bool singleOperationNodeSelected();
     bool isOperationNodeSelected(QUuid id);
-    bool operationNodesSelected();
+    int operationNodesSelected();
     bool twoOperationNodesSelected();
     int seedNodesSelected();
+    bool selectedOperationNodesHaveInputs();
 
     void updateOperation(QUuid id);
 
@@ -112,7 +113,7 @@ signals:
     void updateOperationParameters(QUuid id);
     void blendFactorWidgetCreated(BlendFactorWidget* widget);
     void blendFactorWidgetToggled(BlendFactorWidget* widget);
-    void deletingBlendFactorWidget(BlendFactorWidget* widget);
+    void blendFactorWidgetDeleted(BlendFactorWidget* widget);
     void operationEnabled(QUuid id, bool enabled);
 
 protected:

@@ -45,7 +45,7 @@ class Edge : public QGraphicsObject
     Q_OBJECT
 
 public:
-    Edge(GraphWidget* graphWidget, Node *sourceNode, Node *destNode, float factor);
+    Edge(GraphWidget* graphWidget, Node *sourceNode, Node *destNode);
     ~Edge();
 
     Node *sourceNode() const;
@@ -83,7 +83,7 @@ signals:
     void nodesConnected();
     void blendFactorWidgetCreated(BlendFactorWidget* widget);
     void blendFactorWidgetToggled(BlendFactorWidget* widget);
-    void deleting(BlendFactorWidget* widget);
+    void blendFactorWidgetDeleted(BlendFactorWidget* widget);
 
 public slots:
     void remove();
@@ -106,7 +106,6 @@ private:
 
     qreal arrowSize = 10;
 
-    float blendFactor;
     bool paintBlendFactor = false;
 
     BlendFactorWidget* blendFactorWidget = nullptr;

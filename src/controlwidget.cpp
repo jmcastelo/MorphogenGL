@@ -128,7 +128,7 @@ ControlWidget::ControlWidget(double itFPS, double updFPS, GeneratorGL *theGenera
             updateScrollArea();
         }
     });
-    connect(graphWidget, &GraphWidget::deletingBlendFactorWidget, this, [&](BlendFactorWidget* widget)
+    connect(graphWidget, &GraphWidget::blendFactorWidgetDeleted, this, [&](BlendFactorWidget* widget)
     {
         blendFactorWidgets.removeOne(widget);
     });
@@ -654,11 +654,12 @@ void ControlWidget::constructMultipleNodesToolBar()
         nodesToolBar->addSeparator();
     }
 
-    if (graphWidget->operationNodesSelected())
+    if (graphWidget->operationNodesSelected() > 0)
     {
         nodesToolBar->addAction(QIcon(QPixmap(":/icons/circle-green.png")), "Enable", graphWidget, &GraphWidget::enableSelectedOperations);
         nodesToolBar->addAction(QIcon(QPixmap(":/icons/circle-grey.png")), "Disable", graphWidget, &GraphWidget::disableSelectedOperations);
-        nodesToolBar->addAction(QIcon(QPixmap(":/icons/preferences-desktop.png")), "Equalize blend factors", graphWidget, &GraphWidget::equalizeSelectedBlendFactors);
+        if (graphWidget->selectedOperationNodesHaveInputs())
+            nodesToolBar->addAction(QIcon(QPixmap(":/icons/preferences-desktop.png")), "Equalize blend factors", graphWidget, &GraphWidget::equalizeSelectedBlendFactors);
         nodesToolBar->addSeparator();
         nodesToolBar->addAction(QIcon(QPixmap(":/icons/edit-clear.png")), "Clear", graphWidget, &GraphWidget::clearSelectedOperationNodes);
         nodesToolBar->addSeparator();

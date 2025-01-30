@@ -41,11 +41,10 @@
 
 
 
-Edge::Edge(GraphWidget *graphWidget, Node *sourceNode, Node *destNode, float factor)
+Edge::Edge(GraphWidget *graphWidget, Node *sourceNode, Node *destNode)
     : graph { graphWidget },
     source { sourceNode },
-    dest { destNode },
-    blendFactor { factor }
+    dest { destNode }
 {
     setAcceptedMouseButtons(Qt::NoButton);
     source->addEdge(this);
@@ -59,7 +58,7 @@ Edge::Edge(GraphWidget *graphWidget, Node *sourceNode, Node *destNode, float fac
 
     connect(this, &Edge::blendFactorWidgetCreated, graph, &GraphWidget::blendFactorWidgetCreated);
     connect(this, &Edge::blendFactorWidgetToggled, graph, &GraphWidget::blendFactorWidgetToggled);
-    connect(this, &Edge::deleting, graph, &GraphWidget::deletingBlendFactorWidget);
+    connect(this, &Edge::blendFactorWidgetDeleted, graph, &GraphWidget::blendFactorWidgetDeleted);
 
     if (graph->generator->isNode(source->id) && graph->generator->isNode(dest->id))
         constructBlendFactorWidget();
@@ -67,11 +66,7 @@ Edge::Edge(GraphWidget *graphWidget, Node *sourceNode, Node *destNode, float fac
 
 
 
-Edge::~Edge()
-{
-    emit deleting(blendFactorWidget);
-    blendFactorWidget->deleteLater();
-}
+Edge::~Edge(){}
 
 
 
@@ -83,6 +78,9 @@ void Edge::remove()
     foreach (Edge* edge, dest->edges())
         if (edge->destNode() == source)
             edge->adjust();
+
+    emit blendFactorWidgetDeleted(blendFactorWidget);
+    blendFactorWidget->deleteLater();
 
     graph->removeEdge(this);
 }
@@ -254,7 +252,7 @@ void Edge::insertNode(QAction* action)
 
 void Edge::constructBlendFactorWidget()
 {
-    blendFactorWidget = new BlendFactorWidget(this, blendFactor);
+    blendFactorWidget = new BlendFactorWidget(this, graph->generator->blendFactor(source->id, dest->id));
     connect(blendFactorWidget, &BlendFactorWidget::toggled, graph, &GraphWidget::blendFactorWidgetToggled);
     emit blendFactorWidgetCreated(blendFactorWidget);
 }
@@ -277,7 +275,7 @@ void Edge::updateBlendFactor()
 
 void Edge::setBlendFactor(float factor)
 {
-    blendFactor = factor;
+    graph->generator->setBlendFactor(source->id, dest->id, factor);
     update();
 }
 
@@ -355,7 +353,7 @@ void Edge::paint(QPainter *painter, const QStyleOptionGraphicsItem *, QWidget *)
 
     if (paintBlendFactor)
     {
-        QString text = QString::number(blendFactor);
+        QString text = QString::number(graph->generator->blendFactor(source->id, dest->id));
 
         QFontMetricsF fontMetrics(scene()->font());
         qreal textWidth = fontMetrics.boundingRect(text).width();
