@@ -54,6 +54,7 @@ HEADERS += \
     src/morphowidget.h \
     src/node.h \
     src/operationswidget.h \
+    src/overlay.h \
     src/parameter.h \
     src/plotswidget.h \
     src/recorder.h \
@@ -90,6 +91,7 @@ SOURCES += \
     src/midiwidget.cpp \
     src/morphowidget.cpp \
     src/node.cpp \
+    src/overlay.cpp \
     src/plotswidget.cpp \
     src/recorder.cpp \
     src/rgbwidget.cpp \

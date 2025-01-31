@@ -20,7 +20,10 @@
 *  along with MorphogenGL.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#pragma once
+
+
+#ifndef BLENDER_H
+#define BLENDER_H
 
 
 
@@ -31,6 +34,8 @@
 
 
 enum class InputType { Normal, Blit, Seed };
+
+
 
 // Input for image operation, corresponding to edges
 
@@ -46,6 +51,8 @@ struct InputData
         blendFactor { factor }
     {}
 };
+
+
 
 class Blender : public FBO
 {
@@ -63,3 +70,6 @@ private:
     QVector<InputData*> inputs;
     FBO* fboOut;
 };
+
+
+#endif // BLENDER_H

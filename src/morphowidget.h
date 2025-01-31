@@ -24,6 +24,7 @@
 
 #include "texformat.h"
 #include "fbo.h"
+#include "overlay.h"
 
 #include <cmath>
 #include <QOpenGLWidget>
@@ -46,7 +47,7 @@ class MorphoWidget : public QOpenGLWidget, protected QOpenGLExtraFunctions
     Q_OBJECT
 
 public:
-    MorphoWidget(int width_, int height_, QWidget* parent = nullptr);
+    MorphoWidget(int width_, int height_, Overlay *overlay_, QWidget *parent = nullptr);
     virtual ~MorphoWidget() override;
 
     void initializeGL() override;
@@ -68,6 +69,7 @@ public slots:
     void setCursor(QPoint point);
 
 protected:
+    //void paintEvent(QPaintEvent *event) override;
     void wheelEvent(QWheelEvent* event) override;
     void mouseMoveEvent(QMouseEvent* event) override;
     void mousePressEvent(QMouseEvent* event) override;
@@ -92,6 +94,8 @@ private:
     QOpenGLShaderProgram* program = nullptr;
     QOpenGLVertexArrayObject* vao = nullptr;
     QOpenGLBuffer* vbo = nullptr;
+
+    Overlay* overlay = nullptr;
 
     void setSelectedPoint(QPointF pos);
     void updateCursor();

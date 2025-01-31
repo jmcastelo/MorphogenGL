@@ -9,7 +9,9 @@ MainWindow::MainWindow()
 
     generator = new GeneratorGL();
 
-    morphoWidget = new MorphoWidget(FBO::width, FBO::height);
+    overlay = new Overlay();
+
+    morphoWidget = new MorphoWidget(FBO::width, FBO::height, overlay);
     morphoWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     morphoWidget->setMinimumSize(0, 0);
 
@@ -311,7 +313,10 @@ void MainWindow::keyPressEvent(QKeyEvent* event)
         if (event->key() == Qt::Key_Tab)
         {
             if (stackedLayout->currentWidget() == controlWidget)
+            {
                 stackedLayout->setCurrentWidget(morphoWidget);
+                morphoWidget->update();
+            }
             else
                 stackedLayout->setCurrentWidget(controlWidget);
         }

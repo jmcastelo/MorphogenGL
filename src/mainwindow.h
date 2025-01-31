@@ -9,6 +9,7 @@
 #include "timerthread.h"
 #include "midicontrol.h"
 #include "midiwidget.h"
+#include "overlay.h"
 
 #include <QMainWindow>
 #include <QStackedLayout>
@@ -48,6 +49,7 @@ private:
     Recorder* recorder = nullptr;
     MidiControl midiControl;
     MidiWidget* midiWidget;
+    Overlay* overlay;
 
     TimerThread* updateTimer;
     std::chrono::time_point<std::chrono::steady_clock> updateStart;
