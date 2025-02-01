@@ -20,6 +20,8 @@
 *  along with MorphogenGL.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+
+
 #include "morphowidget.h"
 
 #include <QSurfaceFormat>
@@ -38,7 +40,7 @@ MorphoWidget::MorphoWidget(int w, int h, Overlay* overlay_, QWidget* parent)
     selectedPoint = QPointF(w / 2, h / 2);
     cursor = QPointF(0.0, 0.0);
 
-    overlay->setFrame(QRect(0, 0, w, h));
+    overlay->setViewportRect(w, h);
 }
 
 
@@ -62,20 +64,6 @@ void MorphoWidget::setUpdate(bool state)
 {
     setUpdatesEnabled(state);
 }
-
-
-
-/*void MorphoWidget::paintEvent(QPaintEvent *event)
-{
-    QPainter painter;
-    painter.begin(this);
-    painter.setFont(font);
-    painter.setPen(Qt::white);
-    painter.drawText(QPoint(width() / 2, height() / 2), "Hello world!");
-    painter.end();
-
-    QOpenGLWidget::paintEvent(event);
-}*/
 
 
 
@@ -381,8 +369,10 @@ void MorphoWidget::initializeGL()
 void MorphoWidget::paintGL()
 {
     QPainter painter;
+
     painter.begin(this);
     painter.setRenderHint(QPainter::Antialiasing);
+
     painter.beginNativePainting();
 
     glClear(GL_COLOR_BUFFER_BIT);
@@ -419,7 +409,9 @@ void MorphoWidget::paintGL()
     glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
 
     painter.endNativePainting();
+
     overlay->paint(&painter);
+
     painter.end();
 }
 
@@ -428,6 +420,6 @@ void MorphoWidget::paintGL()
 void MorphoWidget::resizeGL(int w, int h)
 {
     resetZoom(w, h);
-    overlay->setSize(QSize(w, h));
+    overlay->setViewportRect(w, h);
     emit sizeChanged(w, h);
 }

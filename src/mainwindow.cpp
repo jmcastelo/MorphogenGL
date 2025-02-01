@@ -102,6 +102,7 @@ MainWindow::MainWindow()
     connect(controlWidget, &ControlWidget::takeScreenshot, this, &MainWindow::takeScreenshot);
     connect(controlWidget, &ControlWidget::imageSizeChanged, this, &MainWindow::setSize);
     connect(controlWidget, &ControlWidget::showMidiWidget, this, &MainWindow::showMidiWidget);
+    connect(controlWidget, &ControlWidget::parameterValueChanged, overlay, &Overlay::addMessage);
 
     setWindowTitle("Morphogen");
     setWindowIcon(QIcon(":/icons/morphogengl.png"));
@@ -119,6 +120,7 @@ MainWindow::~MainWindow()
     delete controlWidget;
     delete generator;
     delete morphoWidget;
+    delete overlay;
 
     delete midiWidget;
 

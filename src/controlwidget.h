@@ -93,6 +93,7 @@ signals:
     void takeScreenshot(QString filename);
     void iterationFPSChanged(double newFPS);
     void updateFPSChanged(double newFPS);
+    void parameterValueChanged(QUuid id, QString operationName, QString parameterName, QString value);
 
 
 public slots:
@@ -208,6 +209,7 @@ private slots:
     void selectNodesToMark();
 
     void createParametersWidget(QUuid id);
+    void linkParametersWidget(QUuid id);
     void showParametersWidget(QUuid id);
     void removeParametersWidget(QUuid id);
     void updateParametersWidget(QUuid id);

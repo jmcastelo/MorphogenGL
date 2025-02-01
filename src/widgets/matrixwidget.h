@@ -39,7 +39,7 @@ public:
         presetsComboBox->addItem("RGB to GBR");
         presetsComboBox->setCurrentIndex(0);
 
-        connect(presetsComboBox, QOverload<int>::of(&QComboBox::activated), this, [=](int index)
+        connect(presetsComboBox, QOverload<int>::of(&QComboBox::activated), this, [=, this](int index)
                 {
                     for (size_t i = 0; i < presets[index].size(); i++)
                     {
@@ -49,7 +49,7 @@ public:
                     }
                     matrixParameter->setValues();
                 });
-        connect(presetsComboBox, &FocusComboBox::focusIn, this, [=](){ focusedWidget = presetsComboBox; });
+        connect(presetsComboBox, &FocusComboBox::focusIn, this, [=, this](){ focusedWidget = presetsComboBox; });
         connect(presetsComboBox, &FocusComboBox::focusIn, this, QOverload<>::of(&ParameterWidget::focusIn));
         connect(presetsComboBox, &FocusComboBox::focusOut, this, &ParameterWidget::focusOut);
     }

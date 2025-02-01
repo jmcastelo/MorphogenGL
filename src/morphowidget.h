@@ -40,6 +40,8 @@
 #include <QMouseEvent>
 #include <QStyle>
 
+
+
 // MorphoWidget: OpenGL widget displaying MorphogenGL's output
 
 class MorphoWidget : public QOpenGLWidget, protected QOpenGLExtraFunctions
@@ -69,7 +71,6 @@ public slots:
     void setCursor(QPoint point);
 
 protected:
-    //void paintEvent(QPaintEvent *event) override;
     void wheelEvent(QWheelEvent* event) override;
     void mouseMoveEvent(QMouseEvent* event) override;
     void mousePressEvent(QMouseEvent* event) override;

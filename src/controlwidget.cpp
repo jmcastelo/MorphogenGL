@@ -1243,10 +1243,35 @@ void ControlWidget::createParametersWidget(QUuid id)
 
         operationsWidgets.value(id)->toggleMidiButton(anyMidiPortOpen);
 
+        linkParametersWidget(id);
+
         //scrollLayout->insertWidget(0, operationsWidgets.value(id));
         scrollLayout->addWidget(operationsWidgets.value(id));
         scrollArea->ensureWidgetVisible(operationsWidgets.value(id));
         operationsWidgets.value(id)->setFocus();
+    }
+}
+
+
+
+void ControlWidget::linkParametersWidget(QUuid id)
+{
+    ImageOperation *operation = generator->getOperation(id);
+
+    for (const FloatParameter *parameter : operation->getFloatParameters())
+    {
+        connect(parameter->number, QOverload<float>::of(&Number<float>::currentValueChanged), this, [=, this](float value)
+        {
+            emit parameterValueChanged(id, operation->getName(), parameter->name, QString::number(value, 'f', 6));
+        });
+    }
+
+    for (const IntParameter *parameter : operation->getIntParameters())
+    {
+        connect(parameter->number, QOverload<int>::of(&Number<int>::currentValueChanged), this, [=, this](int value)
+        {
+            emit parameterValueChanged(id, operation->getName(), parameter->name, QString::number(value));
+        });
     }
 }
 
@@ -1349,6 +1374,7 @@ void ControlWidget::updateParametersWidget(QUuid id)
         {
             //scrollLayout->removeWidget(operationsWidgets.value(id));
             operationsWidgets.value(id)->recreate(generator->getOperation(id), anyMidiPortOpen);
+            linkParametersWidget(id);
             //scrollLayout->addWidget(operationsWidgets.value(id));
 
             //scrollArea->ensureWidgetVisible(operationsWidgets.value(id));
