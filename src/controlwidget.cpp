@@ -1336,8 +1336,6 @@ void ControlWidget::setUpBlendFactorWidget(BlendFactorWidget* widget)
     if (anyMidiPortOpen)
         midiLinkBlendFactorWidget(widget->id);
 
-    widget->toggleMidiButton(anyMidiPortOpen);
-
     // Overlay
 
     if (overlayEnabled)
@@ -1352,6 +1350,8 @@ void ControlWidget::setUpBlendFactorWidget(BlendFactorWidget* widget)
 void ControlWidget::midiLinkBlendFactorWidget(QUuid id)
 {
     BlendFactorWidget* widget = blendFactorWidgets.value(id);
+
+    widget->toggleMidiButton(anyMidiPortOpen);
 
     connect(widget, &BlendFactorWidget::linkWait, this, [=, this](Number<float>* number)
     {
@@ -1380,6 +1380,8 @@ void ControlWidget::midiLinkBlendFactorWidget(QUuid id)
 void ControlWidget::midiUnlinkBlendFactorWidget(QUuid id)
 {
     BlendFactorWidget* widget = blendFactorWidgets.value(id);
+
+    widget->toggleMidiButton(anyMidiPortOpen);
 
     disconnect(widget, &BlendFactorWidget::linkWait, this, nullptr);
     disconnect(widget, &BlendFactorWidget::linkBreak, this, nullptr);
