@@ -410,7 +410,8 @@ void MorphoWidget::paintGL()
 
     painter.endNativePainting();
 
-    overlay->paint(&painter);
+    if (overlay->isEnabled())
+        overlay->paint(&painter);
 
     painter.end();
 }

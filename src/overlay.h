@@ -19,11 +19,18 @@ public:
     explicit Overlay(QObject *parent = nullptr);
     ~Overlay();
 
+    bool isEnabled(){ return enabled; }
+
     void paint(QPainter *painter);
     void setViewportRect(int w, int h);
     void addMessage(QUuid id, QString operation, QString parameter, QString value);
 
+public slots:
+    void enable(bool set){ enabled = set; }
+
 private:
+    bool enabled = false;
+
     QRect viewportRect;
     QRect windowRect;
     int maxHeight = 1000;

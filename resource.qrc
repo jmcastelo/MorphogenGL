@@ -68,5 +68,6 @@
         <file>shaders/equalize-histogram.frag</file>
         <file>icons/control-knob.png</file>
         <file>icons/circle-orange.png</file>
+        <file>icons/align-horizontal-left.png</file>
     </qresource>
 </RCC>

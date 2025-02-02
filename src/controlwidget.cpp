@@ -29,6 +29,7 @@
 #include <QActionGroup>
 #include <QHeaderView>
 #include <QScrollBar>
+#include <QSplitter>
 #include <QDebug>
 
 
@@ -81,36 +82,7 @@ ControlWidget::ControlWidget(double itFPS, double updFPS, GeneratorGL *theGenera
     connect(graphWidget, &GraphWidget::showOperationParameters, this, &ControlWidget::createParametersWidget);
     connect(graphWidget, &GraphWidget::removeOperationParameters, this, &ControlWidget::removeParametersWidget);
     connect(graphWidget, &GraphWidget::updateOperationParameters, this, &ControlWidget::updateParametersWidget);
-    connect(graphWidget, &GraphWidget::blendFactorWidgetCreated, this, [=, this](BlendFactorWidget* widget)
-    {
-        widget->toggleMidiButton(anyMidiPortOpen);
-        widget->setParent(scrollWidget);
-
-        connect(widget, &BlendFactorWidget::linkWait, this, [=, this](Number<float>* number)
-        {
-            linkingFloat = number;
-        });
-
-        connect(widget, &BlendFactorWidget::linkBreak, this, [=, this](Number<float>* number)
-        {
-            for (auto [port, map] : midiFloatLinks.asKeyValueRange())
-            {
-                for (auto [key, n] : map.asKeyValueRange())
-                {
-                    if (n == number)
-                    {
-                        number->setMidiLinked(false);
-                        midiFloatLinks[port].remove(key);
-                        break;
-                    }
-                }
-            }
-        });
-
-        blendFactorWidgets.append(widget);
-
-        updateScrollArea();
-    });
+    connect(graphWidget, &GraphWidget::blendFactorWidgetCreated, this, &ControlWidget::setUpBlendFactorWidget);
     connect(graphWidget, &GraphWidget::blendFactorWidgetToggled, this, [&](BlendFactorWidget* widget)
     {
         if (widget->isVisible())
@@ -130,7 +102,7 @@ ControlWidget::ControlWidget(double itFPS, double updFPS, GeneratorGL *theGenera
     });
     connect(graphWidget, &GraphWidget::blendFactorWidgetDeleted, this, [&](BlendFactorWidget* widget)
     {
-        blendFactorWidgets.removeOne(widget);
+        blendFactorWidgets.remove(widget->id);
     });
     connect(graphWidget, &GraphWidget::operationEnabled, this, [&](QUuid id, bool enabled)
     {
@@ -260,6 +232,10 @@ void ControlWidget::constructSystemToolBar()
     systemToolBar->addSeparator();
 
     QAction* midiAction = systemToolBar->addAction(QIcon(QPixmap(":/icons/control-knob.png")), "MIDI Controller");
+    QAction* overlayAction = systemToolBar->addAction(QIcon(QPixmap(":/icons/align-horizontal-left.png")), "Overlay");
+
+    systemToolBar->addSeparator();
+
     QAction* aboutAction = systemToolBar->addAction(QIcon(QPixmap(":/icons/help-about.png")), "About");
 
     connect(iterateAction, &QAction::triggered, this, &ControlWidget::iterate);
@@ -271,6 +247,7 @@ void ControlWidget::constructSystemToolBar()
     connect(loadConfigAction, &QAction::triggered, this, &ControlWidget::loadConfig);
     connect(saveConfigAction, &QAction::triggered, this, &ControlWidget::saveConfig);
     connect(midiAction, &QAction::triggered, this, &ControlWidget::showMidiWidget);
+    connect(overlayAction, &QAction::triggered, this, &ControlWidget::toggleOverlay);
     connect(aboutAction, &QAction::triggered, this, &ControlWidget::about);
 }
 
@@ -429,6 +406,32 @@ void ControlWidget::saveConfig()
 
 
 
+void ControlWidget::toggleOverlay()
+{
+    overlayEnabled = !overlayEnabled;
+
+    emit overlayToggled(overlayEnabled);
+
+    if (overlayEnabled)
+    {
+        foreach (QUuid id, operationsWidgets.keys())
+            overlayLinkParametersWidget(id);
+
+        foreach (QUuid id, blendFactorWidgets.keys())
+            overlayLinkBlendFactorWidget(id);
+    }
+    else
+    {
+        foreach (QUuid id, operationsWidgets.keys())
+            overlayUnlinkParametersWidget(id);
+
+        foreach (QUuid id, blendFactorWidgets.keys())
+            overlayUnlinkBlendFactorWidget(id);
+    }
+}
+
+
+
 void ControlWidget::about()
 {
     QMessageBox* aboutBox = new QMessageBox(this);
@@ -438,7 +441,7 @@ void ControlWidget::about()
     aboutBox->setWindowTitle("About");
 
     QStringList lines;
-    lines.append(QString("<h2>MorphogenGL %1</h2>").arg(generator->version));
+    lines.append(QString("<h2>Morphogen %1</h2>").arg(generator->version));
     lines.append("<h4>Videofeedback simulation software.</h4>");
     lines.append("<h5>Let the pixels come alive!</h5><br>");
     lines.append("Looking for help? Please visit:<br>");
@@ -1099,23 +1102,27 @@ void ControlWidget::setupMidi(QString portName, bool open)
     }
 
     anyMidiPortOpen = !midiFloatLinks.isEmpty() || !midiIntLinks.isEmpty();
-    showMidiButtons(anyMidiPortOpen);
+    setUpMidiLinks(anyMidiPortOpen);
 }
 
 
 
-void ControlWidget::showMidiButtons(bool show)
+void ControlWidget::setUpMidiLinks(bool midiOn)
 {
-    QMapIterator<QUuid, OperationsWidget*> it(operationsWidgets);
-    while (it.hasNext())
+    for (auto [id, widget] : operationsWidgets.asKeyValueRange())
     {
-        it.next();
-        it.value()->toggleMidiButton(show);
+        if (midiOn)
+            midiLinkParametersWidget(id);
+        else
+            midiUnlinkParametersWidget(id);
     }
 
-    foreach (BlendFactorWidget* widget, blendFactorWidgets)
+    for (auto [id, widget] : blendFactorWidgets.asKeyValueRange())
     {
-        widget->toggleMidiButton(show);
+        if (midiOn)
+            midiLinkBlendFactorWidget(id);
+        else
+            midiUnlinkBlendFactorWidget(id);
     }
 }
 
@@ -1190,7 +1197,11 @@ void ControlWidget::createParametersWidget(QUuid id)
 {
     if (generator->hasOperationParamaters(id) && !operationsWidgets.contains(id))
     {
+        // Create OperationsWidget and insert it in QMap
+
         operationsWidgets.insert(id, new OperationsWidget(generator->getOperation(id), anyMidiPortOpen, scrollWidget));
+
+        // Connections
 
         connect(operationsWidgets.value(id), &OperationsWidget::enableButtonToggled, this, [=, this]()
         {
@@ -1201,49 +1212,15 @@ void ControlWidget::createParametersWidget(QUuid id)
         connect(operationsWidgets.value(id), &OperationsWidget::focusOut, this, &ControlWidget::removeOneParametersWidgetBorder);
         connect(operationsWidgets.value(id), &OperationsWidget::focusIn, this, &ControlWidget::updateParametersWidgetsBorder);
 
-        connect(operationsWidgets.value(id), QOverload<Number<float>*>::of(&OperationsWidget::linkWait), this, [=, this](Number<float>* number)
-        {
-            linkingFloat = number;
-        });
-        connect(operationsWidgets.value(id), QOverload<Number<int>*>::of(&OperationsWidget::linkWait), this, [=, this](Number<int>* number)
-        {
-            linkingInt = number;
-        });
+        // MIDI
 
-        connect(operationsWidgets.value(id), QOverload<Number<float>*>::of(&OperationsWidget::linkBreak), this, [=, this](Number<float>* number)
-        {
-            for (auto [port, map] : midiFloatLinks.asKeyValueRange())
-            {
-                for (auto [key, n] : map.asKeyValueRange())
-                {
-                    if (n == number)
-                    {
-                        number->setMidiLinked(false);
-                        midiFloatLinks[port].remove(key);
-                        break;
-                    }
-                }
-            }
-        });
-        connect(operationsWidgets.value(id), QOverload<Number<int>*>::of(&OperationsWidget::linkBreak), this, [=, this](Number<int>* number)
-        {
-            for (auto [port, map] : midiIntLinks.asKeyValueRange())
-            {
-                for (auto [key, n] : map.asKeyValueRange())
-                {
-                    if (n == number)
-                    {
-                        number->setMidiLinked(false);
-                        midiFloatLinks[port].remove(key);
-                        break;
-                    }
-                }
-            }
-        });
+        if (anyMidiPortOpen)
+            midiLinkParametersWidget(id);
 
-        operationsWidgets.value(id)->toggleMidiButton(anyMidiPortOpen);
+        // Overlay
 
-        linkParametersWidget(id);
+        if (overlayEnabled)
+            overlayLinkParametersWidget(id);
 
         //scrollLayout->insertWidget(0, operationsWidgets.value(id));
         scrollLayout->addWidget(operationsWidgets.value(id));
@@ -1254,7 +1231,67 @@ void ControlWidget::createParametersWidget(QUuid id)
 
 
 
-void ControlWidget::linkParametersWidget(QUuid id)
+void ControlWidget::midiLinkParametersWidget(QUuid id)
+{
+    operationsWidgets.value(id)->toggleMidiButton(anyMidiPortOpen);
+
+    connect(operationsWidgets.value(id), QOverload<Number<float>*>::of(&OperationsWidget::linkWait), this, [=, this](Number<float>* number)
+    {
+        linkingFloat = number;
+    });
+    connect(operationsWidgets.value(id), QOverload<Number<int>*>::of(&OperationsWidget::linkWait), this, [=, this](Number<int>* number)
+    {
+        linkingInt = number;
+    });
+
+    connect(operationsWidgets.value(id), QOverload<Number<float>*>::of(&OperationsWidget::linkBreak), this, [=, this](Number<float>* number)
+    {
+        for (auto [port, map] : midiFloatLinks.asKeyValueRange())
+        {
+            for (auto [key, n] : map.asKeyValueRange())
+            {
+                if (n == number)
+                {
+                    number->setMidiLinked(false);
+                    midiFloatLinks[port].remove(key);
+                    break;
+                }
+            }
+        }
+    });
+    connect(operationsWidgets.value(id), QOverload<Number<int>*>::of(&OperationsWidget::linkBreak), this, [=, this](Number<int>* number)
+    {
+        for (auto [port, map] : midiIntLinks.asKeyValueRange())
+        {
+            for (auto [key, n] : map.asKeyValueRange())
+            {
+                if (n == number)
+                {
+                    number->setMidiLinked(false);
+                    midiFloatLinks[port].remove(key);
+                    break;
+                }
+            }
+        }
+    });
+}
+
+
+
+void ControlWidget::midiUnlinkParametersWidget(QUuid id)
+{
+    operationsWidgets.value(id)->toggleMidiButton(anyMidiPortOpen);
+
+    disconnect(operationsWidgets.value(id), QOverload<Number<float>*>::of(&OperationsWidget::linkWait), this, nullptr);
+    disconnect(operationsWidgets.value(id), QOverload<Number<int>*>::of(&OperationsWidget::linkWait), this, nullptr);
+
+    disconnect(operationsWidgets.value(id), QOverload<Number<float>*>::of(&OperationsWidget::linkBreak), this, nullptr);
+    disconnect(operationsWidgets.value(id), QOverload<Number<int>*>::of(&OperationsWidget::linkBreak), this, nullptr);
+}
+
+
+
+void ControlWidget::overlayLinkParametersWidget(QUuid id)
 {
     ImageOperation *operation = generator->getOperation(id);
 
@@ -1273,6 +1310,100 @@ void ControlWidget::linkParametersWidget(QUuid id)
             emit parameterValueChanged(id, operation->getName(), parameter->name, QString::number(value));
         });
     }
+}
+
+
+
+void ControlWidget::overlayUnlinkParametersWidget(QUuid id)
+{
+    ImageOperation *operation = generator->getOperation(id);
+
+    for (const FloatParameter *parameter : operation->getFloatParameters())
+        disconnect(parameter->number, QOverload<float>::of(&Number<float>::currentValueChanged), this, nullptr);
+
+    for (const IntParameter *parameter : operation->getIntParameters())
+        disconnect(parameter->number, QOverload<int>::of(&Number<int>::currentValueChanged), this, nullptr);
+}
+
+
+
+void ControlWidget::setUpBlendFactorWidget(BlendFactorWidget* widget)
+{
+    blendFactorWidgets.insert(widget->id, widget);
+
+    // MIDI
+
+    if (anyMidiPortOpen)
+        midiLinkBlendFactorWidget(widget->id);
+
+    widget->toggleMidiButton(anyMidiPortOpen);
+
+    // Overlay
+
+    if (overlayEnabled)
+        overlayLinkParametersWidget(widget->id);
+
+    widget->setParent(scrollWidget);
+    updateScrollArea();
+}
+
+
+
+void ControlWidget::midiLinkBlendFactorWidget(QUuid id)
+{
+    BlendFactorWidget* widget = blendFactorWidgets.value(id);
+
+    connect(widget, &BlendFactorWidget::linkWait, this, [=, this](Number<float>* number)
+    {
+        linkingFloat = number;
+    });
+
+    connect(widget, &BlendFactorWidget::linkBreak, this, [=, this](Number<float>* number)
+    {
+        for (auto [port, map] : midiFloatLinks.asKeyValueRange())
+        {
+            for (auto [key, n] : map.asKeyValueRange())
+            {
+                if (n == number)
+                {
+                    number->setMidiLinked(false);
+                    midiFloatLinks[port].remove(key);
+                    break;
+                }
+            }
+        }
+    });
+}
+
+
+
+void ControlWidget::midiUnlinkBlendFactorWidget(QUuid id)
+{
+    BlendFactorWidget* widget = blendFactorWidgets.value(id);
+
+    disconnect(widget, &BlendFactorWidget::linkWait, this, nullptr);
+    disconnect(widget, &BlendFactorWidget::linkBreak, this, nullptr);
+}
+
+
+
+void ControlWidget::overlayLinkBlendFactorWidget(QUuid id)
+{
+    BlendFactorWidget *widget = blendFactorWidgets.value(id);
+
+    connect(widget->blendFactor, QOverload<float>::of(&Number<float>::currentValueChanged), this, [=, this](float value)
+    {
+        emit parameterValueChanged(id, "Blend factor", widget->getName(), QString::number(value, 'f', 6));
+    });
+}
+
+
+
+void ControlWidget::overlayUnlinkBlendFactorWidget(QUuid id)
+{
+    BlendFactorWidget *widget = blendFactorWidgets.value(id);
+
+    disconnect(widget->blendFactor, QOverload<float>::of(&Number<float>::currentValueChanged), this, nullptr);
 }
 
 
@@ -1374,7 +1505,13 @@ void ControlWidget::updateParametersWidget(QUuid id)
         {
             //scrollLayout->removeWidget(operationsWidgets.value(id));
             operationsWidgets.value(id)->recreate(generator->getOperation(id), anyMidiPortOpen);
-            linkParametersWidget(id);
+
+            if (anyMidiPortOpen)
+                midiLinkParametersWidget(id);
+
+            if (overlayEnabled)
+                overlayLinkParametersWidget(id);
+
             //scrollLayout->addWidget(operationsWidgets.value(id));
 
             //scrollArea->ensureWidgetVisible(operationsWidgets.value(id));

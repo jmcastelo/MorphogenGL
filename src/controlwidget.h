@@ -60,7 +60,6 @@
 #include <QSize>
 #include <QTableWidget>
 #include <QTableWidgetItem>
-#include <QSplitter>
 #include <QScrollArea>
 #include <QMediaFormat>
 
@@ -87,6 +86,7 @@ signals:
     void seedDrawn();
     void updateStateChanged(bool state);
     void showMidiWidget();
+    void overlayToggled(bool show);
     void imageSizeChanged(int width, int height);
     void startRecording(QString recordFilename, int framesPerSecond, QMediaFormat format);
     void stopRecording();
@@ -105,7 +105,6 @@ public slots:
     void updateUpdateMetricsLabels(double uspf, double fps);
     void setVideoCaptureElapsedTimeLabel(int frameNumber);
     void setupMidi(QString portName, bool open);
-    void showMidiButtons(bool show);
     void updateMidiLinks(QString portName, int key, int value);
 
 protected:
@@ -164,19 +163,20 @@ private:
     QLabel* videoCaptureElapsedTimeLabel;
 
     QMap<QUuid, OperationsWidget*> operationsWidgets;
+
     QMap<QString, QMap<int, Number<float>*>> midiFloatLinks;
     QMap<QString, QMap<int, Number<int>*>> midiIntLinks;
     Number<float>* linkingFloat = nullptr;
     Number<int>* linkingInt = nullptr;
     bool anyMidiPortOpen = false;
 
-    QList<BlendFactorWidget*> blendFactorWidgets;
+    QMap<QUuid, BlendFactorWidget*> blendFactorWidgets;
+
+    bool overlayEnabled = false;
 
     QScrollArea* scrollArea;
     QWidget* scrollWidget;
     QHBoxLayout* scrollLayout;
-
-    QSplitter* splitter;
 
     void constructSystemToolBar();
     void constructDisplayOptionsWidget(double itsFPS, double updFPS);
@@ -202,6 +202,7 @@ private slots:
     void plotsActionTriggered();
     void loadConfig();
     void saveConfig();
+    void toggleOverlay();
     void about();
 
     void populateSortedOperationsTable(QList<QPair<QUuid, QString>> sortedData, QList<QUuid> unsortedData);
@@ -209,7 +210,22 @@ private slots:
     void selectNodesToMark();
 
     void createParametersWidget(QUuid id);
-    void linkParametersWidget(QUuid id);
+    void setUpBlendFactorWidget(BlendFactorWidget* widget);
+
+    void setUpMidiLinks(bool midiOn);
+
+    void midiLinkParametersWidget(QUuid id);
+    void midiUnlinkParametersWidget(QUuid id);
+
+    void overlayLinkParametersWidget(QUuid id);
+    void overlayUnlinkParametersWidget(QUuid id);
+
+    void midiLinkBlendFactorWidget(QUuid id);
+    void midiUnlinkBlendFactorWidget(QUuid id);
+
+    void overlayLinkBlendFactorWidget(QUuid id);
+    void overlayUnlinkBlendFactorWidget(QUuid id);
+
     void showParametersWidget(QUuid id);
     void removeParametersWidget(QUuid id);
     void updateParametersWidget(QUuid id);

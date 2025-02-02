@@ -102,6 +102,7 @@ MainWindow::MainWindow()
     connect(controlWidget, &ControlWidget::takeScreenshot, this, &MainWindow::takeScreenshot);
     connect(controlWidget, &ControlWidget::imageSizeChanged, this, &MainWindow::setSize);
     connect(controlWidget, &ControlWidget::showMidiWidget, this, &MainWindow::showMidiWidget);
+    connect(controlWidget, &ControlWidget::overlayToggled, overlay, &Overlay::enable);
     connect(controlWidget, &ControlWidget::parameterValueChanged, overlay, &Overlay::addMessage);
 
     setWindowTitle("Morphogen");

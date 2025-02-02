@@ -8,6 +8,7 @@
 #include "parameter.h"
 
 #include <QWidget>
+#include <QUuid>
 #include <QFormLayout>
 #include <QLineEdit>
 #include <QDoubleValidator>
@@ -24,6 +25,8 @@ public:
     explicit BlendFactorWidget(Edge* edge, float factor, QWidget *parent = nullptr) :
         QWidget(parent)
     {
+        id = QUuid::createUuid();
+
         blendFactor = new Number<float>(factor, 0.0, 1.0, 0.0, 1.0);
 
         QLineEdit* lineEdit = new QLineEdit;
@@ -110,7 +113,9 @@ public:
         layout->addLayout(sliderLayout);
         layout->addWidget(closeButton);
 
-        groupBox = new QGroupBox(edge->sourceNode()->name + " - " + edge->destNode()->name);
+        name = edge->sourceNode()->name + " - " + edge->destNode()->name;
+
+        groupBox = new QGroupBox(name);
         groupBox->setLayout(layout);
 
         QVBoxLayout* mainLayout = new QVBoxLayout;
@@ -127,6 +132,7 @@ public:
 
     void setTitle(QString title)
     {
+        name = title;
         groupBox->setTitle(title);
     }
 
@@ -146,13 +152,18 @@ public:
         midiLinkButton->setVisible(show);
     }
 
+    QUuid id;
+    Number<float>* blendFactor;
+
+    QString getName(){ return name; }
+
 signals:
     void toggled(BlendFactorWidget* widget);
     void linkWait(Number<float>* number);
     void linkBreak(Number<float>* number);
 
 private:
-    Number<float>* blendFactor;
+    QString name;
     QPushButton* midiLinkButton;
     QGroupBox* groupBox;
 };
