@@ -39,12 +39,21 @@
 
 
 
-template <class T>
+template <typename T>
 class Number;
-class IntParameter;
-class FloatParameter;
+
 template <class T>
 class OptionsParameter;
+
+template <typename T>
+class NumberParameter;
+
+template <typename T>
+class ArrayParameter;
+
+class IntParameter;
+class FloatParameter;
+
 class KernelParameter;
 class MatrixParameter;
 
@@ -94,6 +103,15 @@ public:
     virtual void setMatrixParameter(std::vector<Number<float>*>) {};
     virtual void setKernelParameter(std::vector<Number<float>*>) {};
     virtual void setPolarKernelParameter() {};
+
+    template <typename T>
+    void setOptionsParameter(OptionsParameter<T>* parameter);
+
+    template <typename T>
+    void setNumberParameter(NumberParameter<T>* parameter);
+
+    template <typename T>
+    void setArrayParameter(ArrayParameter<T>* parameter);
 
     void adjustMinMax(float value, float minValue, float maxValue, float& min, float& max);
 

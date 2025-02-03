@@ -28,8 +28,10 @@
 
 
 #include "imageoperations.h"
-#include <vector>
+
+#include <QObject>
 #include <QString>
+#include <QUuid>
 
 
 
@@ -37,47 +39,41 @@ class ImageOperation;
 
 
 
-class NumberSignals : public QObject
+template <class T>
+class Number : public QObject
 {
     Q_OBJECT
 
 public:
-    explicit NumberSignals(QObject *parent = nullptr) : QObject(parent) {}
+    Number(T theValue, T theMin, T theMax, T theInf, T theSup, QObject *parent = nullptr) :
+        QObject(parent),
+        mValue { theValue },
+        mMin { theMin },
+        mMax { theMax },
+        mInf { theInf },
+        mSup { theSup }
+    {
+        mId = QUuid::createUuid();
+    }
 
-signals:
-    void currentValueChanged(float currentValue);
-    void currentValueChanged(int currentValue);
-    void currentIndexChanged(int currentIndex);
-    void linked(bool set);
-    void deleting();
-};
-
-
-
-template <class T>
-class Number : public NumberSignals
-{
-public:
-    T value, min, max, inf, sup;
-    int indexMax = 100000;
-    bool midiLinked = false;
-
-    Number(T theValue, T theMin, T theMax, T theInf, T theSup) :
-        value { theValue },
-        min { theMin },
-        max { theMax },
-        inf { theInf },
-        sup { theSup }
+    Number(QUuid theId, T theValue, T theMin, T theMax, T theInf, T theSup) :
+        mId { theId },
+        mValue { theValue },
+        mMin { theMin },
+        mMax { theMax },
+        mInf { theInf },
+        mSup { theSup }
     {}
 
-    Number(const Number& number): NumberSignals(nullptr)
+    Number(const Number& number)
     {
-        value = number.value;
-        min = number.min;
-        max = number.max;
-        inf = number.inf;
-        sup = number.sup;
-        indexMax = number.indexMax;
+        mId = number.mId;
+        mValue = number.mValue;
+        mMin = number.mMin;
+        mMax = number.mMax;
+        mInf = number.mInf;
+        mSup = number.mSup;
+        mIndexMax = number.mIndexMax;
     }
 
     ~Number()
@@ -85,53 +81,86 @@ public:
         emit deleting();
     }
 
-    void setMin(T theMin) { min = theMin; }
-    T getMin() { return min; }
+    QUuid id() { return mId; }
 
-    void setMax(T theMax) { max = theMax; }
-    T getMax() { return max; }
+    void setMin(T theMin) { mMin = theMin; }
+    T min() { return mMin; }
 
-    T getInf() { return inf; }
-    T getSup() { return sup; }
+    void setMax(T theMax) { mMax = theMax; }
+    T max() { return mMax; }
 
-    void setValue(T newValue)
+    T inf() { return mInf; }
+    T sup() { return mSup; }
+
+    void setValue(T theValue)
     {
-        value = newValue;
-        emit currentValueChanged(value);
+        mValue = theValue;
+        emit valueChanged(mValue);
     }
 
-    void setValueFromIndex(int newIndex)
+    void setValueFromIndex(int theIndex)
     {
-        value = static_cast<T>(min + (max - min) * static_cast<float>(newIndex) / static_cast<float>(indexMax));
-        emit currentValueChanged(value);
+        mValue = static_cast<T>(mMin + (mMax - mMin) * static_cast<float>(theIndex) / static_cast<float>(mIndexMax));
+        emit valueChanged(mValue);
     }
+
+    T value() { return mValue; }
 
     void setIndex()
     {
-        int index = static_cast<int>(indexMax * static_cast<float>(value - min) / static_cast<float>(max - min));
-        emit currentIndexChanged(index);
+        int index = static_cast<int>(mIndexMax * static_cast<float>(mValue - mMin) / static_cast<float>(mMax - mMin));
+        emit indexChanged(index);
     }
 
-    int getIndex()
+    int index()
     {
-        return static_cast<int>(indexMax * static_cast<float>(value - min) / static_cast<float>(max - min));
+        return static_cast<int>(mIndexMax * static_cast<float>(mValue - mMin) / static_cast<float>(mMax - mMin));
     }
 
     void setIndexMax(int theIndexMax)
     {
-        indexMax = theIndexMax;
+        mIndexMax = theIndexMax;
     }
 
-    bool isMidiLinked()
+    bool midiLinked()
     {
-        return midiLinked;
+        return mMidiLinked;
     }
 
     void setMidiLinked(bool set)
     {
-        midiLinked = set;
-        emit linked(set);
+        mMidiLinked = set;
+        emit linked(mMidiLinked);
     }
+
+signals:
+    void deleting();
+    void linked(bool set);
+
+private:
+    QUuid mId;
+    T mValue, mMin, mMax, mInf, mSup;
+    int mIndexMax = 100'000;
+    bool mMidiLinked = false;
+};
+
+
+
+
+class ParameterSignals : public QObject
+{
+    Q_OBJECT
+
+public:
+    explicit ParameterSignals(QObject *parent = nullptr) : QObject(parent) {}
+
+signals:
+    void valueChanged(float value);
+    void valueChanged(int value);
+    void valueChanged(int index, float value);
+    void valueChanged(int index, int value);
+
+    void indexChanged(int index);
 };
 
 
@@ -139,190 +168,168 @@ public:
 class Parameter
 {
 public:
-    QString name;
-
-    Parameter(QString theName, int theIndex, ImageOperation* theOperation) :
-        name { theName },
-        index { theIndex },
-        operation { theOperation }
+    Parameter(QString theName, QString theUniformName) :
+        mName { theName },
+        mUniformName { theUniformName }
     {}
 
-    void setOperation(ImageOperation* op) { operation = op; }
+    QString name() { return mName; }
+    QString uniformName() { return mUniformName; }
 
-    int index;
-    ImageOperation* operation;
+    void setOperation(ImageOperation* op) { mOperation = op; }
+
+protected:
+    QString mName;
+    QString mUniformName;
+    ImageOperation* mOperation;
 };
 
 
 
-template <class T>
+template <typename T>
 class OptionsParameter : public Parameter
 {
 public:
-    std::vector<QString> valueNames;
-    std::vector<T> values;
-    T value_;
-
-    OptionsParameter(QString theName, int theIndex, ImageOperation* theOperation, std::vector<QString> theValueNames, std::vector<T> theValues, T theValue) :
-        Parameter(theName, theIndex, theOperation),
-        valueNames { theValueNames },
-        values { theValues },
-        value_ { theValue }
+    OptionsParameter(QString theName, QString theUniformName, QList<QString> theValueNames, QList<T> theValues, T theValue) :
+        Parameter(theName, theUniformName),
+        mValueNames { theValueNames },
+        mValues { theValues },
+        mCurrentValue { theValue }
     {}
 
     void setValue(int valueIndex)
     {
-        value_ = values[valueIndex];
-        operation->setOptionsParameter(index, value_);
+        mCurrentValue = mValues[valueIndex];
+        mOperation->setOptionsParameter<T>(this);
     }
 
-    T value(){ return value_; }
+    T value(){ return mCurrentValue; }
+
+private:
+    QList<QString> mValueNames;
+    QList<T> mValues;
+    T mCurrentValue;
 };
 
 
 
-class IntParameter : public Parameter
+template <typename T>
+class NumberParameter : public Parameter
 {
 public:
-    Number<int>* number;
-    bool isOdd;
-
-    IntParameter(QString theName, int theIndex, ImageOperation* theOperation, int theValue, int theMin, int theMax, int theInf, int theSup, bool odd) :
-        Parameter(theName, theIndex, theOperation),
-        isOdd { odd }
+    NumberParameter(QString theName, QString theUniformName, T theValue, T theMin, T theMax, T theInf, T theSup) :
+        Parameter(theName, theUniformName)
     {
-        number = new Number<int>(theValue, theMin, theMax, theInf, theSup);
+        mNumber = new Number<T>(theValue, theMin, theMax, theInf, theSup);
     }
 
-    IntParameter(const IntParameter& parameter) :
+    NumberParameter(QString theName, QString theUniformName, QUuid theId, T theValue, T theMin, T theMax, T theInf, T theSup) :
+        Parameter(theName, theUniformName)
+    {
+        mNumber = new Number<T>(theId, theValue, theMin, theMax, theInf, theSup);
+    }
+
+    NumberParameter(const NumberParameter& parameter) :
         Parameter(parameter)
     {
-        number = new Number<int>(*parameter.number);
+        mNumber = new Number<T>(*parameter->number);
     }
 
-    ~IntParameter()
+    ~NumberParameter()
     {
-        delete number;
+        delete mNumber;
     }
 
-    void setValue(int theValue)
+    void setValue(T theValue)
     {
-        operation->setIntParameter(index, theValue);
+        mNumber->setValue(theValue);
+        mOperation->setNumberParameter<T>(this);
     }
 
-    int value() { return number->value; }
+    T value() { return mNumber->value; }
+
+    Number<T>* number(QUuid theId)
+    {
+        if (theId == mNumber->id())
+            return mNumber;
+        return nullptr;
+    }
+
+private:
+    Number<T>* mNumber;
 };
 
 
 
-class FloatParameter : public Parameter
-{
-public:
-    Number<float>* number;
-
-    FloatParameter(QString theName, int theIndex, ImageOperation* theOperation, float theValue, float theMin, float theMax, float theInf, float theSup) :
-        Parameter(theName, theIndex, theOperation)
-    {
-        number = new Number<float>(theValue, theMin, theMax, theInf, theSup);
-    }
-
-    FloatParameter(const FloatParameter& parameter) :
-        Parameter(parameter)
-    {
-        number = new Number<float>(*parameter.number);
-    }
-
-    ~FloatParameter()
-    {
-        delete number;
-    }
-
-    void setValue(float theValue)
-    {
-        operation->setFloatParameter(index, theValue);
-    }
-
-    float value() { return number->value; }
-};
-
-
-
+template <typename T>
 class ArrayParameter : public Parameter
 {
 public:
-    std::vector<Number<float>*> numbers;
-
-    ArrayParameter(QString theName, int theIndex, ImageOperation* theOperation, std::vector<float> theValues, float theMin, float theMax, float theInf, float theSup) :
-        Parameter(theName, theIndex, theOperation)
+    ArrayParameter(QString theName, QString theUniformName, QList<T> theValues, T theMin, T theMax, T theInf, T theSup) :
+        Parameter(theName, theUniformName)
     {
-        for (float value : theValues)
+        for (T value : theValues)
         {
-            Number<float>* number = new Number<float>(value, theMin, theMax, theInf, theSup);
-            numbers.push_back(number);
+            Number<T>* number = new Number<T>(value, theMin, theMax, theInf, theSup);
+            mNumbers.append(number);
+        }
+    }
+
+    ArrayParameter(QString theName, QString theUniformName, QList<QPair<QUuid, T>> theIdValuePairs, T theMin, T theMax, T theInf, T theSup) :
+        Parameter(theName, theUniformName)
+    {
+        for (QPair<QUuid, T> pair : theIdValuePairs)
+        {
+            Number<T>* number = new Number<T>(pair.first. pair.second, theMin, theMax, theInf, theSup);
+            mNumbers.append(number);
         }
     }
 
     ArrayParameter(const ArrayParameter& parameter) :
         Parameter(parameter)
     {
-        for (auto n : parameter.numbers)
+        for (Number<T>* number : parameter.mNumbers)
         {
-            Number<float>* number = new Number<float>(*n);
-            numbers.push_back(number);
+            Number<T>* newNumber = new Number<T>(*number);
+            mNumbers.push_back(number);
         }
     }
 
-    virtual ~ArrayParameter()
+    ~ArrayParameter()
     {
-        for (Number<float>* number : numbers)
-            delete number;
-        numbers.clear();
+        qDeleteAll(mNumbers);
     }
 
-    virtual void setValues() = 0;
-};
-
-
-
-class KernelParameter : public ArrayParameter
-{
-public:
-    bool normalize;
-
-    KernelParameter(QString theName, int theIndex, ImageOperation* theOperation, std::vector<float> theValues, float theMin, float theMax, float theInf, float theSup, bool norm) :
-        ArrayParameter(theName, theIndex, theOperation, theValues, theMin, theMax, theInf, theSup),
-        normalize { norm }
-    {}
-
-    KernelParameter(const KernelParameter& parameter) :
-        ArrayParameter(parameter)
+    T value(int i)
     {
-        normalize = parameter.normalize;
+        return mNumbers.at(i)->value();
     }
 
-    void setValues()
+    void setValue(int i, T theValue)
     {
-        operation->setKernelParameter(numbers);
+        mNumbers[i]->setValue(theValue);
+        mOperation->setArrayParameter(this);
+        emit valueChanged(i, theValue);
     }
-};
 
-
-
-class MatrixParameter : public ArrayParameter
-{
-public:
-    MatrixParameter(QString theName, int theIndex, ImageOperation* theOperation, std::vector<float> theValues, float theMin, float theMax, float theInf, float theSup) :
-        ArrayParameter(theName, theIndex, theOperation, theValues, theMin, theMax, theInf, theSup)
-    {}
-
-    MatrixParameter(const MatrixParameter& parameter) :
-        ArrayParameter(parameter)
-    {}
-
-    void setValues()
+    QList<T> values()
     {
-        operation->setMatrixParameter(numbers);
+        QList<T> theValues;
+        for (Number<T>* number : mNumbers)
+            theValues.append(number->value());
+        return theValues;
     }
+
+    Number<T>* number(QUuid theId)
+    {
+        for (Number<T>* number : mNumbers)
+            if (theId == number->id())
+                return number;
+        return nullptr;
+    }
+
+private:
+    QList<Number<T>*> mNumbers;
 };
 
 
