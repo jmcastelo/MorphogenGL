@@ -8,35 +8,27 @@
 
 
 
-// Options parameter widget: QComboBox
-
 template <class T>
 class OptionsParameterWidget : public ParameterWidget
 {
 public:
-    FocusComboBox* comboBox;
-
-    OptionsParameterWidget(OptionsParameter<T>* theOptionsParameter, QWidget* parent = nullptr) : ParameterWidget(parent), optionsParameter(theOptionsParameter)
+    OptionsParameterWidget(OptionsParameter<T>* theOptionsParameter, QWidget* parent = nullptr) :
+        ParameterWidget(parent),
+        optionsParameter { theOptionsParameter }
     {
-        // Get current index
-
-        int index = 0;
-        for (size_t i = 0; i < optionsParameter->values.size(); i++)
-            if (optionsParameter->value() == optionsParameter->values[i])
-                index = static_cast<int>(i);
-
         comboBox = new FocusComboBox;
-        comboBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
-        for (auto valueName : optionsParameter->valueNames)
+        comboBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+
+        for (QString valueName : optionsParameter->valueNames())
             comboBox->addItem(valueName);
-        comboBox->setCurrentIndex(index);
+        comboBox->setCurrentIndex(optionsParameter->indexOf());
 
         connect(comboBox, QOverload<int>::of(&QComboBox::activated), this, [=, this](int index)
         {
             optionsParameter->setValue(index);
         });
 
-        connect(comboBox, &FocusComboBox::focusIn, this, [=, this](){ emit focusIn(); });
+        connect(comboBox, &FocusComboBox::focusIn, this, QOverload<>::of(&ParameterWidget::focusIn));
         connect(comboBox, &FocusComboBox::focusOut, this, &ParameterWidget::focusOut);
 
         focusedWidget = comboBox;
@@ -46,6 +38,7 @@ public:
 
 private:
     OptionsParameter<T>* optionsParameter;
+    FocusComboBox* comboBox;
 };
 
 

@@ -70,6 +70,7 @@ HEADERS += \
     src/widgets/intwidget.h \
     src/widgets/kernelwidget.h \
     src/widgets/matrixwidget.h \
+    src/widgets/numberwidget.h \
     src/widgets/optionswidget.h \
     src/widgets/parameterwidget.h
 

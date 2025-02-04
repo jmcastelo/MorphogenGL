@@ -30,6 +30,7 @@
 #include "imageoperations.h"
 
 #include <QObject>
+#include <QVariant>
 #include <QString>
 #include <QUuid>
 
@@ -39,14 +40,27 @@ class ImageOperation;
 
 
 
-template <class T>
-class Number : public QObject
+class NumberSignals : public QObject
 {
     Q_OBJECT
 
 public:
-    Number(T theValue, T theMin, T theMax, T theInf, T theSup, QObject *parent = nullptr) :
-        QObject(parent),
+    explicit NumberSignals(QObject *parent = nullptr) : QObject(parent) {}
+
+signals:
+    void valueChanged(QVariant value);
+    void indexChanged(int index);
+    void deleting();
+    void linked(bool set);
+};
+
+
+
+template <class T>
+class Number : public NumberSignals
+{
+public:
+    Number(T theValue, T theMin, T theMax, T theInf, T theSup) :
         mValue { theValue },
         mMin { theMin },
         mMax { theMax },
@@ -65,7 +79,7 @@ public:
         mSup { theSup }
     {}
 
-    Number(const Number& number)
+    Number(const Number<T>& number)
     {
         mId = number.mId;
         mValue = number.mValue;
@@ -81,16 +95,16 @@ public:
         emit deleting();
     }
 
-    QUuid id() { return mId; }
+    QUuid id(){ return mId; }
 
     void setMin(T theMin) { mMin = theMin; }
-    T min() { return mMin; }
+    T min(){ return mMin; }
 
     void setMax(T theMax) { mMax = theMax; }
-    T max() { return mMax; }
+    T max(){ return mMax; }
 
-    T inf() { return mInf; }
-    T sup() { return mSup; }
+    T inf(){ return mInf; }
+    T sup(){ return mSup; }
 
     void setValue(T theValue)
     {
@@ -117,25 +131,15 @@ public:
         return static_cast<int>(mIndexMax * static_cast<float>(mValue - mMin) / static_cast<float>(mMax - mMin));
     }
 
-    void setIndexMax(int theIndexMax)
-    {
-        mIndexMax = theIndexMax;
-    }
+    void setIndexMax(int theIndexMax){ mIndexMax = theIndexMax; }
 
-    bool midiLinked()
-    {
-        return mMidiLinked;
-    }
+    bool midiLinked(){ return mMidiLinked; }
 
     void setMidiLinked(bool set)
     {
         mMidiLinked = set;
         emit linked(mMidiLinked);
     }
-
-signals:
-    void deleting();
-    void linked(bool set);
 
 private:
     QUuid mId;
@@ -155,17 +159,14 @@ public:
     explicit ParameterSignals(QObject *parent = nullptr) : QObject(parent) {}
 
 signals:
-    void valueChanged(float value);
-    void valueChanged(int value);
-    void valueChanged(int index, float value);
-    void valueChanged(int index, int value);
-
+    void valueChanged(QVariant value);
+    void valueChanged(int i, QVariant value);
     void indexChanged(int index);
 };
 
 
 
-class Parameter
+class Parameter : public ParameterSignals
 {
 public:
     Parameter(QString theName, QString theUniformName) :
@@ -197,6 +198,14 @@ public:
         mCurrentValue { theValue }
     {}
 
+    OptionsParameter(const OptionsParameter<T>& parameter) :
+        Parameter(parameter)
+    {
+        mValueNames = parameter.mValueNames;
+        mValues = parameter.mValues;
+        mCurrentValue = parameter.mCurrentValue;
+    }
+
     void setValue(int valueIndex)
     {
         mCurrentValue = mValues[valueIndex];
@@ -204,6 +213,13 @@ public:
     }
 
     T value(){ return mCurrentValue; }
+
+    int indexOf()
+    {
+        return mValues.indexOf(mCurrentValue);
+    }
+
+    QList<QString> valueNames(){ return mValueNames; }
 
 private:
     QList<QString> mValueNames;
@@ -229,7 +245,7 @@ public:
         mNumber = new Number<T>(theId, theValue, theMin, theMax, theInf, theSup);
     }
 
-    NumberParameter(const NumberParameter& parameter) :
+    NumberParameter(const NumberParameter<T>& parameter) :
         Parameter(parameter)
     {
         mNumber = new Number<T>(*parameter->number);
@@ -243,10 +259,18 @@ public:
     void setValue(T theValue)
     {
         mNumber->setValue(theValue);
+        mNumber->setIndex();
         mOperation->setNumberParameter<T>(this);
+        emit valueChanged(theValue);
     }
 
     T value() { return mNumber->value; }
+
+    T min(){ return mNumber->min(); }
+    T max(){ return mNumber->max(); }
+
+    T inf(){ return mNumber->inf(); }
+    T sup(){ return mNumber->sup(); }
 
     Number<T>* number(QUuid theId)
     {
@@ -285,7 +309,7 @@ public:
         }
     }
 
-    ArrayParameter(const ArrayParameter& parameter) :
+    ArrayParameter(const ArrayParameter<T>& parameter) :
         Parameter(parameter)
     {
         for (Number<T>* number : parameter.mNumbers)
@@ -308,7 +332,8 @@ public:
     void setValue(int i, T theValue)
     {
         mNumbers[i]->setValue(theValue);
-        mOperation->setArrayParameter(this);
+        mNumbers[i]->setIndex();
+        mOperation->setArrayParameter<T>(this);
         emit valueChanged(i, theValue);
     }
 
@@ -320,12 +345,27 @@ public:
         return theValues;
     }
 
+    QList<Number<T>*> numbers()
+    {
+        return mNumbers;
+    }
+
     Number<T>* number(QUuid theId)
     {
         for (Number<T>* number : mNumbers)
             if (theId == number->id())
                 return number;
         return nullptr;
+    }
+
+    Number<T>* number(int i)
+    {
+        return mNumbers[i];
+    }
+
+    int size()
+    {
+        return mNumbers.size();
     }
 
 private:

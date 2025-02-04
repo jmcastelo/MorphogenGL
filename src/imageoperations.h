@@ -20,13 +20,17 @@
 *  along with MorphogenGL.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#pragma once
+
+
+#ifndef IMAGEOPERATIONS_H
+#define IMAGEOPERATIONS_H
+
 
 #include "fbo.h"
 #include "blender.h"
 
-#include <vector>
 #include <cmath>
+#include <QList>
 #include <QVector2D>
 #include <QVector3D>
 #include <QMatrix4x4>
@@ -51,12 +55,6 @@ class NumberParameter;
 template <typename T>
 class ArrayParameter;
 
-class IntParameter;
-class FloatParameter;
-
-class KernelParameter;
-class MatrixParameter;
-
 
 
 // Base image operation class
@@ -64,8 +62,15 @@ class MatrixParameter;
 class ImageOperation
 {
 public:
-    ImageOperation(bool on, QOpenGLContext* mainContext);
+    ImageOperation(bool on, QOpenGLContext* mainContext,
+        QString theVertexShaderPath, QString theFragmentShaderPath,
+        QList<OptionsParameter<GLenum>*> theGLenumParameters = QList<OptionsParameter<GLenum>*>(),
+        QList<NumberParameter<int>*> theIntNumberParameters = QList<NumberParameter<int>*>(),
+        QList<NumberParameter<float>*> theFloatNumberParameters = QList<NumberParameter<float>*>(),
+        QList<ArrayParameter<float>*> theFloatArrayParameters = QList<ArrayParameter<float>*>());
+
     ImageOperation(const ImageOperation& operation);
+
     virtual ~ImageOperation();
 
     virtual ImageOperation* clone() = 0;
@@ -88,21 +93,36 @@ public:
 
     virtual void resize() { blender->resize(); fbo->resize(); }
 
-    virtual std::vector<IntParameter*> getIntParameters() { std::vector<IntParameter*> parameters; return parameters; };
-    virtual std::vector<FloatParameter*> getFloatParameters() { std::vector<FloatParameter*> parameters; return parameters; };
-    virtual std::vector<OptionsParameter<int>*> getOptionsIntParameters() { std::vector<OptionsParameter<int>*> parameters; return parameters; }
-    virtual std::vector<OptionsParameter<GLenum>*> getOptionsGLenumParameters() { std::vector<OptionsParameter<GLenum>*> parameters; return parameters; }
-    virtual MatrixParameter* getMatrixParameter() { return nullptr; }
-    virtual KernelParameter* getKernelParameter() { return nullptr; }
+    template <typename T>
+    QList<OptionsParameter<T>*> optionsParameters()
+    {
+        if (std::is_same<T, GLenum>::value)
+            return glenumOptionsParameters;
+        return QList<OptionsParameter<T>*>();
+    }
+
+    template <typename T>
+    QList<NumberParameter<T>*> numberParameters()
+    {
+        if (std::is_same<T, int>::value)
+            return intNumberParameters;
+        else if (std::is_same<T, float>::value)
+            return floatNumberParameters;
+        return QList<NumberParameter<T>*>();
+    }
+
+    template <typename T>
+    QList<ArrayParameter<T>*> arrayParameters()
+    {
+        if (std::is_same<T, float>::value)
+            return floatArrayParameters;
+        return QList<ArrayParameter<T>*>();
+    }
+
+    template <typename T>
+    void setOptionsParameters(OptionsParameter<T>* parameter);
 
     virtual void setParameters() = 0;
-    virtual void setIntParameter(int, int) {};
-    virtual void setFloatParameter(int, float) {};
-    virtual void setOptionsParameter(int, GLenum) {};
-    virtual void setOptionsParameter(int, int) {};
-    virtual void setMatrixParameter(std::vector<Number<float>*>) {};
-    virtual void setKernelParameter(std::vector<Number<float>*>) {};
-    virtual void setPolarKernelParameter() {};
 
     template <typename T>
     void setOptionsParameter(OptionsParameter<T>* parameter);
@@ -113,8 +133,6 @@ public:
     template <typename T>
     void setArrayParameter(ArrayParameter<T>* parameter);
 
-    void adjustMinMax(float value, float minValue, float maxValue, float& min, float& max);
-
     virtual void applyOperation();
     virtual void blit();
     virtual void clear();
@@ -123,13 +141,23 @@ public:
     void setTextureFormat(){ fbo->setTextureFormat(); }
 
 protected:
+    QString vertexShaderPath;
+    QString fragmentShaderPath;
     bool enabled;
+    bool noParameters = false;
     bool blenderEnabled = false;
     bool blitEnabled = false;
-    bool noParameters = false;
+
     QOpenGLContext* context;
     FBO* fbo;
     Blender* blender;
+
+    QList<OptionsParameter<GLenum>*> glenumOptionsParameters;
+
+    QList<NumberParameter<int>*> intNumberParameters;
+    QList<NumberParameter<float>*> floatNumberParameters;
+
+    QList<ArrayParameter<float>*> floatArrayParameters;
 };
 
 
@@ -809,3 +837,7 @@ private:
     FloatParameter* value;
     FloatParameter* opacity;
 };
+
+
+
+#endif // IMAGEOPERATIONS_H

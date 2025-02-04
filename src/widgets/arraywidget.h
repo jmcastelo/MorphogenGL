@@ -10,16 +10,13 @@
 
 
 
-// Array parameter widget
-
+template <typename T>
 class ArrayParameterWidget : public ParameterWidget
 {
     Q_OBJECT
 
 public:
-    QGridLayout* gridLayout;
-
-    ArrayParameterWidget(ArrayParameter* theArrayParameter, QWidget* parent = nullptr) :
+    ArrayParameterWidget(ArrayParameter<T>* theArrayParameter, QWidget* parent = nullptr) :
         ParameterWidget(parent),
         arrayParameter { theArrayParameter }
     {
@@ -28,14 +25,19 @@ public:
         int row = 0;
         int col = 0;
 
-        for (auto element : arrayParameter->numbers)
+        for (Number<T>* number : arrayParameter->numbers())
         {
             FocusLineEdit* lineEdit = new FocusLineEdit;
             lineEdit->setFixedWidth(75);
 
-            QDoubleValidator* validator = new QDoubleValidator(element->getInf(), element->getSup(), 5, lineEdit);
+            QValidator* validator;
+            if (std::is_same<T, float>::value)
+                validator = new QDoubleValidator(number->inf(), number->sup(), 5, lineEdit);
+            else if (std::is_same<T, int>::value)
+                validator = new QIntValidator(number->inf(), number->sup(), lineEdit);
+
             lineEdit->setValidator(validator);
-            lineEdit->setText(QString::number(element->value));
+            lineEdit->setText(QString::number(number->value()));
 
             gridLayout->addWidget(lineEdit, row, col, Qt::AlignCenter);
 
@@ -48,24 +50,28 @@ public:
 
             lineEdits.push_back(lineEdit);
         }
-        for (size_t i = 0; i < arrayParameter->numbers.size(); i++)
+
+        for (size_t i = 0; i < arrayParameter->numbers().size(); i++)
         {
-            connect(lineEdits[i], &FocusLineEdit::editingFinished, this, [=, this]()
-                    {
-                        arrayParameter->numbers[i]->setValue(lineEdits[i]->text().toFloat());
-                        arrayParameter->numbers[i]->setIndex();
-                        arrayParameter->setValues();
-                    });
+            connect(lineEdits[i], &FocusLineEdit::editingFinished, this, [=, this](){
+                if (std::is_same<T, float>::value)
+                    arrayParameter->setValue(i, lineEdits[i]->text().toFloat());
+                else if (std::is_same<T, int>::value)
+                    arrayParameter->setValue(i, lineEdits[i]->text().toInt());
+            });
+
             connect(lineEdits[i], &FocusLineEdit::focusIn, this, [=, this](){ focusedWidget = lineEdits[i]; });
-            connect(lineEdits[i], &FocusLineEdit::focusIn, this, [=, this](){ emit focusIn(arrayParameter->numbers[i]); });
+            connect(lineEdits[i], &FocusLineEdit::focusIn, this, [=, this](){ emit focusIn(arrayParameter->numbers(i)); });
             connect(lineEdits[i], &FocusLineEdit::focusIn, this, QOverload<>::of(&ParameterWidget::focusIn));
             connect(lineEdits[i], &FocusLineEdit::focusOut, this, &ParameterWidget::focusOut);
-            connect(arrayParameter->numbers[i], QOverload<float>::of(&Number<float>::currentValueChanged), this, [=, this](float newValue)
-                    {
-                        arrayParameter->setValues();
-                        lineEdits[i]->setText(QString::number(newValue));
-                        emit focusIn();
-                    });
+
+            connect(arrayParameter, &Parameter::valueChanged, this, [=, this](int i, QVariant newValue){
+                if (std::is_same<T, float>::value)
+                    lineEdits[i]->setText(QString::number(newValue.toFloat()));
+                else if (std::is_same<T, int>::value)
+                    lineEdits[i]->setText(QString::number(newValue.toInt()));
+                emit focusIn();
+            });
         }
 
         focusedWidget = lineEdits[0];
@@ -74,8 +80,9 @@ public:
     QString getName() { return arrayParameter->name; }
 
 protected:
-    ArrayParameter* arrayParameter;
-    std::vector<FocusLineEdit*> lineEdits;
+    ArrayParameter<T>* arrayParameter;
+    QList<FocusLineEdit*> lineEdits;
+    QGridLayout* gridLayout;
 };
 
 

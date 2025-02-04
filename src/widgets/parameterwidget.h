@@ -22,8 +22,7 @@ public:
     virtual QString getName() = 0;
 
 signals:
-    void focusIn(Number<float>* number);
-    void focusIn(Number<int>* number);
+    void focusIn(Number<QVariant>* number);
     void focusIn();
     void focusOut();
 

@@ -20,14 +20,15 @@
 *  along with MorphogenGL.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#pragma once
 
-#include "widgets/intwidget.h"
-#include "widgets/intoddwidget.h"
-#include "widgets/floatwidget.h"
+
+#ifndef OPERATIONSWIDGET_H
+#define OPERATIONSWIDGET_H
+
+
+
+#include "widgets/numberwidget.h"
 #include "widgets/optionswidget.h"
-#include "widgets/kernelwidget.h"
-#include "widgets/matrixwidget.h"
 
 #include "parameter.h"
 #include "imageoperations.h"
@@ -523,3 +524,7 @@ private:
         event->accept();
     }
 };
+
+
+
+#endif // OPERATIONSWIDGET_H

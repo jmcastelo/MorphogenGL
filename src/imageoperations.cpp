@@ -27,26 +27,73 @@
 
 // Image operation base class
 
-ImageOperation::ImageOperation(bool on, QOpenGLContext* mainContext) : enabled { on }
+ImageOperation::ImageOperation(bool on, QOpenGLContext* mainContext,
+    QString theVertexShaderPath, QString theFragmentShaderPath,
+    QList<OptionsParameter<GLenum>*> theGLenumParameters,
+    QList<NumberParameter<int>*> theIntNumberParameters,
+    QList<NumberParameter<float>*> theFloatNumberParameters,
+    QList<ArrayParameter<float>*> theFloatArrayParameters) :
+    vertexShaderPath { theVertexShaderPath },
+    fragmentShaderPath { theFragmentShaderPath },
+    enabled { on },
+    context { mainContext },
+    glenumOptionsParameters { theGLenumParameters },
+    intNumberParameters { theIntNumberParameters },
+    floatNumberParameters { theFloatNumberParameters },
+    floatArrayParameters { theFloatArrayParameters }
 {
-    context = mainContext;
     blender = new Blender(":/shaders/screen.vert", ":/shaders/blend.frag", mainContext);
 }
 
 
 
 ImageOperation::ImageOperation(const ImageOperation& operation) :
+    vertexShaderPath { operation.vertexShaderPath },
+    fragmentShaderPath { operation.fragmentShaderPath },
     enabled { operation.enabled },
     noParameters { operation.noParameters },
     context { operation.context }
 {
     blender = new Blender(":/shaders/screen.vert", ":/shaders/blend.frag", context);
+
+    for (auto parameter : operation.glenumOptionsParameters)
+    {
+        auto newParameter = new OptionsParameter<GLenum>(*parameter);
+        newParameter->setOperation(this);
+        glenumOptionsParameters.append(newParameter);
+    }
+
+    for (auto parameter: operation.intNumberParameters)
+    {
+        auto newParameter = new NumberParameter<int>(*parameter);
+        newParameter->setOperation(this);
+        intNumberParameters.append(newParameter);
+    }
+
+    for (auto parameter: operation.floatNumberParameters)
+    {
+        auto newParameter = new NumberParameter<float>(*parameter);
+        newParameter->setOperation(this);
+        floatNumberParameters.append(newParameter);
+    }
+
+    for (auto parameter: operation.floatArrayParameters)
+    {
+        auto newParameter = new ArrayParameter<float>(*parameter);
+        newParameter->setOperation(this);
+        floatArrayParameters.append(newParameter);
+    }
 }
 
 
 
 ImageOperation::~ImageOperation()
 {
+    qDeleteAll(glenumOptionsParameters);
+    qDeleteAll(intNumberParameters);
+    qDeleteAll(floatNumberParameters);
+    qDeleteAll(floatArrayParameters);
+
     delete blender;
     delete fbo;
 }
@@ -98,15 +145,36 @@ void ImageOperation::setInputData(QList<InputData *> data)
 
 
 
-void ImageOperation::adjustMinMax(float value, float minValue, float maxValue, float& min, float& max)
+template <typename T>
+void ImageOperation::setOptionsParameter(OptionsParameter<T>* parameter)
 {
-    if (value < minValue) min = value;
-    else min = minValue;
-
-    if (value > maxValue) max = value;
-    else max = maxValue;
+    if (std::is_same<T, GLenum>::value)
+        fbo->setMinMagFilter(parameter->value());
 }
 
+
+
+template <typename T>
+void ImageOperation::setNumberParameter(NumberParameter<T>* parameter)
+{
+    fbo->makeCurrent();
+    fbo->program->bind();
+    fbo->program->setUniformValue(parameter->uniformName(), parameter->value());
+    fbo->program->release();
+    fbo->doneCurrent();
+}
+
+
+
+template <typename T>
+void ImageOperation::setArrayParameter(ArrayParameter<T>* parameter)
+{
+    fbo->makeCurrent();
+    fbo->program->bind();
+    fbo->program->setUniformValueArray(parameter->uniformName(), parameter->values().constData(), parameter->size());
+    fbo->program->release();
+    fbo->doneCurrent();
+}
 
 
 // Convolution
@@ -898,7 +966,7 @@ void Dilation::setFloatParameter(int index, float value)
 
         fbo->makeCurrent();
         fbo->program->bind();
-        fbo->program->setUniformValueArray("offset", offset, 8);
+        fbo->program->setUniformValueArray("offset", offset, 9);
         fbo->program->release();
         fbo->doneCurrent();
     }
@@ -984,7 +1052,7 @@ void Erosion::setFloatParameter(int index, float value)
 
         fbo->makeCurrent();
         fbo->program->bind();
-        fbo->program->setUniformValueArray("offset", offset, 8);
+        fbo->program->setUniformValueArray("offset", offset, 9);
         fbo->program->release();
         fbo->doneCurrent();
     }
