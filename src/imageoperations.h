@@ -53,7 +53,7 @@ template <typename T>
 class NumberParameter;
 
 template <typename T>
-class ArrayParameter;
+class UniformParameter;
 
 
 
@@ -128,10 +128,10 @@ public:
     void setOptionsParameter(OptionsParameter<T>* parameter);
 
     template <typename T>
-    void setNumberParameter(NumberParameter<T>* parameter);
+    void setUniform(QString name, T value);
 
     template <typename T>
-    void setArrayParameter(ArrayParameter<T>* parameter);
+    void setUniformArray(QString name, QList<T> values);
 
     virtual void applyOperation();
     virtual void blit();

@@ -33,6 +33,12 @@
 #include <QVariant>
 #include <QString>
 #include <QUuid>
+#include <QVector2D>
+#include <QVector3D>
+#include <QVector4D>
+#include <QMatrix2x2>
+#include <QMatrix3x3>
+#include <QMatrix4x4>
 
 
 
@@ -150,6 +156,17 @@ private:
 
 
 
+class Vector
+{
+public:
+    Vector();
+
+
+private:
+    QList<Number<float>*> mNumbers;
+};
+
+
 
 class ParameterSignals : public QObject
 {
@@ -169,19 +186,29 @@ signals:
 class Parameter : public ParameterSignals
 {
 public:
-    Parameter(QString theName, QString theUniformName) :
+    Parameter(QString theName, QString theUniformName, QString theUniformType) :
         mName { theName },
-        mUniformName { theUniformName }
+        mUniformName { theUniformName },
+        mUniformType { theUniformType }
     {}
+
+    Parameter(const Parameter& parameter)
+    {
+        mName = parameter.mName;
+        mUniformName = parameter.mUniformName;
+        mUniformType = parameter.mUniformType;
+    }
 
     QString name() { return mName; }
     QString uniformName() { return mUniformName; }
+    QString uniformType() { return mUniformType; }
 
     void setOperation(ImageOperation* op) { mOperation = op; }
 
 protected:
     QString mName;
     QString mUniformName;
+    QString mUniformType;
     ImageOperation* mOperation;
 };
 
@@ -191,8 +218,8 @@ template <typename T>
 class OptionsParameter : public Parameter
 {
 public:
-    OptionsParameter(QString theName, QString theUniformName, QList<QString> theValueNames, QList<T> theValues, T theValue) :
-        Parameter(theName, theUniformName),
+    OptionsParameter(QString theName, QString theUniformName, QString theUniformType, QList<QString> theValueNames, QList<T> theValues, T theValue) :
+        Parameter(theName, theUniformName, theUniformType),
         mValueNames { theValueNames },
         mValues { theValues },
         mCurrentValue { theValue }
@@ -233,14 +260,14 @@ template <typename T>
 class NumberParameter : public Parameter
 {
 public:
-    NumberParameter(QString theName, QString theUniformName, T theValue, T theMin, T theMax, T theInf, T theSup) :
-        Parameter(theName, theUniformName)
+    NumberParameter(QString theName, QString theUniformName, QString theUniformType, T theValue, T theMin, T theMax, T theInf, T theSup) :
+        Parameter(theName, theUniformName, theUniformType)
     {
         mNumber = new Number<T>(theValue, theMin, theMax, theInf, theSup);
     }
 
-    NumberParameter(QString theName, QString theUniformName, QUuid theId, T theValue, T theMin, T theMax, T theInf, T theSup) :
-        Parameter(theName, theUniformName)
+    NumberParameter(QString theName, QString theUniformName, QString theUniformType, QUuid theId, T theValue, T theMin, T theMax, T theInf, T theSup) :
+        Parameter(theName, theUniformName, theUniformType)
     {
         mNumber = new Number<T>(theId, theValue, theMin, theMax, theInf, theSup);
     }
@@ -286,11 +313,11 @@ private:
 
 
 template <typename T>
-class ArrayParameter : public Parameter
+class UniformParameter : public Parameter
 {
 public:
-    ArrayParameter(QString theName, QString theUniformName, QList<T> theValues, T theMin, T theMax, T theInf, T theSup) :
-        Parameter(theName, theUniformName)
+    UniformParameter(QString theName, QString theUniformName, QString theUniformType, QList<T> theValues, T theMin, T theMax, T theInf, T theSup) :
+        Parameter(theName, theUniformName, theUniformType)
     {
         for (T value : theValues)
         {
@@ -299,8 +326,8 @@ public:
         }
     }
 
-    ArrayParameter(QString theName, QString theUniformName, QList<QPair<QUuid, T>> theIdValuePairs, T theMin, T theMax, T theInf, T theSup) :
-        Parameter(theName, theUniformName)
+    UniformParameter(QString theName, QString theUniformName, QString theUniformType, QList<QPair<QUuid, T>> theIdValuePairs, T theMin, T theMax, T theInf, T theSup) :
+        Parameter(theName, theUniformName, theUniformType)
     {
         for (QPair<QUuid, T> pair : theIdValuePairs)
         {
@@ -309,7 +336,7 @@ public:
         }
     }
 
-    ArrayParameter(const ArrayParameter<T>& parameter) :
+    UniformParameter(const UniformParameter<T>& parameter) :
         Parameter(parameter)
     {
         for (Number<T>* number : parameter.mNumbers)
@@ -319,22 +346,38 @@ public:
         }
     }
 
-    ~ArrayParameter()
+    ~UniformParameter()
     {
         qDeleteAll(mNumbers);
     }
 
     T value(int i)
     {
-        return mNumbers.at(i)->value();
+        if (i < mNumbers.size())
+            return mNumbers.at(i)->value();
+        else
+            return 0;
     }
 
     void setValue(int i, T theValue)
     {
-        mNumbers[i]->setValue(theValue);
-        mNumbers[i]->setIndex();
-        mOperation->setArrayParameter<T>(this);
-        emit valueChanged(i, theValue);
+        if (i < mNumbers.size())
+        {
+            mNumbers[i]->setValue(theValue);
+            mNumbers[i]->setIndex();
+            emit valueChanged(i, theValue);
+        }
+
+        if (mNumbers.empty())
+            mOperation->setUniform<T>(mName, 0.0);
+        else if (mNumbers.size() == 1)
+            mOperation->setUniform<T>(mName, mNumbers.at(0)->value());
+        else
+        {
+            if (mUniformType == "float")
+                mOperation->setUniformArray<T>(mName, values());
+        }
+
     }
 
     QList<T> values()
@@ -360,12 +403,101 @@ public:
 
     Number<T>* number(int i)
     {
-        return mNumbers[i];
+        if (i < mNumbers.size())
+            return mNumbers[i];
+        else
+            return new Number<T>(0, 0, 0, 0, 0);
     }
 
     int size()
     {
         return mNumbers.size();
+    }
+
+    T toValue()
+    {
+        if (mNumbers.size() > 0)
+            return mNumbers.at(0)->value();
+        else
+            return 0;
+    }
+
+    QVector2D toVector2D()
+    {
+        if (mNumbers.size() > 1)
+            return QVector2D(mNumbers.at(0)->value(), mNumbers.at(1)->value());
+        else if (mNumbers.size() > 0)
+            return QVector2D(mNumbers.at(0)->value(), 0.0);
+        else
+            return QVector2D(0.0, 0.0);
+    }
+
+    QVector3D toVector3D()
+    {
+        if (mNumbers.size() > 2)
+            return QVector3D(mNumbers.at(0)->value(), mNumbers.at(1)->value(), mNumbers.at(2)->value());
+        else if (mNumbers.size() > 1)
+            return QVector3D(mNumbers.at(0)->value(), mNumbers.at(1)->value(), 0.0);
+        else if (mNumbers.size() > 0)
+            return QVector3D(mNumbers.at(0)->value(), 0.0, 0.0);
+        else
+            return QVector3D(0.0, 0.0, 0.0);
+    }
+
+    QVector4D toVector4D()
+    {
+        if (mNumbers.size() > 3)
+            return QVector4D(mNumbers.at(0)->value(), mNumbers.at(1)->value(), mNumbers.at(2)->value()), mNumbers.at(3)->value();
+        else if (mNumbers.size() > 2)
+            return QVector4D(mNumbers.at(0)->value(), mNumbers.at(1)->value(), mNumbers.at(2)->value(), 0.0);
+        else if (mNumbers.size() > 1)
+            return QVector4D(mNumbers.at(0)->value(), mNumbers.at(1)->value(), 0.0, 0.0);
+        else if (mNumbers.size() > 0)
+            return QVector4D(mNumbers.at(0)->value(), 0.0, 0.0, 0.0);
+        else
+            return QVector4D(0.0, 0.0, 0.0, 0.0);
+    }
+
+    QMatrix2x2 toMatrix2x2()
+    {
+        QMatrix2x2 matrix;
+
+        int row = 0, col = 0;
+        for (auto number : mNumbers)
+        {
+            matrix(row, col++) = number->value();
+            if (col >= 2) { row++; col = 0; }
+        }
+
+        return matrix;
+    }
+
+    QMatrix3x3 toMatrix3x3()
+    {
+        QMatrix3x3 matrix;
+
+        int row = 0, col = 0;
+        for (auto number : mNumbers)
+        {
+            matrix(row, col++) = number->value();
+            if (col >= 3) { row++; col = 0; }
+        }
+
+        return matrix;
+    }
+
+    QMatrix4x4 toMatrix4x4()
+    {
+        QMatrix4x4 matrix;
+
+        int row = 0, col = 0;
+        for (auto number : mNumbers)
+        {
+            matrix(row, col++) = number->value();
+            if (col >= 4) { row++; col = 0; }
+        }
+
+        return matrix;
     }
 
 private:

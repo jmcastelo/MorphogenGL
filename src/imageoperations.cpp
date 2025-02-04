@@ -155,11 +155,11 @@ void ImageOperation::setOptionsParameter(OptionsParameter<T>* parameter)
 
 
 template <typename T>
-void ImageOperation::setNumberParameter(NumberParameter<T>* parameter)
+void ImageOperation::setUniform(QString name, T value)
 {
     fbo->makeCurrent();
     fbo->program->bind();
-    fbo->program->setUniformValue(parameter->uniformName(), parameter->value());
+    fbo->program->setUniformValue(name, value);
     fbo->program->release();
     fbo->doneCurrent();
 }
@@ -167,11 +167,11 @@ void ImageOperation::setNumberParameter(NumberParameter<T>* parameter)
 
 
 template <typename T>
-void ImageOperation::setArrayParameter(ArrayParameter<T>* parameter)
+void ImageOperation::setUniformArray(QString name, QList<T> values)
 {
     fbo->makeCurrent();
     fbo->program->bind();
-    fbo->program->setUniformValueArray(parameter->uniformName(), parameter->values().constData(), parameter->size());
+    fbo->program->setUniformValueArray(name, values.constData(), values.size());
     fbo->program->release();
     fbo->doneCurrent();
 }
