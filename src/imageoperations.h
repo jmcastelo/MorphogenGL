@@ -128,10 +128,13 @@ public:
     void setOptionsParameter(OptionsParameter<T>* parameter);
 
     template <typename T>
-    void setUniform(QString name, T value);
+    void setUniform1(int location, QString type, T value);
 
     template <typename T>
-    void setUniformArray(QString name, QList<T> values);
+    void setUniform2(int location, QString type, T value);
+
+    template <typename T>
+    void setUniformArray(QString name, QString type, QList<T> values);
 
     virtual void applyOperation();
     virtual void blit();

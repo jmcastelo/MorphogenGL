@@ -155,11 +155,20 @@ void ImageOperation::setOptionsParameter(OptionsParameter<T>* parameter)
 
 
 template <typename T>
-void ImageOperation::setUniform(QString name, T value)
+void ImageOperation::setUniform(int location, QString type, T value)
 {
     fbo->makeCurrent();
     fbo->program->bind();
-    fbo->program->setUniformValue(name, value);
+
+    if (type == "float")
+        glUniform1f(location, value);
+    else if (type == "int")
+        glUniform1i(location, value);
+    else if (type == "uint")
+        glUniform1ui(location, value);
+    else if (type == "bool")
+        glUniform1b(location, value);
+
     fbo->program->release();
     fbo->doneCurrent();
 }
@@ -167,7 +176,7 @@ void ImageOperation::setUniform(QString name, T value)
 
 
 template <typename T>
-void ImageOperation::setUniformArray(QString name, QList<T> values)
+void ImageOperation::setUniformArray(QString name, QString type, QList<T> values)
 {
     fbo->makeCurrent();
     fbo->program->bind();

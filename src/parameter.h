@@ -156,18 +156,6 @@ private:
 
 
 
-class Vector
-{
-public:
-    Vector();
-
-
-private:
-    QList<Number<float>*> mNumbers;
-};
-
-
-
 class ParameterSignals : public QObject
 {
     Q_OBJECT
@@ -186,10 +174,11 @@ signals:
 class Parameter : public ParameterSignals
 {
 public:
-    Parameter(QString theName, QString theUniformName, QString theUniformType) :
+    Parameter(QString theName, QString theUniformName, QString theUniformType, bool isEditable) :
         mName { theName },
         mUniformName { theUniformName },
-        mUniformType { theUniformType }
+        mUniformType { theUniformType },
+        mEditable { isEditable }
     {}
 
     Parameter(const Parameter& parameter)
@@ -197,11 +186,13 @@ public:
         mName = parameter.mName;
         mUniformName = parameter.mUniformName;
         mUniformType = parameter.mUniformType;
+        mEditable = parameter.mEditable;
     }
 
     QString name() { return mName; }
     QString uniformName() { return mUniformName; }
     QString uniformType() { return mUniformType; }
+    bool editable() { return mEditable; }
 
     void setOperation(ImageOperation* op) { mOperation = op; }
 
@@ -209,6 +200,7 @@ protected:
     QString mName;
     QString mUniformName;
     QString mUniformType;
+    bool mEditable;
     ImageOperation* mOperation;
 };
 
@@ -218,8 +210,8 @@ template <typename T>
 class OptionsParameter : public Parameter
 {
 public:
-    OptionsParameter(QString theName, QString theUniformName, QString theUniformType, QList<QString> theValueNames, QList<T> theValues, T theValue) :
-        Parameter(theName, theUniformName, theUniformType),
+    OptionsParameter(QString theName, QString theUniformName, QString theUniformType, bool isEditable, QList<QString> theValueNames, QList<T> theValues, T theValue) :
+        Parameter(theName, theUniformName, theUniformType, isEditable),
         mValueNames { theValueNames },
         mValues { theValues },
         mCurrentValue { theValue }
@@ -256,18 +248,18 @@ private:
 
 
 
-template <typename T>
+/*template <typename T>
 class NumberParameter : public Parameter
 {
 public:
-    NumberParameter(QString theName, QString theUniformName, QString theUniformType, T theValue, T theMin, T theMax, T theInf, T theSup) :
-        Parameter(theName, theUniformName, theUniformType)
+    NumberParameter(QString theName, QString theUniformName, QString theUniformType, bool isEditable, T theValue, T theMin, T theMax, T theInf, T theSup) :
+        Parameter(theName, theUniformName, theUniformType, isEditable)
     {
         mNumber = new Number<T>(theValue, theMin, theMax, theInf, theSup);
     }
 
     NumberParameter(QString theName, QString theUniformName, QString theUniformType, QUuid theId, T theValue, T theMin, T theMax, T theInf, T theSup) :
-        Parameter(theName, theUniformName, theUniformType)
+        Parameter(theName, theUniformName, theUniformType, isEditable)
     {
         mNumber = new Number<T>(theId, theValue, theMin, theMax, theInf, theSup);
     }
@@ -308,7 +300,7 @@ public:
 
 private:
     Number<T>* mNumber;
-};
+};*/
 
 
 
@@ -316,8 +308,10 @@ template <typename T>
 class UniformParameter : public Parameter
 {
 public:
-    UniformParameter(QString theName, QString theUniformName, QString theUniformType, QList<T> theValues, T theMin, T theMax, T theInf, T theSup) :
-        Parameter(theName, theUniformName, theUniformType)
+    UniformParameter(QString theName, QString theUniformName, QString theUniformType, int numItems, bool isArray, bool isEditable, QList<T> theValues, T theMin, T theMax, T theInf, T theSup) :
+        Parameter(theName, theUniformName, theUniformType, isEditable),
+        nItems { numItems },
+        mArray { isArray }
     {
         for (T value : theValues)
         {
@@ -326,8 +320,8 @@ public:
         }
     }
 
-    UniformParameter(QString theName, QString theUniformName, QString theUniformType, QList<QPair<QUuid, T>> theIdValuePairs, T theMin, T theMax, T theInf, T theSup) :
-        Parameter(theName, theUniformName, theUniformType)
+    UniformParameter(QString theName, QString theUniformName, QString theUniformType, bool isEditable, QList<QPair<QUuid, T>> theIdValuePairs, T theMin, T theMax, T theInf, T theSup) :
+        Parameter(theName, theUniformName, theUniformType, isEditable)
     {
         for (QPair<QUuid, T> pair : theIdValuePairs)
         {
@@ -365,19 +359,23 @@ public:
         {
             mNumbers[i]->setValue(theValue);
             mNumbers[i]->setIndex();
+
             emit valueChanged(i, theValue);
-        }
 
-        if (mNumbers.empty())
-            mOperation->setUniform<T>(mName, 0.0);
-        else if (mNumbers.size() == 1)
-            mOperation->setUniform<T>(mName, mNumbers.at(0)->value());
-        else
+            setUniform();
+        }
+    }
+
+    void setUniform()
+    {
+        if (!mArray)
         {
-            if (mUniformType == "float")
-                mOperation->setUniformArray<T>(mName, values());
-        }
+            if (mUniformType == "float" || mUniformType == "int")
+                mOperation->setUniform1<T>(mName, toValue());
+            else if (mUniformType == "vec2" || mUniformType == "ivec2")
+                mOperation->setUniform2<T>(mName, toVector2D());
 
+        }
     }
 
     QList<T> values()
@@ -502,6 +500,8 @@ public:
 
 private:
     QList<Number<T>*> mNumbers;
+    bool mArray;
+    int nCols, nRows, nItems;
 };
 
 
