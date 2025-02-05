@@ -50,9 +50,6 @@ template <class T>
 class OptionsParameter;
 
 template <typename T>
-class NumberParameter;
-
-template <typename T>
 class UniformParameter;
 
 
@@ -64,10 +61,10 @@ class ImageOperation
 public:
     ImageOperation(bool on, QOpenGLContext* mainContext,
         QString theVertexShaderPath, QString theFragmentShaderPath,
-        QList<OptionsParameter<GLenum>*> theGLenumParameters = QList<OptionsParameter<GLenum>*>(),
-        QList<NumberParameter<int>*> theIntNumberParameters = QList<NumberParameter<int>*>(),
-        QList<NumberParameter<float>*> theFloatNumberParameters = QList<NumberParameter<float>*>(),
-        QList<ArrayParameter<float>*> theFloatArrayParameters = QList<ArrayParameter<float>*>());
+        QList<UniformParameter<float>*> theFloatUniformParameters = QList<UniformParameter<float>*>(),
+        QList<UniformParameter<int>*> theIntNumberParameters = QList<UniformParameter<int>*>(),
+        QList<UniformParameter<unsigned int>*> theUintNumberParameters = QList<UniformParameter<unsigned int>*>(),
+        QList<OptionsParameter<GLenum>*> theGLenumParameters = QList<OptionsParameter<GLenum>*>());
 
     ImageOperation(const ImageOperation& operation);
 
@@ -94,6 +91,19 @@ public:
     virtual void resize() { blender->resize(); fbo->resize(); }
 
     template <typename T>
+    QList<UniformParameter<T>*> uniformParameters()
+    {
+        if (std::is_same<T, float>::value)
+            return floatUniformParameters;
+        else if (std::is_same<T, int>::value)
+            return intUniformParameters;
+        else if (std::is_same<T, unsigned int>::value)
+            return uintUniformParameters;
+        else
+            return QList<UniformParameter<T>*>();
+    }
+
+    template <typename T>
     QList<OptionsParameter<T>*> optionsParameters()
     {
         if (std::is_same<T, GLenum>::value)
@@ -101,40 +111,13 @@ public:
         return QList<OptionsParameter<T>*>();
     }
 
-    template <typename T>
-    QList<NumberParameter<T>*> numberParameters()
-    {
-        if (std::is_same<T, int>::value)
-            return intNumberParameters;
-        else if (std::is_same<T, float>::value)
-            return floatNumberParameters;
-        return QList<NumberParameter<T>*>();
-    }
+    void setParameters();
 
     template <typename T>
-    QList<ArrayParameter<T>*> arrayParameters()
-    {
-        if (std::is_same<T, float>::value)
-            return floatArrayParameters;
-        return QList<ArrayParameter<T>*>();
-    }
-
-    template <typename T>
-    void setOptionsParameters(OptionsParameter<T>* parameter);
-
-    virtual void setParameters() = 0;
+    void setUniform(QString name, QString type, GLsizei count, const T* values);
 
     template <typename T>
     void setOptionsParameter(OptionsParameter<T>* parameter);
-
-    template <typename T>
-    void setUniform1(int location, QString type, T value);
-
-    template <typename T>
-    void setUniform2(int location, QString type, T value);
-
-    template <typename T>
-    void setUniformArray(QString name, QString type, QList<T> values);
 
     virtual void applyOperation();
     virtual void blit();
@@ -155,15 +138,15 @@ protected:
     FBO* fbo;
     Blender* blender;
 
+    QList<UniformParameter<float>*> floatUniformParameters;
+    QList<UniformParameter<int>*> intUniformParameters;
+    QList<UniformParameter<unsigned int>*> uintUniformParameters;
+
     QList<OptionsParameter<GLenum>*> glenumOptionsParameters;
-
-    QList<NumberParameter<int>*> intNumberParameters;
-    QList<NumberParameter<float>*> floatNumberParameters;
-
-    QList<ArrayParameter<float>*> floatArrayParameters;
 };
 
 
+/*
 
 // Bilateral filter
 
@@ -841,6 +824,7 @@ private:
     FloatParameter* opacity;
 };
 
+*/
 
 
 #endif // IMAGEOPERATIONS_H

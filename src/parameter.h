@@ -248,70 +248,13 @@ private:
 
 
 
-/*template <typename T>
-class NumberParameter : public Parameter
-{
-public:
-    NumberParameter(QString theName, QString theUniformName, QString theUniformType, bool isEditable, T theValue, T theMin, T theMax, T theInf, T theSup) :
-        Parameter(theName, theUniformName, theUniformType, isEditable)
-    {
-        mNumber = new Number<T>(theValue, theMin, theMax, theInf, theSup);
-    }
-
-    NumberParameter(QString theName, QString theUniformName, QString theUniformType, QUuid theId, T theValue, T theMin, T theMax, T theInf, T theSup) :
-        Parameter(theName, theUniformName, theUniformType, isEditable)
-    {
-        mNumber = new Number<T>(theId, theValue, theMin, theMax, theInf, theSup);
-    }
-
-    NumberParameter(const NumberParameter<T>& parameter) :
-        Parameter(parameter)
-    {
-        mNumber = new Number<T>(*parameter->number);
-    }
-
-    ~NumberParameter()
-    {
-        delete mNumber;
-    }
-
-    void setValue(T theValue)
-    {
-        mNumber->setValue(theValue);
-        mNumber->setIndex();
-        mOperation->setNumberParameter<T>(this);
-        emit valueChanged(theValue);
-    }
-
-    T value() { return mNumber->value; }
-
-    T min(){ return mNumber->min(); }
-    T max(){ return mNumber->max(); }
-
-    T inf(){ return mNumber->inf(); }
-    T sup(){ return mNumber->sup(); }
-
-    Number<T>* number(QUuid theId)
-    {
-        if (theId == mNumber->id())
-            return mNumber;
-        return nullptr;
-    }
-
-private:
-    Number<T>* mNumber;
-};*/
-
-
-
 template <typename T>
 class UniformParameter : public Parameter
 {
 public:
-    UniformParameter(QString theName, QString theUniformName, QString theUniformType, int numItems, bool isArray, bool isEditable, QList<T> theValues, T theMin, T theMax, T theInf, T theSup) :
+    UniformParameter(QString theName, QString theUniformName, QString theUniformType, int numItems, bool isEditable, QList<T> theValues, T theMin, T theMax, T theInf, T theSup) :
         Parameter(theName, theUniformName, theUniformType, isEditable),
-        nItems { numItems },
-        mArray { isArray }
+        nItems { numItems }
     {
         for (T value : theValues)
         {
@@ -368,14 +311,7 @@ public:
 
     void setUniform()
     {
-        if (!mArray)
-        {
-            if (mUniformType == "float" || mUniformType == "int")
-                mOperation->setUniform1<T>(mName, toValue());
-            else if (mUniformType == "vec2" || mUniformType == "ivec2")
-                mOperation->setUniform2<T>(mName, toVector2D());
-
-        }
+        mOperation->setUniform<T>(mName, mUniformType, nItems, values().constData());
     }
 
     QList<T> values()
@@ -412,96 +348,32 @@ public:
         return mNumbers.size();
     }
 
-    T toValue()
+    int numItems()
     {
-        if (mNumbers.size() > 0)
-            return mNumbers.at(0)->value();
-        else
-            return 0;
+        return nItems;
     }
 
-    QVector2D toVector2D()
+    int numValuesPerItem()
     {
-        if (mNumbers.size() > 1)
-            return QVector2D(mNumbers.at(0)->value(), mNumbers.at(1)->value());
-        else if (mNumbers.size() > 0)
-            return QVector2D(mNumbers.at(0)->value(), 0.0);
-        else
-            return QVector2D(0.0, 0.0);
-    }
+        if (mUniformType == "float" || mUniformType == "int" | mUniformType == "uint")
+            return 1;
+        else if (mUniformType == "vec2" || mUniformType == "ivec2" || mUniformType == "uvec2")
+            return 2;
+        else if (mUniformType == "vec3" || mUniformType == "ivec3" || mUniformType == "uvec3")
+            return 3;
+        else if (mUniformType == "vec4" || mUniformType == "ivec4" || mUniformType == "uvec4" || mUniformType == "mat2")
+            return 4;
+        else if (mUniformType == "mat3")
+            return 9;
+        else if (mUniformType == "mat4")
+            return 16;
 
-    QVector3D toVector3D()
-    {
-        if (mNumbers.size() > 2)
-            return QVector3D(mNumbers.at(0)->value(), mNumbers.at(1)->value(), mNumbers.at(2)->value());
-        else if (mNumbers.size() > 1)
-            return QVector3D(mNumbers.at(0)->value(), mNumbers.at(1)->value(), 0.0);
-        else if (mNumbers.size() > 0)
-            return QVector3D(mNumbers.at(0)->value(), 0.0, 0.0);
-        else
-            return QVector3D(0.0, 0.0, 0.0);
-    }
-
-    QVector4D toVector4D()
-    {
-        if (mNumbers.size() > 3)
-            return QVector4D(mNumbers.at(0)->value(), mNumbers.at(1)->value(), mNumbers.at(2)->value()), mNumbers.at(3)->value();
-        else if (mNumbers.size() > 2)
-            return QVector4D(mNumbers.at(0)->value(), mNumbers.at(1)->value(), mNumbers.at(2)->value(), 0.0);
-        else if (mNumbers.size() > 1)
-            return QVector4D(mNumbers.at(0)->value(), mNumbers.at(1)->value(), 0.0, 0.0);
-        else if (mNumbers.size() > 0)
-            return QVector4D(mNumbers.at(0)->value(), 0.0, 0.0, 0.0);
-        else
-            return QVector4D(0.0, 0.0, 0.0, 0.0);
-    }
-
-    QMatrix2x2 toMatrix2x2()
-    {
-        QMatrix2x2 matrix;
-
-        int row = 0, col = 0;
-        for (auto number : mNumbers)
-        {
-            matrix(row, col++) = number->value();
-            if (col >= 2) { row++; col = 0; }
-        }
-
-        return matrix;
-    }
-
-    QMatrix3x3 toMatrix3x3()
-    {
-        QMatrix3x3 matrix;
-
-        int row = 0, col = 0;
-        for (auto number : mNumbers)
-        {
-            matrix(row, col++) = number->value();
-            if (col >= 3) { row++; col = 0; }
-        }
-
-        return matrix;
-    }
-
-    QMatrix4x4 toMatrix4x4()
-    {
-        QMatrix4x4 matrix;
-
-        int row = 0, col = 0;
-        for (auto number : mNumbers)
-        {
-            matrix(row, col++) = number->value();
-            if (col >= 4) { row++; col = 0; }
-        }
-
-        return matrix;
+        return 0;
     }
 
 private:
     QList<Number<T>*> mNumbers;
-    bool mArray;
-    int nCols, nRows, nItems;
+    int nItems;
 };
 
 

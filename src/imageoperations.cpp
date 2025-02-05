@@ -29,18 +29,18 @@
 
 ImageOperation::ImageOperation(bool on, QOpenGLContext* mainContext,
     QString theVertexShaderPath, QString theFragmentShaderPath,
-    QList<OptionsParameter<GLenum>*> theGLenumParameters,
-    QList<NumberParameter<int>*> theIntNumberParameters,
-    QList<NumberParameter<float>*> theFloatNumberParameters,
-    QList<ArrayParameter<float>*> theFloatArrayParameters) :
+    QList<UniformParameter<float>*> theFloatUniformParameters,
+    QList<UniformParameter<int>*> theIntUniformParameters,
+    QList<UniformParameter<unsigned int>*> theUintUniformParameters,
+    QList<OptionsParameter<GLenum>*> theGLenumParameters) :
     vertexShaderPath { theVertexShaderPath },
     fragmentShaderPath { theFragmentShaderPath },
     enabled { on },
     context { mainContext },
-    glenumOptionsParameters { theGLenumParameters },
-    intNumberParameters { theIntNumberParameters },
-    floatNumberParameters { theFloatNumberParameters },
-    floatArrayParameters { theFloatArrayParameters }
+    floatUniformParameters { theFloatUniformParameters },
+    intUniformParameters { theIntUniformParameters },
+    uintUniformParameters { theUintUniformParameters },
+    glenumOptionsParameters { theGLenumParameters }
 {
     blender = new Blender(":/shaders/screen.vert", ":/shaders/blend.frag", mainContext);
 }
@@ -56,32 +56,29 @@ ImageOperation::ImageOperation(const ImageOperation& operation) :
 {
     blender = new Blender(":/shaders/screen.vert", ":/shaders/blend.frag", context);
 
+    for (auto parameter: operation.floatUniformParameters)
+    {
+        auto newParameter = new UniformParameter<float>(*parameter);
+        newParameter->setOperation(this);
+        floatUniformParameters.append(newParameter);
+    }
+    for (auto parameter: operation.intUniformParameters)
+    {
+        auto newParameter = new UniformParameter<int>(*parameter);
+        newParameter->setOperation(this);
+        intUniformParameters.append(newParameter);
+    }
+    for (auto parameter: operation.uintUniformParameters)
+    {
+        auto newParameter = new UniformParameter<unsigned int>(*parameter);
+        newParameter->setOperation(this);
+        uintUniformParameters.append(newParameter);
+    }
     for (auto parameter : operation.glenumOptionsParameters)
     {
         auto newParameter = new OptionsParameter<GLenum>(*parameter);
         newParameter->setOperation(this);
         glenumOptionsParameters.append(newParameter);
-    }
-
-    for (auto parameter: operation.intNumberParameters)
-    {
-        auto newParameter = new NumberParameter<int>(*parameter);
-        newParameter->setOperation(this);
-        intNumberParameters.append(newParameter);
-    }
-
-    for (auto parameter: operation.floatNumberParameters)
-    {
-        auto newParameter = new NumberParameter<float>(*parameter);
-        newParameter->setOperation(this);
-        floatNumberParameters.append(newParameter);
-    }
-
-    for (auto parameter: operation.floatArrayParameters)
-    {
-        auto newParameter = new ArrayParameter<float>(*parameter);
-        newParameter->setOperation(this);
-        floatArrayParameters.append(newParameter);
     }
 }
 
@@ -89,10 +86,10 @@ ImageOperation::ImageOperation(const ImageOperation& operation) :
 
 ImageOperation::~ImageOperation()
 {
+    qDeleteAll(floatUniformParameters);
+    qDeleteAll(intUniformParameters);
+    qDeleteAll(uintUniformParameters);
     qDeleteAll(glenumOptionsParameters);
-    qDeleteAll(intNumberParameters);
-    qDeleteAll(floatNumberParameters);
-    qDeleteAll(floatArrayParameters);
 
     delete blender;
     delete fbo;
@@ -155,19 +152,43 @@ void ImageOperation::setOptionsParameter(OptionsParameter<T>* parameter)
 
 
 template <typename T>
-void ImageOperation::setUniform(int location, QString type, T value)
+void ImageOperation::setUniform(QString name, QString type, GLsizei count, const T* values)
 {
     fbo->makeCurrent();
     fbo->program->bind();
+
+    int location = fbo->program->uniformLocation(name);
 
     if (type == "float")
-        glUniform1f(location, value);
+        glUniform1fv(location, count, values);
     else if (type == "int")
-        glUniform1i(location, value);
+        glUniform1iv(location, count, values);
     else if (type == "uint")
-        glUniform1ui(location, value);
-    else if (type == "bool")
-        glUniform1b(location, value);
+        glUniform1uiv(location, count, values);
+    else if (type == "vec2")
+        glUniform2fv(location, count, values);
+    else if (type == "ivec2")
+        glUniform2iv(location, count, values);
+    else if (type == "uvec2")
+        glUniform2uiv(location, count, values);
+    else if (type == "vec3")
+        glUniform3fv(location, count, values);
+    else if (type == "ivec3")
+        glUniform3iv(location, count, values);
+    else if (type == "uvec3")
+        glUniform3uiv(location, count, values);
+    else if (type == "vec4")
+        glUniform4fv(location, count, values);
+    else if (type == "ivec4")
+        glUniform4iv(location, count, values);
+    else if (type == "uvec4")
+        glUniform4uiv(location, count, values);
+    else if (type == "mat2")
+        glUniformMatrix2fv(location, count, GL_FALSE, values);
+    else if (type == "mat3")
+        glUniformMatrix3fv(location, count, GL_FALSE, values);
+    else if (type == "mat4")
+        glUniformMatrix4fv(location, count, GL_FALSE, values);
 
     fbo->program->release();
     fbo->doneCurrent();
@@ -175,17 +196,7 @@ void ImageOperation::setUniform(int location, QString type, T value)
 
 
 
-template <typename T>
-void ImageOperation::setUniformArray(QString name, QString type, QList<T> values)
-{
-    fbo->makeCurrent();
-    fbo->program->bind();
-    fbo->program->setUniformValueArray(name, values.constData(), values.size());
-    fbo->program->release();
-    fbo->doneCurrent();
-}
-
-
+/*
 // Convolution
 
 QString EqualizeHistogram::name = "Equalize histogram";
@@ -2163,11 +2174,11 @@ void Rotation::setFloatParameter(int index, float value)
 
         // Set shader uniform
 
-        /*fbo->makeCurrent();
-        fbo->program->bind();
-        fbo->program->setUniformValue("transform", transform);
-        fbo->program->release();
-        fbo->doneCurrent();*/
+        //fbo->makeCurrent();
+        //fbo->program->bind();
+        //fbo->program->setUniformValue("transform", transform);
+        //fbo->program->release();
+        //fbo->doneCurrent();
     }
 }
 
@@ -2311,17 +2322,17 @@ void Scale::setFloatParameter(int index, float value)
     {
         // Set scale matrix
 
-        /*QMatrix4x4 transform;
-        transform.setToIdentity();
-        transform.scale(value, value);*/
+        //QMatrix4x4 transform;
+        //transform.setToIdentity();
+        //transform.scale(value, value);
 
         // Set shader uniform
 
-        /*fbo->makeCurrent();
-        fbo->program->bind();
-        fbo->program->setUniformValue("transform", transform);
-        fbo->program->release();
-        fbo->doneCurrent();*/
+        //fbo->makeCurrent();
+        //fbo->program->bind();
+        //fbo->program->setUniformValue("transform", transform);
+        //fbo->program->release();
+        //fbo->doneCurrent();
 
         fbo->transformationMatrix.setToIdentity();
         fbo->transformationMatrix.scale(value, value);
@@ -2410,3 +2421,4 @@ void Value::setFloatParameter(int index, float theValue)
         fbo->doneCurrent();
     }
 }
+*/
