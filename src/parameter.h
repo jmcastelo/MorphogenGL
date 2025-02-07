@@ -353,22 +353,24 @@ public:
         return nItems;
     }
 
-    int numValuesPerItem()
+    QPair<int, int> colsRowsPerItem()
     {
         if (mUniformType == "float" || mUniformType == "int" | mUniformType == "uint")
-            return 1;
+            return QPair<int, int>(1, 1);
         else if (mUniformType == "vec2" || mUniformType == "ivec2" || mUniformType == "uvec2")
-            return 2;
+            return QPair<int, int>(2, 1);
         else if (mUniformType == "vec3" || mUniformType == "ivec3" || mUniformType == "uvec3")
-            return 3;
-        else if (mUniformType == "vec4" || mUniformType == "ivec4" || mUniformType == "uvec4" || mUniformType == "mat2")
-            return 4;
+            return QPair<int, int>(3, 1);
+        else if (mUniformType == "vec4" || mUniformType == "ivec4" || mUniformType == "uvec4")
+            return QPair<int, int>(4, 1);
+        else if (mUniformType == "mat2")
+            return QPair<int, int>(2, 2);
         else if (mUniformType == "mat3")
-            return 9;
+            return QPair<int, int>(3, 3);
         else if (mUniformType == "mat4")
-            return 16;
+            return QPair<int, int>(4, 4);
 
-        return 0;
+        return QPair<int, int>(9, 0);
     }
 
 private:

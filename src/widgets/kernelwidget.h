@@ -3,7 +3,7 @@
 
 
 
-#include "arraywidget.h"
+#include "uniformwidget.h"
 
 
 
