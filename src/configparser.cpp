@@ -120,74 +120,48 @@ void ConfigurationParser::writeOperationNode(ImageOperationNode* node)
 
     stream.writeStartElement("operation");
 
-    stream.writeAttribute("name", node->operation->getName());
+    stream.writeAttribute("name", node->operation->name());
     stream.writeAttribute("enabled", QString::number(node->operation->isEnabled()));
 
-    for (auto parameter: node->operation->getIntParameters())
+    for (auto parameter: node->operation->uniformParameters<float>())
     {
         stream.writeStartElement("parameter");
-        stream.writeAttribute("name", parameter->name);
-        stream.writeAttribute("type", "int");
-        stream.writeCharacters(QString::number(parameter->number->value));
-        stream.writeEndElement();
-    }
-
-    for (auto parameter: node->operation->getFloatParameters())
-    {
-        stream.writeStartElement("parameter");
-        stream.writeAttribute("name", parameter->name);
+        stream.writeAttribute("name", parameter->name());
         stream.writeAttribute("type", "float");
-        stream.writeCharacters(QString::number(parameter->number->value));
+        for (auto number: parameter->numbers())
+        {
+            stream.writeStartElement("number");
+            stream.writeCharacters(QString::number(number->value()));
+            stream.writeEndElement();
+        }
         stream.writeEndElement();
     }
 
-    for (auto parameter: node->operation->getOptionsIntParameters())
+    for (auto parameter: node->operation->uniformParameters<int>())
     {
         stream.writeStartElement("parameter");
-        stream.writeAttribute("name", parameter->name);
+        stream.writeAttribute("name", parameter->name());
         stream.writeAttribute("type", "int");
-        stream.writeCharacters(QString::number(parameter->value()));
-        stream.writeEndElement();
-    }
-
-    for (auto parameter: node->operation->getOptionsGLenumParameters())
-    {
-        stream.writeStartElement("parameter");
-        stream.writeAttribute("name", parameter->name);
-        stream.writeAttribute("type", "interpolationflag");
-        stream.writeCharacters(QString::number(parameter->value()));
-        stream.writeEndElement();
-    }
-
-    if (node->operation->getKernelParameter())
-    {
-        stream.writeStartElement("parameter");
-        stream.writeAttribute("name", node->operation->getKernelParameter()->name);
-        stream.writeAttribute("type", "kernel");
-
-        for (auto element: node->operation->getKernelParameter()->numbers)
+        for (auto number: parameter->numbers())
         {
-            stream.writeStartElement("element");
-            stream.writeCharacters(QString::number(element->value));
+            stream.writeStartElement("number");
+            stream.writeCharacters(QString::number(number->value()));
             stream.writeEndElement();
         }
-
         stream.writeEndElement();
     }
 
-    if (node->operation->getMatrixParameter())
+    for (auto parameter: node->operation->uniformParameters<unsigned int>())
     {
         stream.writeStartElement("parameter");
-        stream.writeAttribute("name", node->operation->getMatrixParameter()->name);
-        stream.writeAttribute("type", "matrix");
-
-        for (auto element : node->operation->getMatrixParameter()->numbers)
+        stream.writeAttribute("name", parameter->name());
+        stream.writeAttribute("type", "unsigned int");
+        for (auto number: parameter->numbers())
         {
-            stream.writeStartElement("element");
-            stream.writeCharacters(QString::number(element->value));
+            stream.writeStartElement("number");
+            stream.writeCharacters(QString::number(number->value()));
             stream.writeEndElement();
         }
-
         stream.writeEndElement();
     }
 
@@ -370,7 +344,7 @@ void ConfigurationParser::read()
                         {
                             generator->loadOperation(id, operation);
                             connections.insert(id, inputs);
-                            operationNodeData.insert(id, QPair<QString, QPointF>(operation->getName(), position));
+                            operationNodeData.insert(id, QPair<QString, QPointF>(operation->name(), position));
                         }
                     }
                     else

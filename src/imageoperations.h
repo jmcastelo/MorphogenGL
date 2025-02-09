@@ -30,6 +30,7 @@
 #include "blender.h"
 
 #include <cmath>
+#include <QOpenGLExtraFunctions>
 #include <QList>
 #include <QVector2D>
 #include <QVector3D>
@@ -56,10 +57,10 @@ class UniformParameter;
 
 // Base image operation class
 
-class ImageOperation
+class ImageOperation : protected QOpenGLExtraFunctions
 {
 public:
-    ImageOperation(bool on, QOpenGLContext* mainContext,
+    ImageOperation(QString theName, bool on, QOpenGLContext* mainContext,
         QString theVertexShaderPath, QString theFragmentShaderPath,
         QList<UniformParameter<float>*> theFloatUniformParameters = QList<UniformParameter<float>*>(),
         QList<UniformParameter<int>*> theIntNumberParameters = QList<UniformParameter<int>*>(),
@@ -68,50 +69,35 @@ public:
 
     ImageOperation(const ImageOperation& operation);
 
-    virtual ~ImageOperation();
+    ~ImageOperation();
 
-    virtual ImageOperation* clone() = 0;
+    //ImageOperation* clone() { return new ImageOperation(*this); }
 
     bool isEnabled() { return enabled; }
-    virtual void enable(bool on) { enabled = on; }
+    void enable(bool on) { enabled = on; }
 
     void enableBlit(bool on) { blitEnabled = on; }
 
     bool hasParameters() { return !noParameters; }
 
-    virtual QString getName() = 0;
+    QString name() { return mName; }
 
     GLuint getFBO() { return fbo->getFBO(); }
 
-    virtual GLuint** getTextureBlit() { return fbo->getTextureBlit(); }
-    virtual GLuint** getTextureID() { return fbo->getTextureID(); }
+    GLuint** getTextureBlit() { return fbo->getTextureBlit(); }
+    GLuint** getTextureID() { return fbo->getTextureID(); }
 
     void setInputData(QList<InputData*> data);
 
-    virtual void resize() { blender->resize(); fbo->resize(); }
+    void resize() { blender->resize(); fbo->resize(); }
 
     template <typename T>
-    QList<UniformParameter<T>*> uniformParameters()
-    {
-        if (std::is_same<T, float>::value)
-            return floatUniformParameters;
-        else if (std::is_same<T, int>::value)
-            return intUniformParameters;
-        else if (std::is_same<T, unsigned int>::value)
-            return uintUniformParameters;
-        else
-            return QList<UniformParameter<T>*>();
-    }
+    QList<UniformParameter<T>*> uniformParameters();
 
     template <typename T>
-    QList<OptionsParameter<T>*> optionsParameters()
-    {
-        if (std::is_same<T, GLenum>::value)
-            return glenumOptionsParameters;
-        return QList<OptionsParameter<T>*>();
-    }
+    QList<OptionsParameter<T>*> optionsParameters();
 
-    void setParameters();
+    //void setParameters();
 
     template <typename T>
     void setUniform(QString name, QString type, GLsizei count, const T* values);
@@ -119,14 +105,15 @@ public:
     template <typename T>
     void setOptionsParameter(OptionsParameter<T>* parameter);
 
-    virtual void applyOperation();
-    virtual void blit();
-    virtual void clear();
+    void applyOperation();
+    void blit();
+    void clear();
 
     QImage outputImage(){ return fbo->outputImage(); }
     void setTextureFormat(){ fbo->setTextureFormat(); }
 
 protected:
+    QString mName;
     QString vertexShaderPath;
     QString fragmentShaderPath;
     bool enabled;

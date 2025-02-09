@@ -63,13 +63,7 @@ HEADERS += \
     src/seed.h \
     src/texformat.h \
     src/timerthread.h \
-    src/widgets/floatwidget.h \
     src/widgets/focuswidgets.h \
-    src/widgets/intoddwidget.h \
-    src/widgets/intwidget.h \
-    src/widgets/kernelwidget.h \
-    src/widgets/matrixwidget.h \
-    src/widgets/numberwidget.h \
     src/widgets/optionswidget.h \
     src/widgets/parameterwidget.h \
     src/widgets/uniformwidget.h

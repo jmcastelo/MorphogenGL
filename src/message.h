@@ -1,6 +1,8 @@
 #ifndef MESSAGE_H
 #define MESSAGE_H
 
+
+
 #include <QObject>
 #include <QPainter>
 #include <QTimer>

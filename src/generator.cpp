@@ -244,7 +244,7 @@ void ImageOperationNode::setOperation(ImageOperation *newOperation)
 
 GeneratorGL::GeneratorGL()
 {
-    availableOperations = {
+    /*availableOperations = {
         BilateralFilter::name,
         Brightness::name,
         ColorMix::name,
@@ -269,7 +269,7 @@ GeneratorGL::GeneratorGL()
         Saturation::name,
         Scale::name,
         Value::name
-    };
+    };*/
 }
 
 
@@ -325,7 +325,7 @@ void GeneratorGL::sortOperations()
                  (node->numInputs() > 0 && node->numNonNormalInputs() == node->numInputs()))
         {
             sortedOperations.push_back(node->operation);
-            sortedOperationsData.push_back(QPair<QUuid, QString>(node->id, node->operation->getName()));
+            sortedOperationsData.push_back(QPair<QUuid, QString>(node->id, node->operation->name()));
             pendingNodes.remove(node->id);
             node->setComputed(true);
         }
@@ -342,7 +342,7 @@ void GeneratorGL::sortOperations()
             if (node->allInputsComputed())
             {
                 sortedOperations.push_back(node->operation);
-                sortedOperationsData.push_back(QPair<QUuid, QString>(node->id, node->operation->getName()));
+                sortedOperationsData.push_back(QPair<QUuid, QString>(node->id, node->operation->name()));
                 computedNodes.push_back(node);
                 node->setComputed(true);
             }
@@ -527,11 +527,14 @@ void GeneratorGL::pasteOperations()
 
 void GeneratorGL::swapTwoOperations(QUuid id1, QUuid id2)
 {
-    ImageOperation* operation1 = operationNodes.value(id1)->operation->clone();
-    operation1->setParameters();
+    //ImageOperation* operation1 = operationNodes.value(id1)->operation->clone();
+    //operation1->setParameters();
 
-    ImageOperation* operation2 = operationNodes.value(id2)->operation->clone();
-    operation2->setParameters();
+    //ImageOperation* operation2 = operationNodes.value(id2)->operation->clone();
+    //operation2->setParameters();
+
+    ImageOperation* operation1 = new ImageOperation(*operationNodes.value(id1)->operation);
+    ImageOperation* operation2 = new ImageOperation(*operationNodes.value(id2)->operation);
 
     operationNodes.value(id1)->setOperation(operation2);
     operationNodes.value(id2)->setOperation(operation1);
@@ -591,8 +594,10 @@ QUuid GeneratorGL::addOperation(QString operationName)
 
 QUuid GeneratorGL::copyOperation(QUuid srcId)
 {
-    ImageOperation* operation = operationNodes.value(srcId)->operation->clone();
-    operation->setParameters();
+    //ImageOperation* operation = operationNodes.value(srcId)->operation->clone();
+    //operation->setParameters();
+
+    ImageOperation* operation = new ImageOperation(*operationNodes.value(srcId)->operation);
 
     QUuid id = QUuid::createUuid();
 
@@ -713,7 +718,7 @@ void GeneratorGL::connectLoadedOperations(QMap<QUuid, QMap<QUuid, InputData*>> c
 ImageOperation* GeneratorGL::newOperation(QString operationName)
 {
     ImageOperation* operation = nullptr;
-
+/*
     if (operationName == BilateralFilter::name)
     {
         operation = new BilateralFilter(false, sharedContext, 3, 1.0f, 10.0f, 0.1f, 1.0f);
@@ -815,7 +820,7 @@ ImageOperation* GeneratorGL::newOperation(QString operationName)
 
     if (operation)
         operation->setParameters();
-
+*/
     return operation;
 }
 
@@ -832,7 +837,7 @@ ImageOperation* GeneratorGL::loadImageOperation(
     std::vector<float> matrixElements)
 {
     ImageOperation* operation = nullptr;
-
+/*
     if (operationName == BilateralFilter::name)
     {
         operation = new BilateralFilter(enabled, sharedContext, intParameters[0], floatParameters[0], floatParameters[1], floatParameters[2], floatParameters[3]);
@@ -932,7 +937,7 @@ ImageOperation* GeneratorGL::loadImageOperation(
 
     if (operation)
         operation->setParameters();
-
+*/
     return operation;
 }
 

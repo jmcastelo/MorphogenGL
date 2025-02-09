@@ -43,8 +43,8 @@ public:
 
         QSlider* slider = new QSlider(Qt::Horizontal);
         slider->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
-        slider->setRange(0, blendFactor->indexMax);
-        slider->setValue(blendFactor->getIndex());
+        slider->setRange(0, blendFactor->indexMax());
+        slider->setValue(blendFactor->index());
 
         midiLinkButton = new QPushButton();
         midiLinkButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
@@ -73,7 +73,7 @@ public:
             else
                 midiLinkButton->setStyleSheet("QPushButton{ qproperty-icon: url(:/icons/circle-grey.png); }");
 
-            slider->setRange(0, blendFactor->indexMax);
+            slider->setRange(0, blendFactor->indexMax());
         });
 
         QHBoxLayout* sliderLayout = new QHBoxLayout;
@@ -82,13 +82,13 @@ public:
 
         connect(slider, &QAbstractSlider::sliderMoved, blendFactor, &Number<float>::setValueFromIndex);
 
-        connect(blendFactor, &Number<float>::currentIndexChanged, slider, &QAbstractSlider::setValue);
+        connect(blendFactor, &Number<float>::indexChanged, slider, &QAbstractSlider::setValue);
 
-        connect(blendFactor, QOverload<float>::of(&Number<float>::currentValueChanged), this, [=, this](float currentValue)
+        connect(blendFactor, &Number<float>::valueChanged, this, [=, this](QVariant value)
         {
-            lineEdit->setText(QString::number(currentValue));
+            lineEdit->setText(QString::number(value.toFloat()));
             blendFactor->setIndex();
-            edge->setBlendFactor(currentValue);
+            edge->setBlendFactor(value.toFloat());
         });
 
         connect(lineEdit, &QLineEdit::editingFinished, this, [=, this]()

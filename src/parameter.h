@@ -85,7 +85,8 @@ public:
         mSup { theSup }
     {}
 
-    Number(const Number<T>& number)
+    Number(const Number<T>& number) :
+        NumberSignals()
     {
         mId = number.mId;
         mValue = number.mValue;
@@ -114,7 +115,13 @@ public:
 
     void setValue(T theValue)
     {
+        if (theValue < mMin)
+            theValue = mMin;
+        else if (theValue > mMax)
+            theValue = mMax;
+
         mValue = theValue;
+
         emit valueChanged(mValue);
     }
 
@@ -137,6 +144,7 @@ public:
         return static_cast<int>(mIndexMax * static_cast<float>(mValue - mMin) / static_cast<float>(mMax - mMin));
     }
 
+    int indexMax() { return mIndexMax; }
     void setIndexMax(int theIndexMax){ mIndexMax = theIndexMax; }
 
     bool midiLinked(){ return mMidiLinked; }
@@ -175,13 +183,15 @@ class Parameter : public ParameterSignals
 {
 public:
     Parameter(QString theName, QString theUniformName, QString theUniformType, bool isEditable) :
+        ParameterSignals(),
         mName { theName },
         mUniformName { theUniformName },
         mUniformType { theUniformType },
         mEditable { isEditable }
     {}
 
-    Parameter(const Parameter& parameter)
+    Parameter(const Parameter& parameter) :
+        ParameterSignals()
     {
         mName = parameter.mName;
         mUniformName = parameter.mUniformName;
@@ -279,7 +289,7 @@ public:
         for (Number<T>* number : parameter.mNumbers)
         {
             Number<T>* newNumber = new Number<T>(*number);
-            mNumbers.push_back(number);
+            mNumbers.push_back(newNumber);
         }
     }
 
@@ -303,7 +313,8 @@ public:
             mNumbers[i]->setValue(theValue);
             mNumbers[i]->setIndex();
 
-            emit valueChanged(i, theValue);
+            emit valueChanged(i, QVariant(theValue));
+            emit valueChanged(QVariant(theValue));
 
             setUniform();
         }

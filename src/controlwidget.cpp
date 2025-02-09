@@ -1295,19 +1295,24 @@ void ControlWidget::overlayLinkParametersWidget(QUuid id)
 {
     ImageOperation *operation = generator->getOperation(id);
 
-    for (const FloatParameter *parameter : operation->getFloatParameters())
+    foreach (auto parameter, operation->uniformParameters<float>())
     {
-        connect(parameter->number, QOverload<float>::of(&Number<float>::currentValueChanged), this, [=, this](float value)
-        {
-            emit parameterValueChanged(id, operation->getName(), parameter->name, QString::number(value, 'f', 6));
+        connect(parameter, QOverload<QVariant>::of(&Parameter::valueChanged), this, [=, this](QVariant value){
+            emit parameterValueChanged(id, operation->name(), parameter->name(), QString::number(value.toFloat(), 'f', 6));
         });
     }
 
-    for (const IntParameter *parameter : operation->getIntParameters())
+    foreach (auto parameter, operation->uniformParameters<int>())
     {
-        connect(parameter->number, QOverload<int>::of(&Number<int>::currentValueChanged), this, [=, this](int value)
-        {
-            emit parameterValueChanged(id, operation->getName(), parameter->name, QString::number(value));
+        connect(parameter, QOverload<QVariant>::of(&Parameter::valueChanged), this, [=, this](QVariant value){
+            emit parameterValueChanged(id, operation->name(), parameter->name(), QString::number(value.toInt()));
+        });
+    }
+
+    foreach (auto parameter, operation->uniformParameters<unsigned int>())
+    {
+        connect(parameter, QOverload<QVariant>::of(&Parameter::valueChanged), this, [=, this](QVariant value){
+            emit parameterValueChanged(id, operation->name(), parameter->name(), QString::number(value.toUInt()));
         });
     }
 }
@@ -1318,11 +1323,14 @@ void ControlWidget::overlayUnlinkParametersWidget(QUuid id)
 {
     ImageOperation *operation = generator->getOperation(id);
 
-    for (const FloatParameter *parameter : operation->getFloatParameters())
-        disconnect(parameter->number, QOverload<float>::of(&Number<float>::currentValueChanged), this, nullptr);
+    foreach (auto parameter, operation->uniformParameters<float>())
+        disconnect(parameter, QOverload<QVariant>::of(&Parameter::valueChanged), this, nullptr);
 
-    for (const IntParameter *parameter : operation->getIntParameters())
-        disconnect(parameter->number, QOverload<int>::of(&Number<int>::currentValueChanged), this, nullptr);
+    foreach (auto parameter, operation->uniformParameters<int>())
+        disconnect(parameter, QOverload<QVariant>::of(&Parameter::valueChanged), this, nullptr);
+
+    foreach (auto parameter, operation->uniformParameters<unsigned int>())
+        disconnect(parameter, QOverload<QVariant>::of(&Parameter::valueChanged), this, nullptr);
 }
 
 
@@ -1393,9 +1401,9 @@ void ControlWidget::overlayLinkBlendFactorWidget(QUuid id)
 {
     BlendFactorWidget *widget = blendFactorWidgets.value(id);
 
-    connect(widget->blendFactor, QOverload<float>::of(&Number<float>::currentValueChanged), this, [=, this](float value)
+    connect(widget->blendFactor, &Number<float>::valueChanged, this, [=, this](QVariant value)
     {
-        emit parameterValueChanged(id, "Blend factor", widget->getName(), QString::number(value, 'f', 6));
+        emit parameterValueChanged(id, "Blend factor", widget->getName(), QString::number(value.toFloat(), 'f', 6));
     });
 }
 
@@ -1405,7 +1413,7 @@ void ControlWidget::overlayUnlinkBlendFactorWidget(QUuid id)
 {
     BlendFactorWidget *widget = blendFactorWidgets.value(id);
 
-    disconnect(widget->blendFactor, QOverload<float>::of(&Number<float>::currentValueChanged), this, nullptr);
+    disconnect(widget->blendFactor, &Number<float>::valueChanged, this, nullptr);
 }
 
 

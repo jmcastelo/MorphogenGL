@@ -27,7 +27,7 @@
 
 
 
-#include "widgets/numberwidget.h"
+#include "widgets/uniformwidget.h"
 #include "widgets/optionswidget.h"
 
 #include "parameter.h"
@@ -78,78 +78,46 @@ public:
         QVBoxLayout* parametersLayout = new QVBoxLayout;
         parametersLayout->setAlignment(Qt::AlignCenter);
 
-        QFormLayout* formLayout = new QFormLayout;
-
-        for (auto parameter : operation->getIntParameters())
+        for (auto parameter : operation->uniformParameters<float>())
         {
-            if (parameter->isOdd)
-            {
-                IntOddParameterWidget* widget = new IntOddParameterWidget(parameter, this);
-                parameterWidgets.push_back(widget);
-                slideableIntParameterWidgets.push_back(widget);
-                formLayout->addRow(parameter->name + ":", widget->lineEdit);
-            }
-            else
-            {
-                IntParameterWidget* widget = new IntParameterWidget(parameter, this);
-                parameterWidgets.push_back(widget);
-                slideableIntParameterWidgets.push_back(widget);
-                formLayout->addRow(parameter->name + ":", widget->lineEdit);
-            }
-        }
-        for (auto parameter : operation->getFloatParameters())
-        {
-            FloatParameterWidget* widget = new FloatParameterWidget(parameter, this);
-            parameterWidgets.push_back(widget);
-            slideableFloatParameterWidgets.push_back(widget);
-            formLayout->addRow(parameter->name + ":", widget->lineEdit);
-        }
-        for (auto parameter : operation->getOptionsIntParameters())
-        {
-            OptionsParameterWidget<int>* widget = new OptionsParameterWidget<int>(parameter, this);
-            parameterWidgets.push_back(widget);
-            formLayout->addRow(parameter->name + ":", widget->comboBox);
-        }
-        for (auto parameter : operation->getOptionsGLenumParameters())
-        {
-            OptionsParameterWidget<GLenum>* widget = new OptionsParameterWidget<GLenum>(parameter, this);
-            parameterWidgets.push_back(widget);
-            formLayout->addRow(parameter->name + ":", widget->comboBox);
-        }
-        if (operation->getKernelParameter())
-        {
-            KernelParameterWidget* widget = new KernelParameterWidget(operation->getKernelParameter(), this);
-            parameterWidgets.push_back(widget);
-            slideableFloatParameterWidgets.push_back(widget);
-            parametersLayout->addWidget(new QLabel(operation->getKernelParameter()->name + ":"));
-            parametersLayout->addLayout(widget->gridLayout);
-            parametersLayout->addWidget(widget->normalizePushButton);
-            formLayout->addRow("Presets:", widget->presetsComboBox);
-        }
-        if (operation->getMatrixParameter())
-        {
-            MatrixParameterWidget* widget = new MatrixParameterWidget(operation->getMatrixParameter(), this);
-            parameterWidgets.push_back(widget);
-            slideableFloatParameterWidgets.push_back(widget);
-            parametersLayout->addWidget(new QLabel(operation->getMatrixParameter()->name + ":"));
-            parametersLayout->addLayout(widget->gridLayout);
-            formLayout->addRow("Presets:", widget->presetsComboBox);
+            UniformParameterWidget<float>* widget = new UniformParameterWidget<float>(parameter);
+            parametersLayout->addWidget(widget->widget());
+            floatParameterWidgets.append(widget);
         }
 
-        parametersLayout->addLayout(formLayout);
+        for (auto parameter : operation->uniformParameters<int>())
+        {
+            UniformParameterWidget<int>* widget = new UniformParameterWidget<int>(parameter);
+            parametersLayout->addWidget(widget->widget());
+            intParameterWidgets.append(widget);
+        }
 
-        QGroupBox* parametersGroupBox = new QGroupBox(operation->getName());
+        for (auto parameter : operation->uniformParameters<unsigned int>())
+        {
+            UniformParameterWidget<unsigned int>* widget = new UniformParameterWidget<unsigned int>(parameter);
+            parametersLayout->addWidget(widget->widget());
+            uintParameterWidgets.append(widget);
+        }
+
+        for (auto parameter : operation->optionsParameters<GLenum>())
+        {
+            OptionsParameterWidget<GLenum>* widget = new OptionsParameterWidget<GLenum>(parameter);
+            parametersLayout->addWidget(widget->widget());
+            glenumOptionsWidget.append(widget);
+        }
+
+        QGroupBox* parametersGroupBox = new QGroupBox(operation->name());
         parametersGroupBox->setLayout(parametersLayout);
 
         mainLayout->addWidget(parametersGroupBox);
 
-        // Selected float or int parameter
+        // Selected uniform parameter
 
-        if (!slideableFloatParameterWidgets.empty() || !slideableIntParameterWidgets.empty())
+        if (!floatParameterWidgets.empty() || !intParameterWidgets.empty() || !uintParameterWidgets.empty())
         {
-            FocusSlider* selectedParameterSlider = new FocusSlider(Qt::Horizontal);
+            selectedParameterSlider = new FocusSlider(Qt::Horizontal);
             selectedParameterSlider->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Maximum);
-            selectedParameterSlider->setRange(0, 10000);
+            selectedParameterSlider->setRange(0, 100'000);
 
             midiLinkButton = new QPushButton();
             midiLinkButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
@@ -157,21 +125,13 @@ public:
             midiLinkButton->setStyleSheet("QPushButton{ qproperty-icon: url(:/icons/circle-grey.png); }");
             midiLinkButton->setVisible(midiEnabled);
 
-            FocusLineEdit* selectedParameterMinLineEdit = new FocusLineEdit;
+            selectedParameterMinLineEdit = new FocusLineEdit;
             selectedParameterMinLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
             selectedParameterMinLineEdit->setPlaceholderText("Minimum");
 
-            QDoubleValidator* selectedParameterMinValidator = new QDoubleValidator(selectedParameterMinLineEdit);
-            selectedParameterMinValidator->setDecimals(10);
-            selectedParameterMinLineEdit->setValidator(selectedParameterMinValidator);
-
-            FocusLineEdit* selectedParameterMaxLineEdit = new FocusLineEdit;
+            selectedParameterMaxLineEdit = new FocusLineEdit;
             selectedParameterMaxLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
             selectedParameterMaxLineEdit->setPlaceholderText("Maximum");
-
-            QDoubleValidator* selectedParameterMaxValidator = new QDoubleValidator(selectedParameterMaxLineEdit);
-            selectedParameterMaxValidator->setDecimals(10);
-            selectedParameterMaxLineEdit->setValidator(selectedParameterMaxValidator);
 
             QHBoxLayout* sliderLayout = new QHBoxLayout;
             sliderLayout->addWidget(midiLinkButton);
@@ -192,62 +152,11 @@ public:
 
             mainLayout->addWidget(selectedParameterGroupBox);
 
-            foreach (auto widget, slideableFloatParameterWidgets)
-            {
-                connect(widget, QOverload<Number<float>*>::of(&ParameterWidget::focusIn), this, [=, this](Number<float>* number)
-                {
-                    updateSlideableParameterControls<float>(
-                        widget->getName(),
-                        number,
-                        selectedParameterSlider,
-                        selectedParameterMinLineEdit,
-                        selectedParameterMinValidator,
-                        selectedParameterMaxLineEdit,
-                        selectedParameterMaxValidator,
-                        selectedParameterGroupBox);
+            connectUniformParameterWidgets<float>(floatParameterWidgets);
+            connectUniformParameterWidgets<int>(intParameterWidgets);
+            connectUniformParameterWidgets<uint>(uintParameterWidgets);
 
-                    updateMidiButtons<float>(number);
-                });
-            }
-
-            foreach (auto widget, slideableIntParameterWidgets)
-            {
-                connect(widget, QOverload<Number<int>*>::of(&ParameterWidget::focusIn), this, [=, this](Number<int>* number)
-                {
-                    updateSlideableParameterControls<int>(
-                        widget->getName(),
-                        number,
-                        selectedParameterSlider,
-                        selectedParameterMinLineEdit,
-                        selectedParameterMinValidator,
-                        selectedParameterMaxLineEdit,
-                        selectedParameterMaxValidator,
-                        selectedParameterGroupBox);
-
-                    updateMidiButtons<int>(number);
-                });
-            }
-        }
-
-        // Connect widgets
-
-        if (!parameterWidgets.isEmpty())
-        {
-            foreach (auto widget, parameterWidgets)
-            {
-                connect(widget, QOverload<>::of(&ParameterWidget::focusIn), this, [=, this](){
-                    setLineWidth(1);
-                    lastFocusedWidget = widget->lastFocusedWidget();
-                    lastFocused = true;
-                    emit focusIn(this);
-                });
-                connect(widget, &ParameterWidget::focusOut, this, [=, this](){
-                    setLineWidth(0);
-                    emit focusOut(this);
-                });
-            }
-
-            lastFocusedWidget = parameterWidgets.front()->lastFocusedWidget();
+            lastFocusedWidget = nullptr;
         }
 
         // Enable button
@@ -257,6 +166,7 @@ public:
         enableButton->setFixedHeight(10);
         enableButton->setCheckable(true);
         enableButton->setChecked(operation->isEnabled());
+
         if (operation->isEnabled())
             enableButton->setStyleSheet("background-color: rgb(0, 255, 0); color: rgb(255, 255, 255)");
         else
@@ -286,13 +196,39 @@ public:
         setLayout(mainLayout);
     }
 
+    template <typename T>
+    void connectUniformParameterWidgets(QList<UniformParameterWidget<T>*> widgets)
+    {
+        foreach (auto widget, widgets)
+        {
+            connect(widget, &UniformParameterWidget<T>::focusIn, this, [&](){
+                updateSelectedParameterControls<T>(widget);
+                updateMidiButtons<T>(widget);
+            });
+
+            connect(widget, &UniformParameterWidget<T>::focusIn, this, [=, this](){
+                setLineWidth(1);
+                lastFocusedWidget = widget->lastFocusedWidget();
+                lastFocused = true;
+                emit focusIn(this);
+            });
+
+            connect(widget, &UniformParameterWidget<T>::focusOut, this, [=, this](){
+                setLineWidth(0);
+                emit focusOut(this);
+            });
+        }
+    }
+
     void recreate(ImageOperation* operation, bool midiEnabled)
     {
         qDeleteAll(findChildren<QWidget*>(QString(), Qt::FindDirectChildrenOnly));
 
-        parameterWidgets.clear();
-        slideableFloatParameterWidgets.clear();
-        slideableIntParameterWidgets.clear();
+        floatParameterWidgets.clear();
+        intParameterWidgets.clear();
+        uintParameterWidgets.clear();
+
+        glenumOptionsWidget.clear();
 
         setup(operation, midiEnabled);
     }
@@ -308,7 +244,9 @@ public:
 
     bool isFocused()
     {
-        return lastFocusedWidget->hasFocus();
+        if (lastFocusedWidget)
+            return lastFocusedWidget->hasFocus();
+        return false;
     }
 
     bool isLastFocused()
@@ -328,21 +266,36 @@ public:
 
 signals:
     void enableButtonToggled();
+
     void focusIn(QWidget* widget);
     void focusOut(QWidget* widget);
+
     void linkWait(Number<float>* number);
     void linkWait(Number<int>* number);
+    void linkWait(Number<unsigned int>* number);
+
     void linkBreak(Number<float>* number);
     void linkBreak(Number<int>* number);
+    void linkBreak(Number<unsigned int>* number);
 
 private:
     QVBoxLayout* mainLayout;
 
-    QVector<ParameterWidget*> parameterWidgets;
-    QVector<ParameterWidget*> slideableFloatParameterWidgets;
-    QVector<ParameterWidget*> slideableIntParameterWidgets;
+    QList<UniformParameterWidget<float>*> floatParameterWidgets;
+    QList<UniformParameterWidget<int>*> intParameterWidgets;
+    QList<UniformParameterWidget<unsigned int>*> uintParameterWidgets;
+
+    QList<OptionsParameterWidget<GLenum>*> glenumOptionsWidget;
+
+    FocusSlider* selectedParameterSlider;
+    FocusLineEdit* selectedParameterMinLineEdit;
+    FocusLineEdit* selectedParameterMaxLineEdit;
+    QValidator* minValidator = nullptr;
+    QValidator* maxValidator = nullptr;
 
     QPushButton* midiLinkButton;
+
+    QGroupBox* selectedParameterGroupBox;
 
     FocusPushButton* enableButton;
 
@@ -350,31 +303,18 @@ private:
     bool lastFocused = false;
 
     template <class T>
-    void updateSlideableParameterControls(
-            QString name,
-            Number<T>* number,
-            FocusSlider* selectedParameterSlider,
-            FocusLineEdit* selectedParameterMinLineEdit,
-            QDoubleValidator* selectedParameterMinValidator,
-            FocusLineEdit* selectedParameterMaxLineEdit,
-            QDoubleValidator* selectedParameterMaxValidator,
-            QGroupBox* selectedParameterGroupBox)
+    void updateSelectedParameterControls(UniformParameterWidget<T>* widget)
     {
+        Number<T>* number = widget->selectedNumber();
+
         // Slider
 
         selectedParameterSlider->disconnect();
-        selectedParameterSlider->setRange(0, number->indexMax);
-        selectedParameterSlider->setValue(number->getIndex());
+        selectedParameterSlider->setRange(0, number->indexMax());
+        selectedParameterSlider->setValue(number->index());
 
         connect(selectedParameterSlider, &QAbstractSlider::sliderMoved, number, &Number<T>::setValueFromIndex);
-
-        connect(number, &Number<T>::currentIndexChanged, selectedParameterSlider, &QAbstractSlider::setValue);
-        /*connect(number, &Number<T>::currentIndexChanged, this, [=](int currentIndex)
-        {
-            //disconnect(selectedParameterSlider, &QAbstractSlider::valueChanged, nullptr, nullptr);
-            selectedParameterSlider->setValue(currentIndex);
-            //connect(selectedParameterSlider, &QAbstractSlider::valueChanged, number, &Number<T>::setValueFromIndex);
-        });*/
+        connect(number, &Number<T>::indexChanged, selectedParameterSlider, &QAbstractSlider::setValue);
 
         // Focus
 
@@ -389,69 +329,68 @@ private:
             emit focusOut(this);
         });
 
-        // Value changed: check if within min/max range and adjust controls
-
-        connect(number, QOverload<float>::of(&Number<T>::currentValueChanged), this, [=](T currentValue)
-        {
-            if (currentValue < number->getMin())
-            {
-                number->setMin(currentValue);
-
-                selectedParameterMinLineEdit->setText(QString::number(currentValue));
-
-                disconnect(selectedParameterSlider, &QAbstractSlider::valueChanged, nullptr, nullptr);
-                selectedParameterSlider->setValue(number->getIndex());
-                connect(selectedParameterSlider, &QAbstractSlider::valueChanged, number, &Number<T>::setValueFromIndex);
-            }
-            else if (currentValue > number->getMax())
-            {
-                number->setMax(currentValue);
-
-                selectedParameterMaxLineEdit->setText(QString::number(currentValue));
-
-                disconnect(selectedParameterSlider, &QAbstractSlider::valueChanged, nullptr, nullptr);
-                selectedParameterSlider->setValue(number->getIndex());
-                connect(selectedParameterSlider, &QAbstractSlider::valueChanged, number, &Number<T>::setValueFromIndex);
-            }
-        });
-
         // Minimum
 
         selectedParameterMinLineEdit->disconnect();
-        selectedParameterMinLineEdit->setText(QString::number(number->getMin()));
 
-        connect(selectedParameterMinLineEdit, &FocusLineEdit::editingFinished, this, [=]()
+        if (minValidator)
         {
-            number->setMin(selectedParameterMinLineEdit->text().toDouble());
+            delete minValidator;
+            minValidator = nullptr;
+        }
+
+        if (std::is_same<T, float>::value)
+            minValidator = new QDoubleValidator(number->inf(), number->sup(), 5, selectedParameterMinLineEdit);
+        else if (std::is_same<T, int>::value || std::is_same<T, unsigned int>::value)
+            minValidator = new QIntValidator(number->inf(), number->sup(), selectedParameterMinLineEdit);
+
+        if (minValidator)
+            selectedParameterMinLineEdit->setValidator(minValidator);
+
+        selectedParameterMinLineEdit->setText(QString::number(number->min()));
+
+        connect(selectedParameterMinLineEdit, &FocusLineEdit::editingFinished, this, [=, this]()
+        {
+            if (std::is_same<T, float>::value)
+                number->setMin(selectedParameterMinLineEdit->text().toFloat());
+            else if (std::is_same<T, int>::value)
+                number->setMin(selectedParameterMinLineEdit->text().toInt());
+            else if (std::is_same<T, unsigned int>::value)
+                number->setMin(selectedParameterMinLineEdit->text().toUInt());
+
             number->setIndex();
-        });
-        connect(selectedParameterMinLineEdit, &FocusLineEdit::focusOut, this, [=]()
-        {
-            selectedParameterMinLineEdit->setText(QString::number(number->getMin()));
         });
 
         // Maximum
 
         selectedParameterMaxLineEdit->disconnect();
-        selectedParameterMaxLineEdit->setText(QString::number(number->getMax()));
 
-        connect(selectedParameterMaxLineEdit, &FocusLineEdit::editingFinished, this, [=]()
+        if (maxValidator)
         {
-            number->setMax(selectedParameterMaxLineEdit->text().toDouble());
+            delete maxValidator;
+            maxValidator = nullptr;
+        }
+
+        if (std::is_same<T, float>::value)
+            maxValidator = new QDoubleValidator(number->inf(), number->sup(), 5, selectedParameterMaxLineEdit);
+        else if (std::is_same<T, int>::value || std::is_same<T, unsigned int>::value)
+            maxValidator = new QIntValidator(number->inf(), number->sup(), selectedParameterMaxLineEdit);
+
+        if (maxValidator)
+            selectedParameterMaxLineEdit->setValidator(maxValidator);
+
+        selectedParameterMaxLineEdit->setText(QString::number(number->max()));
+
+        connect(selectedParameterMaxLineEdit, &FocusLineEdit::editingFinished, this, [=, this](){
+            if (std::is_same<T, float>::value)
+                number->setMax(selectedParameterMaxLineEdit->text().toFloat());
+            else if (std::is_same<T, int>::value)
+                number->setMax(selectedParameterMaxLineEdit->text().toInt());
+            else if (std::is_same<T, unsigned int>::value)
+                number->setMax(selectedParameterMaxLineEdit->text().toUInt());
+
             number->setIndex();
         });
-        connect(selectedParameterMaxLineEdit, &FocusLineEdit::focusOut, this, [=]()
-        {
-            selectedParameterMaxLineEdit->setText(QString::number(number->getMax()));
-        });
-
-        // Validators
-
-        selectedParameterMinValidator->setBottom(number->getInf());
-        selectedParameterMinValidator->setTop(number->getMax());
-
-        selectedParameterMaxValidator->setBottom(number->getMin());
-        selectedParameterMaxValidator->setTop(number->getSup());
 
         // Focus
 
@@ -479,25 +418,26 @@ private:
 
         // Title
 
-        selectedParameterGroupBox->setTitle("Selected parameter: " + name);
+        selectedParameterGroupBox->setTitle("Selected parameter: " + widget->name());
     }
 
     template <typename T>
-    void updateMidiButtons(Number<T>* number)
+    void updateMidiButtons(UniformParameterWidget<T>* widget)
     {
+        Number<T>* number = widget->selectedNumber();
+
         // MIDI Link button
 
         midiLinkButton->disconnect();
 
-        midiLinkButton->setChecked(number->isMidiLinked());
+        midiLinkButton->setChecked(number->midiLinked());
 
-        if (number->isMidiLinked())
+        if (number->midiLinked())
             midiLinkButton->setStyleSheet("QPushButton{ qproperty-icon: url(:/icons/circle-green.png); }");
         else
             midiLinkButton->setStyleSheet("QPushButton{ qproperty-icon: url(:/icons/circle-grey.png); }");
 
-        connect(midiLinkButton, &QPushButton::clicked, this, [=, this](bool checked)
-        {
+        connect(midiLinkButton, &QPushButton::clicked, this, [=, this](bool checked){
             if (checked)
             {
                 midiLinkButton->setStyleSheet("QPushButton{ qproperty-icon: url(:/icons/circle-orange.png); }");

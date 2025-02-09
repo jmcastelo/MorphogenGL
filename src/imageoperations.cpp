@@ -27,12 +27,14 @@
 
 // Image operation base class
 
-ImageOperation::ImageOperation(bool on, QOpenGLContext* mainContext,
+ImageOperation::ImageOperation(QString theName, bool on, QOpenGLContext* mainContext,
     QString theVertexShaderPath, QString theFragmentShaderPath,
     QList<UniformParameter<float>*> theFloatUniformParameters,
     QList<UniformParameter<int>*> theIntUniformParameters,
     QList<UniformParameter<unsigned int>*> theUintUniformParameters,
     QList<OptionsParameter<GLenum>*> theGLenumParameters) :
+    QOpenGLExtraFunctions(mainContext),
+    mName { theName },
     vertexShaderPath { theVertexShaderPath },
     fragmentShaderPath { theFragmentShaderPath },
     enabled { on },
@@ -43,11 +45,16 @@ ImageOperation::ImageOperation(bool on, QOpenGLContext* mainContext,
     glenumOptionsParameters { theGLenumParameters }
 {
     blender = new Blender(":/shaders/screen.vert", ":/shaders/blend.frag", mainContext);
+
+    fbo = new FBO(vertexShaderPath, fragmentShaderPath, mainContext);
+    fbo->setInputTextureID(*blender->getTextureID());
 }
 
 
 
 ImageOperation::ImageOperation(const ImageOperation& operation) :
+    QOpenGLExtraFunctions(operation.context),
+    mName { operation.mName },
     vertexShaderPath { operation.vertexShaderPath },
     fragmentShaderPath { operation.fragmentShaderPath },
     enabled { operation.enabled },
@@ -55,6 +62,9 @@ ImageOperation::ImageOperation(const ImageOperation& operation) :
     context { operation.context }
 {
     blender = new Blender(":/shaders/screen.vert", ":/shaders/blend.frag", context);
+
+    fbo = new FBO(vertexShaderPath, fragmentShaderPath, context);
+    fbo->setInputTextureID(*blender->getTextureID());
 
     for (auto parameter: operation.floatUniformParameters)
     {
@@ -93,6 +103,38 @@ ImageOperation::~ImageOperation()
 
     delete blender;
     delete fbo;
+}
+
+
+
+template<>
+QList<UniformParameter<float>*> ImageOperation::uniformParameters()
+{
+    return floatUniformParameters;
+}
+
+
+
+template<>
+QList<UniformParameter<int>*> ImageOperation::uniformParameters()
+{
+    return intUniformParameters;
+}
+
+
+
+template<>
+QList<UniformParameter<unsigned int>*> ImageOperation::uniformParameters()
+{
+    return uintUniformParameters;
+}
+
+
+
+template<>
+QList<OptionsParameter<GLenum>*> ImageOperation::optionsParameters()
+{
+    return glenumOptionsParameters;
 }
 
 
@@ -142,17 +184,8 @@ void ImageOperation::setInputData(QList<InputData *> data)
 
 
 
-template <typename T>
-void ImageOperation::setOptionsParameter(OptionsParameter<T>* parameter)
-{
-    if (std::is_same<T, GLenum>::value)
-        fbo->setMinMagFilter(parameter->value());
-}
-
-
-
-template <typename T>
-void ImageOperation::setUniform(QString name, QString type, GLsizei count, const T* values)
+template <>
+void ImageOperation::setUniform<float>(QString name, QString type, GLsizei count, const float* values)
 {
     fbo->makeCurrent();
     fbo->program->bind();
@@ -161,28 +194,12 @@ void ImageOperation::setUniform(QString name, QString type, GLsizei count, const
 
     if (type == "float")
         glUniform1fv(location, count, values);
-    else if (type == "int")
-        glUniform1iv(location, count, values);
-    else if (type == "uint")
-        glUniform1uiv(location, count, values);
     else if (type == "vec2")
         glUniform2fv(location, count, values);
-    else if (type == "ivec2")
-        glUniform2iv(location, count, values);
-    else if (type == "uvec2")
-        glUniform2uiv(location, count, values);
     else if (type == "vec3")
         glUniform3fv(location, count, values);
-    else if (type == "ivec3")
-        glUniform3iv(location, count, values);
-    else if (type == "uvec3")
-        glUniform3uiv(location, count, values);
     else if (type == "vec4")
         glUniform4fv(location, count, values);
-    else if (type == "ivec4")
-        glUniform4iv(location, count, values);
-    else if (type == "uvec4")
-        glUniform4uiv(location, count, values);
     else if (type == "mat2")
         glUniformMatrix2fv(location, count, GL_FALSE, values);
     else if (type == "mat3")
@@ -192,6 +209,60 @@ void ImageOperation::setUniform(QString name, QString type, GLsizei count, const
 
     fbo->program->release();
     fbo->doneCurrent();
+}
+
+
+
+template <>
+void ImageOperation::setUniform<int>(QString name, QString type, GLsizei count, const int* values)
+{
+    fbo->makeCurrent();
+    fbo->program->bind();
+
+    int location = fbo->program->uniformLocation(name);
+
+    if (type == "int")
+        glUniform1iv(location, count, values);
+    else if (type == "ivec2")
+        glUniform2iv(location, count, values);
+    else if (type == "ivec3")
+        glUniform3iv(location, count, values);
+    else if (type == "ivec4")
+        glUniform4iv(location, count, values);
+
+    fbo->program->release();
+    fbo->doneCurrent();
+}
+
+
+
+template <>
+void ImageOperation::setUniform<unsigned int>(QString name, QString type, GLsizei count, const unsigned int* values)
+{
+    fbo->makeCurrent();
+    fbo->program->bind();
+
+    int location = fbo->program->uniformLocation(name);
+
+    if (type == "uint")
+        glUniform1uiv(location, count, values);
+    else if (type == "uvec2")
+        glUniform2uiv(location, count, values);
+    else if (type == "uvec3")
+        glUniform3uiv(location, count, values);
+    else if (type == "uvec4")
+        glUniform4uiv(location, count, values);
+
+    fbo->program->release();
+    fbo->doneCurrent();
+}
+
+
+
+template <>
+void ImageOperation::setOptionsParameter<GLenum>(OptionsParameter<GLenum>* parameter)
+{
+    fbo->setMinMagFilter(parameter->value());
 }
 
 

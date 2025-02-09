@@ -3,42 +3,54 @@
 
 
 
+#include "../parameter.h"
 #include "parameterwidget.h"
 #include "focuswidgets.h"
+
+#include <QGroupBox>
+#include <QVBoxLayout>
 
 
 
 template <class T>
-class OptionsParameterWidget : public ParameterWidget
+class OptionsParameterWidget : public ParameterWidgetSignals
 {
 public:
-    OptionsParameterWidget(OptionsParameter<T>* theOptionsParameter, QWidget* parent = nullptr) :
-        ParameterWidget(parent),
-        optionsParameter { theOptionsParameter }
+    OptionsParameterWidget(OptionsParameter<T>* theOptionsParameter, QObject* parent = nullptr) :
+        ParameterWidgetSignals(parent),
+        mOptionsParameter { theOptionsParameter }
     {
-        comboBox = new FocusComboBox;
-        comboBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+        mGroupBox = new QGroupBox(mOptionsParameter->name());
 
-        for (QString valueName : optionsParameter->valueNames())
-            comboBox->addItem(valueName);
-        comboBox->setCurrentIndex(optionsParameter->indexOf());
+        // Set up combo box
 
-        connect(comboBox, QOverload<int>::of(&QComboBox::activated), this, [=, this](int index)
+        mComboBox = new FocusComboBox;
+        mComboBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+
+        for (QString valueName : mOptionsParameter->valueNames())
+            mComboBox->addItem(valueName);
+        mComboBox->setCurrentIndex(mOptionsParameter->indexOf());
+
+        QVBoxLayout* layout = new QVBoxLayout;
+        layout->addWidget(mComboBox);
+        mGroupBox->setLayout(layout);
+
+        // Connections
+
+        connect(mComboBox, QOverload<int>::of(&QComboBox::activated), this, [=, this](int index)
         {
-            optionsParameter->setValue(index);
+            mOptionsParameter->setValue(index);
         });
-
-        connect(comboBox, &FocusComboBox::focusIn, this, QOverload<>::of(&ParameterWidget::focusIn));
-        connect(comboBox, &FocusComboBox::focusOut, this, &ParameterWidget::focusOut);
-
-        focusedWidget = comboBox;
     }
 
-    QString getName() { return optionsParameter->name; }
+    QString name() { return mOptionsParameter->name; }
+
+    QGroupBox* widget() { return mGroupBox; }
 
 private:
-    OptionsParameter<T>* optionsParameter;
-    FocusComboBox* comboBox;
+    OptionsParameter<T>* mOptionsParameter;
+    QGroupBox* mGroupBox;
+    FocusComboBox* mComboBox;
 };
 
 

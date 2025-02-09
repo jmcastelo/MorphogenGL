@@ -3,31 +3,22 @@
 
 
 
-#include "../parameter.h"
-
 #include <QWidget>
 
 
 
 // Parameter widget base class
 
-class ParameterWidget : public QWidget
+class ParameterWidgetSignals : public QObject
 {
     Q_OBJECT
 
 public:
-    ParameterWidget(QWidget* parent = nullptr) : QWidget(parent){}
-
-    QWidget* lastFocusedWidget() { return focusedWidget; }
-    virtual QString getName() = 0;
+    explicit ParameterWidgetSignals(QObject* parent = nullptr) : QObject(parent) {}
 
 signals:
-    void focusIn(Number<QVariant>* number);
     void focusIn();
     void focusOut();
-
-protected:
-    QWidget* focusedWidget;
 };
 
 
