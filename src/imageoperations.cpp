@@ -28,21 +28,13 @@
 // Image operation base class
 
 ImageOperation::ImageOperation(QString theName, bool on, QOpenGLContext* mainContext,
-    QString theVertexShaderPath, QString theFragmentShaderPath,
-    QList<UniformParameter<float>*> theFloatUniformParameters,
-    QList<UniformParameter<int>*> theIntUniformParameters,
-    QList<UniformParameter<unsigned int>*> theUintUniformParameters,
-    QList<OptionsParameter<GLenum>*> theGLenumParameters) :
+    QString theVertexShaderPath, QString theFragmentShaderPath) :
     QOpenGLExtraFunctions(mainContext),
     mName { theName },
     vertexShaderPath { theVertexShaderPath },
     fragmentShaderPath { theFragmentShaderPath },
     enabled { on },
-    context { mainContext },
-    floatUniformParameters { theFloatUniformParameters },
-    intUniformParameters { theIntUniformParameters },
-    uintUniformParameters { theUintUniformParameters },
-    glenumOptionsParameters { theGLenumParameters }
+    context { mainContext }
 {
     blender = new Blender(":/shaders/screen.vert", ":/shaders/blend.frag", mainContext);
 
@@ -185,26 +177,26 @@ void ImageOperation::setInputData(QList<InputData *> data)
 
 
 template <>
-void ImageOperation::setUniform<float>(QString name, QString type, GLsizei count, const float* values)
+void ImageOperation::setUniform<float>(QString name, UniformType type, GLsizei count, const float* values)
 {
     fbo->makeCurrent();
     fbo->program->bind();
 
     int location = fbo->program->uniformLocation(name);
 
-    if (type == "float")
+    if (type == UniformType::FLOAT)
         glUniform1fv(location, count, values);
-    else if (type == "vec2")
+    else if (type == UniformType::FLOAT_VEC2)
         glUniform2fv(location, count, values);
-    else if (type == "vec3")
+    else if (type == UniformType::FLOAT_VEC3)
         glUniform3fv(location, count, values);
-    else if (type == "vec4")
+    else if (type == UniformType::FLOAT_VEC4)
         glUniform4fv(location, count, values);
-    else if (type == "mat2")
+    else if (type == UniformType::FLOAT_MAT_2)
         glUniformMatrix2fv(location, count, GL_FALSE, values);
-    else if (type == "mat3")
+    else if (type == UniformType::FLOAT_MAT_3)
         glUniformMatrix3fv(location, count, GL_FALSE, values);
-    else if (type == "mat4")
+    else if (type == UniformType::FLOAT_MAT_4)
         glUniformMatrix4fv(location, count, GL_FALSE, values);
 
     fbo->program->release();
@@ -214,20 +206,20 @@ void ImageOperation::setUniform<float>(QString name, QString type, GLsizei count
 
 
 template <>
-void ImageOperation::setUniform<int>(QString name, QString type, GLsizei count, const int* values)
+void ImageOperation::setUniform<int>(QString name, UniformType type, GLsizei count, const int* values)
 {
     fbo->makeCurrent();
     fbo->program->bind();
 
     int location = fbo->program->uniformLocation(name);
 
-    if (type == "int")
+    if (type == UniformType::INT)
         glUniform1iv(location, count, values);
-    else if (type == "ivec2")
+    else if (type == UniformType::INT_VEC2)
         glUniform2iv(location, count, values);
-    else if (type == "ivec3")
+    else if (type == UniformType::INT_VEC3)
         glUniform3iv(location, count, values);
-    else if (type == "ivec4")
+    else if (type == UniformType::INT_VEC4)
         glUniform4iv(location, count, values);
 
     fbo->program->release();
@@ -237,20 +229,20 @@ void ImageOperation::setUniform<int>(QString name, QString type, GLsizei count, 
 
 
 template <>
-void ImageOperation::setUniform<unsigned int>(QString name, QString type, GLsizei count, const unsigned int* values)
+void ImageOperation::setUniform<unsigned int>(QString name, UniformType type, GLsizei count, const unsigned int* values)
 {
     fbo->makeCurrent();
     fbo->program->bind();
 
     int location = fbo->program->uniformLocation(name);
 
-    if (type == "uint")
+    if (type == UniformType::UNSIGNED_INT)
         glUniform1uiv(location, count, values);
-    else if (type == "uvec2")
+    else if (type == UniformType::UNSIGNED_INT_VEC2)
         glUniform2uiv(location, count, values);
-    else if (type == "uvec3")
+    else if (type == UniformType::UNSIGNED_INT_VEC3)
         glUniform3uiv(location, count, values);
-    else if (type == "uvec4")
+    else if (type == UniformType::UNSIGNED_INT_VEC4)
         glUniform4uiv(location, count, values);
 
     fbo->program->release();
@@ -264,6 +256,31 @@ void ImageOperation::setOptionsParameter<GLenum>(OptionsParameter<GLenum>* param
 {
     fbo->setMinMagFilter(parameter->value());
 }
+
+
+
+void ImageOperation::setMat4Uniform(QString name, UniformMat4Type type, QList<float> values)
+{
+    QMatrix4x4 matrix;
+    matrix.setToIdentity();
+
+    if (type == UniformMat4Type::TRANSLATION)
+        matrix.translate(values.at(0) * FBO::width, values.at(1) * FBO::height);
+    else if (type == UniformMat4Type::ROTATION)
+        matrix.rotate(values.at(0), 0.0f, 0.0f, 1.0f);
+    else if (type == UniformMat4Type::SCALING)
+        matrix.scale(values.at(0), values.at(1));
+
+    fbo->makeCurrent();
+    fbo->program->bind();
+
+    int location = fbo->program->uniformLocation(name);
+    fbo->program->setUniformValue(location, matrix);
+
+    fbo->program->release();
+    fbo->doneCurrent();
+}
+
 
 
 

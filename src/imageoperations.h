@@ -53,6 +53,9 @@ class OptionsParameter;
 template <typename T>
 class UniformParameter;
 
+enum class UniformType;
+enum class UniformMat4Type;
+
 
 
 // Base image operation class
@@ -61,11 +64,7 @@ class ImageOperation : protected QOpenGLExtraFunctions
 {
 public:
     ImageOperation(QString theName, bool on, QOpenGLContext* mainContext,
-        QString theVertexShaderPath, QString theFragmentShaderPath,
-        QList<UniformParameter<float>*> theFloatUniformParameters = QList<UniformParameter<float>*>(),
-        QList<UniformParameter<int>*> theIntNumberParameters = QList<UniformParameter<int>*>(),
-        QList<UniformParameter<unsigned int>*> theUintNumberParameters = QList<UniformParameter<unsigned int>*>(),
-        QList<OptionsParameter<GLenum>*> theGLenumParameters = QList<OptionsParameter<GLenum>*>());
+        QString theVertexShaderPath, QString theFragmentShaderPath);
 
     ImageOperation(const ImageOperation& operation);
 
@@ -97,13 +96,20 @@ public:
     template <typename T>
     QList<OptionsParameter<T>*> optionsParameters();
 
-    //void setParameters();
-
     template <typename T>
-    void setUniform(QString name, QString type, GLsizei count, const T* values);
+    void setUniform(QString name, UniformType type, GLsizei count, const T* values);
 
     template <typename T>
     void setOptionsParameter(OptionsParameter<T>* parameter);
+
+    void setMat4Uniform(QString name, UniformMat4Type type, QList<float> values);
+
+    void setOrthographicProjection(QString name) { fbo->setOrthographic(name); };
+
+    void setFloatUniformParameters(QList<UniformParameter<float>*> theFloatUniformParameters){ floatUniformParameters = theFloatUniformParameters; }
+    void setIntUniformParameters(QList<UniformParameter<int>*> theIntUniformParameters){ intUniformParameters = theIntUniformParameters; }
+    void setUintUniformParameters(QList<UniformParameter<unsigned int>*> theUintUniformParameters){ uintUniformParameters = theUintUniformParameters; }
+    void setGLenumOptionsParameters(QList<OptionsParameter<GLenum>*> theGLenumParameters){ glenumOptionsParameters = theGLenumParameters; }
 
     void applyOperation();
     void blit();

@@ -46,8 +46,6 @@ public:
     static TextureFormat texFormat;
 
     QOpenGLShaderProgram* program;
-
-    QMatrix4x4 transformationMatrix;
     
     FBO(QString vertexShader, QString fragmentShader, QOpenGLContext* mainContext);
     virtual ~FBO();
@@ -72,7 +70,8 @@ public:
     void identity();
     void clear();
 
-    void adjustTransform();
+    void setOrthographic(QString name);
+    void adjustOrtho();
 
     QImage outputImage();
 
@@ -98,6 +97,9 @@ protected:
     GLuint widthOld;
     GLuint heightOld;
     GLsync fence = 0;
+
+    bool mOrthoEnabled = false;
+    QString mOrthoName;
 
 private:
     void resizeVertices();

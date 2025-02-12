@@ -20,9 +20,12 @@
 *  along with MorphogenGL.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#pragma once
 
-#include "texformat.h"
+
+#ifndef SEED_H
+#define SEED_H
+
+
 
 #include <random>
 #include <QOpenGLExtraFunctions>
@@ -104,3 +107,7 @@ private:
     void drawRandom(bool grayscale);
     void drawImage();
 };
+
+
+
+#endif // SEED_H

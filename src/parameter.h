@@ -39,6 +39,7 @@
 #include <QMatrix2x2>
 #include <QMatrix3x3>
 #include <QMatrix4x4>
+#include <QOpenGLExtraFunctions>
 
 
 
@@ -179,15 +180,37 @@ signals:
 
 
 
+enum class UniformType
+{
+    FLOAT = GL_FLOAT,
+    FLOAT_VEC2 = GL_FLOAT_VEC2,
+    FLOAT_VEC3 = GL_FLOAT_VEC3,
+    FLOAT_VEC4 = GL_FLOAT_VEC4,
+    INT = GL_INT,
+    INT_VEC2 = GL_INT_VEC2,
+    INT_VEC3 = GL_INT_VEC3,
+    INT_VEC4 = GL_INT_VEC4,
+    UNSIGNED_INT = GL_UNSIGNED_INT,
+    UNSIGNED_INT_VEC2 = GL_UNSIGNED_INT_VEC2,
+    UNSIGNED_INT_VEC3 = GL_UNSIGNED_INT_VEC3,
+    UNSIGNED_INT_VEC4 = GL_UNSIGNED_INT_VEC4,
+    FLOAT_MAT_2 = GL_FLOAT_MAT2,
+    FLOAT_MAT_3 = GL_FLOAT_MAT3,
+    FLOAT_MAT_4 = GL_FLOAT_MAT4
+};
+
+
+
 class Parameter : public ParameterSignals
 {
 public:
-    Parameter(QString theName, QString theUniformName, QString theUniformType, bool isEditable) :
+    Parameter(QString theName, QString theUniformName, UniformType theUniformType, bool isEditable, ImageOperation* theOperation) :
         ParameterSignals(),
         mName { theName },
         mUniformName { theUniformName },
         mUniformType { theUniformType },
-        mEditable { isEditable }
+        mEditable { isEditable },
+        mOperation { theOperation }
     {}
 
     Parameter(const Parameter& parameter) :
@@ -201,15 +224,15 @@ public:
 
     QString name() { return mName; }
     QString uniformName() { return mUniformName; }
-    QString uniformType() { return mUniformType; }
+    UniformType uniformType() { return mUniformType; }
     bool editable() { return mEditable; }
 
-    void setOperation(ImageOperation* op) { mOperation = op; }
+    void setOperation(ImageOperation* operation) { mOperation = operation; }
 
 protected:
     QString mName;
     QString mUniformName;
-    QString mUniformType;
+    UniformType mUniformType;
     bool mEditable;
     ImageOperation* mOperation;
 };
@@ -220,8 +243,8 @@ template <typename T>
 class OptionsParameter : public Parameter
 {
 public:
-    OptionsParameter(QString theName, QString theUniformName, QString theUniformType, bool isEditable, QList<QString> theValueNames, QList<T> theValues, T theValue) :
-        Parameter(theName, theUniformName, theUniformType, isEditable),
+    OptionsParameter(QString theName, QString theUniformName, UniformType theUniformType, bool isEditable, QList<QString> theValueNames, QList<T> theValues, T theValue, ImageOperation* theOperation) :
+        Parameter(theName, theUniformName, theUniformType, isEditable, theOperation),
         mValueNames { theValueNames },
         mValues { theValues },
         mCurrentValue { theValue }
@@ -262,8 +285,8 @@ template <typename T>
 class UniformParameter : public Parameter
 {
 public:
-    UniformParameter(QString theName, QString theUniformName, QString theUniformType, int numItems, bool isEditable, QList<T> theValues, T theMin, T theMax, T theInf, T theSup) :
-        Parameter(theName, theUniformName, theUniformType, isEditable),
+    UniformParameter(QString theName, QString theUniformName, UniformType theUniformType, int numItems, bool isEditable, QList<T> theValues, T theMin, T theMax, T theInf, T theSup, ImageOperation* theOperation) :
+        Parameter(theName, theUniformName, theUniformType, isEditable, theOperation),
         nItems { numItems }
     {
         for (T value : theValues)
@@ -273,8 +296,8 @@ public:
         }
     }
 
-    UniformParameter(QString theName, QString theUniformName, QString theUniformType, bool isEditable, QList<QPair<QUuid, T>> theIdValuePairs, T theMin, T theMax, T theInf, T theSup) :
-        Parameter(theName, theUniformName, theUniformType, isEditable)
+    UniformParameter(QString theName, QString theUniformName, UniformType theUniformType, bool isEditable, QList<QPair<QUuid, T>> theIdValuePairs, T theMin, T theMax, T theInf, T theSup, ImageOperation* theOperation) :
+        Parameter(theName, theUniformName, theUniformType, isEditable, theOperation)
     {
         for (QPair<QUuid, T> pair : theIdValuePairs)
         {
@@ -366,19 +389,19 @@ public:
 
     QPair<int, int> colsRowsPerItem()
     {
-        if (mUniformType == "float" || mUniformType == "int" | mUniformType == "uint")
+        if (mUniformType == UniformType::FLOAT || mUniformType == UniformType::INT || mUniformType == UniformType::UNSIGNED_INT)
             return QPair<int, int>(1, 1);
-        else if (mUniformType == "vec2" || mUniformType == "ivec2" || mUniformType == "uvec2")
+        else if (mUniformType == UniformType::FLOAT_VEC2 || mUniformType == UniformType::INT_VEC2 || mUniformType == UniformType::UNSIGNED_INT_VEC2)
             return QPair<int, int>(2, 1);
-        else if (mUniformType == "vec3" || mUniformType == "ivec3" || mUniformType == "uvec3")
+        else if (mUniformType == UniformType::FLOAT_VEC3 || mUniformType == UniformType::INT_VEC3 || mUniformType == UniformType::UNSIGNED_INT_VEC3)
             return QPair<int, int>(3, 1);
-        else if (mUniformType == "vec4" || mUniformType == "ivec4" || mUniformType == "uvec4")
+        else if (mUniformType == UniformType::FLOAT_VEC4 || mUniformType == UniformType::INT_VEC4 || mUniformType == UniformType::UNSIGNED_INT_VEC4)
             return QPair<int, int>(4, 1);
-        else if (mUniformType == "mat2")
+        else if (mUniformType == UniformType::FLOAT_MAT_2)
             return QPair<int, int>(2, 2);
-        else if (mUniformType == "mat3")
+        else if (mUniformType == UniformType::FLOAT_MAT_3)
             return QPair<int, int>(3, 3);
-        else if (mUniformType == "mat4")
+        else if (mUniformType == UniformType::FLOAT_MAT_4)
             return QPair<int, int>(4, 4);
 
         return QPair<int, int>(9, 0);
@@ -387,6 +410,163 @@ public:
 private:
     QList<Number<T>*> mNumbers;
     int nItems;
+};
+
+
+
+enum class UniformMat4Type
+{
+    TRANSLATION = 0,
+    ROTATION = 1,
+    SCALING = 2,
+    ORTHOGRAPHIC = 3
+};
+
+
+class UniformMat4Parameter : public Parameter
+{
+public:
+    UniformMat4Parameter(QString theName, QString theUniformName, bool isEditable, UniformMat4Type theMat4Type, QList<float> theValues, float theMin, float theMax, float theInf, float theSup, ImageOperation* theOperation) :
+        Parameter(theName, theUniformName, UniformType::FLOAT_MAT_4, isEditable, theOperation),
+        mType { theMat4Type }
+    {
+        if (mType == UniformMat4Type::TRANSLATION)
+        {
+            mNumberNames.append("X");
+            mNumbers.append(new Number<float>(theValues.at(0), theMin, theMax, theInf, theSup));
+
+            mNumberNames.append("Y");
+            mNumbers.append(new Number<float>(theValues.at(1), theMin, theMax, theInf, theSup));
+        }
+        else if (mType == UniformMat4Type::ROTATION)
+        {
+            mNumberNames.append("Angle");
+            mNumbers.append(new Number<float>(theValues.at(0), theMin, theMax, theInf, theSup));
+        }
+        else if (mType == UniformMat4Type::SCALING)
+        {
+            mNumberNames.append("X");
+            mNumbers.append(new Number<float>(theValues.at(0), theMin, theMax, theInf, theSup));
+
+            mNumberNames.append("Y");
+            mNumbers.append(new Number<float>(theValues.at(1), theMin, theMax, theInf, theSup));
+        }
+        else if (mType == UniformMat4Type::ORTHOGRAPHIC)
+        {
+            mEditable = false;
+            mOperation->setOrthographicProjection(mUniformName);
+        }
+    }
+
+    UniformMat4Parameter(QString theName, QString theUniformName, bool isEditable, UniformMat4Type theMat4Type, QList<QPair<QUuid, float>> theIdValuePairs, float theMin, float theMax, float theInf, float theSup, ImageOperation* theOperation) :
+        Parameter(theName, theUniformName, UniformType::FLOAT_MAT_4, isEditable, theOperation),
+        mType { theMat4Type }
+    {
+        if (mType == UniformMat4Type::TRANSLATION)
+        {
+            mNumberNames.append("X");
+            mNumbers.append(new Number<float>(theIdValuePairs.at(0).first, theIdValuePairs.at(0).second, theMin, theMax, theInf, theSup));
+
+            mNumberNames.append("Y");
+            mNumbers.append(new Number<float>(theIdValuePairs.at(1).first, theIdValuePairs.at(1).second, theMin, theMax, theInf, theSup));
+        }
+        else if (mType == UniformMat4Type::ROTATION)
+        {
+            mNumberNames.append("Angle");
+            mNumbers.append(new Number<float>(theIdValuePairs.at(0).first, theIdValuePairs.at(0).second, theMin, theMax, theInf, theSup));
+        }
+        else if (mType == UniformMat4Type::SCALING)
+        {
+            mNumberNames.append("X");
+            mNumbers.append(new Number<float>(theIdValuePairs.at(0).first, theIdValuePairs.at(0).second, theMin, theMax, theInf, theSup));
+
+            mNumberNames.append("Y");
+            mNumbers.append(new Number<float>(theIdValuePairs.at(1).first, theIdValuePairs.at(1).second, theMin, theMax, theInf, theSup));
+        }
+        else if (mType == UniformMat4Type::ORTHOGRAPHIC)
+        {
+            mEditable = false;
+            mOperation->setOrthographicProjection(mUniformName);
+        }
+    }
+
+    UniformMat4Parameter(const UniformMat4Parameter& parameter) :
+        Parameter(parameter)
+    {
+        mNumberNames = parameter.mNumberNames;
+
+        for (const Number<float>* number : parameter.mNumbers)
+        {
+            Number<float>* newNumber = new Number<float>(*number);
+            mNumbers.push_back(newNumber);
+        }
+    }
+
+    ~UniformMat4Parameter()
+    {
+        qDeleteAll(mNumbers);
+    }
+
+    float value(int i)
+    {
+        if (i < mNumbers.size())
+            return mNumbers.at(i)->value();
+        else
+            return 0;
+    }
+
+    void setValue(int i, float theValue)
+    {
+        if (i < mNumbers.size())
+        {
+            mNumbers[i]->setValue(theValue);
+            mNumbers[i]->setIndex();
+
+            emit valueChanged(i, QVariant(theValue));
+            emit valueChanged(QVariant(theValue));
+
+            setUniform();
+        }
+    }
+
+    void setUniform()
+    {
+        mOperation->setMat4Uniform(mName, mType, values());
+    }
+
+    QList<float> values()
+    {
+        QList<float> theValues;
+        foreach (Number<float>* number, mNumbers)
+            theValues.append(number->value());
+        return theValues;
+    }
+
+    QList<Number<float>*> numbers()
+    {
+        return mNumbers;
+    }
+
+    Number<float>* number(QUuid theId)
+    {
+        foreach (Number<float>* number, mNumbers)
+            if (theId == number->id())
+                return number;
+        return nullptr;
+    }
+
+    Number<float>* number(int i)
+    {
+        if (i < mNumbers.size())
+            return mNumbers[i];
+        else
+            return new Number<float>(0, 0, 0, 0, 0);
+    }
+
+private:
+    UniformMat4Type mType;
+    QList<Number<float>*> mNumbers;
+    QList<QString> mNumberNames;
 };
 
 
