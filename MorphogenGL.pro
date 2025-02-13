@@ -18,7 +18,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with MorphogenGL.  If not, see <https://www.gnu.org/licenses/>.
 
-TARGET = MorphogenGL
+TARGET = morphogen
 
 TEMPLATE = app
 
@@ -54,6 +54,7 @@ HEADERS += \
     src/midiwidget.h \
     src/morphowidget.h \
     src/node.h \
+    src/operationbuilder.h \
     src/operationswidget.h \
     src/overlay.h \
     src/parameter.h \
@@ -89,6 +90,7 @@ SOURCES += \
     src/midiwidget.cpp \
     src/morphowidget.cpp \
     src/node.cpp \
+    src/operationbuilder.cpp \
     src/overlay.cpp \
     src/plotswidget.cpp \
     src/recorder.cpp \

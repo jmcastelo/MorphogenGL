@@ -69,5 +69,6 @@
         <file>icons/control-knob.png</file>
         <file>icons/circle-orange.png</file>
         <file>icons/align-horizontal-left.png</file>
+        <file>icons/applications-development.png</file>
     </qresource>
 </RCC>

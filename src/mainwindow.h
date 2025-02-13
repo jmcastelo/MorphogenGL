@@ -10,6 +10,7 @@
 #include "midicontrol.h"
 #include "midiwidget.h"
 #include "overlay.h"
+#include "operationbuilder.h"
 
 #include <QMainWindow>
 #include <QStackedLayout>
@@ -50,6 +51,7 @@ private:
     MidiControl midiControl;
     MidiWidget* midiWidget;
     Overlay* overlay;
+    OperationBuilder* opBuilder;
 
     TimerThread* updateTimer;
     std::chrono::time_point<std::chrono::steady_clock> updateStart;
@@ -91,6 +93,8 @@ private slots:
     void setSize(int with, int height);
 
     void showMidiWidget();
+
+    void toggleOperationBuilder();
 };
 
 

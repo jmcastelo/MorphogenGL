@@ -28,7 +28,6 @@ ui_*.h
 *.qmlc
 *.jsc
 Makefile*
-*build*
 *.qm
 *.prl
 
@@ -53,5 +52,10 @@ compile_commands.json
 
 *_qmlcache.qrc
 
+.qtc_clangd
+
+morphogen
+
+build
 configs
 videos

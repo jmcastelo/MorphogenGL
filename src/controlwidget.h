@@ -86,6 +86,7 @@ signals:
     void seedDrawn();
     void updateStateChanged(bool state);
     void showMidiWidget();
+    void toggleOperationBuilder();
     void overlayToggled(bool show);
     void imageSizeChanged(int width, int height);
     void startRecording(QString recordFilename, int framesPerSecond, QMediaFormat format);

@@ -83,8 +83,7 @@ ControlWidget::ControlWidget(double itFPS, double updFPS, GeneratorGL *theGenera
     connect(graphWidget, &GraphWidget::removeOperationParameters, this, &ControlWidget::removeParametersWidget);
     connect(graphWidget, &GraphWidget::updateOperationParameters, this, &ControlWidget::updateParametersWidget);
     connect(graphWidget, &GraphWidget::blendFactorWidgetCreated, this, &ControlWidget::setUpBlendFactorWidget);
-    connect(graphWidget, &GraphWidget::blendFactorWidgetToggled, this, [&](BlendFactorWidget* widget)
-    {
+    connect(graphWidget, &GraphWidget::blendFactorWidgetToggled, this, [&](BlendFactorWidget* widget){
         if (widget->isVisible())
         {
             if (scrollLayout->indexOf(widget) == -1)
@@ -100,12 +99,10 @@ ControlWidget::ControlWidget(double itFPS, double updFPS, GeneratorGL *theGenera
             updateScrollArea();
         }
     });
-    connect(graphWidget, &GraphWidget::blendFactorWidgetDeleted, this, [&](BlendFactorWidget* widget)
-    {
+    connect(graphWidget, &GraphWidget::blendFactorWidgetDeleted, this, [&](BlendFactorWidget* widget){
         blendFactorWidgets.remove(widget->id);
     });
-    connect(graphWidget, &GraphWidget::operationEnabled, this, [&](QUuid id, bool enabled)
-    {
+    connect(graphWidget, &GraphWidget::operationEnabled, this, [&](QUuid id, bool enabled){
         if (operationsWidgets.contains(id))
             operationsWidgets.value(id)->toggleEnableButton(enabled);
     });
@@ -218,6 +215,7 @@ void ControlWidget::constructSystemToolBar()
 
     systemToolBar->addSeparator();
 
+    systemToolBar->addAction(QIcon(QPixmap(":/icons/applications-development.png")), "Operation builder", this, &ControlWidget::toggleOperationBuilder);
     systemToolBar->addAction(QIcon(QPixmap(":/icons/format-list-ordered.png")), "List sorted operations", this, &ControlWidget::toggleSortedOperationsWidget);
 
     systemToolBar->addSeparator();

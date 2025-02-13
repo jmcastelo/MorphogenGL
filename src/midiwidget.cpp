@@ -13,6 +13,8 @@ MidiWidget::MidiWidget(QWidget *parent): QWidget{parent}
     layout->addWidget(portsTable);
 
     setLayout(layout);
+
+    setWindowTitle("MIDI Controller");
 }
 
 
@@ -23,13 +25,12 @@ void MidiWidget::populatePortsTable(std::vector<std::string> portNames)
 
     int portId = 0;
 
-    for (std::string name : portNames)
+    foreach (std::string name, portNames)
     {
         QListWidgetItem* item = new QListWidgetItem("", portsTable);
         QCheckBox* checkBox = new QCheckBox(QString::fromStdString(name));
         portsTable->setItemWidget(item, checkBox);
-        connect(checkBox, &QCheckBox::checkStateChanged, [=, this](Qt::CheckState state)
-        {
+        connect(checkBox, &QCheckBox::checkStateChanged, this, [=, this](Qt::CheckState state){
             emit portSelected(portId, state == Qt::Checked);
         });
         portId++;

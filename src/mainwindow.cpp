@@ -45,6 +45,8 @@ MainWindow::MainWindow()
 
     stackedLayout->setCurrentWidget(controlWidget);
 
+    opBuilder = new OperationBuilder();
+
     midiWidget = new MidiWidget();
 
     connect(&midiControl, &MidiControl::inputPortsChanged, midiWidget, &MidiWidget::populatePortsTable);
@@ -64,8 +66,7 @@ MainWindow::MainWindow()
     connect(this, &MainWindow::iterationTimeMeasured, controlWidget, &ControlWidget::updateIterationMetricsLabels);
     connect(this, &MainWindow::updateTimeMeasured, controlWidget, &ControlWidget::updateUpdateMetricsLabels);
 
-    connect(morphoWidget, &MorphoWidget::openGLInitialized, this, [&]()
-    {
+    connect(morphoWidget, &MorphoWidget::openGLInitialized, this, [&](){
         controlWidget->generator->init(morphoWidget->context());
         plotsWidget->init(morphoWidget->context());
 
@@ -104,6 +105,7 @@ MainWindow::MainWindow()
     connect(controlWidget, &ControlWidget::showMidiWidget, this, &MainWindow::showMidiWidget);
     connect(controlWidget, &ControlWidget::overlayToggled, overlay, &Overlay::enable);
     connect(controlWidget, &ControlWidget::parameterValueChanged, overlay, &Overlay::addMessage);
+    connect(controlWidget, &ControlWidget::toggleOperationBuilder, this, &MainWindow::toggleOperationBuilder);
 
     setWindowTitle("Morphogen");
     setWindowIcon(QIcon(":/icons/morphogengl.png"));
@@ -124,6 +126,8 @@ MainWindow::~MainWindow()
     delete overlay;
 
     delete midiWidget;
+
+    delete opBuilder;
 
     delete iterationTimer;
     delete updateTimer;
@@ -270,11 +274,16 @@ void MainWindow::takeScreenshot(QString filename)
 
 void MainWindow::showMidiWidget()
 {
-    if (midiWidget->isVisible())
-        midiWidget->hide();
-    else
-        midiWidget->show();
+    midiWidget->setVisible(!midiWidget->isVisible());
 }
+
+
+
+void MainWindow::toggleOperationBuilder()
+{
+    opBuilder->setVisible(!opBuilder->isVisible());
+}
+
 
 
 void MainWindow::setSize(int width, int height)
@@ -360,6 +369,8 @@ void MainWindow::closeEvent(QCloseEvent* event)
     generator->setState(false);
 
     midiWidget->close();
+
+    opBuilder->close();
 
     event->accept();
 }
