@@ -37,8 +37,7 @@ public:
 
         // Connections
 
-        connect(mComboBox, QOverload<int>::of(&QComboBox::activated), this, [=, this](int index)
-        {
+        connect(mComboBox, QOverload<int>::of(&QComboBox::activated), this, [=, this](int index){
             mOptionsParameter->setValue(index);
         });
     }

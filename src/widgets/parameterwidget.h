@@ -6,11 +6,11 @@
 #include "../parameter.h"
 #include "focuswidgets.h"
 
-#include <QWidget>
+#include <QObject>
 
 
 
-// Parameter widget base class
+// Parameter widget signals class
 
 class ParameterWidgetSignals : public QObject
 {
@@ -25,6 +25,8 @@ signals:
 };
 
 
+
+// Parameter widget base class
 
 template <typename T>
 class ParameterWidget : public ParameterWidgetSignals

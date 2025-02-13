@@ -182,6 +182,7 @@ signals:
 
 enum class UniformType
 {
+    NONE = GL_FALSE,
     FLOAT = GL_FLOAT,
     FLOAT_VEC2 = GL_FLOAT_VEC2,
     FLOAT_VEC3 = GL_FLOAT_VEC3,
@@ -243,8 +244,8 @@ template <typename T>
 class OptionsParameter : public Parameter
 {
 public:
-    OptionsParameter(QString theName, QString theUniformName, UniformType theUniformType, bool isEditable, QList<QString> theValueNames, QList<T> theValues, T theValue, ImageOperation* theOperation) :
-        Parameter(theName, theUniformName, theUniformType, isEditable, theOperation),
+    OptionsParameter(QString theName, bool isEditable, QList<QString> theValueNames, QList<T> theValues, T theValue, ImageOperation* theOperation) :
+        Parameter(theName, "", UniformType::NONE, isEditable, theOperation),
         mValueNames { theValueNames },
         mValues { theValues },
         mCurrentValue { theValue }
