@@ -29,6 +29,7 @@
 
 #include "widgets/uniformwidget.h"
 #include "widgets/optionswidget.h"
+#include "widgets/uniformmat4widget.h"
 
 #include "parameter.h"
 #include "imageoperations.h"
@@ -78,32 +79,39 @@ public:
         QVBoxLayout* parametersLayout = new QVBoxLayout;
         parametersLayout->setAlignment(Qt::AlignCenter);
 
-        for (auto parameter : operation->uniformParameters<float>())
+        foreach (auto parameter, operation->uniformParameters<float>())
         {
             UniformParameterWidget<float>* widget = new UniformParameterWidget<float>(parameter);
             parametersLayout->addWidget(widget->widget());
             floatParameterWidgets.append(widget);
         }
 
-        for (auto parameter : operation->uniformParameters<int>())
+        foreach (auto parameter, operation->uniformParameters<int>())
         {
             UniformParameterWidget<int>* widget = new UniformParameterWidget<int>(parameter);
             parametersLayout->addWidget(widget->widget());
             intParameterWidgets.append(widget);
         }
 
-        for (auto parameter : operation->uniformParameters<unsigned int>())
+        foreach (auto parameter, operation->uniformParameters<unsigned int>())
         {
             UniformParameterWidget<unsigned int>* widget = new UniformParameterWidget<unsigned int>(parameter);
             parametersLayout->addWidget(widget->widget());
             uintParameterWidgets.append(widget);
         }
 
-        for (auto parameter : operation->optionsParameters<GLenum>())
+        foreach (auto parameter, operation->optionsParameters<GLenum>())
         {
             OptionsParameterWidget<GLenum>* widget = new OptionsParameterWidget<GLenum>(parameter);
             parametersLayout->addWidget(widget->widget());
             glenumOptionsWidget.append(widget);
+        }
+
+        foreach (auto parameter, operation->mat4UniformParameters())
+        {
+            UniformMat4ParameterWidget* widget = new UniformMat4ParameterWidget(parameter);
+            parametersLayout->addWidget(widget->widget());
+            floatParameterWidgets.append(widget);
         }
 
         QGroupBox* parametersGroupBox = new QGroupBox(operation->name());
@@ -197,23 +205,23 @@ public:
     }
 
     template <typename T>
-    void connectUniformParameterWidgets(QList<UniformParameterWidget<T>*> widgets)
+    void connectUniformParameterWidgets(QList<ParameterWidget<T>*> widgets)
     {
         foreach (auto widget, widgets)
         {
-            connect(widget, &UniformParameterWidget<T>::focusIn, this, [&](){
+            connect(widget, &ParameterWidget<T>::focusIn, this, [&](){
                 updateSelectedParameterControls<T>(widget);
                 updateMidiButtons<T>(widget);
             });
 
-            connect(widget, &UniformParameterWidget<T>::focusIn, this, [=, this](){
+            connect(widget, &ParameterWidget<T>::focusIn, this, [=, this](){
                 setLineWidth(1);
                 lastFocusedWidget = widget->lastFocusedWidget();
                 lastFocused = true;
                 emit focusIn(this);
             });
 
-            connect(widget, &UniformParameterWidget<T>::focusOut, this, [=, this](){
+            connect(widget, &ParameterWidget<T>::focusOut, this, [=, this](){
                 setLineWidth(0);
                 emit focusOut(this);
             });
@@ -281,9 +289,9 @@ signals:
 private:
     QVBoxLayout* mainLayout;
 
-    QList<UniformParameterWidget<float>*> floatParameterWidgets;
-    QList<UniformParameterWidget<int>*> intParameterWidgets;
-    QList<UniformParameterWidget<unsigned int>*> uintParameterWidgets;
+    QList<ParameterWidget<float>*> floatParameterWidgets;
+    QList<ParameterWidget<int>*> intParameterWidgets;
+    QList<ParameterWidget<unsigned int>*> uintParameterWidgets;
 
     QList<OptionsParameterWidget<GLenum>*> glenumOptionsWidget;
 
@@ -303,7 +311,7 @@ private:
     bool lastFocused = false;
 
     template <class T>
-    void updateSelectedParameterControls(UniformParameterWidget<T>* widget)
+    void updateSelectedParameterControls(ParameterWidget<T>* widget)
     {
         Number<T>* number = widget->selectedNumber();
 
@@ -422,7 +430,7 @@ private:
     }
 
     template <typename T>
-    void updateMidiButtons(UniformParameterWidget<T>* widget)
+    void updateMidiButtons(ParameterWidget<T>* widget)
     {
         Number<T>* number = widget->selectedNumber();
 

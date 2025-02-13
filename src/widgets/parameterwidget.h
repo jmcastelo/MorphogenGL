@@ -3,6 +3,9 @@
 
 
 
+#include "../parameter.h"
+#include "focuswidgets.h"
+
 #include <QWidget>
 
 
@@ -19,6 +22,23 @@ public:
 signals:
     void focusIn();
     void focusOut();
+};
+
+
+
+template <typename T>
+class ParameterWidget : public ParameterWidgetSignals
+{
+public:
+    ParameterWidget(QObject* parent = nullptr) : ParameterWidgetSignals(parent) {}
+
+    Number<T>* selectedNumber() { return mSelectedNumber; }
+    FocusLineEdit* lastFocusedWidget() { return mLastFocusedWidget; }
+    virtual QString name() = 0;
+
+protected:
+    Number<T>* mSelectedNumber;
+    FocusLineEdit* mLastFocusedWidget;
 };
 
 

@@ -563,6 +563,8 @@ public:
             return new Number<float>(0, 0, 0, 0, 0);
     }
 
+    QList<QString> numberNames() { return mNumberNames; }
+
 private:
     UniformMat4Type mType;
     QList<Number<float>*> mNumbers;

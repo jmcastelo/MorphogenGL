@@ -66,6 +66,7 @@ HEADERS += \
     src/widgets/focuswidgets.h \
     src/widgets/optionswidget.h \
     src/widgets/parameterwidget.h \
+    src/widgets/uniformmat4widget.h \
     src/widgets/uniformwidget.h
 
 SOURCES += \

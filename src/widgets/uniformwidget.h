@@ -25,18 +25,18 @@ enum class LayoutFormat {
 
 
 template <typename T>
-class UniformParameterWidget : public ParameterWidgetSignals
+class UniformParameterWidget : public ParameterWidget<T>
 {
 public:
     UniformParameterWidget(UniformParameter<T>* theUniformParameter, QObject* parent = nullptr) :
-        ParameterWidgetSignals(parent),
+        ParameterWidget<T>(parent),
         mUniformParameter { theUniformParameter }
     {
         mGroupBox = new QGroupBox(mUniformParameter->name());
 
         // Set up line edits
 
-        for (Number<T>* number : mUniformParameter->numbers())
+        foreach (Number<T>* number, mUniformParameter->numbers())
         {
             FocusLineEdit* lineEdit = new FocusLineEdit;
             lineEdit->setFixedWidth(75);
@@ -53,10 +53,11 @@ public:
 
             lineEdit->setText(QString::number(number->value()));
 
-            mLineEdits.push_back(lineEdit);
+            mLineEdits.append(lineEdit);
         }
 
-        mLastFocusedWidget = mLineEdits[0];
+        ParameterWidget<T>::mLastFocusedWidget = mLineEdits[0];
+
 
         // Set up layouts
 
@@ -73,7 +74,7 @@ public:
 
         for (int i = 0; i < mUniformParameter->numbers().size(); i++)
         {
-            connect(mLineEdits[i], &FocusLineEdit::editingFinished, this, [=, this](){
+            ParameterWidget<T>::connect(mLineEdits[i], &FocusLineEdit::editingFinished, this, [=, this](){
                 if (std::is_same<T, float>::value)
                     mUniformParameter->setValue(i, mLineEdits[i]->text().toFloat());
                 else if (std::is_same<T, int>::value)
@@ -82,14 +83,14 @@ public:
                     mUniformParameter->setValue(i, mLineEdits[i]->text().toUInt());
             });
 
-            connect(mLineEdits[i], &FocusLineEdit::focusIn, this, [=, this](){
-                mSelectedNumber = mUniformParameter->number(i);
-                mLastFocusedWidget = mLineEdits[i];
+            ParameterWidget<T>::connect(mLineEdits[i], &FocusLineEdit::focusIn, this, [=, this](){
+                ParameterWidget<T>::mSelectedNumber = mUniformParameter->number(i);
+                ParameterWidget<T>::mLastFocusedWidget = mLineEdits[i];
             });
-            connect(mLineEdits[i], &FocusLineEdit::focusIn, this, &UniformParameterWidget::focusIn);
-            connect(mLineEdits[i], &FocusLineEdit::focusOut, this, &UniformParameterWidget::focusOut);
+            ParameterWidget<T>::connect(mLineEdits[i], &FocusLineEdit::focusIn, this, &UniformParameterWidget::focusIn);
+            ParameterWidget<T>::connect(mLineEdits[i], &FocusLineEdit::focusOut, this, &UniformParameterWidget::focusOut);
 
-            connect(mUniformParameter, QOverload<int, QVariant>::of(&Parameter::valueChanged), this, [=, this](int i, QVariant newValue){
+            ParameterWidget<T>::connect(mUniformParameter, QOverload<int, QVariant>::of(&Parameter::valueChanged), this, [=, this](int i, QVariant newValue){
                 if (std::is_same<T, float>::value)
                     mLineEdits[i]->setText(QString::number(newValue.toFloat()));
                 else if (std::is_same<T, int>::value)
@@ -115,9 +116,9 @@ public:
 
     QGroupBox* widget() { return mGroupBox; }
 
-    Number<T>* selectedNumber() { return mSelectedNumber; }
+    //Number<T>* selectedNumber() { return mSelectedNumber; }
 
-    FocusLineEdit* lastFocusedWidget() { return mLastFocusedWidget; }
+    //FocusLineEdit* lastFocusedWidget() { return mLastFocusedWidget; }
 
     void setCurrentStack(int index)
     {
@@ -196,8 +197,7 @@ private:
     QWidget* mColWidget;
     QWidget* mRowWidget;
     QWidget* mGridWidget;
-    Number<T>* mSelectedNumber;
-    FocusLineEdit* mLastFocusedWidget;
+    //FocusLineEdit* mLastFocusedWidget;
 
     void setItemsLayouts()
     {

@@ -131,6 +131,13 @@ QList<OptionsParameter<GLenum>*> ImageOperation::optionsParameters()
 
 
 
+QList<UniformMat4Parameter*> ImageOperation::mat4UniformParameters()
+{
+    return mMat4UniformParameters;
+}
+
+
+
 void ImageOperation::applyOperation()
 {
     if (blenderEnabled)

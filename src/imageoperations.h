@@ -53,6 +53,8 @@ class OptionsParameter;
 template <typename T>
 class UniformParameter;
 
+class UniformMat4Parameter;
+
 enum class UniformType;
 enum class UniformMat4Type;
 
@@ -96,6 +98,8 @@ public:
     template <typename T>
     QList<OptionsParameter<T>*> optionsParameters();
 
+    QList<UniformMat4Parameter*> mat4UniformParameters();
+
     template <typename T>
     void setUniform(QString name, UniformType type, GLsizei count, const T* values);
 
@@ -110,6 +114,7 @@ public:
     void setIntUniformParameters(QList<UniformParameter<int>*> theIntUniformParameters){ intUniformParameters = theIntUniformParameters; }
     void setUintUniformParameters(QList<UniformParameter<unsigned int>*> theUintUniformParameters){ uintUniformParameters = theUintUniformParameters; }
     void setGLenumOptionsParameters(QList<OptionsParameter<GLenum>*> theGLenumParameters){ glenumOptionsParameters = theGLenumParameters; }
+    void setMat4UniformParameters(QList<UniformMat4Parameter*> theMat4UniformParameters){ mMat4UniformParameters = theMat4UniformParameters; }
 
     void applyOperation();
     void blit();
@@ -136,6 +141,8 @@ protected:
     QList<UniformParameter<unsigned int>*> uintUniformParameters;
 
     QList<OptionsParameter<GLenum>*> glenumOptionsParameters;
+
+    QList<UniformMat4Parameter*> mMat4UniformParameters;
 };
 
 
