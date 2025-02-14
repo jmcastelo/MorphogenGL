@@ -82,6 +82,12 @@ ImageOperation::ImageOperation(const ImageOperation& operation) :
         newParameter->setOperation(this);
         glenumOptionsParameters.append(newParameter);
     }
+    for (auto parameter : operation.mMat4UniformParameters)
+    {
+        auto newParameter = new UniformMat4Parameter(*parameter);
+        newParameter->setOperation(this);
+        mMat4UniformParameters.append(newParameter);
+    }
 }
 
 
@@ -92,6 +98,7 @@ ImageOperation::~ImageOperation()
     qDeleteAll(intUniformParameters);
     qDeleteAll(uintUniformParameters);
     qDeleteAll(glenumOptionsParameters);
+    qDeleteAll(mMat4UniformParameters);
 
     delete blender;
     delete fbo;

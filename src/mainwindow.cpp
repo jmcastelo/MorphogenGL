@@ -69,6 +69,7 @@ MainWindow::MainWindow()
     connect(morphoWidget, &MorphoWidget::openGLInitialized, this, [&](){
         controlWidget->generator->init(morphoWidget->context());
         plotsWidget->init(morphoWidget->context());
+        opBuilder->init(morphoWidget->context());
 
         numIterations = 0;
         numUpdates = 0;

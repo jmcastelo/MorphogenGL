@@ -20,6 +20,8 @@
 
 TARGET = morphogen
 
+DESTDIR = ../../
+
 TEMPLATE = app
 
 CONFIG += qt c++20
