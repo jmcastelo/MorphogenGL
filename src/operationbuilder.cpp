@@ -63,11 +63,14 @@ OperationBuilder::OperationBuilder(QOpenGLContext *mainContext, QWidget *parent)
     shadersLayout->addLayout(vertexLayout);
     shadersLayout->addLayout(fragmentLayout);
 
-    QVBoxLayout* layout = new QVBoxLayout;
+    QVBoxLayout* opLayout = new QVBoxLayout;
+    opLayout->addWidget(parseButton);
+    opLayout->addWidget(uniformListWidget);
+    opLayout->addWidget(mOpWidget);
+
+    QHBoxLayout* layout = new QHBoxLayout;
     layout->addLayout(shadersLayout);
-    layout->addWidget(parseButton);
-    layout->addWidget(uniformListWidget);
-    layout->addWidget(mOpWidget);
+    layout->addLayout(opLayout);
 
     setLayout(layout);
 
@@ -188,10 +191,6 @@ void OperationBuilder::parseUniforms()
         QString uniformName(name.constData());
 
         addUniformParameter(uniformName, values.at(1), values.at(2));
-
-        qDebug() << uniformName;
-        qDebug() << values;
-        qDebug() << mProgram->uniformLocation(uniformName);
     }
 
     mProgram->release();
@@ -217,9 +216,6 @@ void OperationBuilder::parseAttributes()
         glGetProgramResourceName(mProgram->programId(), GL_PROGRAM_INPUT, index, name.size(), nullptr, name.data());
 
         QString attributeName(name.constData());
-        qDebug() << attributeName;
-        qDebug() << values;
-        qDebug() << mProgram->attributeLocation(attributeName);
     }
 
     mProgram->release();
@@ -253,23 +249,38 @@ bool OperationBuilder::linkProgram()
 
 void OperationBuilder::addUniformParameter(QString uniformName, int uniformType, int numItems)
 {
+    int numValuesPerItem = 0;
+
+    if (uniformType == GL_FLOAT || uniformType == GL_INT || uniformType == GL_UNSIGNED_INT)
+        numValuesPerItem = 1;
+    else if (uniformType == GL_FLOAT_VEC2 || uniformType == GL_INT_VEC2 || uniformType == GL_UNSIGNED_INT_VEC2 || uniformType == GL_FLOAT_MAT2)
+        numValuesPerItem = 2;
+    else if (uniformType == GL_FLOAT_VEC3 || uniformType == GL_INT_VEC3 || uniformType == GL_UNSIGNED_INT_VEC3)
+        numValuesPerItem = 3;
+    else if (uniformType == GL_FLOAT_VEC4 || uniformType == GL_INT_VEC4 || uniformType == GL_UNSIGNED_INT_VEC4 || uniformType == GL_FLOAT_MAT2)
+        numValuesPerItem = 4;
+    else if (uniformType == GL_FLOAT_MAT3)
+        numValuesPerItem = 9;
+    else if (uniformType == GL_FLOAT_MAT4)
+        numValuesPerItem = 16;
+
     Parameter* parameter = nullptr;
 
     if (uniformType == GL_FLOAT || uniformType == GL_FLOAT_VEC2 || uniformType == GL_FLOAT_VEC3 || uniformType == GL_FLOAT_VEC4 || uniformType == GL_FLOAT_MAT2 || uniformType == GL_FLOAT_MAT3 || uniformType == GL_FLOAT_MAT4)
     {
-        UniformParameter<float>* fParameter = new UniformParameter<float>(uniformName.toUpper(), uniformName, uniformType, numItems, true, QList<float>(numItems, 0.0f), -1.0f, 1.0f, -1.0f, 1.0f, mOperation);
+        UniformParameter<float>* fParameter = new UniformParameter<float>(uniformName.toUpper(), uniformName, uniformType, numItems, true, QList<float>(numItems * numValuesPerItem, 0.0f), -1.0f, 1.0f, -1.0f, 1.0f, mOperation);
         mOperation->addUniformParameter<float>(fParameter);
         parameter = fParameter;
     }
     else if (uniformType == GL_INT || uniformType == GL_INT_VEC2 || uniformType == GL_INT_VEC3 || uniformType == GL_INT_VEC4)
     {
-        UniformParameter<int>* iParameter = new UniformParameter<int>(uniformName.toUpper(), uniformName, uniformType, numItems, true, QList<int>(numItems, 0), 0, 1, 0, 1, mOperation);
+        UniformParameter<int>* iParameter = new UniformParameter<int>(uniformName.toUpper(), uniformName, uniformType, numItems, true, QList<int>(numItems * numValuesPerItem, 0), 0, 1, 0, 1, mOperation);
         mOperation->addUniformParameter<int>(iParameter);
         parameter = iParameter;
     }
     else if (uniformType == GL_UNSIGNED_INT || uniformType == GL_UNSIGNED_INT_VEC2 || uniformType == GL_UNSIGNED_INT_VEC3 || uniformType == GL_UNSIGNED_INT_VEC4)
     {
-        UniformParameter<unsigned int>* uiParameter = new UniformParameter<unsigned int>(uniformName.toUpper(), uniformName, uniformType, numItems, true, QList<unsigned int>(numItems, 0), 0, 1, 0, 1, mOperation);
+        UniformParameter<unsigned int>* uiParameter = new UniformParameter<unsigned int>(uniformName.toUpper(), uniformName, uniformType, numItems, true, QList<unsigned int>(numItems * numValuesPerItem, 0), 0, 1, 0, 1, mOperation);
         mOperation->addUniformParameter<unsigned int>(uiParameter);
         parameter = uiParameter;
     }

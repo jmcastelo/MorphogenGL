@@ -39,7 +39,10 @@ public:
         foreach (Number<T>* number, mUniformParameter->numbers())
         {
             FocusLineEdit* lineEdit = new FocusLineEdit;
-            lineEdit->setFixedWidth(75);
+            //lineEdit->setFixedWidth(75);
+            //lineEdit->setFixedHeight(15);
+            lineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+            lineEdit->setAlignment(Qt::AlignLeft);
 
             QValidator* validator = nullptr;
 
@@ -62,9 +65,16 @@ public:
         // Set up layouts
 
         mStackedLayout = new QStackedLayout;
+        mStackedLayout->setContentsMargins(0, 0, 0, 0);
+
         mColWidget = new QWidget;
+        mColWidget->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+
         mRowWidget = new QWidget;
+        mRowWidget->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+
         mGridWidget = new QWidget;
+        mGridWidget->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
 
         setItemsLayouts();
         setDefaultLayoutFormat();
@@ -142,6 +152,9 @@ public:
         if (format == LayoutFormat::Column)
         {
             QGridLayout* gridLayout = new QGridLayout;
+            gridLayout->setContentsMargins(0, 0, 0, 0);
+            gridLayout->setSpacing(0);
+            gridLayout->setAlignment(Qt::AlignCenter);
 
             int row = 0;
             foreach (QWidget* widget, mItemWidgets)
@@ -153,6 +166,9 @@ public:
         else if (format == LayoutFormat::Row)
         {
             QGridLayout* gridLayout = new QGridLayout;
+            gridLayout->setContentsMargins(0, 0, 0, 0);
+            gridLayout->setSpacing(0);
+            gridLayout->setAlignment(Qt::AlignCenter);
 
             int col = 0;
             foreach (QWidget* widget, mItemWidgets)
@@ -164,6 +180,9 @@ public:
         else if (format == LayoutFormat::Grid)
         {
             QGridLayout* gridLayout = new QGridLayout;
+            gridLayout->setContentsMargins(0, 0, 0, 0);
+            gridLayout->setSpacing(0);
+            gridLayout->setAlignment(Qt::AlignCenter);
 
             int dim = static_cast<int>(ceil(sqrt(mUniformParameter->numItems())));
 
@@ -220,7 +239,12 @@ private:
         foreach (FocusLineEdit* lineEdit, mLineEdits)
         {
             if (row == 0 && col == 0)
+            {
                 itemGridLayout = new QGridLayout;
+                itemGridLayout->setContentsMargins(0, 0, 0, 0);
+                itemGridLayout->setSpacing(0);
+                itemGridLayout->setAlignment(Qt::AlignCenter);
+            }
 
             itemGridLayout->addWidget(lineEdit, row, col, Qt::AlignCenter);
 
@@ -237,6 +261,7 @@ private:
                 col = 0;
 
                 QWidget* widget = new QWidget;
+                widget->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
                 widget->setLayout(itemGridLayout);
                 mItemWidgets.append(widget);
             }
@@ -288,7 +313,7 @@ private:
                 // Multiple items with one row and one column
                 mLayoutFormat = LayoutFormat::Grid;
             else
-                // Multiple items with and row and more than one column
+                // Multiple items with one row and more than one column
                 mLayoutFormat = LayoutFormat::Column;
         }
         else

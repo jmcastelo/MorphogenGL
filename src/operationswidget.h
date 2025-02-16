@@ -117,7 +117,6 @@ public:
         QMapIterator<int, QGroupBox*> it(mGroupBoxesMap);
         while (it.hasNext()) {
             it.next();
-            qDebug() << it.key();
             parametersLayout->addWidget(it.value());
         }
 
