@@ -19,16 +19,16 @@ MidiWidget::MidiWidget(QWidget *parent): QWidget{parent}
 
 
 
-void MidiWidget::populatePortsTable(std::vector<std::string> portNames)
+void MidiWidget::populatePortsTable(QList<QString> portNames)
 {
     portsTable->clear();
 
     int portId = 0;
 
-    foreach (std::string name, portNames)
+    foreach (QString name, portNames)
     {
         QListWidgetItem* item = new QListWidgetItem("", portsTable);
-        QCheckBox* checkBox = new QCheckBox(QString::fromStdString(name));
+        QCheckBox* checkBox = new QCheckBox(name);
         portsTable->setItemWidget(item, checkBox);
         connect(checkBox, &QCheckBox::checkStateChanged, this, [=, this](Qt::CheckState state){
             emit portSelected(portId, state == Qt::Checked);

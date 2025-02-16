@@ -7,6 +7,7 @@
 #include "focuswidgets.h"
 
 #include <QObject>
+#include <QGroupBox>
 
 
 
@@ -36,11 +37,15 @@ public:
 
     Number<T>* selectedNumber() { return mSelectedNumber; }
     FocusLineEdit* lastFocusedWidget() { return mLastFocusedWidget; }
+    QGroupBox* widget() { return mGroupBox; }
+
+    virtual void setValueFromIndex(int index) = 0;
     virtual QString name() = 0;
 
 protected:
     Number<T>* mSelectedNumber;
     FocusLineEdit* mLastFocusedWidget;
+    QGroupBox* mGroupBox;
 };
 
 

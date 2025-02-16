@@ -59,7 +59,7 @@ class OperationsWidget : public QFrame
     Q_OBJECT
 
 public:
-    OperationsWidget(ImageOperation* operation, bool midiEnabled, QWidget* parent) : QFrame(parent)
+    OperationsWidget(ImageOperation* operation, bool midiEnabled, QWidget* parent = nullptr) : QFrame(parent)
     {
         setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
 
@@ -76,50 +76,56 @@ public:
 
     void setup(ImageOperation* operation, bool midiEnabled)
     {
-        QVBoxLayout* parametersLayout = new QVBoxLayout;
-        parametersLayout->setAlignment(Qt::AlignCenter);
-
         foreach (auto parameter, operation->uniformParameters<float>())
         {
             UniformParameterWidget<float>* widget = new UniformParameterWidget<float>(parameter);
-            parametersLayout->addWidget(widget->widget());
+            mGroupBoxesMap.insert(parameter->index(), widget->widget());
             floatParameterWidgets.append(widget);
         }
 
         foreach (auto parameter, operation->uniformParameters<int>())
         {
             UniformParameterWidget<int>* widget = new UniformParameterWidget<int>(parameter);
-            parametersLayout->addWidget(widget->widget());
+            mGroupBoxesMap.insert(parameter->index(), widget->widget());
             intParameterWidgets.append(widget);
         }
 
         foreach (auto parameter, operation->uniformParameters<unsigned int>())
         {
             UniformParameterWidget<unsigned int>* widget = new UniformParameterWidget<unsigned int>(parameter);
-            parametersLayout->addWidget(widget->widget());
+            mGroupBoxesMap.insert(parameter->index(), widget->widget());
             uintParameterWidgets.append(widget);
         }
 
         foreach (auto parameter, operation->optionsParameters<GLenum>())
         {
             OptionsParameterWidget<GLenum>* widget = new OptionsParameterWidget<GLenum>(parameter);
-            parametersLayout->addWidget(widget->widget());
-            glenumOptionsWidget.append(widget);
+            mGroupBoxesMap.insert(parameter->index(), widget->widget());
+            glenumOptionsWidgets.append(widget);
         }
 
         foreach (auto parameter, operation->mat4UniformParameters())
         {
             UniformMat4ParameterWidget* widget = new UniformMat4ParameterWidget(parameter);
-            parametersLayout->addWidget(widget->widget());
+            mGroupBoxesMap.insert(parameter->index(), widget->widget());
             floatParameterWidgets.append(widget);
         }
 
+        QVBoxLayout*parametersLayout = new QVBoxLayout;
+        parametersLayout->setAlignment(Qt::AlignCenter);
+
+        QMapIterator<int, QGroupBox*> it(mGroupBoxesMap);
+        while (it.hasNext()) {
+            it.next();
+            qDebug() << it.key();
+            parametersLayout->addWidget(it.value());
+        }
+
         QGroupBox* parametersGroupBox = new QGroupBox(operation->name());
+        parametersGroupBox->setAlignment(Qt::AlignLeft);
         parametersGroupBox->setLayout(parametersLayout);
 
         mainLayout->addWidget(parametersGroupBox);
-
-        // Selected uniform parameter
 
         if (!floatParameterWidgets.empty() || !intParameterWidgets.empty() || !uintParameterWidgets.empty())
         {
@@ -155,7 +161,7 @@ public:
             selectedParameterVBoxLayout->addLayout(sliderLayout);
             selectedParameterVBoxLayout->addLayout(minMaxLayout);
 
-            QGroupBox* selectedParameterGroupBox = new QGroupBox("No parameter selected");
+            selectedParameterGroupBox = new QGroupBox("No parameter selected");
             selectedParameterGroupBox->setLayout(selectedParameterVBoxLayout);
 
             mainLayout->addWidget(selectedParameterGroupBox);
@@ -209,7 +215,7 @@ public:
     {
         foreach (auto widget, widgets)
         {
-            connect(widget, &ParameterWidget<T>::focusIn, this, [&](){
+            connect(widget, &ParameterWidget<T>::focusIn, this, [=, this](){
                 updateSelectedParameterControls<T>(widget);
                 updateMidiButtons<T>(widget);
             });
@@ -232,11 +238,22 @@ public:
     {
         qDeleteAll(findChildren<QWidget*>(QString(), Qt::FindDirectChildrenOnly));
 
+        minValidator = nullptr;
+        maxValidator = nullptr;
+
+        qDeleteAll(floatParameterWidgets);
         floatParameterWidgets.clear();
+
+        qDeleteAll(intParameterWidgets);
         intParameterWidgets.clear();
+
+        qDeleteAll(uintParameterWidgets);
         uintParameterWidgets.clear();
 
-        glenumOptionsWidget.clear();
+        qDeleteAll(glenumOptionsWidgets);
+        glenumOptionsWidgets.clear();
+
+        mGroupBoxesMap.clear();
 
         setup(operation, midiEnabled);
     }
@@ -293,7 +310,9 @@ private:
     QList<ParameterWidget<int>*> intParameterWidgets;
     QList<ParameterWidget<unsigned int>*> uintParameterWidgets;
 
-    QList<OptionsParameterWidget<GLenum>*> glenumOptionsWidget;
+    QList<OptionsParameterWidget<GLenum>*> glenumOptionsWidgets;
+
+    QMap<int, QGroupBox*> mGroupBoxesMap;
 
     FocusSlider* selectedParameterSlider;
     FocusLineEdit* selectedParameterMinLineEdit;
@@ -321,7 +340,7 @@ private:
         selectedParameterSlider->setRange(0, number->indexMax());
         selectedParameterSlider->setValue(number->index());
 
-        connect(selectedParameterSlider, &QAbstractSlider::sliderMoved, number, &Number<T>::setValueFromIndex);
+        connect(selectedParameterSlider, &QAbstractSlider::sliderMoved, widget, &ParameterWidget<T>::setValueFromIndex);
         connect(number, &Number<T>::indexChanged, selectedParameterSlider, &QAbstractSlider::setValue);
 
         // Focus

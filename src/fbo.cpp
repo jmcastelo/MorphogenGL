@@ -65,9 +65,9 @@ FBO::FBO(QString vertexShader, QString fragmentShader, QOpenGLContext* mainConte
     // Initialize shader program
 
     program = new QOpenGLShaderProgram();
-    if (!program->addShaderFromSourceFile(QOpenGLShader::Vertex, vertexShader))
+    if (!program->addShaderFromSourceCode(QOpenGLShader::Vertex, vertexShader))
         qDebug() << "Vertex shader error:\n" << program->log();
-    if (!program->addShaderFromSourceFile(QOpenGLShader::Fragment, fragmentShader))
+    if (!program->addShaderFromSourceCode(QOpenGLShader::Fragment, fragmentShader))
         qDebug() << "Fragment shader error:\n" << program->log();
     if (!program->link())
         qDebug() << "Shader link error:\n" << program->log();

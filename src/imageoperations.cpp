@@ -27,35 +27,27 @@
 
 // Image operation base class
 
-ImageOperation::ImageOperation(QString theName, bool on, QOpenGLContext* mainContext,
-    QString theVertexShaderPath, QString theFragmentShaderPath) :
+ImageOperation::ImageOperation(QString theName, bool on, QOpenGLContext* mainContext) :
     QOpenGLExtraFunctions(mainContext),
     mName { theName },
-    vertexShaderPath { theVertexShaderPath },
-    fragmentShaderPath { theFragmentShaderPath },
     enabled { on },
     context { mainContext }
-{
-    blender = new Blender(":/shaders/screen.vert", ":/shaders/blend.frag", mainContext);
-
-    fbo = new FBO(vertexShaderPath, fragmentShaderPath, mainContext);
-    fbo->setInputTextureID(*blender->getTextureID());
-}
+{}
 
 
 
 ImageOperation::ImageOperation(const ImageOperation& operation) :
     QOpenGLExtraFunctions(operation.context),
     mName { operation.mName },
-    vertexShaderPath { operation.vertexShaderPath },
-    fragmentShaderPath { operation.fragmentShaderPath },
+    vertexShader { operation.vertexShader },
+    fragmentShader { operation.fragmentShader },
     enabled { operation.enabled },
     noParameters { operation.noParameters },
     context { operation.context }
 {
     blender = new Blender(":/shaders/screen.vert", ":/shaders/blend.frag", context);
 
-    fbo = new FBO(vertexShaderPath, fragmentShaderPath, context);
+    fbo = new FBO(vertexShader, fragmentShader, context);
     fbo->setInputTextureID(*blender->getTextureID());
 
     for (auto parameter: operation.floatUniformParameters)
@@ -94,11 +86,7 @@ ImageOperation::ImageOperation(const ImageOperation& operation) :
 
 ImageOperation::~ImageOperation()
 {
-    qDeleteAll(floatUniformParameters);
-    qDeleteAll(intUniformParameters);
-    qDeleteAll(uintUniformParameters);
-    qDeleteAll(glenumOptionsParameters);
-    qDeleteAll(mMat4UniformParameters);
+    clearParameters();
 
     delete blender;
     delete fbo;
@@ -106,8 +94,45 @@ ImageOperation::~ImageOperation()
 
 
 
+void ImageOperation::setup(QString theVertexShader, QString theFragmentShader)
+{
+    vertexShader = theVertexShader;
+    fragmentShader = theFragmentShader;
+
+    blender = new Blender(":/shaders/screen.vert", ":/shaders/blend.frag", context);
+
+    fbo = new FBO(vertexShader, fragmentShader, context);
+    fbo->setInputTextureID(*blender->getTextureID());
+}
+
+
+
 template<>
-QList<UniformParameter<float>*> ImageOperation::uniformParameters()
+void ImageOperation::addUniformParameter(UniformParameter<float>* parameter)
+{
+    floatUniformParameters.append(parameter);
+}
+
+
+
+template<>
+void ImageOperation::addUniformParameter(UniformParameter<int>* parameter)
+{
+    intUniformParameters.append(parameter);
+}
+
+
+
+template<>
+void ImageOperation::addUniformParameter(UniformParameter<unsigned int>* parameter)
+{
+    uintUniformParameters.append(parameter);
+}
+
+
+
+template<>
+QList<UniformParameter<float>*> ImageOperation::uniformParameters<float>()
 {
     return floatUniformParameters;
 }
@@ -141,6 +166,23 @@ QList<OptionsParameter<GLenum>*> ImageOperation::optionsParameters()
 QList<UniformMat4Parameter*> ImageOperation::mat4UniformParameters()
 {
     return mMat4UniformParameters;
+}
+
+
+
+void ImageOperation::clearParameters()
+{
+    qDeleteAll(floatUniformParameters);
+    qDeleteAll(intUniformParameters);
+    qDeleteAll(uintUniformParameters);
+    qDeleteAll(glenumOptionsParameters);
+    qDeleteAll(mMat4UniformParameters);
+
+    floatUniformParameters.clear();
+    intUniformParameters.clear();
+    uintUniformParameters.clear();
+    glenumOptionsParameters.clear();
+    mMat4UniformParameters.clear();
 }
 
 
@@ -191,26 +233,26 @@ void ImageOperation::setInputData(QList<InputData *> data)
 
 
 template <>
-void ImageOperation::setUniform<float>(QString name, UniformType type, GLsizei count, const float* values)
+void ImageOperation::setUniform<float>(QString name, int type, GLsizei count, const float* values)
 {
     fbo->makeCurrent();
     fbo->program->bind();
 
     int location = fbo->program->uniformLocation(name);
 
-    if (type == UniformType::FLOAT)
+    if (type == GL_FLOAT)
         glUniform1fv(location, count, values);
-    else if (type == UniformType::FLOAT_VEC2)
+    else if (type == GL_FLOAT_VEC2)
         glUniform2fv(location, count, values);
-    else if (type == UniformType::FLOAT_VEC3)
+    else if (type == GL_FLOAT_VEC3)
         glUniform3fv(location, count, values);
-    else if (type == UniformType::FLOAT_VEC4)
+    else if (type == GL_FLOAT_VEC4)
         glUniform4fv(location, count, values);
-    else if (type == UniformType::FLOAT_MAT_2)
+    else if (type == GL_FLOAT_MAT2)
         glUniformMatrix2fv(location, count, GL_FALSE, values);
-    else if (type == UniformType::FLOAT_MAT_3)
+    else if (type == GL_FLOAT_MAT3)
         glUniformMatrix3fv(location, count, GL_FALSE, values);
-    else if (type == UniformType::FLOAT_MAT_4)
+    else if (type == GL_FLOAT_MAT4)
         glUniformMatrix4fv(location, count, GL_FALSE, values);
 
     fbo->program->release();
@@ -220,20 +262,20 @@ void ImageOperation::setUniform<float>(QString name, UniformType type, GLsizei c
 
 
 template <>
-void ImageOperation::setUniform<int>(QString name, UniformType type, GLsizei count, const int* values)
+void ImageOperation::setUniform<int>(QString name, int type, GLsizei count, const int* values)
 {
     fbo->makeCurrent();
     fbo->program->bind();
 
     int location = fbo->program->uniformLocation(name);
 
-    if (type == UniformType::INT)
+    if (type == GL_INT)
         glUniform1iv(location, count, values);
-    else if (type == UniformType::INT_VEC2)
+    else if (type == GL_INT_VEC2)
         glUniform2iv(location, count, values);
-    else if (type == UniformType::INT_VEC3)
+    else if (type == GL_INT_VEC3)
         glUniform3iv(location, count, values);
-    else if (type == UniformType::INT_VEC4)
+    else if (type == GL_INT_VEC4)
         glUniform4iv(location, count, values);
 
     fbo->program->release();
@@ -243,20 +285,20 @@ void ImageOperation::setUniform<int>(QString name, UniformType type, GLsizei cou
 
 
 template <>
-void ImageOperation::setUniform<unsigned int>(QString name, UniformType type, GLsizei count, const unsigned int* values)
+void ImageOperation::setUniform<unsigned int>(QString name, int type, GLsizei count, const unsigned int* values)
 {
     fbo->makeCurrent();
     fbo->program->bind();
 
     int location = fbo->program->uniformLocation(name);
 
-    if (type == UniformType::UNSIGNED_INT)
+    if (type == GL_UNSIGNED_INT)
         glUniform1uiv(location, count, values);
-    else if (type == UniformType::UNSIGNED_INT_VEC2)
+    else if (type == GL_UNSIGNED_INT_VEC2)
         glUniform2uiv(location, count, values);
-    else if (type == UniformType::UNSIGNED_INT_VEC3)
+    else if (type == GL_UNSIGNED_INT_VEC3)
         glUniform3uiv(location, count, values);
-    else if (type == UniformType::UNSIGNED_INT_VEC4)
+    else if (type == GL_UNSIGNED_INT_VEC4)
         glUniform4uiv(location, count, values);
 
     fbo->program->release();

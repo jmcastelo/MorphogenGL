@@ -20,7 +20,7 @@ signals:
     void portSelected(int port, bool state);
 
 public slots:
-    void populatePortsTable(std::vector<std::string> portNames);
+    void populatePortsTable(QList<QString> portNames);
 
 private:
     QListWidget* portsTable;

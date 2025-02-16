@@ -123,13 +123,15 @@ public:
 
         mValue = theValue;
 
-        emit valueChanged(mValue);
+        setIndex();
+
+        emit valueChanged(QVariant(mValue));
     }
 
     void setValueFromIndex(int theIndex)
     {
         mValue = static_cast<T>(mMin + (mMax - mMin) * static_cast<float>(theIndex) / static_cast<float>(mIndexMax));
-        emit valueChanged(mValue);
+        emit valueChanged(QVariant(mValue));
     }
 
     T value() { return mValue; }
@@ -180,7 +182,7 @@ signals:
 
 
 
-enum class UniformType
+/*enum class UniformType
 {
     NONE = GL_FALSE,
     FLOAT = GL_FLOAT,
@@ -197,15 +199,17 @@ enum class UniformType
     UNSIGNED_INT_VEC4 = GL_UNSIGNED_INT_VEC4,
     FLOAT_MAT_2 = GL_FLOAT_MAT2,
     FLOAT_MAT_3 = GL_FLOAT_MAT3,
-    FLOAT_MAT_4 = GL_FLOAT_MAT4
-};
+    FLOAT_MAT_4 = GL_FLOAT_MAT4,
+    SAMPLER_2D = GL_SAMPLER_2D,
+    SAMPLER_2D_ARRAY = GL_SAMPLER_2D_ARRAY
+};*/
 
 
 
 class Parameter : public ParameterSignals
 {
 public:
-    Parameter(QString theName, QString theUniformName, UniformType theUniformType, bool isEditable, ImageOperation* theOperation) :
+    Parameter(QString theName, QString theUniformName, int theUniformType, bool isEditable, ImageOperation* theOperation) :
         ParameterSignals(),
         mName { theName },
         mUniformName { theUniformName },
@@ -225,16 +229,23 @@ public:
 
     QString name() { return mName; }
     QString uniformName() { return mUniformName; }
-    UniformType uniformType() { return mUniformType; }
+    int uniformType() { return mUniformType; }
     bool editable() { return mEditable; }
+
+    int index() { return mIndex; }
+    void setIndex(int i) { mIndex = i; }
+
+    void setUpdateOperation(bool set){ mUpdate = set; }
 
     void setOperation(ImageOperation* operation) { mOperation = operation; }
 
 protected:
     QString mName;
     QString mUniformName;
-    UniformType mUniformType;
+    int mUniformType;
     bool mEditable;
+    int mIndex;
+    bool mUpdate = true;
     ImageOperation* mOperation;
 };
 
@@ -245,7 +256,7 @@ class OptionsParameter : public Parameter
 {
 public:
     OptionsParameter(QString theName, bool isEditable, QList<QString> theValueNames, QList<T> theValues, T theValue, ImageOperation* theOperation) :
-        Parameter(theName, "", UniformType::NONE, isEditable, theOperation),
+        Parameter(theName, "", 0, isEditable, theOperation),
         mValueNames { theValueNames },
         mValues { theValues },
         mCurrentValue { theValue }
@@ -262,7 +273,9 @@ public:
     void setValue(int valueIndex)
     {
         mCurrentValue = mValues[valueIndex];
-        mOperation->setOptionsParameter<T>(this);
+
+        if (mUpdate)
+            mOperation->setOptionsParameter<T>(this);
     }
 
     T value(){ return mCurrentValue; }
@@ -286,7 +299,7 @@ template <typename T>
 class UniformParameter : public Parameter
 {
 public:
-    UniformParameter(QString theName, QString theUniformName, UniformType theUniformType, int numItems, bool isEditable, QList<T> theValues, T theMin, T theMax, T theInf, T theSup, ImageOperation* theOperation) :
+    UniformParameter(QString theName, QString theUniformName, int theUniformType, int numItems, bool isEditable, QList<T> theValues, T theMin, T theMax, T theInf, T theSup, ImageOperation* theOperation) :
         Parameter(theName, theUniformName, theUniformType, isEditable, theOperation),
         nItems { numItems }
     {
@@ -297,8 +310,9 @@ public:
         }
     }
 
-    UniformParameter(QString theName, QString theUniformName, UniformType theUniformType, bool isEditable, QList<QPair<QUuid, T>> theIdValuePairs, T theMin, T theMax, T theInf, T theSup, ImageOperation* theOperation) :
-        Parameter(theName, theUniformName, theUniformType, isEditable, theOperation)
+    UniformParameter(QString theName, QString theUniformName, int theUniformType, int numItems, bool isEditable, QList<QPair<QUuid, T>> theIdValuePairs, T theMin, T theMax, T theInf, T theSup, ImageOperation* theOperation) :
+        Parameter(theName, theUniformName, theUniformType, isEditable, theOperation),
+        nItems { numItems }
     {
         for (QPair<QUuid, T> pair : theIdValuePairs)
         {
@@ -315,6 +329,8 @@ public:
             Number<T>* newNumber = new Number<T>(*number);
             mNumbers.push_back(newNumber);
         }
+
+        nItems = parameter.nItems;
     }
 
     ~UniformParameter()
@@ -335,12 +351,25 @@ public:
         if (i < mNumbers.size())
         {
             mNumbers[i]->setValue(theValue);
-            mNumbers[i]->setIndex();
 
-            emit valueChanged(i, QVariant(theValue));
+            //emit valueChanged(i, QVariant(theValue));
             emit valueChanged(QVariant(theValue));
 
-            setUniform();
+            if (mUpdate)
+                setUniform();
+        }
+    }
+
+    void setValueFromIndex(int i, int index)
+    {
+        if (i < mNumbers.size())
+        {
+            mNumbers[i]->setValueFromIndex(index);
+
+            emit valueChanged(i, QVariant(mNumbers[i]->value()));
+
+            if (mUpdate)
+                setUniform();
         }
     }
 
@@ -390,22 +419,22 @@ public:
 
     QPair<int, int> colsRowsPerItem()
     {
-        if (mUniformType == UniformType::FLOAT || mUniformType == UniformType::INT || mUniformType == UniformType::UNSIGNED_INT)
+        if (mUniformType == GL_FLOAT || mUniformType == GL_INT || mUniformType == GL_UNSIGNED_INT)
             return QPair<int, int>(1, 1);
-        else if (mUniformType == UniformType::FLOAT_VEC2 || mUniformType == UniformType::INT_VEC2 || mUniformType == UniformType::UNSIGNED_INT_VEC2)
+        else if (mUniformType == GL_FLOAT_VEC2 || mUniformType == GL_INT_VEC2 || mUniformType == GL_UNSIGNED_INT_VEC2)
             return QPair<int, int>(2, 1);
-        else if (mUniformType == UniformType::FLOAT_VEC3 || mUniformType == UniformType::INT_VEC3 || mUniformType == UniformType::UNSIGNED_INT_VEC3)
+        else if (mUniformType == GL_FLOAT_VEC3 || mUniformType == GL_INT_VEC3 || mUniformType == GL_UNSIGNED_INT_VEC3)
             return QPair<int, int>(3, 1);
-        else if (mUniformType == UniformType::FLOAT_VEC4 || mUniformType == UniformType::INT_VEC4 || mUniformType == UniformType::UNSIGNED_INT_VEC4)
+        else if (mUniformType == GL_FLOAT_VEC4 || mUniformType == GL_INT_VEC4 || mUniformType == GL_UNSIGNED_INT_VEC4)
             return QPair<int, int>(4, 1);
-        else if (mUniformType == UniformType::FLOAT_MAT_2)
+        else if (mUniformType == GL_FLOAT_MAT2)
             return QPair<int, int>(2, 2);
-        else if (mUniformType == UniformType::FLOAT_MAT_3)
+        else if (mUniformType == GL_FLOAT_MAT3)
             return QPair<int, int>(3, 3);
-        else if (mUniformType == UniformType::FLOAT_MAT_4)
+        else if (mUniformType == GL_FLOAT_MAT4)
             return QPair<int, int>(4, 4);
 
-        return QPair<int, int>(9, 0);
+        return QPair<int, int>(0, 0);
     }
 
 private:
@@ -428,7 +457,7 @@ class UniformMat4Parameter : public Parameter
 {
 public:
     UniformMat4Parameter(QString theName, QString theUniformName, bool isEditable, UniformMat4Type theMat4Type, QList<float> theValues, float theMin, float theMax, float theInf, float theSup, ImageOperation* theOperation) :
-        Parameter(theName, theUniformName, UniformType::FLOAT_MAT_4, isEditable, theOperation),
+        Parameter(theName, theUniformName, GL_FLOAT_MAT4, isEditable, theOperation),
         mType { theMat4Type }
     {
         if (mType == UniformMat4Type::TRANSLATION)
@@ -460,7 +489,7 @@ public:
     }
 
     UniformMat4Parameter(QString theName, QString theUniformName, bool isEditable, UniformMat4Type theMat4Type, QList<QPair<QUuid, float>> theIdValuePairs, float theMin, float theMax, float theInf, float theSup, ImageOperation* theOperation) :
-        Parameter(theName, theUniformName, UniformType::FLOAT_MAT_4, isEditable, theOperation),
+        Parameter(theName, theUniformName, GL_FLOAT_MAT4, isEditable, theOperation),
         mType { theMat4Type }
     {
         if (mType == UniformMat4Type::TRANSLATION)
@@ -521,12 +550,25 @@ public:
         if (i < mNumbers.size())
         {
             mNumbers[i]->setValue(theValue);
-            mNumbers[i]->setIndex();
 
-            emit valueChanged(i, QVariant(theValue));
+            //emit valueChanged(i, QVariant(theValue));
             emit valueChanged(QVariant(theValue));
 
-            setUniform();
+            if (mUpdate)
+                setUniform();
+        }
+    }
+
+    void setValueFromIndex(int i, int index)
+    {
+        if (i < mNumbers.size())
+        {
+            mNumbers[i]->setValueFromIndex(index);
+
+            emit valueChanged(i, QVariant(mNumbers[i]->value()));
+
+            if (mUpdate)
+                setUniform();
         }
     }
 

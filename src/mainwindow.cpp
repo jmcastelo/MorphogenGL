@@ -45,8 +45,6 @@ MainWindow::MainWindow()
 
     stackedLayout->setCurrentWidget(controlWidget);
 
-    opBuilder = new OperationBuilder();
-
     midiWidget = new MidiWidget();
 
     connect(&midiControl, &MidiControl::inputPortsChanged, midiWidget, &MidiWidget::populatePortsTable);
@@ -69,7 +67,10 @@ MainWindow::MainWindow()
     connect(morphoWidget, &MorphoWidget::openGLInitialized, this, [&](){
         controlWidget->generator->init(morphoWidget->context());
         plotsWidget->init(morphoWidget->context());
-        opBuilder->init(morphoWidget->context());
+
+        morphoWidget->makeCurrent();
+        opBuilder = new OperationBuilder(morphoWidget->context());
+        morphoWidget->doneCurrent();
 
         numIterations = 0;
         numUpdates = 0;

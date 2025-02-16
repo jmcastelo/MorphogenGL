@@ -32,7 +32,7 @@ public:
         ParameterWidget<T>(parent),
         mUniformParameter { theUniformParameter }
     {
-        mGroupBox = new QGroupBox(mUniformParameter->name());
+        ParameterWidget<T>::mGroupBox = new QGroupBox(mUniformParameter->name());
 
         // Set up line edits
 
@@ -57,7 +57,7 @@ public:
         }
 
         ParameterWidget<T>::mLastFocusedWidget = mLineEdits[0];
-
+        mLastIndex = 0;
 
         // Set up layouts
 
@@ -68,7 +68,7 @@ public:
 
         setItemsLayouts();
         setDefaultLayoutFormat();
-        mGroupBox->setLayout(mStackedLayout);
+        ParameterWidget<T>::mGroupBox->setLayout(mStackedLayout);
 
         // Connections
 
@@ -86,6 +86,7 @@ public:
             ParameterWidget<T>::connect(mLineEdits[i], &FocusLineEdit::focusIn, this, [=, this](){
                 ParameterWidget<T>::mSelectedNumber = mUniformParameter->number(i);
                 ParameterWidget<T>::mLastFocusedWidget = mLineEdits[i];
+                mLastIndex = i;
             });
             ParameterWidget<T>::connect(mLineEdits[i], &FocusLineEdit::focusIn, this, &UniformParameterWidget::focusIn);
             ParameterWidget<T>::connect(mLineEdits[i], &FocusLineEdit::focusOut, this, &UniformParameterWidget::focusOut);
@@ -103,22 +104,28 @@ public:
 
     ~UniformParameterWidget()
     {
-        clearLayouts();
+        //clearLayouts();
 
-        qDeleteAll(mItemWidgets);
+        //qDeleteAll(mItemWidgets);
 
-        delete mColWidget;
-        delete mRowWidget;
-        delete mGridWidget;
+        /*if (mColWidget)
+            delete mColWidget;
+        if (mRowWidget)
+            delete mRowWidget;
+        if (mGridWidget)
+            delete mGridWidget;*/
     }
 
     QString name() { return mUniformParameter->name(); }
 
-    QGroupBox* widget() { return mGroupBox; }
-
     //Number<T>* selectedNumber() { return mSelectedNumber; }
 
     //FocusLineEdit* lastFocusedWidget() { return mLastFocusedWidget; }
+
+    void setValueFromIndex(int index)
+    {
+        mUniformParameter->setValueFromIndex(mLastIndex, index);
+    }
 
     void setCurrentStack(int index)
     {
@@ -189,7 +196,6 @@ public:
 
 private:
     UniformParameter<T>* mUniformParameter;
-    QGroupBox* mGroupBox;
     LayoutFormat mLayoutFormat;
     QList<FocusLineEdit*> mLineEdits;
     QStackedLayout* mStackedLayout;
@@ -198,6 +204,7 @@ private:
     QWidget* mRowWidget;
     QWidget* mGridWidget;
     //FocusLineEdit* mLastFocusedWidget;
+    int mLastIndex;
 
     void setItemsLayouts()
     {

@@ -37,6 +37,7 @@ public:
         }
 
         mLastFocusedWidget = mLineEdits[0];
+        mLastIndex = 0;
 
         // Set up form layout
 
@@ -59,6 +60,7 @@ public:
             connect(mLineEdits[i], &FocusLineEdit::focusIn, this, [=, this](){
                 mSelectedNumber = mUniformMat4Parameter->number(i);
                 mLastFocusedWidget = mLineEdits[i];
+                mLastIndex = i;
             });
             connect(mLineEdits[i], &FocusLineEdit::focusIn, this, &UniformMat4ParameterWidget::focusIn);
             connect(mLineEdits[i], &FocusLineEdit::focusOut, this, &UniformMat4ParameterWidget::focusOut);
@@ -71,6 +73,11 @@ public:
 
     QString name() { return mUniformMat4Parameter->name(); }
 
+    void setValueFromIndex(int index)
+    {
+        mUniformMat4Parameter->setValueFromIndex(mLastIndex, index);
+    }
+
     QGroupBox* widget() { return mGroupBox; }
 
     //Number<float>* selectedNumber() { return mSelectedNumber; }
@@ -81,6 +88,7 @@ private:
     UniformMat4Parameter* mUniformMat4Parameter;
     QGroupBox* mGroupBox;
     QList<FocusLineEdit*> mLineEdits;
+    int mLastIndex;
     //Number<float>* mSelectedNumber;
 //    FocusLineEdit* mLastFocusedWidget;
 };

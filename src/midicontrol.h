@@ -13,11 +13,12 @@ class MidiControl : public QObject
 
 public:
     explicit MidiControl(QObject *parent = nullptr);
+    ~MidiControl();
 
     void setInputPorts();
 
 signals:
-    void inputPortsChanged(std::vector<std::string> portNames);
+    void inputPortsChanged(QList<QString> portNames);
     void inputPortOpen(QString portName, bool open);
     void ccInputMessageReceived(QString portName, int key, int value);
 
@@ -26,7 +27,7 @@ public slots:
 
 private:
     libremidi::observer observer;
-    std::vector<libremidi::midi_in> midiInputs;
+    QList<libremidi::midi_in*> midiInputs;
 };
 
 

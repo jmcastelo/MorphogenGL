@@ -55,7 +55,6 @@ class UniformParameter;
 
 class UniformMat4Parameter;
 
-enum class UniformType;
 enum class UniformMat4Type;
 
 
@@ -65,12 +64,13 @@ enum class UniformMat4Type;
 class ImageOperation : protected QOpenGLExtraFunctions
 {
 public:
-    ImageOperation(QString theName, bool on, QOpenGLContext* mainContext,
-        QString theVertexShaderPath, QString theFragmentShaderPath);
+    ImageOperation(QString theName, bool on, QOpenGLContext* mainContext);
 
     ImageOperation(const ImageOperation& operation);
 
     ~ImageOperation();
+
+    void setup(QString theVertexShader, QString theFragmentShader);
 
     //ImageOperation* clone() { return new ImageOperation(*this); }
 
@@ -82,6 +82,7 @@ public:
     bool hasParameters() { return !noParameters; }
 
     QString name() { return mName; }
+    void setName(QString theName) { mName = theName; }
 
     GLuint getFBO() { return fbo->getFBO(); }
 
@@ -101,20 +102,25 @@ public:
     QList<UniformMat4Parameter*> mat4UniformParameters();
 
     template <typename T>
-    void setUniform(QString name, UniformType type, GLsizei count, const T* values);
+    void setUniform(QString name, int type, GLsizei count, const T* values);
 
     template <typename T>
     void setOptionsParameter(OptionsParameter<T>* parameter);
 
     void setMat4Uniform(QString name, UniformMat4Type type, QList<float> values);
 
-    void setOrthographicProjection(QString name) { fbo->setOrthographic(name); };
+    void setOrthographicProjection(QString name) { fbo->setOrthographic(name); }
 
     void setFloatUniformParameters(QList<UniformParameter<float>*> theFloatUniformParameters){ floatUniformParameters = theFloatUniformParameters; }
     void setIntUniformParameters(QList<UniformParameter<int>*> theIntUniformParameters){ intUniformParameters = theIntUniformParameters; }
     void setUintUniformParameters(QList<UniformParameter<unsigned int>*> theUintUniformParameters){ uintUniformParameters = theUintUniformParameters; }
     void setGLenumOptionsParameters(QList<OptionsParameter<GLenum>*> theGLenumParameters){ glenumOptionsParameters = theGLenumParameters; }
     void setMat4UniformParameters(QList<UniformMat4Parameter*> theMat4UniformParameters){ mMat4UniformParameters = theMat4UniformParameters; }
+
+    template<typename T>
+    void addUniformParameter(UniformParameter<T>* parameter);
+
+    void clearParameters();
 
     void applyOperation();
     void blit();
@@ -123,10 +129,10 @@ public:
     QImage outputImage(){ return fbo->outputImage(); }
     void setTextureFormat(){ fbo->setTextureFormat(); }
 
-protected:
+private:
     QString mName;
-    QString vertexShaderPath;
-    QString fragmentShaderPath;
+    QString vertexShader;
+    QString fragmentShader;
     bool enabled;
     bool noParameters = false;
     bool blenderEnabled = false;
