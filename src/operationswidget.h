@@ -64,8 +64,9 @@ public:
         setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
 
         mainLayout = new QVBoxLayout;
-        mainLayout->setAlignment(Qt::AlignCenter);
-        mainLayout->setSizeConstraint(QLayout::SetFixedSize);
+        //mainLayout->setAlignment(Qt::AlignCenter);
+        //mainLayout->setSizeConstraint(QLayout::SetFixedSize);
+        mainLayout->setSizeConstraint(QLayout::SetMaximumSize);
 
         setFrameStyle(QFrame::Panel | QFrame::Plain);
         setLineWidth(0);
@@ -117,11 +118,11 @@ public:
         QMapIterator<int, QGroupBox*> it(mGroupBoxesMap);
         while (it.hasNext()) {
             it.next();
-            parametersLayout->addWidget(it.value());
+            parametersLayout->addWidget(it.value(), Qt::AlignCenter);
         }
 
         QGroupBox* parametersGroupBox = new QGroupBox(operation->name());
-        parametersGroupBox->setAlignment(Qt::AlignLeft);
+        parametersGroupBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
         parametersGroupBox->setLayout(parametersLayout);
 
         mainLayout->addWidget(parametersGroupBox);
@@ -156,18 +157,19 @@ public:
             minMaxLayout->addWidget(selectedParameterMaxLineEdit);
 
             QVBoxLayout* selectedParameterVBoxLayout = new QVBoxLayout;
-            selectedParameterVBoxLayout->setSizeConstraint(QLayout::SetMaximumSize);
+            //selectedParameterVBoxLayout->setSizeConstraint(QLayout::SetMaximumSize);
             selectedParameterVBoxLayout->addLayout(sliderLayout);
             selectedParameterVBoxLayout->addLayout(minMaxLayout);
 
             selectedParameterGroupBox = new QGroupBox("No parameter selected");
+            selectedParameterGroupBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
             selectedParameterGroupBox->setLayout(selectedParameterVBoxLayout);
 
             mainLayout->addWidget(selectedParameterGroupBox);
 
             connectUniformParameterWidgets<float>(floatParameterWidgets);
             connectUniformParameterWidgets<int>(intParameterWidgets);
-            connectUniformParameterWidgets<uint>(uintParameterWidgets);
+            connectUniformParameterWidgets<unsigned int>(uintParameterWidgets);
 
             lastFocusedWidget = nullptr;
         }
@@ -175,7 +177,7 @@ public:
         // Enable button
 
         enableButton = new FocusPushButton;
-        enableButton->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+        enableButton->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
         enableButton->setFixedHeight(10);
         enableButton->setCheckable(true);
         enableButton->setChecked(operation->isEnabled());

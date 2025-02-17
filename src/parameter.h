@@ -232,6 +232,8 @@ public:
     int uniformType() { return mUniformType; }
     bool editable() { return mEditable; }
 
+    virtual int numItems() { return 1; }
+
     int index() { return mIndex; }
     void setIndex(int i) { mIndex = i; }
 

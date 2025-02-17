@@ -19,6 +19,15 @@
 
 
 
+struct UniformData
+{
+    QString name;
+    int type;
+    int size;
+};
+
+
+
 class OperationBuilder : public QWidget, public QOpenGLExtraFunctions
 {
     Q_OBJECT

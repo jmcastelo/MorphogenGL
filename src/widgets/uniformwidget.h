@@ -33,16 +33,14 @@ public:
         mUniformParameter { theUniformParameter }
     {
         ParameterWidget<T>::mGroupBox = new QGroupBox(mUniformParameter->name());
+        ParameterWidget<T>::mGroupBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
 
         // Set up line edits
 
         foreach (Number<T>* number, mUniformParameter->numbers())
         {
             FocusLineEdit* lineEdit = new FocusLineEdit;
-            //lineEdit->setFixedWidth(75);
-            //lineEdit->setFixedHeight(15);
             lineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
-            lineEdit->setAlignment(Qt::AlignLeft);
 
             QValidator* validator = nullptr;
 
@@ -65,7 +63,6 @@ public:
         // Set up layouts
 
         mStackedLayout = new QStackedLayout;
-        mStackedLayout->setContentsMargins(0, 0, 0, 0);
 
         mColWidget = new QWidget;
         mColWidget->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
@@ -108,6 +105,7 @@ public:
                     mLineEdits[i]->setText(QString::number(newValue.toInt()));
                 else if (std::is_same<T, unsigned int>::value)
                     mLineEdits[i]->setText(QString::number(newValue.toUInt()));
+                mLineEdits[i]->setCursorPosition(0);
             });
         }
     }
@@ -152,7 +150,7 @@ public:
         if (format == LayoutFormat::Column)
         {
             QGridLayout* gridLayout = new QGridLayout;
-            gridLayout->setContentsMargins(0, 0, 0, 0);
+            gridLayout->setContentsMargins(1, 1, 1, 1);
             gridLayout->setSpacing(0);
             gridLayout->setAlignment(Qt::AlignCenter);
 
@@ -166,7 +164,7 @@ public:
         else if (format == LayoutFormat::Row)
         {
             QGridLayout* gridLayout = new QGridLayout;
-            gridLayout->setContentsMargins(0, 0, 0, 0);
+            gridLayout->setContentsMargins(1, 1, 1, 1);
             gridLayout->setSpacing(0);
             gridLayout->setAlignment(Qt::AlignCenter);
 
@@ -180,7 +178,7 @@ public:
         else if (format == LayoutFormat::Grid)
         {
             QGridLayout* gridLayout = new QGridLayout;
-            gridLayout->setContentsMargins(0, 0, 0, 0);
+            gridLayout->setContentsMargins(1, 1, 1, 1);
             gridLayout->setSpacing(0);
             gridLayout->setAlignment(Qt::AlignCenter);
 
@@ -241,7 +239,7 @@ private:
             if (row == 0 && col == 0)
             {
                 itemGridLayout = new QGridLayout;
-                itemGridLayout->setContentsMargins(0, 0, 0, 0);
+                itemGridLayout->setContentsMargins(1, 1, 1, 1);
                 itemGridLayout->setSpacing(0);
                 itemGridLayout->setAlignment(Qt::AlignCenter);
             }

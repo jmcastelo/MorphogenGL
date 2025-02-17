@@ -189,8 +189,10 @@ void OperationBuilder::parseUniforms()
         glGetProgramResourceName(mProgram->programId(), GL_UNIFORM, index, name.size(), nullptr, name.data());
 
         QString uniformName(name.constData());
+        int uniformType = values.at(1);
+        int numItems = values.at(2);
 
-        addUniformParameter(uniformName, values.at(1), values.at(2));
+        addUniformParameter(uniformName, uniformType, numItems);
     }
 
     mProgram->release();
