@@ -39,6 +39,9 @@ public:
     FocusLineEdit* lastFocusedWidget() { return mLastFocusedWidget; }
     QGroupBox* widget() { return mGroupBox; }
 
+    virtual void setRow(int i) = 0;
+    virtual void setCol(int i) = 0;
+
     virtual void setValueFromIndex(int index) = 0;
     virtual QString name() = 0;
 

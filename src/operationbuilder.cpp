@@ -18,6 +18,7 @@ OperationBuilder::OperationBuilder(QOpenGLContext *mainContext, QWidget *parent)
     mOperation = new ImageOperation("New Operation", false, mainContext);
 
     mOpWidget = new OperationsWidget(mOperation, false);
+    mOpWidget->setVisible(false);
 
     mProgram = new QOpenGLShaderProgram();
 
@@ -49,16 +50,6 @@ OperationBuilder::OperationBuilder(QOpenGLContext *mainContext, QWidget *parent)
     connect(loadVertexButton, &QPushButton::clicked, this, [=](){ shadersTabWidget->setCurrentIndex(0); });
     connect(loadFragmentButton, &QPushButton::clicked, this, [=](){ shadersTabWidget->setCurrentIndex(1); });
 
-    uniformListWidget = new QListWidget;
-    uniformListWidget->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
-    uniformListWidget->setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContents);
-    uniformListWidget->setSelectionMode(QAbstractItemView::SingleSelection);
-    uniformListWidget->setDragEnabled(true);
-    uniformListWidget->setDropIndicatorShown(true);
-    uniformListWidget->setDragDropMode(QAbstractItemView::InternalMove);
-
-    connect(uniformListWidget->model(), &QAbstractItemModel::rowsMoved, this, &OperationBuilder::setParametersIndices);
-
     // Layouts
 
     QHBoxLayout* buttonsLayout = new QHBoxLayout;
@@ -73,7 +64,6 @@ OperationBuilder::OperationBuilder(QOpenGLContext *mainContext, QWidget *parent)
 
     QVBoxLayout* opLayout = new QVBoxLayout;
     opLayout->setAlignment(Qt::AlignTop);
-    opLayout->addWidget(uniformListWidget);
     opLayout->addWidget(mOpWidget);
 
     QHBoxLayout* layout = new QHBoxLayout;
@@ -170,7 +160,7 @@ void OperationBuilder::parseShaders()
         parseAttributes();
         parseUniforms();
 
-        setParametersIndices();
+        mOpWidget->setVisible(true);
     }
 }
 
@@ -248,11 +238,7 @@ void OperationBuilder::parseUniforms()
     for (auto [uniformName, parameter] : uiParamMap.asKeyValueRange())
         mOperation->addUniformParameter<unsigned int>(parameter);
 
-    uniformListWidget->clear();
-    for (auto [uniformName, parameter] : paramMap.asKeyValueRange())
-        uniformListWidget->addItem(uniformName);
-
-    setParametersIndices();
+    mOpWidget->recreate(mOperation, false);
 }
 
 
@@ -347,19 +333,23 @@ void OperationBuilder::addUniformParameter(QString uniformName, int uniformType,
     if (parameter)
     {
         parameter->setUpdateOperation(false);
+
+        parameter->setRow(maxRow() + 1);
+        parameter->setCol(0);
+
         newParamMap.insert(uniformName, parameter);
     }
 }
 
 
 
-void OperationBuilder::setParametersIndices()
+int OperationBuilder::maxRow()
 {
-    for (int index = 0; index < uniformListWidget->count(); index++)
-    {
-        QString name = uniformListWidget->item(index)->text();
-        paramMap[name]->setIndex(index);
-    }
+    int row = -1;
 
-    mOpWidget->recreate(mOperation, false);
+    for (auto [uniformName, parameter] : newParamMap.asKeyValueRange())
+        if (parameter->row() > row)
+            row = parameter->row();
+
+    return row;
 }

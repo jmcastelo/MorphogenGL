@@ -126,6 +126,9 @@ public:
 
     QString name() { return mUniformParameter->name(); }
 
+    void setRow(int i) { mUniformParameter->setRow(i); }
+    void setCol(int i) { mUniformParameter->setCol(i); }
+
     //Number<T>* selectedNumber() { return mSelectedNumber; }
 
     //FocusLineEdit* lastFocusedWidget() { return mLastFocusedWidget; }

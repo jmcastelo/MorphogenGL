@@ -43,7 +43,6 @@ private:
 
     QPushButton* parseButton;
 
-    QListWidget* uniformListWidget;
     QMap<QString, Parameter*> newParamMap;
     QMap<QString, Parameter*> paramMap;
     ImageOperation* mOperation;
@@ -59,11 +58,12 @@ private:
 
     void addUniformParameter(QString uniformName, int uniformType, int numItems);
 
+    int maxRow();
+
 private slots:
     void loadVertexShader();
     void loadFragmentShader();
     void parseShaders();
-    void setParametersIndices();
 };
 
 

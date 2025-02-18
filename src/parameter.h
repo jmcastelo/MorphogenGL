@@ -234,8 +234,11 @@ public:
 
     virtual int numItems() { return 1; }
 
-    int index() { return mIndex; }
-    void setIndex(int i) { mIndex = i; }
+    int row() { return mRow; }
+    void setRow(int i) { mRow = i; }
+
+    int col() { return mCol; }
+    void setCol(int i) { mCol = i; }
 
     void setUpdateOperation(bool set){ mUpdate = set; }
 
@@ -246,7 +249,7 @@ protected:
     QString mUniformName;
     int mUniformType;
     bool mEditable;
-    int mIndex;
+    int mRow, mCol;
     bool mUpdate = true;
     ImageOperation* mOperation;
 };

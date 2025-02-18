@@ -44,6 +44,9 @@ public:
 
     QString name() { return mOptionsParameter->name; }
 
+    void setRow(int i) { mOptionsParameter->setRow(i); }
+    void setCol(int i) { mOptionsParameter->setCol(i); }
+
     QGroupBox* widget() { return mGroupBox; }
 
 private:

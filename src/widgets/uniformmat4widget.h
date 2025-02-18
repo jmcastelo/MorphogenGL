@@ -73,6 +73,9 @@ public:
 
     QString name() { return mUniformMat4Parameter->name(); }
 
+    void setRow(int i) { mUniformMat4Parameter->setRow(i); }
+    void setCol(int i) { mUniformMat4Parameter->setCol(i); }
+
     void setValueFromIndex(int index)
     {
         mUniformMat4Parameter->setValueFromIndex(mLastIndex, index);

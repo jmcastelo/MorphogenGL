@@ -17,9 +17,10 @@ public:
     explicit GridWidget(QWidget *parent = nullptr);
 
     void addWidget(QWidget* widget, int row, int column);
+    void clear();
 
 signals:
-    void itemIndicesChanged(QWidget* widget, int row, int column);
+    void itemRowColChanged(QWidget* widget, int row, int column);
 
 protected:
     void mousePressEvent(QMouseEvent* event) override;
@@ -30,7 +31,8 @@ protected:
 
 private:
     QGridLayout* gridLayout;
-    int targetIndex = -1;
+    QPoint dragStartPosition;
+    int sourceIndex = -1;
 
     int itemIndex(QPoint pos);
 };
