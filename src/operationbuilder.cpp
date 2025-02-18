@@ -1,5 +1,6 @@
 #include "operationbuilder.h"
 
+#include <QTabWidget>
 #include <QFileDialog>
 #include <QFormLayout>
 #include <QHBoxLayout>
@@ -41,7 +42,16 @@ OperationBuilder::OperationBuilder(QOpenGLContext *mainContext, QWidget *parent)
     fragmentEditor = new QPlainTextEdit;
     fragmentEditor->setLineWrapMode(QPlainTextEdit::NoWrap);
 
+    QTabWidget* shadersTabWidget = new QTabWidget;
+    shadersTabWidget->addTab(vertexEditor, "Vertex shader");
+    shadersTabWidget->addTab(fragmentEditor, "Fragment shader");
+
+    connect(loadVertexButton, &QPushButton::clicked, this, [=](){ shadersTabWidget->setCurrentIndex(0); });
+    connect(loadFragmentButton, &QPushButton::clicked, this, [=](){ shadersTabWidget->setCurrentIndex(1); });
+
     uniformListWidget = new QListWidget;
+    uniformListWidget->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+    uniformListWidget->setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContents);
     uniformListWidget->setSelectionMode(QAbstractItemView::SingleSelection);
     uniformListWidget->setDragEnabled(true);
     uniformListWidget->setDropIndicatorShown(true);
@@ -51,24 +61,23 @@ OperationBuilder::OperationBuilder(QOpenGLContext *mainContext, QWidget *parent)
 
     // Layouts
 
-    QVBoxLayout* vertexLayout = new QVBoxLayout;
-    vertexLayout->addWidget(loadVertexButton);
-    vertexLayout->addWidget(vertexEditor);
+    QHBoxLayout* buttonsLayout = new QHBoxLayout;
+    buttonsLayout->setAlignment(Qt::AlignLeft);
+    buttonsLayout->addWidget(loadVertexButton);
+    buttonsLayout->addWidget(loadFragmentButton);
+    buttonsLayout->addWidget(parseButton);
 
-    QVBoxLayout* fragmentLayout = new QVBoxLayout;
-    fragmentLayout->addWidget(loadFragmentButton);
-    fragmentLayout->addWidget(fragmentEditor);
-
-    QHBoxLayout* shadersLayout = new QHBoxLayout;
-    shadersLayout->addLayout(vertexLayout);
-    shadersLayout->addLayout(fragmentLayout);
+    QVBoxLayout* shadersLayout = new QVBoxLayout;
+    shadersLayout->addLayout(buttonsLayout);
+    shadersLayout->addWidget(shadersTabWidget);
 
     QVBoxLayout* opLayout = new QVBoxLayout;
-    opLayout->addWidget(parseButton);
+    opLayout->setAlignment(Qt::AlignTop);
     opLayout->addWidget(uniformListWidget);
     opLayout->addWidget(mOpWidget);
 
     QHBoxLayout* layout = new QHBoxLayout;
+    layout->setAlignment(Qt::AlignTop);
     layout->addLayout(shadersLayout);
     layout->addLayout(opLayout);
 

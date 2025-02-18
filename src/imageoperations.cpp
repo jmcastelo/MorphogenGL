@@ -86,7 +86,11 @@ ImageOperation::ImageOperation(const ImageOperation& operation) :
 
 ImageOperation::~ImageOperation()
 {
-    clearParameters();
+    qDeleteAll(floatUniformParameters);
+    qDeleteAll(intUniformParameters);
+    qDeleteAll(uintUniformParameters);
+    qDeleteAll(glenumOptionsParameters);
+    qDeleteAll(mMat4UniformParameters);
 
     delete blender;
     delete fbo;
@@ -172,12 +176,6 @@ QList<UniformMat4Parameter*> ImageOperation::mat4UniformParameters()
 
 void ImageOperation::clearParameters()
 {
-    qDeleteAll(floatUniformParameters);
-    qDeleteAll(intUniformParameters);
-    qDeleteAll(uintUniformParameters);
-    qDeleteAll(glenumOptionsParameters);
-    qDeleteAll(mMat4UniformParameters);
-
     floatUniformParameters.clear();
     intUniformParameters.clear();
     uintUniformParameters.clear();

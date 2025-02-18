@@ -48,6 +48,7 @@ HEADERS += \
     src/fbo.h \
     src/generator.h \
     src/graphwidget.h \
+    src/gridwidget.h \
     src/histogramwidget.h \
     src/imageoperations.h \
     src/mainwindow.h \
@@ -83,6 +84,7 @@ SOURCES += \
     src/fbo.cpp \
     src/generator.cpp \
     src/graphwidget.cpp \
+    src/gridwidget.cpp \
     src/histogramwidget.cpp \
     src/imageoperations.cpp \
     src/main.cpp \
