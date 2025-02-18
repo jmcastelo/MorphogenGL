@@ -169,9 +169,7 @@ void OperationBuilder::parseShaders()
 
 void OperationBuilder::parseUniforms()
 {
-    mOperation->clearParameters();
-    mParameterMap.clear();
-    uniformListWidget->clear();
+    newParamMap.clear();
 
     mProgram->bind();
 
@@ -192,10 +190,60 @@ void OperationBuilder::parseUniforms()
         int uniformType = values.at(1);
         int numItems = values.at(2);
 
-        addUniformParameter(uniformName, uniformType, numItems);
+        if (!paramMap.contains(uniformName))
+        {
+            addUniformParameter(uniformName, uniformType, numItems);
+        }
+        else if (paramMap[uniformName]->uniformType() != uniformType || paramMap[uniformName]->numItems() != numItems)
+        {
+            if (fParamMap.contains(uniformName))
+                fParamMap.remove(uniformName);
+            else if (iParamMap.contains(uniformName))
+                iParamMap.remove(uniformName);
+            else if (uiParamMap.contains(uniformName))
+                uiParamMap.remove(uniformName);
+
+            paramMap.remove(uniformName);
+
+            addUniformParameter(uniformName, uniformType, numItems);
+        }
+        else
+        {
+            newParamMap.insert(uniformName, paramMap[uniformName]);
+        }
     }
 
     mProgram->release();
+
+    for (auto [uniformName, parameter] : paramMap.asKeyValueRange())
+    {
+        if (!newParamMap.contains(uniformName))
+        {
+            if (fParamMap.contains(uniformName))
+                fParamMap.remove(uniformName);
+            else if (iParamMap.contains(uniformName))
+                iParamMap.remove(uniformName);
+            else if (uiParamMap.contains(uniformName))
+                uiParamMap.remove(uniformName);
+        }
+    }
+
+    paramMap = newParamMap;
+
+    mOperation->clearParameters();
+
+    for (auto [uniformName, parameter] : fParamMap.asKeyValueRange())
+        mOperation->addUniformParameter<float>(parameter);
+    for (auto [uniformName, parameter] : iParamMap.asKeyValueRange())
+        mOperation->addUniformParameter<int>(parameter);
+    for (auto [uniformName, parameter] : uiParamMap.asKeyValueRange())
+        mOperation->addUniformParameter<unsigned int>(parameter);
+
+    uniformListWidget->clear();
+    for (auto [uniformName, parameter] : paramMap.asKeyValueRange())
+        uniformListWidget->addItem(uniformName);
+
+    setParametersIndices();
 }
 
 
@@ -255,7 +303,7 @@ void OperationBuilder::addUniformParameter(QString uniformName, int uniformType,
 
     if (uniformType == GL_FLOAT || uniformType == GL_INT || uniformType == GL_UNSIGNED_INT)
         numValuesPerItem = 1;
-    else if (uniformType == GL_FLOAT_VEC2 || uniformType == GL_INT_VEC2 || uniformType == GL_UNSIGNED_INT_VEC2 || uniformType == GL_FLOAT_MAT2)
+    else if (uniformType == GL_FLOAT_VEC2 || uniformType == GL_INT_VEC2 || uniformType == GL_UNSIGNED_INT_VEC2)
         numValuesPerItem = 2;
     else if (uniformType == GL_FLOAT_VEC3 || uniformType == GL_INT_VEC3 || uniformType == GL_UNSIGNED_INT_VEC3)
         numValuesPerItem = 3;
@@ -271,27 +319,26 @@ void OperationBuilder::addUniformParameter(QString uniformName, int uniformType,
     if (uniformType == GL_FLOAT || uniformType == GL_FLOAT_VEC2 || uniformType == GL_FLOAT_VEC3 || uniformType == GL_FLOAT_VEC4 || uniformType == GL_FLOAT_MAT2 || uniformType == GL_FLOAT_MAT3 || uniformType == GL_FLOAT_MAT4)
     {
         UniformParameter<float>* fParameter = new UniformParameter<float>(uniformName.toUpper(), uniformName, uniformType, numItems, true, QList<float>(numItems * numValuesPerItem, 0.0f), -1.0f, 1.0f, -1.0f, 1.0f, mOperation);
-        mOperation->addUniformParameter<float>(fParameter);
+        fParamMap.insert(uniformName, fParameter);
         parameter = fParameter;
     }
     else if (uniformType == GL_INT || uniformType == GL_INT_VEC2 || uniformType == GL_INT_VEC3 || uniformType == GL_INT_VEC4)
     {
         UniformParameter<int>* iParameter = new UniformParameter<int>(uniformName.toUpper(), uniformName, uniformType, numItems, true, QList<int>(numItems * numValuesPerItem, 0), 0, 1, 0, 1, mOperation);
-        mOperation->addUniformParameter<int>(iParameter);
+        iParamMap.insert(uniformName, iParameter);
         parameter = iParameter;
     }
     else if (uniformType == GL_UNSIGNED_INT || uniformType == GL_UNSIGNED_INT_VEC2 || uniformType == GL_UNSIGNED_INT_VEC3 || uniformType == GL_UNSIGNED_INT_VEC4)
     {
         UniformParameter<unsigned int>* uiParameter = new UniformParameter<unsigned int>(uniformName.toUpper(), uniformName, uniformType, numItems, true, QList<unsigned int>(numItems * numValuesPerItem, 0), 0, 1, 0, 1, mOperation);
-        mOperation->addUniformParameter<unsigned int>(uiParameter);
+        uiParamMap.insert(uniformName, uiParameter);
         parameter = uiParameter;
     }
 
     if (parameter)
     {
         parameter->setUpdateOperation(false);
-        mParameterMap.insert(uniformName, parameter);
-        uniformListWidget->addItem(uniformName);
+        newParamMap.insert(uniformName, parameter);
     }
 }
 
@@ -302,7 +349,7 @@ void OperationBuilder::setParametersIndices()
     for (int index = 0; index < uniformListWidget->count(); index++)
     {
         QString name = uniformListWidget->item(index)->text();
-        mParameterMap[name]->setIndex(index);
+        paramMap[name]->setIndex(index);
     }
 
     mOpWidget->recreate(mOperation, false);

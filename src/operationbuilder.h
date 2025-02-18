@@ -53,9 +53,14 @@ private:
     QPushButton* parseButton;
 
     QListWidget* uniformListWidget;
-    QMap<QString, Parameter*> mParameterMap;
+    QMap<QString, Parameter*> newParamMap;
+    QMap<QString, Parameter*> paramMap;
     ImageOperation* mOperation;
     OperationsWidget* mOpWidget = nullptr;
+
+    QMap<QString, UniformParameter<float>*> fParamMap;
+    QMap<QString, UniformParameter<int>*> iParamMap;
+    QMap<QString, UniformParameter<unsigned int>*> uiParamMap;
 
     bool linkProgram();
     void parseUniforms();

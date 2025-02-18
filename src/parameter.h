@@ -329,7 +329,7 @@ public:
         for (Number<T>* number : parameter.mNumbers)
         {
             Number<T>* newNumber = new Number<T>(*number);
-            mNumbers.push_back(newNumber);
+            mNumbers.append(newNumber);
         }
 
         nItems = parameter.nItems;
