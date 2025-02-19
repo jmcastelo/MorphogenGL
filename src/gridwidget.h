@@ -7,6 +7,7 @@
 #include <QGridLayout>
 #include <QMouseEvent>
 #include <QDragEnterEvent>
+#include <QDragMoveEvent>
 
 
 
@@ -24,17 +25,22 @@ signals:
 
 protected:
     void mousePressEvent(QMouseEvent* event) override;
-    void mouseReleaseEvent(QMouseEvent* event) override;
-    void mouseMoveEvent(QMouseEvent* event) override;
     void dragEnterEvent(QDragEnterEvent* event) override;
+    void dragMoveEvent(QDragMoveEvent* event) override;
     void dropEvent(QDropEvent* event) override;
 
 private:
     QGridLayout* gridLayout;
     QPoint dragStartPosition;
-    int sourceIndex = -1;
+    QLayoutItem* sourceItem;
+    QWidget* placeholder;
+    QLayoutItem* placeholderItem = nullptr;
+    int oldTargetIndex = -1;
 
     int itemIndex(QPoint pos);
+    void moveItemsUp(int row, int col);
+    void moveItemsDown(int row, int col);
+    void swapItems(QLayoutItem* item1, QLayoutItem* item2);
 };
 
 
