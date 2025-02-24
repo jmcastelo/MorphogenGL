@@ -60,6 +60,9 @@ private:
 
     int maxRow();
 
+protected:
+    void closeEvent(QCloseEvent* event);
+
 private slots:
     void loadVertexShader();
     void loadFragmentShader();

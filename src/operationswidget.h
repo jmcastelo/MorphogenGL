@@ -36,7 +36,6 @@
 
 #include <cmath>
 #include <QWidget>
-#include <QFrame>
 #include <QString>
 #include <QIntValidator>
 #include <QDoubleValidator>
@@ -47,37 +46,85 @@
 #include <QSlider>
 #include <QFormLayout>
 #include <QVBoxLayout>
+#include <QHBoxLayout>
 #include <QCloseEvent>
 #include <QGroupBox>
+#include <QDial>
+#include <QFrame>
 
 
 
 // Operations widget
 
-class OperationsWidget : public QFrame
+class OperationsWidget : public QWidget
 {
     Q_OBJECT
 
 public:
-    OperationsWidget(ImageOperation* operation, bool midiEnabled, QWidget* parent = nullptr) : QFrame(parent)
+    OperationsWidget(ImageOperation* operation, bool midiEnabled, QWidget* parent = nullptr) : QWidget(parent)
     {
         mainLayout = new QVBoxLayout;
-        //mainLayout->setAlignment(Qt::AlignCenter);
-        //mainLayout->setSizeConstraint(QLayout::SetFixedSize);
-        mainLayout->setSizeConstraint(QLayout::SetMaximumSize);
+        mainLayout->setSizeConstraint(QLayout::SetFixedSize);
+
+        // Header widget
+
+        headerWidget = new QFrame;
+        headerWidget->setFrameStyle(QFrame::Box | QFrame::Plain);
+        headerWidget->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Maximum);
+
+        // Enable button
+
+        enableButton = new QPushButton;
+        enableButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+        enableButton->setCheckable(true);
+
+        // Operation name label
+
+        opNameLabel = new QLabel;
+        opNameLabel->setMargin(10);
+        opNameLabel->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Maximum);
+
+        // Toggle body button
+
+        toggleButton = new QPushButton;
+        toggleButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+        toggleButton->setCheckable(true);
+        toggleButton->setChecked(true);
+
+        connect(toggleButton, &QPushButton::clicked, this, &OperationsWidget::toggleBody);
+
+        QHBoxLayout* headerLayout = new QHBoxLayout;
+        headerLayout->addWidget(enableButton, 0, Qt::AlignLeft | Qt::AlignVCenter);
+        headerLayout->addWidget(opNameLabel, 0, Qt::AlignHCenter | Qt::AlignVCenter);
+        headerLayout->addWidget(toggleButton, 0, Qt::AlignRight | Qt::AlignVCenter);
+
+        headerWidget->setLayout(headerLayout);
+        mainLayout->addWidget(headerWidget, 0, Qt::AlignTop | Qt::AlignLeft);
+
+        // Body widget
+
+        bodyWidget = new QWidget;
+        bodyWidget->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+
+        mainLayout->addWidget(bodyWidget, 0, Qt::AlignTop | Qt::AlignHCenter);
+
+        QVBoxLayout* bodyLayout = new QVBoxLayout;
+        bodyWidget->setLayout(bodyLayout);
+
+        // Grid widget containing parameter widgets
 
         gridWidget = new GridWidget;
         gridWidget->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
 
         connect(gridWidget, &GridWidget::itemRowColChanged, this, &OperationsWidget::updateWidgetRowCol);
 
-        mainLayout->addWidget(gridWidget);
+        bodyLayout->addWidget(gridWidget, 0, Qt::AlignTop | Qt::AlignLeft);
 
-        selectedParameterSlider = new FocusSlider(Qt::Horizontal);
-        selectedParameterSlider->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Maximum);
-        selectedParameterSlider->setRange(0, 100'000);
+        selParamDial = new QDial;
+        selParamDial->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+        selParamDial->setRange(0, 100'000);
 
-        midiLinkButton = new QPushButton();
+        midiLinkButton = new QPushButton;
         midiLinkButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
         midiLinkButton->setCheckable(true);
         midiLinkButton->setStyleSheet("QPushButton{ qproperty-icon: url(:/icons/circle-grey.png); }");
@@ -90,53 +137,22 @@ public:
         selectedParameterMaxLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
         selectedParameterMaxLineEdit->setPlaceholderText("Maximum");
 
-        QHBoxLayout* sliderLayout = new QHBoxLayout;
-        sliderLayout->addWidget(midiLinkButton);
-        sliderLayout->addWidget(selectedParameterSlider);
-
-        QHBoxLayout* minMaxLayout = new QHBoxLayout;
-        minMaxLayout->setAlignment(Qt::AlignJustify);
-        minMaxLayout->addWidget(selectedParameterMinLineEdit);
-        minMaxLayout->addWidget(selectedParameterMaxLineEdit);
-
-        QVBoxLayout* selectedParameterVBoxLayout = new QVBoxLayout;
-        //selectedParameterVBoxLayout->setSizeConstraint(QLayout::SetMaximumSize);
-        selectedParameterVBoxLayout->addLayout(sliderLayout);
-        selectedParameterVBoxLayout->addLayout(minMaxLayout);
+        QHBoxLayout* selParamLayout = new QHBoxLayout;
+        selParamLayout->addWidget(midiLinkButton);
+        selParamLayout->addWidget(selParamDial);
+        selParamLayout->addWidget(selectedParameterMinLineEdit);
+        selParamLayout->addWidget(selectedParameterMaxLineEdit);
 
         selectedParameterGroupBox = new QGroupBox("No parameter selected");
-        selectedParameterGroupBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
-        selectedParameterGroupBox->setLayout(selectedParameterVBoxLayout);
+        selectedParameterGroupBox->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Maximum);
+        selectedParameterGroupBox->setLayout(selParamLayout);
         selectedParameterGroupBox->setVisible(false);
 
-        mainLayout->addWidget(selectedParameterGroupBox);
+        bodyLayout->addWidget(selectedParameterGroupBox, 0, Qt::AlignTop | Qt::AlignHCenter);
 
-        // Enable button
-
-        enableButton = new FocusPushButton;
-        enableButton->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
-        enableButton->setFixedHeight(10);
-        enableButton->setCheckable(true);
-
-        connect(enableButton, &FocusPushButton::focusIn, this, [=, this](){
-            setLineWidth(1);
-            lastFocusedWidget = enableButton;
-            lastFocused = true;
-            emit focusIn(this);
-        });
-        connect(enableButton, &FocusPushButton::focusOut, this, [=, this](){
-            setLineWidth(0);
-            emit focusOut(this);
-        });
-
-        mainLayout->addWidget(enableButton);
+        toggleBody(true);
 
         setLayout(mainLayout);
-
-        setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
-        setFrameStyle(QFrame::Panel | QFrame::Plain);
-        setLineWidth(0);
-        setMidLineWidth(0);
 
         setup(operation, midiEnabled);
     }
@@ -144,8 +160,6 @@ public:
     void setup(ImageOperation* operation, bool midiEnabled)
     {
         // Parameter widgets
-
-        gridWidget->clear();
 
         foreach (auto parameter, operation->uniformParameters<float>())
         {
@@ -182,6 +196,8 @@ public:
             floatParameterWidgets.append(widget);
         }
 
+        gridWidget->optimizeLayout();
+
         // Selected parameter widget
 
         if (!floatParameterWidgets.empty() || !intParameterWidgets.empty() || !uintParameterWidgets.empty())
@@ -199,29 +215,23 @@ public:
             selectedParameterGroupBox->setVisible(false);
         }
 
+        // Operation name label
+
+        opNameLabel->setText(operation->name());
+
         // Midi link button
 
         midiLinkButton->setVisible(midiEnabled);
 
         // Enable button
 
-        enableButton->setChecked(operation->isEnabled());
-
-        if (operation->isEnabled())
-            enableButton->setStyleSheet("background-color: rgb(0, 255, 0); color: rgb(255, 255, 255)");
-        else
-            enableButton->setStyleSheet("background-color: rgb(32, 32, 32); color: rgb(255, 255, 255)");
+        toggleEnableButton(operation->isEnabled());
 
         disconnect(enableButton, &QPushButton::toggled, this, nullptr);
 
         connect(enableButton, &QPushButton::toggled, this, [=, this](bool checked){
             operation->enable(checked);
-
-            if (checked)
-                enableButton->setStyleSheet("background-color: rgb(0, 255, 0); color: rgb(255, 255, 255)");
-            else
-                enableButton->setStyleSheet("background-color: rgb(32, 32, 32); color: rgb(255, 255, 255)");
-
+            setEnableButtonStyle(checked);
             emit enableButtonToggled();
         });
     }
@@ -237,14 +247,12 @@ public:
             });
 
             connect(widget, &ParameterWidget<T>::focusIn, this, [=, this](){
-                setLineWidth(1);
                 lastFocusedWidget = widget->lastFocusedWidget();
                 lastFocused = true;
                 emit focusIn(this);
             });
 
             connect(widget, &ParameterWidget<T>::focusOut, this, [=, this](){
-                setLineWidth(0);
                 emit focusOut(this);
             });
         }
@@ -254,6 +262,8 @@ public:
     {
         minValidator = nullptr;
         maxValidator = nullptr;
+
+        gridWidget->clear();
 
         qDeleteAll(floatParameterWidgets);
         floatParameterWidgets.clear();
@@ -273,10 +283,15 @@ public:
     void toggleEnableButton(bool checked)
     {
         enableButton->setChecked(checked);
-        if (checked)
-            enableButton->setStyleSheet("background-color: rgb(0, 255, 0); color: rgb(255, 255, 255)");
+        setEnableButtonStyle(checked);
+    }
+
+    void setEnableButtonStyle(bool enabled)
+    {
+        if (enabled)
+            enableButton->setStyleSheet("QPushButton{ qproperty-icon: url(:/icons/circle-green.png); }");
         else
-            enableButton->setStyleSheet("background-color: rgb(32, 32, 32); color: rgb(255, 255, 255)");
+            enableButton->setStyleSheet("QPushButton{ qproperty-icon: url(:/icons/circle-grey.png); }");
     }
 
     bool isFocused()
@@ -318,6 +333,14 @@ signals:
 private:
     QVBoxLayout* mainLayout;
 
+    QFrame* headerWidget;
+
+    QPushButton* enableButton;
+    QPushButton* toggleButton;
+    QLabel* opNameLabel;
+
+    QWidget* bodyWidget;
+
     GridWidget* gridWidget;
 
     QList<ParameterWidget<float>*> floatParameterWidgets;
@@ -325,7 +348,7 @@ private:
     QList<ParameterWidget<unsigned int>*> uintParameterWidgets;
     QList<OptionsParameterWidget<GLenum>*> glenumOptionsWidgets;
 
-    FocusSlider* selectedParameterSlider;
+    QDial* selParamDial;
     FocusLineEdit* selectedParameterMinLineEdit;
     FocusLineEdit* selectedParameterMaxLineEdit;
     QValidator* minValidator = nullptr;
@@ -334,8 +357,6 @@ private:
     QPushButton* midiLinkButton;
 
     QGroupBox* selectedParameterGroupBox;
-
-    FocusPushButton* enableButton;
 
     QWidget* lastFocusedWidget = nullptr;
     bool lastFocused = false;
@@ -347,25 +368,23 @@ private:
 
         // Slider
 
-        selectedParameterSlider->disconnect();
-        selectedParameterSlider->setRange(0, number->indexMax());
-        selectedParameterSlider->setValue(number->index());
+        selParamDial->disconnect();
+        selParamDial->setRange(0, number->indexMax());
+        selParamDial->setValue(number->index());
 
-        connect(selectedParameterSlider, &QAbstractSlider::sliderMoved, widget, &ParameterWidget<T>::setValueFromIndex);
-        connect(number, &Number<T>::indexChanged, selectedParameterSlider, &QAbstractSlider::setValue);
+        connect(selParamDial, &QAbstractSlider::sliderMoved, widget, &ParameterWidget<T>::setValueFromIndex);
+        connect(number, &Number<T>::indexChanged, selParamDial, &QAbstractSlider::setValue);
 
         // Focus
 
-        connect(selectedParameterSlider, &FocusSlider::focusIn, this, [=, this](){
-            setLineWidth(1);
-            lastFocusedWidget = selectedParameterSlider;
+        /*connect(selParamDial, &FocusSlider::focusIn, this, [=, this](){
+            lastFocusedWidget = selParamDial;
             lastFocused = true;
             emit focusIn(this);
         });
-        connect(selectedParameterSlider, &FocusSlider::focusOut, this, [=, this](){
-            setLineWidth(0);
+        connect(selParamDial, &FocusSlider::focusOut, this, [=, this](){
             emit focusOut(this);
-        });
+        });*/
 
         // Minimum
 
@@ -433,24 +452,20 @@ private:
         // Focus
 
         connect(selectedParameterMinLineEdit, &FocusLineEdit::focusIn, this, [=, this](){
-            setLineWidth(1);
             lastFocusedWidget = selectedParameterMinLineEdit;
             lastFocused = true;
             emit focusIn(this);
         });
         connect(selectedParameterMinLineEdit, &FocusLineEdit::focusOut, this, [=, this](){
-            setLineWidth(0);
             emit focusOut(this);
         });
 
         connect(selectedParameterMaxLineEdit, &FocusLineEdit::focusIn, this, [=, this](){
-            setLineWidth(1);
             lastFocusedWidget = selectedParameterMaxLineEdit;
             lastFocused = true;
             emit focusIn(this);
         });
         connect(selectedParameterMaxLineEdit, &FocusLineEdit::focusOut, this, [=, this](){
-            setLineWidth(0);
             emit focusOut(this);
         });
 
@@ -540,6 +555,22 @@ private slots:
                 paramWidget->setCol(col);
                 return;
             }
+        }
+    }
+
+    void toggleBody(bool visible)
+    {
+        bodyWidget->setVisible(visible);
+
+        if (visible)
+        {
+            toggleButton->setStyleSheet("QPushButton{ qproperty-icon: url(:/icons/go-up.png); }");
+            resize(headerWidget->size() + bodyWidget->size());
+        }
+        else
+        {
+            toggleButton->setStyleSheet("QPushButton{ qproperty-icon: url(:/icons/go-down.png); }");
+            resize(headerWidget->size());
         }
     }
 };

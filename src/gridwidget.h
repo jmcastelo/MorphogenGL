@@ -19,6 +19,7 @@ public:
 
     void addWidget(QWidget* widget, int row, int column);
     void clear();
+    void optimizeLayout();
 
 signals:
     void itemRowColChanged(QWidget* widget, int row, int column);
@@ -31,16 +32,26 @@ protected:
 
 private:
     QGridLayout* gridLayout;
-    QPoint dragStartPosition;
-    QLayoutItem* sourceItem;
-    QWidget* placeholder;
-    QLayoutItem* placeholderItem = nullptr;
-    int oldTargetIndex = -1;
+    int margin = 20;
+    int spacing = 10;
+    int minWidth, minHeight;
+    QMap<QLayoutItem*, QList<int>> itemCoords;
+    QLayoutItem* sourceItem = nullptr;
+    QPoint sourceOffset;
+    QSize sourceSize;
+    QPoint dragPoint;
+
+    void setRowColSizes();
+
+    int getMaxRow();
+    int getMaxCol();
+
+    int countItemsInRow(int row, int colMax);
+    int countItemsInCol(int col, int rowCount);
 
     int itemIndex(QPoint pos);
-    void moveItemsUp(int row, int col);
-    void moveItemsDown(int row, int col);
-    void swapItems(QLayoutItem* item1, QLayoutItem* item2);
+
+    void moveItem(QLayoutItem* item, int deltaRow, int deltaCol);
 };
 
 

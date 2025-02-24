@@ -41,7 +41,10 @@ class FocusLineEdit : public QLineEdit
     Q_OBJECT
 
 public:
-    FocusLineEdit(QWidget* parent = nullptr) : QLineEdit(parent) {}
+    FocusLineEdit(QWidget* parent = nullptr) : QLineEdit(parent)
+    {
+        setFixedWidth(80);
+    }
 
 signals:
     void focusOut();

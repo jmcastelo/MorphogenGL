@@ -62,16 +62,7 @@ OperationBuilder::OperationBuilder(QOpenGLContext *mainContext, QWidget *parent)
     shadersLayout->addLayout(buttonsLayout);
     shadersLayout->addWidget(shadersTabWidget);
 
-    QVBoxLayout* opLayout = new QVBoxLayout;
-    opLayout->setAlignment(Qt::AlignTop);
-    opLayout->addWidget(mOpWidget);
-
-    QHBoxLayout* layout = new QHBoxLayout;
-    layout->setAlignment(Qt::AlignTop);
-    layout->addLayout(shadersLayout);
-    layout->addLayout(opLayout);
-
-    setLayout(layout);
+    setLayout(shadersLayout);
 
     setWindowTitle("Operation Builder");
     setVisible(false);
@@ -157,10 +148,9 @@ void OperationBuilder::parseShaders()
 {
     if (linkProgram())
     {
+        mOpWidget->setVisible(true);
         parseAttributes();
         parseUniforms();
-
-        mOpWidget->setVisible(true);
     }
 }
 
@@ -352,4 +342,13 @@ int OperationBuilder::maxRow()
             row = parameter->row();
 
     return row;
+}
+
+
+
+void OperationBuilder::closeEvent(QCloseEvent* event)
+{
+    mOpWidget->close();
+
+    event->accept();
 }

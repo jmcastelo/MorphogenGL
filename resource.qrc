@@ -70,5 +70,7 @@
         <file>icons/circle-orange.png</file>
         <file>icons/align-horizontal-left.png</file>
         <file>icons/applications-development.png</file>
+        <file>icons/go-down.png</file>
+        <file>icons/go-up.png</file>
     </qresource>
 </RCC>
