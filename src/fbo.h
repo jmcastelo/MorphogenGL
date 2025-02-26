@@ -47,8 +47,12 @@ public:
 
     QOpenGLShaderProgram* program;
     
-    FBO(QString vertexShader, QString fragmentShader, QOpenGLContext* mainContext);
+    //FBO(QString vertexShader, QString fragmentShader, QOpenGLContext* mainContext);
+    FBO(QOpenGLContext* mainContext);
     virtual ~FBO();
+
+    void setShadersFromSourceCode(QString vertexShader, QString fragmentShader);
+    void setShadersFromSourceFile(QString vertexShader, QString fragmentShader);
 
     GLuint getFBO() { return fboBlit; }
     GLuint** getTextureID() { return &texID; }

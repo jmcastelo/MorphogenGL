@@ -20,16 +20,17 @@
 *  along with MorphogenGL.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#ifndef GENERATOR_H
-#define GENERATOR_H
+#ifndef NODEMANAGER_H
+#define NODEMANAGER_H
 
 
 
-#include "imageoperations.h"
+#include "imageoperation.h"
 #include "parameter.h"
 #include "seed.h"
 #include "blender.h"
 #include "texformat.h"
+#include "operationwidget.h"
 
 #include "fbo.h"
 #include <QObject>
@@ -88,13 +89,13 @@ struct ImageOperationNode
 
 
 
-class GeneratorGL : public QObject
+class NodeManager : public QObject
 {
     Q_OBJECT
 
 public:
-    GeneratorGL();
-    ~GeneratorGL();
+    NodeManager();
+    ~NodeManager();
 
     QList<QString> availableOperations;
 
@@ -115,10 +116,10 @@ public:
     void equalizeBlendFactors(QUuid id);
 
     ImageOperation* getOperation(QUuid id);
-    ImageOperation* newOperation(QString operationName);
-    QUuid addOperation(QString operationName);
+    OperationWidget* addNewOperation();
+    //QUuid addOperation(QString operationName);
     QUuid copyOperation(QUuid srcId);
-    void setOperation(QUuid id, QString operationName);
+    //void setOperation(QUuid id, QString operationName);
     void removeOperation(QUuid id);
     void enableOperation(QUuid id, bool enabled);
     bool isOperationEnabled(QUuid id);
@@ -218,4 +219,4 @@ private:
 
 
 
-#endif // GENERATOR_H
+#endif // NODEMANAGER_H

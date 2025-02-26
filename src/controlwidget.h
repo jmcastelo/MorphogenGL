@@ -25,8 +25,8 @@
 
 
 
-#include "generator.h"
-#include "operationswidget.h"
+#include "nodemanager.h"
+#include "operationwidget.h"
 #include "graphwidget.h"
 #include "plotswidget.h"
 
@@ -76,9 +76,9 @@ class ControlWidget : public QWidget
     Q_OBJECT
 
 public:
-    GeneratorGL* generator;
+    NodeManager* mNodeManager;
 
-    ControlWidget(double itFPS, double updFPS, GeneratorGL* theGenerator, PlotsWidget* thePlotsWidget, QWidget *parent = nullptr);
+    ControlWidget(double itFPS, double updFPS, NodeManager* theGenerator, PlotsWidget* thePlotsWidget, QWidget *parent = nullptr);
     ~ControlWidget();
 
 signals:
@@ -86,7 +86,6 @@ signals:
     void seedDrawn();
     void updateStateChanged(bool state);
     void showMidiWidget();
-    void toggleOperationBuilder();
     void overlayToggled(bool show);
     void imageSizeChanged(int width, int height);
     void startRecording(QString recordFilename, int framesPerSecond, QMediaFormat format);
@@ -126,7 +125,7 @@ private:
 
     QWidget* displayOptionsWidget;
     QWidget* recordingOptionsWidget;
-    QWidget* sortedOperationsWidget;
+    QWidget* sortedOperationWidget;
 
     QTableWidget* sortedOperationsTable;
     QList<QPair<QUuid, QString>> sortedOperationsData;
@@ -163,7 +162,7 @@ private:
 
     QLabel* videoCaptureElapsedTimeLabel;
 
-    QMap<QUuid, OperationsWidget*> operationsWidgets;
+    QMap<QUuid, OperationWidget*> operationsWidgets;
 
     QMap<QString, QMap<int, Number<float>*>> midiFloatLinks;
     QMap<QString, QMap<int, Number<int>*>> midiIntLinks;
@@ -182,7 +181,7 @@ private:
     void constructSystemToolBar();
     void constructDisplayOptionsWidget(double itsFPS, double updFPS);
     void constructRecordingOptionsWidget();
-    void constructSortedOperationsWidget();
+    void constructSortedOperationWidget();
 
     QString textureFormatToString(TextureFormat format);
 
@@ -199,7 +198,7 @@ private slots:
     void setOutputDir();
     //void toggleDisplayOptionsWidget();
     //void toggleRecordingOptionsWidget();
-    //void toggleSortedOperationsWidget();
+    //void toggleSortedOperationWidget();
     void plotsActionTriggered();
     //void loadConfig();
     //void saveConfig();

@@ -27,7 +27,7 @@
 
 
 
-#include "imageoperations.h"
+#include "imageoperation.h"
 
 #include <QObject>
 #include <QVariant>

@@ -27,7 +27,7 @@
 #include "node.h"
 //#include "cycle.h"
 //#include "cyclesearch.h"
-//#include "generator.h"
+#include "nodemanager.h"
 
 #include <cmath>
 #include <QKeyEvent>
@@ -37,8 +37,9 @@
 
 
 
-GraphWidget::GraphWidget(QWidget *parent)
-    : QGraphicsView(parent)
+GraphWidget::GraphWidget(NodeManager* nodeManager, QWidget *parent) :
+    QGraphicsView(parent),
+    mNodeManager{ nodeManager}
 {
     QGraphicsScene *scene = new QGraphicsScene(this);
     scene->setItemIndexMethod(QGraphicsScene::NoIndex);
@@ -54,7 +55,8 @@ GraphWidget::GraphWidget(QWidget *parent)
     setOptimizationFlags(QGraphicsView::DontAdjustForAntialiasing | QGraphicsView::DontSavePainterState);
 
     setCacheMode(CacheBackground);
-    setViewportUpdateMode(BoundingRectViewportUpdate);
+    //setViewportUpdateMode(BoundingRectViewportUpdate);
+    setViewportUpdateMode(SmartViewportUpdate);
     setRenderHint(QPainter::Antialiasing);
     setTransformationAnchor(AnchorUnderMouse);
     setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
@@ -80,9 +82,11 @@ void GraphWidget::addNewOperationNode()
     QAction* action = qobject_cast<QAction*>(sender());
     QVariant data = action->data();
 
-    //Node *node = new SeedNode(this);
-    //scene()->addItem(node);
-    //node->setPos(mapToScene(mapFromGlobal(data.toPoint())));
+    QWidget* widget = mNodeManager->addNewOperation();
+    QGraphicsProxyWidget* proxyWidget = scene()->addWidget(widget);
+    Node* node = new Node(widget, proxyWidget);
+    scene()->addItem(node);
+    node->setPos(mapToScene(mapFromGlobal(data.toPoint())));
 }
 
 

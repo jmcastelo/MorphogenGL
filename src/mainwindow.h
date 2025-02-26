@@ -1,7 +1,7 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-#include "generator.h"
+#include "nodemanager.h"
 #include "morphowidget.h"
 #include "controlwidget.h"
 #include "plotswidget.h"
@@ -10,7 +10,6 @@
 #include "midicontrol.h"
 #include "midiwidget.h"
 #include "overlay.h"
-#include "operationbuilder.h"
 
 #include <QMainWindow>
 #include <QStackedLayout>
@@ -43,7 +42,7 @@ protected:
     void keyPressEvent(QKeyEvent* event) override;
 
 private:
-    GeneratorGL* generator;
+    NodeManager* nodeManager;
     MorphoWidget* morphoWidget;
     ControlWidget* controlWidget;
     PlotsWidget* plotsWidget;
@@ -51,7 +50,6 @@ private:
     MidiControl midiControl;
     MidiWidget* midiWidget;
     Overlay* overlay;
-    OperationBuilder* opBuilder;
 
     TimerThread* updateTimer;
     std::chrono::time_point<std::chrono::steady_clock> updateStart;
@@ -93,8 +91,6 @@ private slots:
     void setSize(int with, int height);
 
     void showMidiWidget();
-
-    void toggleOperationBuilder();
 };
 
 

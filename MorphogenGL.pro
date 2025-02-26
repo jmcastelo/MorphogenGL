@@ -46,19 +46,19 @@ HEADERS += \
     src/cyclesearch.h \
     src/edge.h \
     src/fbo.h \
-    src/generator.h \
     src/graphwidget.h \
     src/gridwidget.h \
     src/histogramwidget.h \
-    src/imageoperations.h \
+    src/imageoperation.h \
     src/mainwindow.h \
     src/message.h \
     src/midicontrol.h \
     src/midiwidget.h \
     src/morphowidget.h \
     src/node.h \
+    src/nodemanager.h \
     src/operationbuilder.h \
-    src/operationswidget.h \
+    src/operationwidget.h \
     src/overlay.h \
     src/parameter.h \
     src/plotswidget.h \
@@ -82,11 +82,10 @@ SOURCES += \
     src/cyclesearch.cpp \
     src/edge.cpp \
     src/fbo.cpp \
-    src/generator.cpp \
     src/graphwidget.cpp \
     src/gridwidget.cpp \
     src/histogramwidget.cpp \
-    src/imageoperations.cpp \
+    src/imageoperation.cpp \
     src/main.cpp \
     src/mainwindow.cpp \
     src/message.cpp \
@@ -94,6 +93,7 @@ SOURCES += \
     src/midiwidget.cpp \
     src/morphowidget.cpp \
     src/node.cpp \
+    src/nodemanager.cpp \
     src/operationbuilder.cpp \
     src/overlay.cpp \
     src/plotswidget.cpp \

@@ -34,9 +34,9 @@
 
 
 
-ControlWidget::ControlWidget(double itFPS, double updFPS, GeneratorGL *theGenerator, PlotsWidget *thePlotsWidget, QWidget *parent) :
+ControlWidget::ControlWidget(double itFPS, double updFPS, NodeManager *nodeManager, PlotsWidget *thePlotsWidget, QWidget *parent) :
     QWidget(parent),
-    generator { theGenerator },
+    mNodeManager { nodeManager },
     plotsWidget { thePlotsWidget }
 {
     // Scroll area
@@ -65,13 +65,13 @@ ControlWidget::ControlWidget(double itFPS, double updFPS, GeneratorGL *theGenera
     constructSystemToolBar();
     constructDisplayOptionsWidget(itFPS, updFPS);
     constructRecordingOptionsWidget();
-    constructSortedOperationsWidget();
+    constructSortedOperationWidget();
 
     //updateScrollArea();
 
     // Graph widget
 
-    graphWidget = new GraphWidget;
+    graphWidget = new GraphWidget(mNodeManager);
     graphWidget->setMinimumSize(0, 0);
     graphWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
@@ -109,7 +109,7 @@ ControlWidget::ControlWidget(double itFPS, double updFPS, GeneratorGL *theGenera
 
     // Parser
 
-    parser = new ConfigurationParser(generator, graphWidget);
+    parser = new ConfigurationParser(mNodeManager, graphWidget);
 
     // Status bar
 
@@ -174,7 +174,7 @@ ControlWidget::~ControlWidget()
     delete recordingOptionsWidget;
     delete parser;
     delete graphWidget;
-    delete sortedOperationsWidget;
+    delete sortedOperationWidget;
     qDeleteAll(operationsWidgets);
     //qDeleteAll(blendFactorWidgets);
 }
@@ -213,10 +213,9 @@ void ControlWidget::constructSystemToolBar()
 
     recordingOptionsAction = systemToolBar->addAction(QIcon(QPixmap(":/icons/emblem-videos.png")), "Recording options");
 
-    systemToolBar->addSeparator();
+    //systemToolBar->addSeparator();
 
-    systemToolBar->addAction(QIcon(QPixmap(":/icons/applications-development.png")), "Operation builder", this, &ControlWidget::toggleOperationBuilder);
-    //systemToolBar->addAction(QIcon(QPixmap(":/icons/format-list-ordered.png")), "List sorted operations", this, &ControlWidget::toggleSortedOperationsWidget);
+    //systemToolBar->addAction(QIcon(QPixmap(":/icons/format-list-ordered.png")), "List sorted operations", this, &ControlWidget::toggleSortedOperationWidget);
 
     systemToolBar->addSeparator();
 
@@ -265,9 +264,9 @@ void ControlWidget::iterate()
 
 void ControlWidget::reset()
 {
-    generator->clearAllOperations();
-    generator->drawAllSeeds();
-    generator->resetIterationNumer();
+    mNodeManager->clearAllOperations();
+    mNodeManager->drawAllSeeds();
+    mNodeManager->resetIterationNumer();
 }
 
 
@@ -332,17 +331,17 @@ void ControlWidget::setScreenshotFilename()
 
 
 
-/*void ControlWidget::toggleSortedOperationsWidget()
+/*void ControlWidget::toggleSortedOperationWidget()
 {
-    sortedOperationsWidget->setVisible(!sortedOperationsWidget->isVisible());
+    sortedOperationWidget->setVisible(!sortedOperationWidget->isVisible());
 
-    if (sortedOperationsWidget->isVisible())
+    if (sortedOperationWidget->isVisible())
     {
-        scrollLayout->addWidget(sortedOperationsWidget);
-        scrollArea->ensureWidgetVisible(sortedOperationsWidget);
+        scrollLayout->addWidget(sortedOperationWidget);
+        scrollArea->ensureWidgetVisible(sortedOperationWidget);
     }
     else
-        scrollLayout->removeWidget(sortedOperationsWidget);
+        scrollLayout->removeWidget(sortedOperationWidget);
 
     updateScrollArea();
 }*/
@@ -439,7 +438,7 @@ void ControlWidget::about()
     aboutBox->setWindowTitle("About");
 
     QStringList lines;
-    lines.append(QString("<h2>Morphogen %1</h2>").arg(generator->version));
+    lines.append(QString("<h2>Morphogen %1</h2>").arg(mNodeManager->version));
     lines.append("<h4>Videofeedback simulation software.</h4>");
     lines.append("<h5>Let the pixels come alive!</h5><br>");
     lines.append("Looking for help? Please visit:<br>");
@@ -458,7 +457,7 @@ void ControlWidget::about()
 
 void ControlWidget::updateIterationNumberLabel()
 {
-    iterationNumberLabel->setText(QString("Frame: %1").arg(generator->getIterationNumber()));
+    iterationNumberLabel->setText(QString("Frame: %1").arg(mNodeManager->getIterationNumber()));
 }
 
 
@@ -772,7 +771,7 @@ void ControlWidget::constructDisplayOptionsWidget(double itsFPS, double updFPS)
     {
         int selectedValue = texFormatComboBox->itemData(index).toInt();
         TextureFormat selectedFormat = static_cast<TextureFormat>(selectedValue);
-        generator->setTextureFormat(selectedFormat);
+        mNodeManager->setTextureFormat(selectedFormat);
     });
 }
 
@@ -980,7 +979,7 @@ void ControlWidget::setVideoCaptureElapsedTimeLabel(int frameNumber)
 
 
 
-void ControlWidget::constructSortedOperationsWidget()
+void ControlWidget::constructSortedOperationWidget()
 {
      sortedOperationsTable = new QTableWidget;
      sortedOperationsTable->setColumnCount(1);
@@ -993,13 +992,13 @@ void ControlWidget::constructSortedOperationsWidget()
      layout->setAlignment(Qt::AlignCenter);
      layout->addWidget(sortedOperationsTable);
 
-     sortedOperationsWidget = new QWidget;
-     sortedOperationsWidget->setLayout(layout);
-     sortedOperationsWidget->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
-     sortedOperationsWidget->setVisible(false);
+     sortedOperationWidget = new QWidget;
+     sortedOperationWidget->setLayout(layout);
+     sortedOperationWidget->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+     sortedOperationWidget->setVisible(false);
 
-     connect(generator, &GeneratorGL::sortedOperationsChanged, this, &ControlWidget::populateSortedOperationsTable);
-     //connect(generator, &GeneratorGL::sortedOperationsChanged, this, &ControlWidget::populateScrollLayout);
+     connect(mNodeManager, &NodeManager::sortedOperationsChanged, this, &ControlWidget::populateSortedOperationsTable);
+     //connect(generator, &NodeManager::sortedOperationsChanged, this, &ControlWidget::populateScrollLayout);
      //connect(sortedOperationsTable, &QTableWidget::itemSelectionChanged, this, &ControlWidget::selectNodesToMark);
 }
 
@@ -1195,20 +1194,20 @@ void ControlWidget::updateMidiLinks(QString portName, int key, int value)
 {
     if (generator->hasOperationParamaters(id) && !operationsWidgets.contains(id))
     {
-        // Create OperationsWidget and insert it in QMap
+        // Create OperationWidget and insert it in QMap
 
-        operationsWidgets.insert(id, new OperationsWidget(generator->getOperation(id), anyMidiPortOpen, scrollWidget));
+        operationsWidgets.insert(id, new OperationWidget(generator->getOperation(id), anyMidiPortOpen, scrollWidget));
 
         // Connections
 
-        connect(operationsWidgets.value(id), &OperationsWidget::enableButtonToggled, this, [=, this]()
+        connect(operationsWidgets.value(id), &OperationWidget::enableButtonToggled, this, [=, this]()
         {
             if (nodesToolBar->isVisible() && graphWidget->singleOperationNodeSelected() && graphWidget->isOperationNodeSelected(id))
                 constructSingleNodeToolBar(graphWidget->getNode(id));
         });
 
-        connect(operationsWidgets.value(id), &OperationsWidget::focusOut, this, &ControlWidget::removeOneParametersWidgetBorder);
-        connect(operationsWidgets.value(id), &OperationsWidget::focusIn, this, &ControlWidget::updateParametersWidgetsBorder);
+        connect(operationsWidgets.value(id), &OperationWidget::focusOut, this, &ControlWidget::removeOneParametersWidgetBorder);
+        connect(operationsWidgets.value(id), &OperationWidget::focusIn, this, &ControlWidget::updateParametersWidgetsBorder);
 
         // MIDI
 
@@ -1233,16 +1232,16 @@ void ControlWidget::midiLinkParametersWidget(QUuid id)
 {
     operationsWidgets.value(id)->toggleMidiButton(anyMidiPortOpen);
 
-    connect(operationsWidgets.value(id), QOverload<Number<float>*>::of(&OperationsWidget::linkWait), this, [=, this](Number<float>* number)
+    connect(operationsWidgets.value(id), QOverload<Number<float>*>::of(&OperationWidget::linkWait), this, [=, this](Number<float>* number)
     {
         linkingFloat = number;
     });
-    connect(operationsWidgets.value(id), QOverload<Number<int>*>::of(&OperationsWidget::linkWait), this, [=, this](Number<int>* number)
+    connect(operationsWidgets.value(id), QOverload<Number<int>*>::of(&OperationWidget::linkWait), this, [=, this](Number<int>* number)
     {
         linkingInt = number;
     });
 
-    connect(operationsWidgets.value(id), QOverload<Number<float>*>::of(&OperationsWidget::linkBreak), this, [=, this](Number<float>* number)
+    connect(operationsWidgets.value(id), QOverload<Number<float>*>::of(&OperationWidget::linkBreak), this, [=, this](Number<float>* number)
     {
         for (auto [port, map] : midiFloatLinks.asKeyValueRange())
         {
@@ -1257,7 +1256,7 @@ void ControlWidget::midiLinkParametersWidget(QUuid id)
             }
         }
     });
-    connect(operationsWidgets.value(id), QOverload<Number<int>*>::of(&OperationsWidget::linkBreak), this, [=, this](Number<int>* number)
+    connect(operationsWidgets.value(id), QOverload<Number<int>*>::of(&OperationWidget::linkBreak), this, [=, this](Number<int>* number)
     {
         for (auto [port, map] : midiIntLinks.asKeyValueRange())
         {
@@ -1280,18 +1279,18 @@ void ControlWidget::midiUnlinkParametersWidget(QUuid id)
 {
     operationsWidgets.value(id)->toggleMidiButton(anyMidiPortOpen);
 
-    disconnect(operationsWidgets.value(id), QOverload<Number<float>*>::of(&OperationsWidget::linkWait), this, nullptr);
-    disconnect(operationsWidgets.value(id), QOverload<Number<int>*>::of(&OperationsWidget::linkWait), this, nullptr);
+    disconnect(operationsWidgets.value(id), QOverload<Number<float>*>::of(&OperationWidget::linkWait), this, nullptr);
+    disconnect(operationsWidgets.value(id), QOverload<Number<int>*>::of(&OperationWidget::linkWait), this, nullptr);
 
-    disconnect(operationsWidgets.value(id), QOverload<Number<float>*>::of(&OperationsWidget::linkBreak), this, nullptr);
-    disconnect(operationsWidgets.value(id), QOverload<Number<int>*>::of(&OperationsWidget::linkBreak), this, nullptr);
+    disconnect(operationsWidgets.value(id), QOverload<Number<float>*>::of(&OperationWidget::linkBreak), this, nullptr);
+    disconnect(operationsWidgets.value(id), QOverload<Number<int>*>::of(&OperationWidget::linkBreak), this, nullptr);
 }
 
 
 
 void ControlWidget::overlayLinkParametersWidget(QUuid id)
 {
-    ImageOperation *operation = generator->getOperation(id);
+    ImageOperation *operation = mNodeManager->getOperation(id);
 
     foreach (auto parameter, operation->uniformParameters<float>())
     {
@@ -1319,7 +1318,7 @@ void ControlWidget::overlayLinkParametersWidget(QUuid id)
 
 void ControlWidget::overlayUnlinkParametersWidget(QUuid id)
 {
-    ImageOperation *operation = generator->getOperation(id);
+    ImageOperation *operation = mNodeManager->getOperation(id);
 
     foreach (auto parameter, operation->uniformParameters<float>())
         disconnect(parameter, QOverload<QVariant>::of(&Parameter::valueChanged), this, nullptr);
@@ -1418,7 +1417,7 @@ void ControlWidget::overlayUnlinkBlendFactorWidget(QUuid id)
 
 /*void ControlWidget::updateParametersWidgetsBorder(QWidget* widget)
 {
-    QMapIterator<QUuid, OperationsWidget*> it(operationsWidgets);
+    QMapIterator<QUuid, OperationWidget*> it(operationsWidgets);
     while (it.hasNext())
     {
         it.next();
@@ -1443,7 +1442,7 @@ void ControlWidget::overlayUnlinkBlendFactorWidget(QUuid id)
 
 void ControlWidget::removeAllParametersWidgetsBorder()
 {
-    foreach (OperationsWidget* widget, operationsWidgets)
+    foreach (OperationWidget* widget, operationsWidgets)
         widget->setLastFocused(false);
 }
 
@@ -1451,7 +1450,7 @@ void ControlWidget::removeAllParametersWidgetsBorder()
 
 void ControlWidget::removeOneParametersWidgetBorder(QWidget* widget)
 {
-    QMapIterator<QUuid, OperationsWidget*> it(operationsWidgets);
+    QMapIterator<QUuid, OperationWidget*> it(operationsWidgets);
     while (it.hasNext())
     {
         it.next();

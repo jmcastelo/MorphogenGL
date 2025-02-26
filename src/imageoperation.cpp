@@ -20,7 +20,7 @@
 *  along with MorphogenGL.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include "imageoperations.h"
+#include "imageoperation.h"
 #include "parameter.h"
 
 
@@ -31,23 +31,29 @@ ImageOperation::ImageOperation(QString theName, bool on, QOpenGLContext* mainCon
     QOpenGLExtraFunctions(mainContext),
     mName { theName },
     enabled { on },
-    context { mainContext }
-{}
+    mContext { mainContext }
+{
+    blender = new Blender(":/shaders/screen.vert", ":/shaders/blend.frag", mContext);
+
+    fbo = new FBO(mContext);
+    fbo->setInputTextureID(*blender->getTextureID());
+}
 
 
 
 ImageOperation::ImageOperation(const ImageOperation& operation) :
-    QOpenGLExtraFunctions(operation.context),
+    QOpenGLExtraFunctions(operation.mContext),
     mName { operation.mName },
     vertexShader { operation.vertexShader },
     fragmentShader { operation.fragmentShader },
     enabled { operation.enabled },
     noParameters { operation.noParameters },
-    context { operation.context }
+    mContext { operation.mContext }
 {
-    blender = new Blender(":/shaders/screen.vert", ":/shaders/blend.frag", context);
+    blender = new Blender(":/shaders/screen.vert", ":/shaders/blend.frag", mContext);
 
-    fbo = new FBO(vertexShader, fragmentShader, context);
+    fbo = new FBO(mContext);
+    fbo->setShadersFromSourceCode(vertexShader, fragmentShader);
     fbo->setInputTextureID(*blender->getTextureID());
 
     for (auto parameter: operation.floatUniformParameters)
@@ -103,9 +109,7 @@ void ImageOperation::setup(QString theVertexShader, QString theFragmentShader)
     vertexShader = theVertexShader;
     fragmentShader = theFragmentShader;
 
-    blender = new Blender(":/shaders/screen.vert", ":/shaders/blend.frag", context);
-
-    fbo = new FBO(vertexShader, fragmentShader, context);
+    fbo->setShadersFromSourceCode(vertexShader, fragmentShader);
     fbo->setInputTextureID(*blender->getTextureID());
 }
 

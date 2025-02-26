@@ -22,8 +22,8 @@
 
 
 
-#ifndef IMAGEOPERATIONS_H
-#define IMAGEOPERATIONS_H
+#ifndef IMAGEOPERATION_H
+#define IMAGEOPERATION_H
 
 
 #include "fbo.h"
@@ -71,6 +71,8 @@ public:
     ~ImageOperation();
 
     void setup(QString theVertexShader, QString theFragmentShader);
+
+    QOpenGLContext* context(){ return mContext; }
 
     //ImageOperation* clone() { return new ImageOperation(*this); }
 
@@ -138,7 +140,7 @@ private:
     bool blenderEnabled = false;
     bool blitEnabled = false;
 
-    QOpenGLContext* context;
+    QOpenGLContext* mContext;
     FBO* fbo;
     Blender* blender;
 
@@ -833,4 +835,4 @@ private:
 */
 
 
-#endif // IMAGEOPERATIONS_H
+#endif // IMAGEOPERATION_H

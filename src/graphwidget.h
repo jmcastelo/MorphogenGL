@@ -37,7 +37,7 @@
 //class OperationNode;
 //class SeedNode;
 //class Edge;
-//class GeneratorGL;
+class NodeManager;
 //struct InputData;
 
 
@@ -46,7 +46,7 @@ class GraphWidget : public QGraphicsView
     Q_OBJECT
 
 public:
-    GraphWidget(QWidget *parent = nullptr);
+    GraphWidget(NodeManager* nodeManager, QWidget *parent = nullptr);
     ~GraphWidget();
 
     //Node* getNode(QUuid id);
@@ -122,6 +122,7 @@ protected:
     void mouseMoveEvent(QMouseEvent* event) override;
 
 private:
+    NodeManager* mNodeManager;
     //Node *selectedNode = nullptr;
 
     //QVector<OperationNode*> selectedOperationNodes;

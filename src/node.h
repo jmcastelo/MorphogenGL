@@ -35,7 +35,7 @@
 
 //class GraphWidget;
 //class Edge;
-//class GeneratorGL;
+//class NodeManager;
 
 
 
@@ -52,7 +52,7 @@ public:
     //bool marked = false;
 
     //Node(GraphWidget* graphWidget, QString name);
-    explicit Node(QWidget* widget, QGraphicsObject* parent = nullptr);
+    explicit Node(QWidget* widget, QGraphicsProxyWidget* proxyWidget, QGraphicsObject* parent = nullptr);
     //~Node();
 
     //void addEdge(Edge *edge);
@@ -87,6 +87,7 @@ public:
 private:
     //qreal ellipseMargin = 10.0;
     //qreal penSize = 2.0;
+    QWidget* mWidget;
     QGraphicsProxyWidget* mProxyWidget;
 };
 

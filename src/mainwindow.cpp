@@ -7,7 +7,7 @@ MainWindow::MainWindow()
     iterationTimer = new TimerThread(iterationFPS, this);
     updateTimer = new TimerThread(updateFPS, this);
 
-    generator = new GeneratorGL();
+    nodeManager = new NodeManager();
 
     overlay = new Overlay();
 
@@ -22,7 +22,7 @@ MainWindow::MainWindow()
     plotsWidgetOpacityEffect->setOpacity(opacity);
     plotsWidget->setGraphicsEffect(plotsWidgetOpacityEffect);
 
-    controlWidget = new ControlWidget(iterationFPS, updateFPS, generator, plotsWidget);
+    controlWidget = new ControlWidget(iterationFPS, updateFPS, nodeManager, plotsWidget);
     controlWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     controlWidget->setMinimumSize(0, 0);
 
@@ -65,12 +65,8 @@ MainWindow::MainWindow()
     connect(this, &MainWindow::updateTimeMeasured, controlWidget, &ControlWidget::updateUpdateMetricsLabels);
 
     connect(morphoWidget, &MorphoWidget::openGLInitialized, this, [&](){
-        controlWidget->generator->init(morphoWidget->context());
+        nodeManager->init(morphoWidget->context());
         plotsWidget->init(morphoWidget->context());
-
-        morphoWidget->makeCurrent();
-        opBuilder = new OperationBuilder(morphoWidget->context());
-        morphoWidget->doneCurrent();
 
         numIterations = 0;
         numUpdates = 0;
@@ -82,7 +78,7 @@ MainWindow::MainWindow()
         updateTimer->start();
     });
     connect(morphoWidget, &MorphoWidget::supportedTexFormats, controlWidget, &ControlWidget::populateTexFormatComboBox);
-    connect(morphoWidget, &MorphoWidget::sizeChanged, generator, &GeneratorGL::resize);
+    connect(morphoWidget, &MorphoWidget::sizeChanged, nodeManager, &NodeManager::resize);
     connect(morphoWidget, &MorphoWidget::sizeChanged, controlWidget, &ControlWidget::updateWindowSizeLineEdits);
     connect(morphoWidget, &MorphoWidget::sizeChanged, plotsWidget, &PlotsWidget::setImageSize);
 
@@ -94,9 +90,9 @@ MainWindow::MainWindow()
     connect(controlWidget, &ControlWidget::iterateStateChanged, this, &MainWindow::setIterationState);
     connect(controlWidget, &ControlWidget::updateStateChanged, morphoWidget, &MorphoWidget::setUpdate);
 
-    connect(generator, &GeneratorGL::outputTextureChanged, morphoWidget, &MorphoWidget::updateOutputTextureID);
-    connect(generator, &GeneratorGL::outputTextureChanged, plotsWidget, &PlotsWidget::setTextureID);
-    connect(generator, &GeneratorGL::outputFBOChanged, plotsWidget, &PlotsWidget::setFBO);
+    connect(nodeManager, &NodeManager::outputTextureChanged, morphoWidget, &MorphoWidget::updateOutputTextureID);
+    connect(nodeManager, &NodeManager::outputTextureChanged, plotsWidget, &PlotsWidget::setTextureID);
+    connect(nodeManager, &NodeManager::outputFBOChanged, plotsWidget, &PlotsWidget::setFBO);
 
     connect(controlWidget, &ControlWidget::iterationFPSChanged, this, &MainWindow::setIterationTimerInterval);
     connect(controlWidget, &ControlWidget::updateFPSChanged, this, &MainWindow::setUpdateTimerInterval);
@@ -107,7 +103,6 @@ MainWindow::MainWindow()
     connect(controlWidget, &ControlWidget::showMidiWidget, this, &MainWindow::showMidiWidget);
     connect(controlWidget, &ControlWidget::overlayToggled, overlay, &Overlay::enable);
     connect(controlWidget, &ControlWidget::parameterValueChanged, overlay, &Overlay::addMessage);
-    connect(controlWidget, &ControlWidget::toggleOperationBuilder, this, &MainWindow::toggleOperationBuilder);
 
     setWindowTitle("Morphogen");
     setWindowIcon(QIcon(":/icons/morphogengl.png"));
@@ -123,13 +118,11 @@ MainWindow::~MainWindow()
 
     delete plotsWidget;
     delete controlWidget;
-    delete generator;
+    delete nodeManager;
     delete morphoWidget;
     delete overlay;
 
     delete midiWidget;
-
-    delete opBuilder;
 
     delete iterationTimer;
     delete updateTimer;
@@ -144,7 +137,7 @@ void MainWindow::beat()
         if (recorder->isRecording())
         {
             iterate();
-            recorder->sendVideoFrame(generator->outputImage());
+            recorder->sendVideoFrame(nodeManager->outputImage());
         }
     }
     else
@@ -157,9 +150,9 @@ void MainWindow::beat()
 
 void MainWindow::iterate()
 {
-    if (generator->isActive())
+    if (nodeManager->isActive())
     {
-        generator->iterate();
+        nodeManager->iterate();
         plotsWidget->updatePlots();
     }
 }
@@ -211,7 +204,7 @@ void MainWindow::computeUpdateFPS()
 
 void MainWindow::setIterationState(bool state)
 {
-    generator->setState(state);
+    nodeManager->setState(state);
 }
 
 
@@ -277,13 +270,6 @@ void MainWindow::takeScreenshot(QString filename)
 void MainWindow::showMidiWidget()
 {
     midiWidget->setVisible(!midiWidget->isVisible());
-}
-
-
-
-void MainWindow::toggleOperationBuilder()
-{
-    opBuilder->setVisible(!opBuilder->isVisible());
 }
 
 
@@ -368,11 +354,9 @@ void MainWindow::closeEvent(QCloseEvent* event)
     iterationTimer->stop();
     updateTimer->stop();
 
-    generator->setState(false);
+    nodeManager->setState(false);
 
     midiWidget->close();
-
-    opBuilder->close();
 
     event->accept();
 }

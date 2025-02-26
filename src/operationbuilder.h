@@ -3,9 +3,8 @@
 
 
 
-#include "imageoperations.h"
+#include "imageoperation.h"
 #include "parameter.h"
-#include "operationswidget.h"
 
 #include <QWidget>
 #include <QOpenGLExtraFunctions>
@@ -19,18 +18,19 @@
 
 
 
+class OperationWidget;
+
+
+
 class OperationBuilder : public QWidget, public QOpenGLExtraFunctions
 {
     Q_OBJECT
 
 public:
-    explicit OperationBuilder(QOpenGLContext* mainContext, QWidget *parent = nullptr);
+    explicit OperationBuilder(ImageOperation* operation, OperationWidget* opWidget, QWidget *parent = nullptr);
     ~OperationBuilder();
 
-    void init(QOpenGLContext* mainContext);
-
 private:
-    QOpenGLContext* mMainContext;
     QOpenGLContext* mContext;
     QOffscreenSurface* mSurface;
     QOpenGLShaderProgram* mProgram;
@@ -46,7 +46,7 @@ private:
     QMap<QString, Parameter*> newParamMap;
     QMap<QString, Parameter*> paramMap;
     ImageOperation* mOperation;
-    OperationsWidget* mOpWidget = nullptr;
+    OperationWidget* mOpWidget;
 
     QMap<QString, UniformParameter<float>*> fParamMap;
     QMap<QString, UniformParameter<int>*> iParamMap;
@@ -59,9 +59,6 @@ private:
     void addUniformParameter(QString uniformName, int uniformType, int numItems);
 
     int maxRow();
-
-protected:
-    void closeEvent(QCloseEvent* event);
 
 private slots:
     void loadVertexShader();

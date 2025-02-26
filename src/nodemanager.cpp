@@ -20,7 +20,9 @@
 *  along with MorphogenGL.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include "generator.h"
+
+
+#include "nodemanager.h"
 
 
 
@@ -240,9 +242,9 @@ void ImageOperationNode::setOperation(ImageOperation *newOperation)
 
 
 
-// GeneratorGL
+// NodeManager
 
-GeneratorGL::GeneratorGL()
+NodeManager::NodeManager()
 {
     /*availableOperations = {
         BilateralFilter::name,
@@ -274,14 +276,14 @@ GeneratorGL::GeneratorGL()
 
 
 
-void GeneratorGL::init(QOpenGLContext* mainContext)
+void NodeManager::init(QOpenGLContext* mainContext)
 {
     sharedContext = mainContext;
 }
 
 
 
-GeneratorGL::~GeneratorGL()
+NodeManager::~NodeManager()
 {
     foreach(Seed* seed, seeds)
         delete seed;
@@ -292,7 +294,7 @@ GeneratorGL::~GeneratorGL()
 
 
 
-void GeneratorGL::sortOperations()
+void NodeManager::sortOperations()
 {
     //QList<ImageOperation*> tmpSortedOperations = sortedOperations;
 
@@ -361,7 +363,7 @@ void GeneratorGL::sortOperations()
 
 
 
-void GeneratorGL::iterate()
+void NodeManager::iterate()
 {
     foreach(ImageOperation* operation, sortedOperations)
         operation->blit();
@@ -378,7 +380,7 @@ void GeneratorGL::iterate()
 
 
 
-void GeneratorGL::clearOperation(QUuid id)
+void NodeManager::clearOperation(QUuid id)
 {
     if (operationNodes.contains(id))
         operationNodes.value(id)->operation->clear();
@@ -386,7 +388,7 @@ void GeneratorGL::clearOperation(QUuid id)
 
 
 
-void GeneratorGL::clearAllOperations()
+void NodeManager::clearAllOperations()
 {
     foreach (ImageOperationNode* node, operationNodes)
         node->operation->clear();
@@ -394,7 +396,7 @@ void GeneratorGL::clearAllOperations()
 
 
 
-void GeneratorGL::setOutput(QUuid id)
+void NodeManager::setOutput(QUuid id)
 {
     if (operationNodes.contains(id))
     {
@@ -424,7 +426,7 @@ void GeneratorGL::setOutput(QUuid id)
 
 
 
-void GeneratorGL::connectOperations(QUuid srcId, QUuid dstId, float factor)
+void NodeManager::connectOperations(QUuid srcId, QUuid dstId, float factor)
 {
     if (operationNodes.contains(srcId) && operationNodes.contains(dstId))
     {
@@ -441,7 +443,7 @@ void GeneratorGL::connectOperations(QUuid srcId, QUuid dstId, float factor)
 
 
 
-void GeneratorGL::connectCopiedOperationsA(QUuid srcId0, QUuid dstId0, QUuid srcId1, QUuid dstId1)
+void NodeManager::connectCopiedOperationsA(QUuid srcId0, QUuid dstId0, QUuid srcId1, QUuid dstId1)
 {
     if (operationNodes.contains(srcId0))
     {
@@ -459,7 +461,7 @@ void GeneratorGL::connectCopiedOperationsA(QUuid srcId0, QUuid dstId0, QUuid src
 
 
 
-void GeneratorGL::connectCopiedOperationsB(QUuid srcId0, QUuid dstId0, QUuid srcId1, QUuid dstId1)
+void NodeManager::connectCopiedOperationsB(QUuid srcId0, QUuid dstId0, QUuid srcId1, QUuid dstId1)
 {
     if (copiedOperationNodes[1].contains(srcId0))
     {
@@ -477,7 +479,7 @@ void GeneratorGL::connectCopiedOperationsB(QUuid srcId0, QUuid dstId0, QUuid src
 
 
 
-void GeneratorGL::disconnectOperations(QUuid srcId, QUuid dstId)
+void NodeManager::disconnectOperations(QUuid srcId, QUuid dstId)
 {
     if (operationNodes.contains(srcId))
     {
@@ -494,7 +496,7 @@ void GeneratorGL::disconnectOperations(QUuid srcId, QUuid dstId)
 
 
 
-void GeneratorGL::setOperationInputType(QUuid srcId, QUuid dstId, InputType type)
+void NodeManager::setOperationInputType(QUuid srcId, QUuid dstId, InputType type)
 {
     if (operationNodes.contains(srcId))
     {
@@ -509,7 +511,7 @@ void GeneratorGL::setOperationInputType(QUuid srcId, QUuid dstId, InputType type
 
 
 
-void GeneratorGL::pasteOperations()
+void NodeManager::pasteOperations()
 {
     operationNodes.insert(copiedOperationNodes[0]);
     seeds.insert(copiedSeeds[0]);
@@ -525,7 +527,7 @@ void GeneratorGL::pasteOperations()
 
 
 
-void GeneratorGL::swapTwoOperations(QUuid id1, QUuid id2)
+void NodeManager::swapTwoOperations(QUuid id1, QUuid id2)
 {
     //ImageOperation* operation1 = operationNodes.value(id1)->operation->clone();
     //operation1->setParameters();
@@ -549,35 +551,35 @@ void GeneratorGL::swapTwoOperations(QUuid id1, QUuid id2)
 
 
 
-float GeneratorGL::blendFactor(QUuid srcId, QUuid dstId)
+float NodeManager::blendFactor(QUuid srcId, QUuid dstId)
 {
     return operationNodes.value(dstId)->blendFactor(srcId);
 }
 
 
 
-void GeneratorGL::setBlendFactor(QUuid srcId, QUuid dstId, float factor)
+void NodeManager::setBlendFactor(QUuid srcId, QUuid dstId, float factor)
 {
     operationNodes.value(dstId)->setBlendFactor(srcId, factor);
 }
 
 
 
-void GeneratorGL::equalizeBlendFactors(QUuid id)
+void NodeManager::equalizeBlendFactors(QUuid id)
 {
     operationNodes.value(id)->equalizeBlendFactors();
 }
 
 
 
-ImageOperation* GeneratorGL::getOperation(QUuid id)
+ImageOperation* NodeManager::getOperation(QUuid id)
 {
     return operationNodes.contains(id) ? operationNodes.value(id)->operation : nullptr;
 }
 
 
 
-QUuid GeneratorGL::addOperation(QString operationName)
+/*QUuid NodeManager::addOperation(QString operationName)
 {
     ImageOperation* operation = newOperation(operationName);
 
@@ -588,11 +590,11 @@ QUuid GeneratorGL::addOperation(QString operationName)
     operationNodes.insert(id, node);
 
     return id;
-}
+}*/
 
 
 
-QUuid GeneratorGL::copyOperation(QUuid srcId)
+QUuid NodeManager::copyOperation(QUuid srcId)
 {
     //ImageOperation* operation = operationNodes.value(srcId)->operation->clone();
     //operation->setParameters();
@@ -610,7 +612,7 @@ QUuid GeneratorGL::copyOperation(QUuid srcId)
 
 
 
-void GeneratorGL::setOperation(QUuid id, QString operationName)
+/*void NodeManager::setOperation(QUuid id, QString operationName)
 {
     ImageOperation* operation = newOperation(operationName);
 
@@ -622,11 +624,11 @@ void GeneratorGL::setOperation(QUuid id, QString operationName)
         setOutput(id);
 
     sortOperations();
-}
+}*/
 
 
 
-void GeneratorGL::removeOperation(QUuid id)
+void NodeManager::removeOperation(QUuid id)
 {
     delete operationNodes.value(id);
     operationNodes.remove(id);
@@ -639,28 +641,28 @@ void GeneratorGL::removeOperation(QUuid id)
 
 
 
-void GeneratorGL::enableOperation(QUuid id, bool enabled)
+void NodeManager::enableOperation(QUuid id, bool enabled)
 {
     operationNodes.value(id)->operation->enable(enabled);
 }
 
 
 
-bool GeneratorGL::isOperationEnabled(QUuid id)
+bool NodeManager::isOperationEnabled(QUuid id)
 {
     return operationNodes.value(id)->operation->isEnabled();
 }
 
 
 
-bool GeneratorGL::hasOperationParamaters(QUuid id)
+bool NodeManager::hasOperationParamaters(QUuid id)
 {
     return operationNodes.value(id)->operation->hasParameters();
 }
 
 
 
-void GeneratorGL::loadOperation(QUuid id, ImageOperation* operation)
+void NodeManager::loadOperation(QUuid id, ImageOperation* operation)
 {
     ImageOperationNode *node = new ImageOperationNode(id);
     node->operation = operation;
@@ -670,7 +672,7 @@ void GeneratorGL::loadOperation(QUuid id, ImageOperation* operation)
 
 
 
-void GeneratorGL::connectLoadedOperations(QMap<QUuid, QMap<QUuid, InputData*>> connections)
+void NodeManager::connectLoadedOperations(QMap<QUuid, QMap<QUuid, InputData*>> connections)
 {
     QMap<QUuid, QMap<QUuid, InputData*>>::iterator dst = connections.begin();
 
@@ -715,9 +717,19 @@ void GeneratorGL::connectLoadedOperations(QMap<QUuid, QMap<QUuid, InputData*>> c
 
 
 
-ImageOperation* GeneratorGL::newOperation(QString operationName)
+OperationWidget* NodeManager::addNewOperation()
 {
-    ImageOperation* operation = nullptr;
+    ImageOperation* operation = new ImageOperation("New Operation", false, sharedContext);
+    OperationWidget* opWidget = new OperationWidget(operation, false);
+
+    QUuid id = QUuid::createUuid();
+
+    ImageOperationNode *node = new ImageOperationNode(id);
+    node->operation = operation;
+    operationNodes.insert(id, node);
+
+    return opWidget;
+
 /*
     if (operationName == BilateralFilter::name)
     {
@@ -820,13 +832,13 @@ ImageOperation* GeneratorGL::newOperation(QString operationName)
 
     if (operation)
         operation->setParameters();
-*/
-    return operation;
+
+    return operation;*/
 }
 
 
 
-ImageOperation* GeneratorGL::loadImageOperation(
+ImageOperation* NodeManager::loadImageOperation(
     QString operationName,
     bool enabled,
     std::vector<bool> boolParameters,
@@ -943,7 +955,7 @@ ImageOperation* GeneratorGL::loadImageOperation(
 
 
 
-QUuid GeneratorGL::addSeed()
+QUuid NodeManager::addSeed()
 {
     Seed* seed = new Seed(sharedContext);
 
@@ -955,7 +967,7 @@ QUuid GeneratorGL::addSeed()
 
 
 
-QUuid GeneratorGL::copySeed(QUuid srcId)
+QUuid NodeManager::copySeed(QUuid srcId)
 {
     Seed* seed = new Seed(*seeds.value(srcId));
 
@@ -967,7 +979,7 @@ QUuid GeneratorGL::copySeed(QUuid srcId)
 
 
 
-void GeneratorGL::removeSeed(QUuid id)
+void NodeManager::removeSeed(QUuid id)
 {
     delete seeds.value(id);
     seeds.remove(id);
@@ -978,7 +990,7 @@ void GeneratorGL::removeSeed(QUuid id)
 
 
 
-void GeneratorGL::loadSeed(QUuid id, int type, bool fixed)
+void NodeManager::loadSeed(QUuid id, int type, bool fixed)
 {
     Seed* seed = new Seed(sharedContext);
 
@@ -988,49 +1000,49 @@ void GeneratorGL::loadSeed(QUuid id, int type, bool fixed)
     loadedSeeds.insert(id, seed);
 }
 
-void GeneratorGL::loadSeedImage(QUuid id, QString filename)
+void NodeManager::loadSeedImage(QUuid id, QString filename)
 {
     seeds.value(id)->loadImage(filename);
 }
 
 
 
-int GeneratorGL::getSeedType(QUuid id)
+int NodeManager::getSeedType(QUuid id)
 {
     return seeds.value(id)->getType();
 }
 
 
 
-void GeneratorGL::setSeedType(QUuid id, int set)
+void NodeManager::setSeedType(QUuid id, int set)
 {
     seeds.value(id)->setType(set);
 }
 
 
 
-bool GeneratorGL::isSeedFixed(QUuid id)
+bool NodeManager::isSeedFixed(QUuid id)
 {
     return seeds.value(id)->isFixed();
 }
 
 
 
-void GeneratorGL::setSeedFixed(QUuid id, bool fixed)
+void NodeManager::setSeedFixed(QUuid id, bool fixed)
 {
     seeds.value(id)->setFixed(fixed);
 }
 
 
 
-void GeneratorGL::drawSeed(QUuid id)
+void NodeManager::drawSeed(QUuid id)
 {
     seeds.value(id)->draw();
 }
 
 
 
-void GeneratorGL::drawAllSeeds()
+void NodeManager::drawAllSeeds()
 {
     foreach (Seed* seed, seeds)
         if (!seed->isFixed())
@@ -1039,7 +1051,7 @@ void GeneratorGL::drawAllSeeds()
 
 
 
-QImage GeneratorGL::outputImage()
+QImage NodeManager::outputImage()
 {
     ImageOperation* operation = getOperation(outputID);
     if (operation)
@@ -1056,7 +1068,7 @@ QImage GeneratorGL::outputImage()
 
 
 
-void GeneratorGL::setTextureFormat(TextureFormat format)
+void NodeManager::setTextureFormat(TextureFormat format)
 {
     FBO::texFormat = format;
 
@@ -1071,7 +1083,7 @@ void GeneratorGL::setTextureFormat(TextureFormat format)
 
 
 
-void GeneratorGL::resize(GLuint width, GLuint height)
+void NodeManager::resize(GLuint width, GLuint height)
 {
     FBO::width = width;
     FBO::height = height;

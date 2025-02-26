@@ -22,8 +22,10 @@
 
 #include "blender.h"
 
-Blender::Blender(QString vertexShader, QString fragmentShader, QOpenGLContext* mainContext) : FBO(vertexShader, fragmentShader, mainContext)
+Blender::Blender(QString vertexShader, QString fragmentShader, QOpenGLContext* mainContext) : FBO(mainContext)
 {
+    setShadersFromSourceFile(vertexShader, fragmentShader);
+
     context->makeCurrent(surface);
 
     program->bind();
@@ -35,7 +37,8 @@ Blender::Blender(QString vertexShader, QString fragmentShader, QOpenGLContext* m
 
     context->doneCurrent();
 
-    fboOut = new FBO(":/shaders/screen.vert", ":/shaders/screen.frag", mainContext);
+    fboOut = new FBO(mainContext);
+    fboOut->setShadersFromSourceFile(":/shaders/screen.vert", ":/shaders/screen.frag");
     fboOut->setInputTextureID(texID);
 }
 

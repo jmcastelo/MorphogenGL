@@ -22,8 +22,8 @@
 
 
 
-#ifndef OPERATIONSWIDGET_H
-#define OPERATIONSWIDGET_H
+#ifndef OPERATIONWIDGET_H
+#define OPERATIONWIDGET_H
 
 
 
@@ -32,19 +32,15 @@
 #include "widgets/uniformmat4widget.h"
 #include "gridwidget.h"
 #include "parameter.h"
-#include "imageoperations.h"
+#include "imageoperation.h"
+#include "operationbuilder.h"
 
-#include <cmath>
 #include <QWidget>
 #include <QString>
 #include <QIntValidator>
 #include <QDoubleValidator>
-#include <QComboBox>
-#include <QCheckBox>
 #include <QPushButton>
 #include <QLabel>
-#include <QSlider>
-#include <QFormLayout>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QCloseEvent>
@@ -56,13 +52,16 @@
 
 // Operations widget
 
-class OperationsWidget : public QWidget
+class OperationWidget : public QWidget
 {
     Q_OBJECT
 
 public:
-    OperationsWidget(ImageOperation* operation, bool midiEnabled, QWidget* parent = nullptr) : QWidget(parent)
+    OperationWidget(ImageOperation* operation, bool midiEnabled, QWidget* parent = nullptr) : QWidget(parent)
     {
+        mOpBuilder = new OperationBuilder(operation, this);
+        mOpBuilder->setVisible(false);
+
         mainLayout = new QVBoxLayout;
         mainLayout->setSizeConstraint(QLayout::SetFixedSize);
 
@@ -78,6 +77,16 @@ public:
         enableButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
         enableButton->setCheckable(true);
 
+        // Edit button
+
+        editButton = new QPushButton;
+        editButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+        editButton->setCheckable(true);
+        editButton->setChecked(false);
+        editButton->setStyleSheet("QPushButton{ qproperty-icon: url(:/icons/applications-development.png); }");
+
+        connect(editButton, &QPushButton::clicked, mOpBuilder, &QWidget::setVisible);
+
         // Operation name label
 
         opNameLabel = new QLabel;
@@ -91,10 +100,11 @@ public:
         toggleButton->setCheckable(true);
         toggleButton->setChecked(true);
 
-        connect(toggleButton, &QPushButton::clicked, this, &OperationsWidget::toggleBody);
+        connect(toggleButton, &QPushButton::clicked, this, &OperationWidget::toggleBody);
 
         QHBoxLayout* headerLayout = new QHBoxLayout;
         headerLayout->addWidget(enableButton, 0, Qt::AlignLeft | Qt::AlignVCenter);
+        headerLayout->addWidget(editButton, 0, Qt::AlignLeft | Qt::AlignVCenter);
         headerLayout->addWidget(opNameLabel, 0, Qt::AlignHCenter | Qt::AlignVCenter);
         headerLayout->addWidget(toggleButton, 0, Qt::AlignRight | Qt::AlignVCenter);
 
@@ -116,7 +126,7 @@ public:
         gridWidget = new GridWidget;
         gridWidget->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
 
-        connect(gridWidget, &GridWidget::itemRowColChanged, this, &OperationsWidget::updateWidgetRowCol);
+        connect(gridWidget, &GridWidget::itemRowColChanged, this, &OperationWidget::updateWidgetRowCol);
 
         bodyLayout->addWidget(gridWidget, 0, Qt::AlignTop | Qt::AlignLeft);
 
@@ -156,6 +166,15 @@ public:
 
         setup(operation, midiEnabled);
     }
+
+
+
+    ~OperationWidget()
+    {
+        delete mOpBuilder;
+    }
+
+
 
     void setup(ImageOperation* operation, bool midiEnabled)
     {
@@ -330,12 +349,20 @@ signals:
     void linkBreak(Number<int>* number);
     void linkBreak(Number<unsigned int>* number);
 
+protected:
+    void closeEvent(QCloseEvent* event) override
+    {
+        mOpBuilder->close();
+        event->accept();
+    }
+
 private:
     QVBoxLayout* mainLayout;
 
     QFrame* headerWidget;
 
     QPushButton* enableButton;
+    QPushButton* editButton;
     QPushButton* toggleButton;
     QLabel* opNameLabel;
 
@@ -357,6 +384,8 @@ private:
     QPushButton* midiLinkButton;
 
     QGroupBox* selectedParameterGroupBox;
+
+    OperationBuilder* mOpBuilder;
 
     QWidget* lastFocusedWidget = nullptr;
     bool lastFocused = false;
@@ -572,9 +601,11 @@ private slots:
             toggleButton->setStyleSheet("QPushButton{ qproperty-icon: url(:/icons/go-down.png); }");
             resize(headerWidget->size());
         }
+
+        updateGeometry();
     }
 };
 
 
 
-#endif // OPERATIONSWIDGET_H
+#endif // OPERATIONWIDGET_H

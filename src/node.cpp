@@ -24,7 +24,6 @@
 #include "node.h"
 //#include "generator.h"
 
-#include <QGraphicsScene>
 /*#include <QGraphicsSceneMouseEvent>
 #include <QPainter>
 #include <QStyleOption>
@@ -35,12 +34,13 @@
 
 
 
-Node::Node(QWidget* widget, QGraphicsObject* parent) :
-    QGraphicsObject(parent)
+Node::Node(QWidget *widget, QGraphicsProxyWidget* proxyWidget, QGraphicsObject* parent) :
+    QGraphicsObject(parent),
+    mWidget { widget },
+    mProxyWidget { proxyWidget }
 {
     setFlags(ItemIsMovable | ItemIsSelectable | ItemSendsGeometryChanges);
 
-    mProxyWidget = scene()->addWidget(widget);
     mProxyWidget->setParentItem(this);
 }
 
@@ -243,11 +243,11 @@ QRectF Node::textBoundingRect() const
 
 
 
-void Node::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
+/*void Node::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
 {
     update();
     QGraphicsObject::mouseReleaseEvent(event);
-}
+}*/
 
 
 

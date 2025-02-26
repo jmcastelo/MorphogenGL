@@ -1,4 +1,5 @@
 #include "operationbuilder.h"
+#include "operationwidget.h"
 
 #include <QTabWidget>
 #include <QFileDialog>
@@ -9,16 +10,24 @@
 
 
 
-OperationBuilder::OperationBuilder(QOpenGLContext *mainContext, QWidget *parent) :
+OperationBuilder::OperationBuilder(ImageOperation *operation, OperationWidget *opWidget, QWidget *parent) :
     QWidget {parent},
-    QOpenGLExtraFunctions(mainContext)
+    QOpenGLExtraFunctions(operation->context()),
+    mOperation { operation },
+    mOpWidget { opWidget }
 {
+    mContext = new QOpenGLContext();
+    mContext->setFormat(mOperation->context()->format());
+    mContext->setShareContext(mOperation->context());
+    mContext->create();
+
+    mSurface = new QOffscreenSurface();
+    mSurface->setFormat(mOperation->context()->format());
+    mSurface->create();
+
+    mContext->makeCurrent(mSurface);
     initializeOpenGLFunctions();
-
-    mOperation = new ImageOperation("New Operation", false, mainContext);
-
-    mOpWidget = new OperationsWidget(mOperation, false);
-    mOpWidget->setVisible(false);
+    mContext->doneCurrent();
 
     mProgram = new QOpenGLShaderProgram();
 
@@ -65,14 +74,12 @@ OperationBuilder::OperationBuilder(QOpenGLContext *mainContext, QWidget *parent)
     setLayout(shadersLayout);
 
     setWindowTitle("Operation Builder");
-    setVisible(false);
 }
 
 
 
 OperationBuilder::~OperationBuilder()
 {
-    delete mOperation;
     delete mProgram;
     delete mContext;
     delete mSurface;
@@ -80,31 +87,9 @@ OperationBuilder::~OperationBuilder()
 
 
 
-void OperationBuilder::init(QOpenGLContext* mainContext)
-{
-    mContext = new QOpenGLContext();
-    mContext->setFormat(mainContext->format());
-    mContext->setShareContext(mainContext);
-    mContext->create();
-
-    mSurface = new QOffscreenSurface();
-    mSurface->setFormat(mainContext->format());
-    mSurface->create();
-
-    mContext->makeCurrent(mSurface);
-    initializeOpenGLFunctions();
-    mContext->doneCurrent();
-
-    mMainContext = mainContext;
-
-    mOperation = new ImageOperation("New Operation", false, mainContext);
-}
-
-
-
 void OperationBuilder::loadVertexShader()
 {
-    QString path = QFileDialog::getOpenFileName(this, "Load vertex shader", QDir::currentPath(), "Vertex shaders (*.vert)");
+    QString path = QFileDialog::getOpenFileName(this, "Load vertex shader", QDir::currentPath() + "/shaders", "Vertex shaders (*.vert)");
 
     if (!path.isEmpty())
     {
@@ -125,7 +110,7 @@ void OperationBuilder::loadVertexShader()
 
 void OperationBuilder::loadFragmentShader()
 {
-    QString path = QFileDialog::getOpenFileName(this, "Load fragment shader", QDir::currentPath(), "Fragment shaders (*.frag)");
+    QString path = QFileDialog::getOpenFileName(this, "Load fragment shader", QDir::currentPath() + "/shaders", "Fragment shaders (*.frag)");
 
     if (!path.isEmpty())
     {
@@ -148,7 +133,6 @@ void OperationBuilder::parseShaders()
 {
     if (linkProgram())
     {
-        mOpWidget->setVisible(true);
         parseAttributes();
         parseUniforms();
     }
@@ -277,6 +261,7 @@ bool OperationBuilder::linkProgram()
         QMessageBox::information(this, "Shader link error", mProgram->log());
         return false;
     }
+
     return true;
 }
 
@@ -342,13 +327,4 @@ int OperationBuilder::maxRow()
             row = parameter->row();
 
     return row;
-}
-
-
-
-void OperationBuilder::closeEvent(QCloseEvent* event)
-{
-    mOpWidget->close();
-
-    event->accept();
 }
