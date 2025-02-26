@@ -21,8 +21,8 @@
 */
 
 #include "configparser.h"
-#include "node.h"
-#include "blendfactorwidget.h"
+//#include "node.h"
+//#include "blendfactorwidget.h"
 #include "controlwidget.h"
 
 #include <QTimer>
@@ -41,7 +41,7 @@ ControlWidget::ControlWidget(double itFPS, double updFPS, GeneratorGL *theGenera
 {
     // Scroll area
 
-    scrollLayout = new QHBoxLayout;
+    /*scrollLayout = new QHBoxLayout;
     scrollLayout->setSizeConstraint(QLayout::SetFixedSize);
     scrollLayout->setAlignment(Qt::AlignBottom);
     scrollLayout->setDirection(QBoxLayout::RightToLeft);
@@ -60,22 +60,22 @@ ControlWidget::ControlWidget(double itFPS, double updFPS, GeneratorGL *theGenera
     nodesToolBar = new QToolBar;
     nodesToolBar->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     nodesToolBar->setOrientation(Qt::Vertical);
-    nodesToolBar->hide();
+    nodesToolBar->hide();*/
 
     constructSystemToolBar();
     constructDisplayOptionsWidget(itFPS, updFPS);
     constructRecordingOptionsWidget();
     constructSortedOperationsWidget();
 
-    updateScrollArea();
+    //updateScrollArea();
 
     // Graph widget
 
-    graphWidget = new GraphWidget(generator, this);
+    graphWidget = new GraphWidget;
     graphWidget->setMinimumSize(0, 0);
     graphWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
-    connect(graphWidget, &GraphWidget::singleNodeSelected, this, &ControlWidget::constructSingleNodeToolBar);
+    /*connect(graphWidget, &GraphWidget::singleNodeSelected, this, &ControlWidget::constructSingleNodeToolBar);
     connect(graphWidget, &GraphWidget::operationNodeSelected, this, &ControlWidget::showParametersWidget);
     connect(graphWidget, &GraphWidget::noOperationNodesSelected, this, &ControlWidget::removeAllParametersWidgetsBorder);
     connect(graphWidget, &GraphWidget::multipleNodesSelected, this, &ControlWidget::constructMultipleNodesToolBar);
@@ -105,7 +105,7 @@ ControlWidget::ControlWidget(double itFPS, double updFPS, GeneratorGL *theGenera
     connect(graphWidget, &GraphWidget::operationEnabled, this, [&](QUuid id, bool enabled){
         if (operationsWidgets.contains(id))
             operationsWidgets.value(id)->toggleEnableButton(enabled);
-    });
+    });*/
 
     // Parser
 
@@ -134,7 +134,7 @@ ControlWidget::ControlWidget(double itFPS, double updFPS, GeneratorGL *theGenera
     QHBoxLayout* hLayout = new QHBoxLayout;
     hLayout->setSizeConstraint(QLayout::SetNoConstraint);
     hLayout->addWidget(graphWidget);
-    hLayout->addWidget(nodesToolBar);
+    //hLayout->addWidget(nodesToolBar);
 
     QWidget* widget = new QWidget;
     widget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
@@ -151,7 +151,7 @@ ControlWidget::ControlWidget(double itFPS, double updFPS, GeneratorGL *theGenera
     mainVBoxLayout->setSizeConstraint(QLayout::SetNoConstraint);
     mainVBoxLayout->addWidget(systemToolBar);
     mainVBoxLayout->addWidget(splitter);
-    mainVBoxLayout->addWidget(scrollArea);
+    //mainVBoxLayout->addWidget(scrollArea);
     mainVBoxLayout->addWidget(statusBar);
 
     setLayout(mainVBoxLayout);
@@ -176,16 +176,16 @@ ControlWidget::~ControlWidget()
     delete graphWidget;
     delete sortedOperationsWidget;
     qDeleteAll(operationsWidgets);
-    qDeleteAll(blendFactorWidgets);
+    //qDeleteAll(blendFactorWidgets);
 }
 
 
 
-void ControlWidget::resizeEvent(QResizeEvent* event)
+/*void ControlWidget::resizeEvent(QResizeEvent* event)
 {
     QWidget::resizeEvent(event);
     updateScrollArea();
-}
+}*/
 
 
 
@@ -216,7 +216,7 @@ void ControlWidget::constructSystemToolBar()
     systemToolBar->addSeparator();
 
     systemToolBar->addAction(QIcon(QPixmap(":/icons/applications-development.png")), "Operation builder", this, &ControlWidget::toggleOperationBuilder);
-    systemToolBar->addAction(QIcon(QPixmap(":/icons/format-list-ordered.png")), "List sorted operations", this, &ControlWidget::toggleSortedOperationsWidget);
+    //systemToolBar->addAction(QIcon(QPixmap(":/icons/format-list-ordered.png")), "List sorted operations", this, &ControlWidget::toggleSortedOperationsWidget);
 
     systemToolBar->addSeparator();
 
@@ -240,10 +240,10 @@ void ControlWidget::constructSystemToolBar()
     connect(resetAction, &QAction::triggered, this, &ControlWidget::reset);
     connect(screenshotAction, &QAction::triggered, this, &ControlWidget::setScreenshotFilename);
     connect(recordAction, &QAction::triggered, this, &ControlWidget::record);
-    connect(displayOptionsAction, &QAction::triggered, this, &ControlWidget::toggleDisplayOptionsWidget);
-    connect(recordingOptionsAction, &QAction::triggered, this, &ControlWidget::toggleRecordingOptionsWidget);
-    connect(loadConfigAction, &QAction::triggered, this, &ControlWidget::loadConfig);
-    connect(saveConfigAction, &QAction::triggered, this, &ControlWidget::saveConfig);
+    //connect(displayOptionsAction, &QAction::triggered, this, &ControlWidget::toggleDisplayOptionsWidget);
+    //connect(recordingOptionsAction, &QAction::triggered, this, &ControlWidget::toggleRecordingOptionsWidget);
+    //connect(loadConfigAction, &QAction::triggered, this, &ControlWidget::loadConfig);
+    //connect(saveConfigAction, &QAction::triggered, this, &ControlWidget::saveConfig);
     connect(midiAction, &QAction::triggered, this, &ControlWidget::showMidiWidget);
     connect(overlayAction, &QAction::triggered, this, &ControlWidget::toggleOverlay);
     connect(aboutAction, &QAction::triggered, this, &ControlWidget::about);
@@ -298,7 +298,7 @@ void ControlWidget::setScreenshotFilename()
 
 
 
-void ControlWidget::toggleDisplayOptionsWidget()
+/*void ControlWidget::toggleDisplayOptionsWidget()
 {
     displayOptionsWidget->setVisible(!displayOptionsWidget->isVisible());
 
@@ -311,11 +311,11 @@ void ControlWidget::toggleDisplayOptionsWidget()
         scrollLayout->removeWidget(displayOptionsWidget);
 
     updateScrollArea();
-}
+}*/
 
 
 
-void ControlWidget::toggleRecordingOptionsWidget()
+/*void ControlWidget::toggleRecordingOptionsWidget()
 {
     recordingOptionsWidget->setVisible(!recordingOptionsWidget->isVisible());
 
@@ -328,11 +328,11 @@ void ControlWidget::toggleRecordingOptionsWidget()
         scrollLayout->removeWidget(recordingOptionsWidget);
 
     updateScrollArea();
-}
+}*/
 
 
 
-void ControlWidget::toggleSortedOperationsWidget()
+/*void ControlWidget::toggleSortedOperationsWidget()
 {
     sortedOperationsWidget->setVisible(!sortedOperationsWidget->isVisible());
 
@@ -345,7 +345,7 @@ void ControlWidget::toggleSortedOperationsWidget()
         scrollLayout->removeWidget(sortedOperationsWidget);
 
     updateScrollArea();
-}
+}*/
 
 
 
@@ -356,7 +356,7 @@ void ControlWidget::plotsActionTriggered()
 
 
 
-void ControlWidget::loadConfig()
+/*void ControlWidget::loadConfig()
 {
     QString filename = QFileDialog::getOpenFileName(this, "Load configuration", outputDir, "MorphogenGL configurations (*.morph)");
 
@@ -400,7 +400,7 @@ void ControlWidget::saveConfig()
         parser->setFilename(filename);
         parser->write();
     }
-}
+}*/
 
 
 
@@ -415,16 +415,16 @@ void ControlWidget::toggleOverlay()
         foreach (QUuid id, operationsWidgets.keys())
             overlayLinkParametersWidget(id);
 
-        foreach (QUuid id, blendFactorWidgets.keys())
-            overlayLinkBlendFactorWidget(id);
+        //foreach (QUuid id, blendFactorWidgets.keys())
+            //overlayLinkBlendFactorWidget(id);
     }
     else
     {
         foreach (QUuid id, operationsWidgets.keys())
             overlayUnlinkParametersWidget(id);
 
-        foreach (QUuid id, blendFactorWidgets.keys())
-            overlayUnlinkBlendFactorWidget(id);
+        //foreach (QUuid id, blendFactorWidgets.keys())
+            //overlayUnlinkBlendFactorWidget(id);
     }
 }
 
@@ -488,7 +488,7 @@ void ControlWidget::updateWindowSizeLineEdits(int width, int height)
 
 
 // Nodes toolbar: single node selected
-
+/*
 void ControlWidget::constructSingleNodeToolBar(Node* node)
 {
     nodesToolBar->clear();
@@ -680,7 +680,7 @@ void ControlWidget::constructMultipleNodesToolBar()
         nodesToolBar->addAction(QIcon(QPixmap(":/icons/edit-delete.png")), "Remove", graphWidget, &GraphWidget::removeSelectedNodes);
     }
 }
-
+*/
 
 
 // Display
@@ -736,7 +736,7 @@ void ControlWidget::constructDisplayOptionsWidget(double itsFPS, double updFPS)
     mainLayout->setSizeConstraint(QLayout::SetFixedSize);
     mainLayout->addWidget(displayGroupBox);
 
-    displayOptionsWidget = new QWidget(scrollWidget);
+    displayOptionsWidget = new QWidget;
     displayOptionsWidget->setLayout(mainLayout);
     displayOptionsWidget->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
     displayOptionsWidget->setVisible(false);
@@ -859,7 +859,7 @@ void ControlWidget::constructRecordingOptionsWidget()
     mainLayout->setSizeConstraint(QLayout::SetFixedSize);
     mainLayout->addWidget(videoGroupBox);
 
-    recordingOptionsWidget = new QWidget(scrollWidget);
+    recordingOptionsWidget = new QWidget;
     recordingOptionsWidget->setLayout(mainLayout);
     recordingOptionsWidget->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
     recordingOptionsWidget->setVisible(false);
@@ -993,14 +993,14 @@ void ControlWidget::constructSortedOperationsWidget()
      layout->setAlignment(Qt::AlignCenter);
      layout->addWidget(sortedOperationsTable);
 
-     sortedOperationsWidget = new QWidget(scrollWidget);
+     sortedOperationsWidget = new QWidget;
      sortedOperationsWidget->setLayout(layout);
      sortedOperationsWidget->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
      sortedOperationsWidget->setVisible(false);
 
      connect(generator, &GeneratorGL::sortedOperationsChanged, this, &ControlWidget::populateSortedOperationsTable);
-     connect(generator, &GeneratorGL::sortedOperationsChanged, this, &ControlWidget::populateScrollLayout);
-     connect(sortedOperationsTable, &QTableWidget::itemSelectionChanged, this, &ControlWidget::selectNodesToMark);
+     //connect(generator, &GeneratorGL::sortedOperationsChanged, this, &ControlWidget::populateScrollLayout);
+     //connect(sortedOperationsTable, &QTableWidget::itemSelectionChanged, this, &ControlWidget::selectNodesToMark);
 }
 
 
@@ -1024,7 +1024,7 @@ void ControlWidget::populateSortedOperationsTable(QList<QPair<QUuid, QString>> s
 
 
 
-void ControlWidget::selectNodesToMark()
+/*void ControlWidget::selectNodesToMark()
 {
     QVector<QUuid> nodeIds;
 
@@ -1032,11 +1032,11 @@ void ControlWidget::selectNodesToMark()
         nodeIds.push_back(sortedOperationsData[item->row()].first);
 
     graphWidget->markNodes(nodeIds);
-}
+}*/
 
 
 
-void ControlWidget::populateScrollLayout(QList<QPair<QUuid, QString>> sortedData, QList<QUuid> unsortedData)
+/*void ControlWidget::populateScrollLayout(QList<QPair<QUuid, QString>> sortedData, QList<QUuid> unsortedData)
 {
     QWidget *widget = nullptr;
 
@@ -1079,7 +1079,7 @@ void ControlWidget::populateScrollLayout(QList<QPair<QUuid, QString>> sortedData
         scrollArea->ensureWidgetVisible(widget);
         //widget->setFocus();
     }
-}
+}*/
 
 
 
@@ -1115,13 +1115,13 @@ void ControlWidget::setUpMidiLinks(bool midiOn)
             midiUnlinkParametersWidget(id);
     }
 
-    for (auto [id, widget] : blendFactorWidgets.asKeyValueRange())
+    /*for (auto [id, widget] : blendFactorWidgets.asKeyValueRange())
     {
         if (midiOn)
             midiLinkBlendFactorWidget(id);
         else
             midiUnlinkBlendFactorWidget(id);
-    }
+    }*/
 }
 
 
@@ -1191,7 +1191,7 @@ void ControlWidget::updateMidiLinks(QString portName, int key, int value)
 
 
 
-void ControlWidget::createParametersWidget(QUuid id)
+/*void ControlWidget::createParametersWidget(QUuid id)
 {
     if (generator->hasOperationParamaters(id) && !operationsWidgets.contains(id))
     {
@@ -1225,7 +1225,7 @@ void ControlWidget::createParametersWidget(QUuid id)
         scrollArea->ensureWidgetVisible(operationsWidgets.value(id));
         operationsWidgets.value(id)->setFocus();
     }
-}
+}*/
 
 
 
@@ -1333,7 +1333,7 @@ void ControlWidget::overlayUnlinkParametersWidget(QUuid id)
 
 
 
-void ControlWidget::setUpBlendFactorWidget(BlendFactorWidget* widget)
+/*void ControlWidget::setUpBlendFactorWidget(BlendFactorWidget* widget)
 {
     blendFactorWidgets.insert(widget->id, widget);
 
@@ -1349,11 +1349,11 @@ void ControlWidget::setUpBlendFactorWidget(BlendFactorWidget* widget)
 
     widget->setParent(scrollWidget);
     updateScrollArea();
-}
+}*/
 
 
 
-void ControlWidget::midiLinkBlendFactorWidget(QUuid id)
+/*void ControlWidget::midiLinkBlendFactorWidget(QUuid id)
 {
     BlendFactorWidget* widget = blendFactorWidgets.value(id);
 
@@ -1413,10 +1413,10 @@ void ControlWidget::overlayUnlinkBlendFactorWidget(QUuid id)
 
     disconnect(widget->blendFactor, &Number<float>::valueChanged, this, nullptr);
 }
+*/
 
 
-
-void ControlWidget::updateParametersWidgetsBorder(QWidget* widget)
+/*void ControlWidget::updateParametersWidgetsBorder(QWidget* widget)
 {
     QMapIterator<QUuid, OperationsWidget*> it(operationsWidgets);
     while (it.hasNext())
@@ -1461,24 +1461,14 @@ void ControlWidget::removeOneParametersWidgetBorder(QWidget* widget)
             break;
         }
     }
-}
+}*/
 
 
-
+/*
 void ControlWidget::showParametersWidget(QUuid id)
 {
     if (generator->hasOperationParamaters(id) && operationsWidgets.contains(id))
     {
-        /*if (operationsWidgets.value(id)->isVisible())
-        {
-            scrollArea->ensureWidgetVisible(operationsWidgets.value(id));
-        }
-        else
-        {
-            operationsWidgets.value(id)->setVisible(true);
-            updateScrollLayout(operationsWidgets.value(id));
-        }*/
-
         //updateParametersWidgetsBorder(operationsWidgets.value(id));
         if (!operationsWidgets.value(id)->isFocused())
             operationsWidgets.value(id)->setFocus();
@@ -1578,4 +1568,4 @@ void ControlWidget::updateScrollArea()
         //scrollArea->setFixedHeight(maxHeight + scrollLayout->contentsMargins().top());
     }
     update();
-}
+}*/

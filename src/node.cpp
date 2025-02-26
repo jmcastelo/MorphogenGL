@@ -20,37 +20,61 @@
 *  along with MorphogenGL.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include "edge.h"
+//#include "edge.h"
 #include "node.h"
-#include "graphwidget.h"
-#include "generator.h"
+//#include "generator.h"
 
 #include <QGraphicsScene>
-#include <QGraphicsSceneMouseEvent>
+/*#include <QGraphicsSceneMouseEvent>
 #include <QPainter>
 #include <QStyleOption>
 #include <QFileDialog>
 #include <QWidgetAction>
 #include <QLabel>
-#include <QActionGroup>
+#include <QActionGroup>*/
 
 
 
-Node::Node(GraphWidget* graphWidget, QString text) :
+Node::Node(QWidget* widget, QGraphicsObject* parent) :
+    QGraphicsObject(parent)
+{
+    setFlags(ItemIsMovable | ItemIsSelectable | ItemSendsGeometryChanges);
+
+    mProxyWidget = scene()->addWidget(widget);
+    mProxyWidget->setParentItem(this);
+}
+
+
+
+QRectF Node::boundingRect() const
+{
+    return mProxyWidget->boundingRect();
+}
+
+
+
+void Node::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
+{
+    mProxyWidget->paint(painter, option, widget);
+}
+
+
+
+/*Node::Node(GraphWidget* graphWidget, QString text) :
     name { text },
     graph { graphWidget }
 {
     setFlags(ItemIsMovable | ItemIsSelectable | ItemSendsGeometryChanges);
     setCacheMode(DeviceCoordinateCache);
     setZValue(-1);
-}
+}*/
 
 
 
-Node::~Node(){}
+//Node::~Node(){}
 
 
-
+/*
 void Node::copy()
 {
     graph->copyNode(this);
@@ -122,26 +146,26 @@ QRectF Node::textBoundingRect() const
     else
         return QRectF();
 }
+*/
 
 
-
-QRectF Node::boundingRect() const
+/*QRectF Node::boundingRect() const
 {
     return textBoundingRect().adjusted(-(ellipseMargin + penSize), -(ellipseMargin + penSize), ellipseMargin + penSize, ellipseMargin + penSize);
-}
+}*/
 
 
 
-QPainterPath Node::shape() const
+/*QPainterPath Node::shape() const
 {
     QPainterPath path;
     path.addEllipse(textBoundingRect().adjusted(-(ellipseMargin + penSize), -(ellipseMargin + penSize), ellipseMargin + penSize, ellipseMargin + penSize));
     return path;
-}
+}*/
 
 
 
-void Node::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *)
+/*void Node::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *)
 {
     QRectF textRect = textBoundingRect();
 
@@ -177,11 +201,11 @@ void Node::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
     painter->setFont(scene()->font());
     painter->setPen(QPen(Qt::white, 0));
     painter->drawText(textRect, Qt::AlignCenter, name);
-}
+}*/
 
 
 
-QVariant Node::itemChange(GraphicsItemChange change, const QVariant &value)
+/*QVariant Node::itemChange(GraphicsItemChange change, const QVariant &value)
 {
     if (change == QGraphicsItem::ItemPositionChange && scene())
     {
@@ -215,7 +239,7 @@ QVariant Node::itemChange(GraphicsItemChange change, const QVariant &value)
     }
 
     return QGraphicsObject::itemChange(change, value);
-}
+}*/
 
 
 
@@ -228,7 +252,7 @@ void Node::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
 
 
 // Operation node
-
+/*
 OperationNode::OperationNode(GraphWidget* graphWidget, QString name) : Node(graphWidget, name)
 {
     id = graph->generator->addOperation(name);
@@ -452,11 +476,11 @@ QVariant OperationNode::itemChange(GraphicsItemChange change, const QVariant &va
 
     return Node::itemChange(change, value);
 }
-
+*/
 
 
 // Seed node
-
+/*
 SeedNode::SeedNode(GraphWidget* graphWidget, QString name) : Node(graphWidget, name)
 {
     id = graph->generator->addSeed();
@@ -631,3 +655,4 @@ void SeedNode::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
 
     menu.exec(event->screenPos());
 }
+*/

@@ -25,7 +25,7 @@
 
 
 
-#include "blendfactorwidget.h"
+//#include "blendfactorwidget.h"
 
 #include <QGraphicsView>
 #include <QUuid>
@@ -33,12 +33,12 @@
 
 
 
-class Node;
-class OperationNode;
-class SeedNode;
-class Edge;
-class GeneratorGL;
-struct InputData;
+//class Node;
+//class OperationNode;
+//class SeedNode;
+//class Edge;
+//class GeneratorGL;
+//struct InputData;
 
 
 class GraphWidget : public QGraphicsView
@@ -46,65 +46,63 @@ class GraphWidget : public QGraphicsView
     Q_OBJECT
 
 public:
-    GeneratorGL* generator;
-
-    GraphWidget(GeneratorGL* generatorGL, QWidget *parent = nullptr);
+    GraphWidget(QWidget *parent = nullptr);
     ~GraphWidget();
 
-    Node* getNode(QUuid id);
-    void selectNode(QUuid id, bool selected);
-    void copyNode(Node* node);
-    void removeNode(Node* node);
-    void removeEdge(Edge* edge);
-    void selectNodeToConnect(Node* node);
-    void deselectNodeToConnect();
-    void connectNodes(Node* node);
-    void insertNodeBetween(QAction* action, Edge* edge);
+    //Node* getNode(QUuid id);
+    //void selectNode(QUuid id, bool selected);
+    //void copyNode(Node* node);
+    //void removeNode(Node* node);
+    //void removeEdge(Edge* edge);
+    //void selectNodeToConnect(Node* node);
+    //void deselectNodeToConnect();
+    //void connectNodes(Node* node);
+    //void insertNodeBetween(QAction* action, Edge* edge);
 
-    bool nodeSelectedToConnect();
-    bool moreThanOneNode();
+    //bool nodeSelectedToConnect();
+    //bool moreThanOneNode();
 
-    void newNodeSelected(Node*);
-    bool nodesSelected();
-    bool singleOperationNodeSelected();
-    bool isOperationNodeSelected(QUuid id);
-    int operationNodesSelected();
-    bool twoOperationNodesSelected();
-    int seedNodesSelected();
-    bool selectedOperationNodesHaveInputs();
+    //void newNodeSelected(Node*);
+    //bool nodesSelected();
+    //bool singleOperationNodeSelected();
+    //bool isOperationNodeSelected(QUuid id);
+    //int operationNodesSelected();
+    //bool twoOperationNodesSelected();
+    //int seedNodesSelected();
+    //bool selectedOperationNodesHaveInputs();
 
-    void updateOperation(QUuid id);
+    //void updateOperation(QUuid id);
 
-    void onDestroyOperationNode(QUuid id);
-    void onDestroySeedNode(QUuid id);
+    //void onDestroyOperationNode(QUuid id);
+    //void onDestroySeedNode(QUuid id);
 
-    void updateNodes();
+    //void updateNodes();
 
-    void drawBlendFactors(bool draw);
+    //void drawBlendFactors(bool draw);
 
-    QPointF nodePosition(QUuid id);
+    //QPointF nodePosition(QUuid id);
 
-    void clearScene();
-    void loadSeedNode(QUuid id, QPointF position);
-    void loadOperationNode(QUuid id, QString name, QPointF position);
-    void connectNodes(QMap<QUuid, QMap<QUuid, InputData*>> connections);
+    //void clearScene();
+    //void loadSeedNode(QUuid id, QPointF position);
+    //void loadOperationNode(QUuid id, QString name, QPointF position);
+    //void connectNodes(QMap<QUuid, QMap<QUuid, InputData*>> connections);
 
-    void markNodes(QVector<QUuid> ids);
+    //void markNodes(QVector<QUuid> ids);
 
-    void closeWidgets();
+    //void closeWidgets();
 
 public slots:
-    void drawSelectedSeeds();
-    void enableSelectedOperations();
-    void disableSelectedOperations();
-    void equalizeSelectedBlendFactors();
-    void clearSelectedOperationNodes();
-    void swapSelectedOperationNodes();
-    void makeNodeSnapshot();
-    void removeSelectedNodes();
+    //void drawSelectedSeeds();
+    //void enableSelectedOperations();
+    //void disableSelectedOperations();
+    //void equalizeSelectedBlendFactors();
+    //void clearSelectedOperationNodes();
+    //void swapSelectedOperationNodes();
+    //void makeNodeSnapshot();
+    //void removeSelectedNodes();
 
 signals:
-    void singleNodeSelected(Node*);
+    /*void singleNodeSelected(Node*);
     void operationNodeSelected(QUuid id);
     void multipleNodesSelected();
     void noOperationNodesSelected();
@@ -114,7 +112,7 @@ signals:
     void blendFactorWidgetCreated(BlendFactorWidget* widget);
     void blendFactorWidgetToggled(BlendFactorWidget* widget);
     void blendFactorWidgetDeleted(BlendFactorWidget* widget);
-    void operationEnabled(QUuid id, bool enabled);
+    void operationEnabled(QUuid id, bool enabled);*/
 
 protected:
     void contextMenuEvent(QContextMenuEvent* event) override;
@@ -124,28 +122,29 @@ protected:
     void mouseMoveEvent(QMouseEvent* event) override;
 
 private:
-    Node *selectedNode = nullptr;
+    //Node *selectedNode = nullptr;
 
-    QVector<OperationNode*> selectedOperationNodes;
-    QVector<SeedNode*> selectedSeedNodes;
+    //QVector<OperationNode*> selectedOperationNodes;
+    //QVector<SeedNode*> selectedSeedNodes;
 
-    QMap<QUuid, Node*> copiedNodes[2];
-    QVector<Edge*> newEdges;
+    //QMap<QUuid, Node*> copiedNodes[2];
+    //QVector<Edge*> newEdges;
 
     QPointF prevPos;
     QPointF center;
     qreal scaleFactor = 1.0;
 
-    void copyNodes(bool connectionA);
+    //void copyNodes(bool connectionA);
     bool pointIntersectsItem(QPointF point);
-    void searchElementaryCycles();
-    void reconnectNodes(Node* node);
+    //void searchElementaryCycles();
+    //void reconnectNodes(Node* node);
 
 private slots:
-    void newSelectedNodes();
-    void addOperationNodeUnderCursor(QAction* action);
-    void addSeedNodeUnderCursor();
-    void pasteCopiedNodes();
+    //void newSelectedNodes();
+    //void addOperationNodeUnderCursor(QAction* action);
+    //void addSeedNodeUnderCursor();
+    //void pasteCopiedNodes();
+    void addNewOperationNode();
 };
 
 

@@ -95,7 +95,7 @@ void ConfigurationParser::writeSeedNode(QUuid id, Seed* seed)
     stream.writeCharacters(QString::number(seed->isFixed()));
     stream.writeEndElement();
 
-    QPointF position = graphWidget->nodePosition(id);
+    /*QPointF position = graphWidget->nodePosition(id);
 
     stream.writeStartElement("position");
 
@@ -107,7 +107,7 @@ void ConfigurationParser::writeSeedNode(QUuid id, Seed* seed)
     stream.writeCharacters(QString::number(position.y()));
     stream.writeEndElement();
 
-    stream.writeEndElement();
+    stream.writeEndElement();*/
 
     stream.writeEndElement();
 }
@@ -190,7 +190,7 @@ void ConfigurationParser::writeOperationNode(ImageOperationNode* node)
 
     stream.writeEndElement();
 
-    QPointF position = graphWidget->nodePosition(node->id);
+    /*QPointF position = graphWidget->nodePosition(node->id);
 
     stream.writeStartElement("position");
 
@@ -202,7 +202,7 @@ void ConfigurationParser::writeOperationNode(ImageOperationNode* node)
     stream.writeCharacters(QString::number(position.y()));
     stream.writeEndElement();
 
-    stream.writeEndElement();
+    stream.writeEndElement();*/
 
     stream.writeEndElement();
 }
@@ -360,7 +360,7 @@ void ConfigurationParser::read()
 
                 generator->sortOperations();
 
-                graphWidget->clearScene();
+                /*graphWidget->clearScene();
 
                 QMap<QUuid, QPointF>::const_iterator i = seedNodePositions.constBegin();
                 while (i != seedNodePositions.constEnd())
@@ -376,7 +376,7 @@ void ConfigurationParser::read()
                     j++;
                 }
 
-                graphWidget->connectNodes(connections);
+                graphWidget->connectNodes(connections);*/
             }
             else if (xml.name() == "display")
             {

@@ -2,7 +2,7 @@
 #define BLENDFACTORWIDGET_H
 
 
-
+/*
 #include "edge.h"
 #include "node.h"
 #include "parameter.h"
@@ -113,7 +113,7 @@ public:
         layout->addLayout(sliderLayout);
         layout->addWidget(closeButton);
 
-        name = edge->sourceNode()->name + " - " + edge->destNode()->name;
+        //name = edge->sourceNode()->name + " - " + edge->destNode()->name;
 
         groupBox = new QGroupBox(name);
         groupBox->setLayout(layout);
@@ -167,7 +167,7 @@ private:
     QPushButton* midiLinkButton;
     QGroupBox* groupBox;
 };
-
+*/
 
 
 #endif // BLENDFACTORWIDGET_H

@@ -21,7 +21,7 @@
 */
 
 #pragma once
-
+/*
 #include <QGraphicsObject>
 
 class GraphWidget;
@@ -49,3 +49,4 @@ private:
     GraphWidget* graph;
     QVector<Edge*> edges;
 };
+*/

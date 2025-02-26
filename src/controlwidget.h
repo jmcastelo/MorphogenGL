@@ -108,8 +108,8 @@ public slots:
     void setupMidi(QString portName, bool open);
     void updateMidiLinks(QString portName, int key, int value);
 
-protected:
-    void resizeEvent(QResizeEvent* event) override;
+//protected:
+    //void resizeEvent(QResizeEvent* event) override;
 
 private:
     PlotsWidget* plotsWidget;
@@ -118,11 +118,11 @@ private:
 
     GraphWidget* graphWidget;
 
-    OperationNode* selectedOperationNode = nullptr;
-    SeedNode* selectedSeedNode = nullptr;
+    //OperationNode* selectedOperationNode = nullptr;
+    //SeedNode* selectedSeedNode = nullptr;
 
     QToolBar* systemToolBar;
-    QToolBar* nodesToolBar;
+    //QToolBar* nodesToolBar;
 
     QWidget* displayOptionsWidget;
     QWidget* recordingOptionsWidget;
@@ -171,13 +171,13 @@ private:
     Number<int>* linkingInt = nullptr;
     bool anyMidiPortOpen = false;
 
-    QMap<QUuid, BlendFactorWidget*> blendFactorWidgets;
+    //QMap<QUuid, BlendFactorWidget*> blendFactorWidgets;
 
     bool overlayEnabled = false;
 
-    QScrollArea* scrollArea;
-    QWidget* scrollWidget;
-    QHBoxLayout* scrollLayout;
+    //QScrollArea* scrollArea;
+    //QWidget* scrollWidget;
+    //QHBoxLayout* scrollLayout;
 
     void constructSystemToolBar();
     void constructDisplayOptionsWidget(double itsFPS, double updFPS);
@@ -189,29 +189,29 @@ private:
     void populateFileFormatsComboBox();
     void populateVideoCodecsComboBox();
 
-    void updateScrollLayout(QWidget* widget);
-    void updateScrollArea();
+    //void updateScrollLayout(QWidget* widget);
+    //void updateScrollArea();
 
 private slots:
     void iterate();
     void record();
     void setScreenshotFilename();
     void setOutputDir();
-    void toggleDisplayOptionsWidget();
-    void toggleRecordingOptionsWidget();
-    void toggleSortedOperationsWidget();
+    //void toggleDisplayOptionsWidget();
+    //void toggleRecordingOptionsWidget();
+    //void toggleSortedOperationsWidget();
     void plotsActionTriggered();
-    void loadConfig();
-    void saveConfig();
+    //void loadConfig();
+    //void saveConfig();
     void toggleOverlay();
     void about();
 
     void populateSortedOperationsTable(QList<QPair<QUuid, QString>> sortedData, QList<QUuid> unsortedData);
-    void populateScrollLayout(QList<QPair<QUuid, QString>> data, QList<QUuid> unsortedData);
-    void selectNodesToMark();
+    //void populateScrollLayout(QList<QPair<QUuid, QString>> data, QList<QUuid> unsortedData);
+    //void selectNodesToMark();
 
-    void createParametersWidget(QUuid id);
-    void setUpBlendFactorWidget(BlendFactorWidget* widget);
+    //void createParametersWidget(QUuid id);
+    //void setUpBlendFactorWidget(BlendFactorWidget* widget);
 
     void setUpMidiLinks(bool midiOn);
 
@@ -221,28 +221,28 @@ private slots:
     void overlayLinkParametersWidget(QUuid id);
     void overlayUnlinkParametersWidget(QUuid id);
 
-    void midiLinkBlendFactorWidget(QUuid id);
-    void midiUnlinkBlendFactorWidget(QUuid id);
+    //void midiLinkBlendFactorWidget(QUuid id);
+    //void midiUnlinkBlendFactorWidget(QUuid id);
 
-    void overlayLinkBlendFactorWidget(QUuid id);
-    void overlayUnlinkBlendFactorWidget(QUuid id);
+    //void overlayLinkBlendFactorWidget(QUuid id);
+    //void overlayUnlinkBlendFactorWidget(QUuid id);
 
-    void showParametersWidget(QUuid id);
-    void removeParametersWidget(QUuid id);
-    void updateParametersWidget(QUuid id);
-    void updateParametersWidgetsBorder(QWidget* widget);
-    void removeAllParametersWidgetsBorder();
-    void removeOneParametersWidgetBorder(QWidget* widget);
+    //void showParametersWidget(QUuid id);
+    //void removeParametersWidget(QUuid id);
+    //void updateParametersWidget(QUuid id);
+    //void updateParametersWidgetsBorder(QWidget* widget);
+    //void removeAllParametersWidgetsBorder();
+    //void removeOneParametersWidgetBorder(QWidget* widget);
 
-    void constructSingleNodeToolBar(Node* node);
-    void constructMultipleNodesToolBar();
+    //void constructSingleNodeToolBar(Node* node);
+    //void constructMultipleNodesToolBar();
 
-    void setNodeOperation(QAction* action);
-    void enableNodeOperation(bool checked);
-    void removeNodeOperation();
-    void setSeedNodeType();
-    void setSeedNodeFixed(bool checked);
-    void removeSeedNode();
+    //void setNodeOperation(QAction* action);
+    //void enableNodeOperation(bool checked);
+    //void removeNodeOperation();
+    //void setSeedNodeType();
+    //void setSeedNodeFixed(bool checked);
+    //void removeSeedNode();
 };
 
 

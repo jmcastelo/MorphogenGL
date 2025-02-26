@@ -19,7 +19,7 @@
 *  You should have received a copy of the GNU General Public License
 *  along with MorphogenGL.  If not, see <https://www.gnu.org/licenses/>.
 */
-
+/*
 #include "cycle.h"
 #include "edge.h"
 #include "node.h"
@@ -119,3 +119,4 @@ void Cycle::paint(QPainter* painter, const QStyleOptionGraphicsItem*, QWidget*)
 
     painter->drawPolygon(boundary);
 }
+*/

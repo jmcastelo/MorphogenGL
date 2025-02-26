@@ -32,7 +32,7 @@
 #include <QGroupBox>
 
 
-
+/*
 class GraphWidget;
 class Node;
 class Cycle;
@@ -121,7 +121,7 @@ private:
 private slots:
     void insertNode(QAction* action);
 };
-
+*/
 
 
 #endif // EDGE_H

@@ -21,7 +21,7 @@
 */
 
 
-
+/*
 #include "edge.h"
 #include "node.h"
 #include "cycle.h"
@@ -410,3 +410,4 @@ void Edge::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
 
     //QGraphicsObject::contextMenuEvent(event);
 }
+*/

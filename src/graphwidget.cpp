@@ -23,22 +23,22 @@
 
 
 #include "graphwidget.h"
-#include "edge.h"
+//#include "edge.h"
 #include "node.h"
-#include "cycle.h"
-#include "cyclesearch.h"
-#include "generator.h"
+//#include "cycle.h"
+//#include "cyclesearch.h"
+//#include "generator.h"
 
 #include <cmath>
 #include <QKeyEvent>
 #include <QRandomGenerator>
 #include <QMenu>
+#include <QPainterPath>
 
 
 
-GraphWidget::GraphWidget(GeneratorGL* generatorGL, QWidget *parent)
-    : QGraphicsView(parent),
-    generator { generatorGL }
+GraphWidget::GraphWidget(QWidget *parent)
+    : QGraphicsView(parent)
 {
     QGraphicsScene *scene = new QGraphicsScene(this);
     scene->setItemIndexMethod(QGraphicsScene::NoIndex);
@@ -46,10 +46,12 @@ GraphWidget::GraphWidget(GeneratorGL* generatorGL, QWidget *parent)
     scene->setSceneRect(0.0, 0.0, 10'000.0, 10'000.0);
     setScene(scene);
 
-    connect(scene, &QGraphicsScene::selectionChanged, this, &GraphWidget::newSelectedNodes);
+    //connect(scene, &QGraphicsScene::selectionChanged, this, &GraphWidget::newSelectedNodes);
 
     setDragMode(QGraphicsView::RubberBandDrag);
     setRubberBandSelectionMode(Qt::ContainsItemShape);
+
+    setOptimizationFlags(QGraphicsView::DontAdjustForAntialiasing | QGraphicsView::DontSavePainterState);
 
     setCacheMode(CacheBackground);
     setViewportUpdateMode(BoundingRectViewportUpdate);
@@ -68,23 +70,34 @@ GraphWidget::GraphWidget(GeneratorGL* generatorGL, QWidget *parent)
 
 GraphWidget::~GraphWidget()
 {
-    disconnect(scene(), &QGraphicsScene::selectionChanged, this, &GraphWidget::newSelectedNodes);
+    //disconnect(scene(), &QGraphicsScene::selectionChanged, this, &GraphWidget::newSelectedNodes);
 }
 
 
 
-void GraphWidget::closeWidgets()
+void GraphWidget::addNewOperationNode()
+{
+    QAction* action = qobject_cast<QAction*>(sender());
+    QVariant data = action->data();
+
+    //Node *node = new SeedNode(this);
+    //scene()->addItem(node);
+    //node->setPos(mapToScene(mapFromGlobal(data.toPoint())));
+}
+
+
+/*void GraphWidget::closeWidgets()
 {
     const QList<QGraphicsItem*> items = scene()->items();
 
     for (QGraphicsItem* item : items)
         if (Edge* edge = qgraphicsitem_cast<Edge*>(item))
             edge->closeBlendFactorWidget();
-}
+}*/
 
 
 
-void GraphWidget::newSelectedNodes()
+/*void GraphWidget::newSelectedNodes()
 {
     selectedOperationNodes.clear();
     selectedSeedNodes.clear();
@@ -113,21 +126,21 @@ void GraphWidget::newSelectedNodes()
 
     if (selectedOperationNodes.empty())
         emit noOperationNodesSelected();
-}
+}*/
 
 
 
-void GraphWidget::addOperationNodeUnderCursor(QAction *action)
+/*void GraphWidget::addOperationNodeUnderCursor(QAction *action)
 {
     Node *node = new OperationNode(this, action->whatsThis());
     scene()->addItem(node);
     node->setPos(mapToScene(mapFromGlobal(action->data().toPoint())));
     emit showOperationParameters(node->id);
-}
+}*/
 
 
 
-void GraphWidget::addSeedNodeUnderCursor()
+/*void GraphWidget::addSeedNodeUnderCursor()
 {
     QAction* action = qobject_cast<QAction*>(sender());
     QVariant data = action->data();
@@ -135,11 +148,11 @@ void GraphWidget::addSeedNodeUnderCursor()
     Node *node = new SeedNode(this);
     scene()->addItem(node);
     node->setPos(mapToScene(mapFromGlobal(data.toPoint())));
-}
+}*/
 
 
 
-void GraphWidget::reconnectNodes(Node* node)
+/*void GraphWidget::reconnectNodes(Node* node)
 {
     if (node->edges().size() == 2)
     {
@@ -183,11 +196,11 @@ void GraphWidget::reconnectNodes(Node* node)
             scene()->addItem(newEdge);
         }
     }
-}
+}*/
 
 
 
-void GraphWidget::selectNode(QUuid id, bool selected)
+/*void GraphWidget::selectNode(QUuid id, bool selected)
 {
     const QList<QGraphicsItem*> items = scene()->items();
 
@@ -197,11 +210,11 @@ void GraphWidget::selectNode(QUuid id, bool selected)
             if (node->id == id)
                 node->setSelected(selected);
     }
-}
+}*/
 
 
 
-void GraphWidget::removeNode(Node *node)
+/*void GraphWidget::removeNode(Node *node)
 {
     reconnectNodes(node);
 
@@ -255,11 +268,11 @@ void GraphWidget::deselectNodeToConnect()
 bool GraphWidget::nodeSelectedToConnect()
 {
     return selectedNode != nullptr;
-}
+}*/
 
 
 
-bool GraphWidget::moreThanOneNode()
+/*bool GraphWidget::moreThanOneNode()
 {
     QVector<Node*> nodes;
 
@@ -274,70 +287,70 @@ bool GraphWidget::moreThanOneNode()
     }
 
     return nodes.size() > 1;
-}
+}*/
 
 
 
-void GraphWidget::newNodeSelected(Node* node)
+/*void GraphWidget::newNodeSelected(Node* node)
 {
     emit singleNodeSelected(node);
-}
+}*/
 
 
 
-bool GraphWidget::nodesSelected()
+/*bool GraphWidget::nodesSelected()
 {
     return selectedOperationNodes.size() + selectedSeedNodes.size() > 1;
-}
+}*/
 
 
 
-bool GraphWidget::singleOperationNodeSelected()
+/*bool GraphWidget::singleOperationNodeSelected()
 {
     return (selectedOperationNodes.size() == 1) && (selectedSeedNodes.size() == 0);
-}
+}*/
 
 
 
-bool GraphWidget::isOperationNodeSelected(QUuid id)
+/*bool GraphWidget::isOperationNodeSelected(QUuid id)
 {
     foreach (OperationNode* node, selectedOperationNodes)
         if (node->id == id)
             return true;
     return false;
-}
+}*/
 
 
 
-int GraphWidget::operationNodesSelected()
+/*int GraphWidget::operationNodesSelected()
 {
     return selectedOperationNodes.size();
-}
+}*/
 
 
 
-bool GraphWidget::twoOperationNodesSelected()
+/*bool GraphWidget::twoOperationNodesSelected()
 {
     return selectedOperationNodes.size() == 2;
-}
+}*/
 
 
 
-int GraphWidget::seedNodesSelected()
+/*int GraphWidget::seedNodesSelected()
 {
     return selectedSeedNodes.size();
-}
+}*/
 
 
 
-void GraphWidget::drawSelectedSeeds()
+/*void GraphWidget::drawSelectedSeeds()
 {
     foreach (SeedNode* node, selectedSeedNodes)
         generator->drawSeed(node->id);
-}
+}*/
 
 
-
+/*
 void GraphWidget::enableSelectedOperations()
 {
     foreach (OperationNode* node, selectedOperationNodes)
@@ -789,10 +802,10 @@ void GraphWidget::markNodes(QVector<QUuid> ids)
         }
     }
 }
+*/
 
 
-
-void GraphWidget::contextMenuEvent(QContextMenuEvent *event)
+/*void GraphWidget::contextMenuEvent(QContextMenuEvent *event)
 {
     if (!pointIntersectsItem(mapToScene(mapFromGlobal(event->globalPos()))))
     {        
@@ -831,18 +844,37 @@ void GraphWidget::contextMenuEvent(QContextMenuEvent *event)
     }
     else
         QGraphicsView::contextMenuEvent(event);
+}*/
+
+
+
+void GraphWidget::contextMenuEvent(QContextMenuEvent *event)
+{
+    if (!pointIntersectsItem(mapToScene(mapFromGlobal(event->globalPos()))))
+    {
+        QMenu menu(this);
+
+        // Build new operation
+
+        QAction* buildNewOpAction = menu.addAction("Build new operation", this, &GraphWidget::addNewOperationNode);
+        buildNewOpAction->setData(QVariant(QCursor::pos()));
+
+        menu.exec(event->globalPos());
+    }
+    else
+        QGraphicsView::contextMenuEvent(event);
 }
 
 
 
 bool GraphWidget::pointIntersectsItem(QPointF point)
 {
-    QVector<Node*> nodes;
-    QVector<Edge*> edges;
+    QList<Node*> nodes;
+    //QVector<Edge*> edges;
 
     const QList<QGraphicsItem*> items = scene()->items(point);
 
-    for (QGraphicsItem* item : items)
+    /*for (QGraphicsItem* item : items)
     {
         if (OperationNode* node = qgraphicsitem_cast<OperationNode*>(item))
             nodes << node;
@@ -850,9 +882,16 @@ bool GraphWidget::pointIntersectsItem(QPointF point)
             nodes << node;
         else if (Edge* edge = qgraphicsitem_cast<Edge*>(item))
             edges << edge;
+    }*/
+
+    for (QGraphicsItem* item : items)
+    {
+        if (Node* node = qgraphicsitem_cast<Node*>(item))
+            nodes.append(node);
     }
 
-    return !nodes.empty() || !edges.empty();
+    //return !nodes.empty() || !edges.empty();
+    return !nodes.empty();
 }
 
 
@@ -962,18 +1001,18 @@ void GraphWidget::mousePressEvent(QMouseEvent* event)
             prevPos = event->position();
     }
 
-    if (!pointIntersectsItem(mapToScene(mapFromGlobal(event->globalPosition().toPoint()))))
+    /*if (!pointIntersectsItem(mapToScene(mapFromGlobal(event->globalPosition().toPoint()))))
     {
         deselectNodeToConnect();
         setFocus();
-    }
+    }*/
 
     QGraphicsView::mousePressEvent(event);
 }
 
 
 
-void GraphWidget::searchElementaryCycles()
+/*void GraphWidget::searchElementaryCycles()
 {
     QVector<Node*> nodes;
     QVector<Edge*> edges;
@@ -1016,4 +1055,4 @@ void GraphWidget::searchElementaryCycles()
         Cycle* cycle = new Cycle(this, nodeCycle);
         scene()->addItem(cycle);
     }
-}
+}*/

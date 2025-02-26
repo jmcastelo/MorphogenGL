@@ -26,16 +26,16 @@
 
 
 #include <QGraphicsObject>
-#include <QVector>
-#include <QMenu>
-#include <QAction>
-#include <QUuid>
+#include <QGraphicsProxyWidget>
+//#include <QMenu>
+//#include <QAction>
+//#include <QUuid>
 
 
 
-class GraphWidget;
-class Edge;
-class GeneratorGL;
+//class GraphWidget;
+//class Edge;
+//class GeneratorGL;
 
 
 
@@ -46,53 +46,55 @@ class Node : public QGraphicsObject
     Q_OBJECT
 
 public:
-    QUuid id;
-    QString name;
+    //QUuid id;
+    //QString name;
 
-    bool marked = false;
+    //bool marked = false;
 
-    Node(GraphWidget* graphWidget, QString name);
-    ~Node();
+    //Node(GraphWidget* graphWidget, QString name);
+    explicit Node(QWidget* widget, QGraphicsObject* parent = nullptr);
+    //~Node();
 
-    void addEdge(Edge *edge);
-    void removeEdge(Edge *edge);
-    QVector<Edge *> edges() const;
+    //void addEdge(Edge *edge);
+    //void removeEdge(Edge *edge);
+    //QVector<Edge *> edges() const;
 
-    bool connectedTo(Node *node);
+    //bool connectedTo(Node *node);
 
-    QRectF textBoundingRect() const;
+    //QRectF textBoundingRect() const;
 
     QRectF boundingRect() const override;
-    QPainterPath shape() const override;
-    void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) override;
+    //QPainterPath shape() const override;
+    void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = nullptr) override;
 
-public slots:
-    void setAsOutput();
-    void selectToConnect();
-    void copy();
-    void remove();
+//public slots:
+    //void setAsOutput();
+    //void selectToConnect();
+    //void copy();
+    //void remove();
 
-protected:
-    GraphWidget* graph;
-    QVector<Edge*> edgeList;
-    bool menuOpen = false;
+//protected:
+    //GraphWidget* graph;
+    //QVector<Edge*> edgeList;
+    //bool menuOpen = false;
 
-    QVariant itemChange(GraphicsItemChange change, const QVariant &value) override;
+    //QVariant itemChange(GraphicsItemChange change, const QVariant &value) override;
 
-    virtual void mousePressEvent(QGraphicsSceneMouseEvent *event) override = 0;
-    void mouseReleaseEvent(QGraphicsSceneMouseEvent *event) override;
-    virtual void contextMenuEvent(QGraphicsSceneContextMenuEvent *event) override = 0;
+    //void mousePressEvent(QGraphicsSceneMouseEvent *event) override;
+    //void mouseReleaseEvent(QGraphicsSceneMouseEvent *event) override;
+    //void contextMenuEvent(QGraphicsSceneContextMenuEvent *event) override;
 
 private:
-    qreal ellipseMargin = 10.0;
-    qreal penSize = 2.0;
+    //qreal ellipseMargin = 10.0;
+    //qreal penSize = 2.0;
+    QGraphicsProxyWidget* mProxyWidget;
 };
 
 
 
 // Operation node
 
-class OperationNode : public Node
+/*class OperationNode : public Node
 {
     Q_OBJECT
 
@@ -119,13 +121,13 @@ protected:
     void mousePressEvent(QGraphicsSceneMouseEvent *event) override;
     void contextMenuEvent(QGraphicsSceneContextMenuEvent *event) override;
     QVariant itemChange(GraphicsItemChange change, const QVariant &value) override;
-};
+};*/
 
 
 
 // Seed node
 
-class SeedNode : public Node
+/*class SeedNode : public Node
 {
     Q_OBJECT
 
@@ -147,7 +149,7 @@ public slots:
 protected:
     void mousePressEvent(QGraphicsSceneMouseEvent *event) override;
     void contextMenuEvent(QGraphicsSceneContextMenuEvent *event) override;
-};
+};*/
 
 
 
