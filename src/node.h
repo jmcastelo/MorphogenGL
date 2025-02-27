@@ -20,12 +20,17 @@
 *  along with MorphogenGL.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+
+
 #ifndef NODE_H
 #define NODE_H
 
 
 
-#include <QGraphicsObject>
+#include "operationwidget.h"
+
+#include <QGraphicsItem>
+#include <QGraphicsWidget>
 #include <QGraphicsProxyWidget>
 //#include <QMenu>
 //#include <QAction>
@@ -52,7 +57,7 @@ public:
     //bool marked = false;
 
     //Node(GraphWidget* graphWidget, QString name);
-    explicit Node(QWidget* widget, QGraphicsProxyWidget* proxyWidget, QGraphicsObject* parent = nullptr);
+    explicit Node(OperationWidget* widget, QGraphicsItem* parent = nullptr);
     //~Node();
 
     //void addEdge(Edge *edge);
@@ -87,8 +92,11 @@ public:
 private:
     //qreal ellipseMargin = 10.0;
     //qreal penSize = 2.0;
-    QWidget* mWidget;
+    OperationWidget* mWidget;
     QGraphicsProxyWidget* mProxyWidget;
+
+private slots:
+    void onWidgetResized();
 };
 
 

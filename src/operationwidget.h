@@ -98,7 +98,7 @@ public:
         toggleButton = new QPushButton;
         toggleButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
         toggleButton->setCheckable(true);
-        toggleButton->setChecked(true);
+        toggleButton->setChecked(false);
 
         connect(toggleButton, &QPushButton::clicked, this, &OperationWidget::toggleBody);
 
@@ -160,7 +160,7 @@ public:
 
         bodyLayout->addWidget(selectedParameterGroupBox, 0, Qt::AlignTop | Qt::AlignHCenter);
 
-        toggleBody(true);
+        toggleBody(false);
 
         setLayout(mainLayout);
 
@@ -251,7 +251,6 @@ public:
         connect(enableButton, &QPushButton::toggled, this, [=, this](bool checked){
             operation->enable(checked);
             setEnableButtonStyle(checked);
-            emit enableButtonToggled();
         });
     }
 
@@ -268,12 +267,11 @@ public:
             connect(widget, &ParameterWidget<T>::focusIn, this, [=, this](){
                 lastFocusedWidget = widget->lastFocusedWidget();
                 lastFocused = true;
-                emit focusIn(this);
             });
 
-            connect(widget, &ParameterWidget<T>::focusOut, this, [=, this](){
+            /*connect(widget, &ParameterWidget<T>::focusOut, this, [=, this](){
                 emit focusOut(this);
-            });
+            });*/
         }
     }
 
@@ -336,10 +334,10 @@ public:
     }
 
 signals:
-    void enableButtonToggled();
+    //void focusIn(QWidget* widget);
+    //void focusOut(QWidget* widget);
 
-    void focusIn(QWidget* widget);
-    void focusOut(QWidget* widget);
+    void sizeChanged();
 
     void linkWait(Number<float>* number);
     void linkWait(Number<int>* number);
@@ -354,6 +352,12 @@ protected:
     {
         mOpBuilder->close();
         event->accept();
+    }
+
+    void resizeEvent(QResizeEvent* event) override
+    {
+        QWidget::resizeEvent(event);
+        emit sizeChanged();
     }
 
 private:
@@ -483,20 +487,20 @@ private:
         connect(selectedParameterMinLineEdit, &FocusLineEdit::focusIn, this, [=, this](){
             lastFocusedWidget = selectedParameterMinLineEdit;
             lastFocused = true;
-            emit focusIn(this);
+            //emit focusIn(this);
         });
-        connect(selectedParameterMinLineEdit, &FocusLineEdit::focusOut, this, [=, this](){
+        /*connect(selectedParameterMinLineEdit, &FocusLineEdit::focusOut, this, [=, this](){
             emit focusOut(this);
-        });
+        });*/
 
         connect(selectedParameterMaxLineEdit, &FocusLineEdit::focusIn, this, [=, this](){
             lastFocusedWidget = selectedParameterMaxLineEdit;
             lastFocused = true;
-            emit focusIn(this);
+            //emit focusIn(this);
         });
-        connect(selectedParameterMaxLineEdit, &FocusLineEdit::focusOut, this, [=, this](){
+        /*connect(selectedParameterMaxLineEdit, &FocusLineEdit::focusOut, this, [=, this](){
             emit focusOut(this);
-        });
+        });*/
 
         // Title
 
@@ -601,8 +605,6 @@ private slots:
             toggleButton->setStyleSheet("QPushButton{ qproperty-icon: url(:/icons/go-down.png); }");
             resize(headerWidget->size());
         }
-
-        updateGeometry();
     }
 };
 

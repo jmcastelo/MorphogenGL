@@ -49,14 +49,14 @@ GraphWidget::GraphWidget(NodeManager* nodeManager, QWidget *parent) :
 
     //connect(scene, &QGraphicsScene::selectionChanged, this, &GraphWidget::newSelectedNodes);
 
-    setDragMode(QGraphicsView::RubberBandDrag);
+    setDragMode(RubberBandDrag);
     setRubberBandSelectionMode(Qt::ContainsItemShape);
 
-    setOptimizationFlags(QGraphicsView::DontAdjustForAntialiasing | QGraphicsView::DontSavePainterState);
+    setOptimizationFlags(DontAdjustForAntialiasing | DontSavePainterState);
 
     setCacheMode(CacheBackground);
-    //setViewportUpdateMode(BoundingRectViewportUpdate);
-    setViewportUpdateMode(SmartViewportUpdate);
+    setViewportUpdateMode(BoundingRectViewportUpdate);
+    //setViewportUpdateMode(SmartViewportUpdate);
     setRenderHint(QPainter::Antialiasing);
     setTransformationAnchor(AnchorUnderMouse);
     setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
@@ -82,11 +82,16 @@ void GraphWidget::addNewOperationNode()
     QAction* action = qobject_cast<QAction*>(sender());
     QVariant data = action->data();
 
-    QWidget* widget = mNodeManager->addNewOperation();
-    QGraphicsProxyWidget* proxyWidget = scene()->addWidget(widget);
-    Node* node = new Node(widget, proxyWidget);
+    Node* node = new Node(mNodeManager->addNewOperation());
     scene()->addItem(node);
     node->setPos(mapToScene(mapFromGlobal(data.toPoint())));
+
+    //QGraphicsProxyWidget *proxyWidget = scene()->addWidget(mNodeManager->addNewOperation());
+    //proxyWidget->setPos(mapToScene(mapFromGlobal(data.toPoint())));
+
+    /*Node* proxyWidget = new Node(mNodeManager->addNewOperation());
+    scene()->addItem(proxyWidget);
+    proxyWidget->setPos(mapToScene(mapFromGlobal(data.toPoint())));*/
 }
 
 

@@ -20,10 +20,14 @@
 *  along with MorphogenGL.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+
+
 //#include "edge.h"
 #include "node.h"
 //#include "generator.h"
 
+#include <QWidget>
+#include <QPainter>
 /*#include <QGraphicsSceneMouseEvent>
 #include <QPainter>
 #include <QStyleOption>
@@ -34,28 +38,46 @@
 
 
 
-Node::Node(QWidget *widget, QGraphicsProxyWidget* proxyWidget, QGraphicsObject* parent) :
+Node::Node(OperationWidget *widget, QGraphicsItem* parent) :
     QGraphicsObject(parent),
-    mWidget { widget },
-    mProxyWidget { proxyWidget }
+    mWidget { widget }
 {
     setFlags(ItemIsMovable | ItemIsSelectable | ItemSendsGeometryChanges);
+    //setCacheMode(DeviceCoordinateCache);
 
+    connect(mWidget, &OperationWidget::sizeChanged, this, &Node::onWidgetResized);
+
+    mProxyWidget = new QGraphicsProxyWidget;
+    mProxyWidget->setWidget(mWidget);
     mProxyWidget->setParentItem(this);
+}
+
+
+
+void Node::onWidgetResized()
+{
+    prepareGeometryChange();
+    mProxyWidget->setGeometry(mWidget->geometry().toRectF());
+    mProxyWidget->update();
+    update();
 }
 
 
 
 QRectF Node::boundingRect() const
 {
-    return mProxyWidget->boundingRect();
+    //return mProxyWidget->boundingRect();
+    return mWidget->rect().toRectF();
 }
 
 
 
 void Node::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
 {
-    mProxyWidget->paint(painter, option, widget);
+    mProxyWidget->paint(painter, option, mWidget);
+
+    //painter->setPen(Qt::white);
+    //painter->drawRect(boundingRect());
 }
 
 
