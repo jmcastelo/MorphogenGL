@@ -3,9 +3,9 @@
 
 
 
-#include "../parameter.h"
 #include "parameterwidget.h"
 #include "focuswidgets.h"
+#include "../parameters/optionsparameter.h"
 
 #include <QGroupBox>
 #include <QVBoxLayout>
@@ -20,7 +20,7 @@ public:
         ParameterWidgetSignals(parent),
         mOptionsParameter { theOptionsParameter }
     {
-        mGroupBox = new QGroupBox(mOptionsParameter->name());
+        mGroupBox->setTitle(mOptionsParameter->name());
 
         // Set up combo box
 
@@ -43,6 +43,11 @@ public:
     }
 
     QString name() { return mOptionsParameter->name; }
+    void setName(QString theName)
+    {
+        mOptionsParameter->setName(theName);
+        mGroupBox->setTitle(theName);
+    }
 
     void setRow(int i) { mOptionsParameter->setRow(i); }
     void setCol(int i) { mOptionsParameter->setCol(i); }

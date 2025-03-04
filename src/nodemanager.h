@@ -26,7 +26,6 @@
 
 
 #include "imageoperation.h"
-#include "parameter.h"
 #include "seed.h"
 #include "blender.h"
 #include "texformat.h"

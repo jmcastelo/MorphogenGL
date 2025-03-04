@@ -107,8 +107,9 @@ public slots:
     void setupMidi(QString portName, bool open);
     void updateMidiLinks(QString portName, int key, int value);
 
-//protected:
+protected:
     //void resizeEvent(QResizeEvent* event) override;
+    void closeEvent(QCloseEvent* event) override;
 
 private:
     PlotsWidget* plotsWidget;

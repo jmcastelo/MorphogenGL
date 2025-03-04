@@ -120,6 +120,7 @@ protected:
     void drawBackground(QPainter* painter, const QRectF& rect) override;
     void mousePressEvent(QMouseEvent* event) override;
     void mouseMoveEvent(QMouseEvent* event) override;
+    void closeEvent(QCloseEvent* event) override;
 
 private:
     NodeManager* mNodeManager;

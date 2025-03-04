@@ -27,8 +27,6 @@
 
 
 
-#include "operationwidget.h"
-
 #include <QGraphicsItem>
 #include <QGraphicsWidget>
 #include <QGraphicsProxyWidget>
@@ -46,7 +44,7 @@
 
 // Abstract node
 
-class Node : public QGraphicsObject
+class Node : public QGraphicsWidget
 {
     Q_OBJECT
 
@@ -57,8 +55,7 @@ public:
     //bool marked = false;
 
     //Node(GraphWidget* graphWidget, QString name);
-    explicit Node(OperationWidget* widget, QGraphicsItem* parent = nullptr);
-    //~Node();
+    explicit Node(QWidget* widget, QGraphicsItem* parent = nullptr);
 
     //void addEdge(Edge *edge);
     //void removeEdge(Edge *edge);
@@ -68,9 +65,9 @@ public:
 
     //QRectF textBoundingRect() const;
 
-    QRectF boundingRect() const override;
+    //QRectF boundingRect() const override;
     //QPainterPath shape() const override;
-    void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = nullptr) override;
+    //void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = nullptr) override;
 
 //public slots:
     //void setAsOutput();
@@ -78,7 +75,12 @@ public:
     //void copy();
     //void remove();
 
-//protected:
+protected:
+    void resizeEvent(QGraphicsSceneResizeEvent *event) override;
+    QSizeF sizeHint(Qt::SizeHint which, const QSizeF &constraint = QSizeF()) const override;
+    bool eventFilter(QObject *obj, QEvent *event) override;
+    void closeEvent(QCloseEvent* event) override;
+
     //GraphWidget* graph;
     //QVector<Edge*> edgeList;
     //bool menuOpen = false;
@@ -92,11 +94,8 @@ public:
 private:
     //qreal ellipseMargin = 10.0;
     //qreal penSize = 2.0;
-    OperationWidget* mWidget;
+    QWidget* mWidget;
     QGraphicsProxyWidget* mProxyWidget;
-
-private slots:
-    void onWidgetResized();
 };
 
 

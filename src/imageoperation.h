@@ -28,6 +28,9 @@
 
 #include "fbo.h"
 #include "blender.h"
+#include "parameters/uniformparameter.h"
+#include "parameters/uniformmat4parameter.h"
+#include "parameters/optionsparameter.h"
 
 #include <cmath>
 #include <QOpenGLExtraFunctions>
@@ -43,23 +46,6 @@
 #include <QObject>
 
 
-
-template <typename T>
-class Number;
-
-template <class T>
-class OptionsParameter;
-
-template <typename T>
-class UniformParameter;
-
-class UniformMat4Parameter;
-
-enum class UniformMat4Type;
-
-
-
-// Base image operation class
 
 class ImageOperation : protected QOpenGLExtraFunctions
 {
@@ -112,12 +98,6 @@ public:
     void setMat4Uniform(QString name, UniformMat4Type type, QList<float> values);
 
     void setOrthographicProjection(QString name) { fbo->setOrthographic(name); }
-
-    void setFloatUniformParameters(QList<UniformParameter<float>*> theFloatUniformParameters){ floatUniformParameters = theFloatUniformParameters; }
-    void setIntUniformParameters(QList<UniformParameter<int>*> theIntUniformParameters){ intUniformParameters = theIntUniformParameters; }
-    void setUintUniformParameters(QList<UniformParameter<unsigned int>*> theUintUniformParameters){ uintUniformParameters = theUintUniformParameters; }
-    void setGLenumOptionsParameters(QList<OptionsParameter<GLenum>*> theGLenumParameters){ glenumOptionsParameters = theGLenumParameters; }
-    void setMat4UniformParameters(QList<UniformMat4Parameter*> theMat4UniformParameters){ mMat4UniformParameters = theMat4UniformParameters; }
 
     template<typename T>
     void addUniformParameter(UniformParameter<T>* parameter);

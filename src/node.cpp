@@ -38,46 +38,75 @@
 
 
 
-Node::Node(OperationWidget *widget, QGraphicsItem* parent) :
-    QGraphicsObject(parent),
+Node::Node(QWidget *widget, QGraphicsItem* parent) :
+    QGraphicsWidget(parent),
     mWidget { widget }
 {
     setFlags(ItemIsMovable | ItemIsSelectable | ItemSendsGeometryChanges);
-    //setCacheMode(DeviceCoordinateCache);
+    setCacheMode(DeviceCoordinateCache);
 
-    connect(mWidget, &OperationWidget::sizeChanged, this, &Node::onWidgetResized);
+    setPreferredSize(mWidget->size());
 
-    mProxyWidget = new QGraphicsProxyWidget;
+    mWidget->installEventFilter(this);
+
+    mProxyWidget = new QGraphicsProxyWidget(this);
     mProxyWidget->setWidget(mWidget);
-    mProxyWidget->setParentItem(this);
+    mProxyWidget->setPos(0, 0);
+    mProxyWidget->setGeometry(rect());
 }
 
 
 
-void Node::onWidgetResized()
+void Node::closeEvent(QCloseEvent* event)
 {
-    prepareGeometryChange();
-    mProxyWidget->setGeometry(mWidget->geometry().toRectF());
-    mProxyWidget->update();
-    update();
+    mWidget->close();
+    event->accept();
 }
 
 
 
-QRectF Node::boundingRect() const
+void Node::resizeEvent(QGraphicsSceneResizeEvent *event)
 {
-    //return mProxyWidget->boundingRect();
-    return mWidget->rect().toRectF();
+    QGraphicsWidget::resizeEvent(event);
+
+    mProxyWidget->setPos(0, 0);
+    mProxyWidget->setGeometry(rect());
 }
 
 
 
-void Node::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
+QSizeF Node::sizeHint(Qt::SizeHint which, const QSizeF &constraint) const
 {
-    mProxyWidget->paint(painter, option, mWidget);
+    if (which == Qt::PreferredSize)
+    {
+        return preferredSize();
+    }
+    return QGraphicsWidget::sizeHint(which, constraint);
+}
 
-    //painter->setPen(Qt::white);
-    //painter->drawRect(boundingRect());
+
+
+bool Node::eventFilter(QObject *obj, QEvent *event)
+{
+    if (obj == mProxyWidget->widget() && event->type() == QEvent::Resize)
+    {
+        QResizeEvent *resizeEvent = static_cast<QResizeEvent*>(event);
+        QSize newSize = resizeEvent->size();
+
+        // Update the QGraphicsWidget's preferred size.
+        setPreferredSize(newSize);
+
+        // Update the proxy's geometry to fill the QGraphicsWidget.
+        setGeometry(QRectF(pos(), newSize));
+
+        mProxyWidget->setPos(0, 0);
+        mProxyWidget->setGeometry(rect());
+
+        // Notify the layout system of the change.
+        updateGeometry();
+        return false; // Continue processing, unless you want to block further handling.
+    }
+    return QGraphicsWidget::eventFilter(obj, event);
 }
 
 

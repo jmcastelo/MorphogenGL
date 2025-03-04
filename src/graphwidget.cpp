@@ -56,12 +56,13 @@ GraphWidget::GraphWidget(NodeManager* nodeManager, QWidget *parent) :
 
     setCacheMode(CacheBackground);
     setViewportUpdateMode(BoundingRectViewportUpdate);
-    //setViewportUpdateMode(SmartViewportUpdate);
-    setRenderHint(QPainter::Antialiasing);
+    //setViewportUpdateMode(FullViewportUpdate);
+    setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform);
     setTransformationAnchor(AnchorUnderMouse);
     setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    setFocusPolicy(Qt::NoFocus);
+    //setFocusPolicy(Qt::NoFocus);
+    setFocusPolicy(Qt::StrongFocus);
 
     scale(qreal(1.0), qreal(1.0));
     center = sceneRect().center();
@@ -93,6 +94,20 @@ void GraphWidget::addNewOperationNode()
     scene()->addItem(proxyWidget);
     proxyWidget->setPos(mapToScene(mapFromGlobal(data.toPoint())));*/
 }
+
+
+
+void GraphWidget::closeEvent(QCloseEvent* event)
+{
+    const QList<QGraphicsItem*> items = scene()->items();
+
+    for (QGraphicsItem* item : items)
+        if (QGraphicsWidget* node = qgraphicsitem_cast<QGraphicsWidget*>(item))
+            node->close();
+
+    event->accept();
+}
+
 
 
 /*void GraphWidget::closeWidgets()

@@ -60,7 +60,11 @@ HEADERS += \
     src/operationbuilder.h \
     src/operationwidget.h \
     src/overlay.h \
-    src/parameter.h \
+    src/parameters/number.h \
+    src/parameters/optionsparameter.h \
+    src/parameters/parameter.h \
+    src/parameters/uniformmat4parameter.h \
+    src/parameters/uniformparameter.h \
     src/plotswidget.h \
     src/recorder.h \
     src/rgbwidget.h \
@@ -68,6 +72,7 @@ HEADERS += \
     src/texformat.h \
     src/timerthread.h \
     src/widgets/focuswidgets.h \
+    src/widgets/layoutformat.h \
     src/widgets/optionswidget.h \
     src/widgets/parameterwidget.h \
     src/widgets/uniformmat4widget.h \
@@ -95,9 +100,15 @@ SOURCES += \
     src/node.cpp \
     src/nodemanager.cpp \
     src/operationbuilder.cpp \
+    src/operationwidget.cpp \
     src/overlay.cpp \
+    src/parameters/optionsparameter.cpp \
+    src/parameters/uniformmat4parameter.cpp \
+    src/parameters/uniformparameter.cpp \
     src/plotswidget.cpp \
     src/recorder.cpp \
     src/rgbwidget.cpp \
     src/seed.cpp \
-    src/timerthread.cpp
+    src/timerthread.cpp \
+    src/widgets/uniformmat4widget.cpp \
+    src/widgets/uniformwidget.cpp

@@ -20,8 +20,9 @@
 *  along with MorphogenGL.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+
+
 #include "imageoperation.h"
-#include "parameter.h"
 
 
 
@@ -116,7 +117,7 @@ void ImageOperation::setup(QString theVertexShader, QString theFragmentShader)
 
 
 template<>
-void ImageOperation::addUniformParameter(UniformParameter<float>* parameter)
+void ImageOperation::addUniformParameter<float>(UniformParameter<float>* parameter)
 {
     floatUniformParameters.append(parameter);
 }
@@ -124,7 +125,7 @@ void ImageOperation::addUniformParameter(UniformParameter<float>* parameter)
 
 
 template<>
-void ImageOperation::addUniformParameter(UniformParameter<int>* parameter)
+void ImageOperation::addUniformParameter<int>(UniformParameter<int>* parameter)
 {
     intUniformParameters.append(parameter);
 }
@@ -132,7 +133,7 @@ void ImageOperation::addUniformParameter(UniformParameter<int>* parameter)
 
 
 template<>
-void ImageOperation::addUniformParameter(UniformParameter<unsigned int>* parameter)
+void ImageOperation::addUniformParameter<unsigned int>(UniformParameter<unsigned int>* parameter)
 {
     uintUniformParameters.append(parameter);
 }
@@ -148,7 +149,7 @@ QList<UniformParameter<float>*> ImageOperation::uniformParameters<float>()
 
 
 template<>
-QList<UniformParameter<int>*> ImageOperation::uniformParameters()
+QList<UniformParameter<int>*> ImageOperation::uniformParameters<int>()
 {
     return intUniformParameters;
 }
@@ -156,7 +157,7 @@ QList<UniformParameter<int>*> ImageOperation::uniformParameters()
 
 
 template<>
-QList<UniformParameter<unsigned int>*> ImageOperation::uniformParameters()
+QList<UniformParameter<unsigned int>*> ImageOperation::uniformParameters<unsigned int>()
 {
     return uintUniformParameters;
 }
@@ -164,7 +165,7 @@ QList<UniformParameter<unsigned int>*> ImageOperation::uniformParameters()
 
 
 template<>
-QList<OptionsParameter<GLenum>*> ImageOperation::optionsParameters()
+QList<OptionsParameter<GLenum>*> ImageOperation::optionsParameters<GLenum>()
 {
     return glenumOptionsParameters;
 }

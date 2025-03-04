@@ -358,5 +358,7 @@ void MainWindow::closeEvent(QCloseEvent* event)
 
     midiWidget->close();
 
+    controlWidget->close();
+
     event->accept();
 }

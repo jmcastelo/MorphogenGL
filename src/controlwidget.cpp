@@ -181,6 +181,14 @@ ControlWidget::~ControlWidget()
 
 
 
+void ControlWidget::closeEvent(QCloseEvent* event)
+{
+    graphWidget->close();
+    event->accept();
+}
+
+
+
 /*void ControlWidget::resizeEvent(QResizeEvent* event)
 {
     QWidget::resizeEvent(event);

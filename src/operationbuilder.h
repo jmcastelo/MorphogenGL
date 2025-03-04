@@ -3,8 +3,7 @@
 
 
 
-#include "imageoperation.h"
-#include "parameter.h"
+#include "parameters/uniformparameter.h"
 
 #include <QWidget>
 #include <QOpenGLExtraFunctions>
@@ -17,6 +16,8 @@
 #include <QListWidget>
 
 
+
+class ImageOperation;
 
 class OperationWidget;
 

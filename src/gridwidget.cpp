@@ -11,10 +11,11 @@ GridWidget::GridWidget(QWidget *parent) :
     QWidget{parent}
 {
     gridLayout = new QGridLayout;
+    gridLayout->setSizeConstraint(QLayout::SetMinAndMaxSize);
     gridLayout->setContentsMargins(margin, margin, margin, margin);
     gridLayout->setSpacing(spacing);
 
-    setAcceptDrops(true);
+    setAcceptDrops(false);
     setLayout(gridLayout);
 }
 
@@ -47,6 +48,9 @@ void GridWidget::clear()
 void GridWidget::optimizeLayout()
 {
     // Obtain widget's minimum width and height
+
+    minWidth = 0;
+    minHeight = 0;
 
     for (int index = 0; index < gridLayout->count(); index++)
     {
@@ -88,32 +92,38 @@ void GridWidget::optimizeLayout()
 
     // Compute new positions (row, col) considering the spans
 
-    for (int col = 0; col < gridLayout->columnCount(); col++)
+    QList<QLayoutItem*> computedItems;
+
+    for (int col = 0; col <= getMaxCol(); col++)
     {
         int nextRow = 0;
 
-        for (int row = 0; row < gridLayout->rowCount(); row++)
+        for (int row = 0; row <= getMaxRow(); row++)
         {
             QLayoutItem* item = gridLayout->itemAtPosition(row, col);
-            if (item)
+            if (item && !computedItems.contains(item))
             {
                 itemCoords[item][0] = (row <= nextRow) ? nextRow : row;
                 nextRow = itemCoords[item][0] + itemCoords[item][2];
+                computedItems.append(item);
             }
         }
     }
 
-    for (int row = 0; row < gridLayout->rowCount(); row++)
+    computedItems.clear();
+
+    for (int row = 0; row <= getMaxRow(); row++)
     {
         int nextCol = 0;
 
-        for (int col = 0; col < gridLayout->rowCount(); col++)
+        for (int col = 0; col <= getMaxCol(); col++)
         {
             QLayoutItem* item = gridLayout->itemAtPosition(row, col);
-            if (item)
+            if (item && !computedItems.contains(item))
             {
                 itemCoords[item][1] = (col <= nextCol) ? nextCol : col;
                 nextCol = itemCoords[item][1] + itemCoords[item][3];
+                computedItems.append(item);
             }
         }
     }
@@ -124,6 +134,7 @@ void GridWidget::optimizeLayout()
     {
         gridLayout->removeItem(item);
         gridLayout->addItem(item, coords[0], coords[1], coords[2], coords[3], Qt::AlignCenter);
+        emit itemRowColChanged(item->widget(), coords[0], coords[1]);
     }
 
     setRowColSizes();

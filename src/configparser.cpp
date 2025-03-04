@@ -21,7 +21,9 @@
 */
 
 #include "configparser.h"
-#include "parameter.h"
+#include "parameters/uniformparameter.h"
+#include "parameters/number.h"
+
 #include <vector>
 #include <QFile>
 
@@ -62,17 +64,11 @@ void ConfigurationParser::write()
 
     stream.writeStartElement("nodes");
 
-    QMap<QUuid, Seed*>::const_iterator i = generator->getSeeds().constBegin();
-    while (i != generator->getSeeds().constEnd())
-    {
-        writeSeedNode(i.key(), i.value());
-        i++;
-    }
+    for (auto [id, seed] : generator->getSeeds().asKeyValueRange())
+        writeSeedNode(id, seed);
 
     foreach (ImageOperationNode* node, generator->getOperationNodes())
-    {
         writeOperationNode(node);
-    }
 
     stream.writeEndElement();
 
@@ -123,12 +119,12 @@ void ConfigurationParser::writeOperationNode(ImageOperationNode* node)
     stream.writeAttribute("name", node->operation->name());
     stream.writeAttribute("enabled", QString::number(node->operation->isEnabled()));
 
-    for (auto parameter: node->operation->uniformParameters<float>())
+    foreach (auto parameter, node->operation->uniformParameters<float>())
     {
         stream.writeStartElement("parameter");
         stream.writeAttribute("name", parameter->name());
         stream.writeAttribute("type", "float");
-        for (auto number: parameter->numbers())
+        foreach (auto number, parameter->numbers())
         {
             stream.writeStartElement("number");
             stream.writeCharacters(QString::number(number->value()));
@@ -137,12 +133,12 @@ void ConfigurationParser::writeOperationNode(ImageOperationNode* node)
         stream.writeEndElement();
     }
 
-    for (auto parameter: node->operation->uniformParameters<int>())
+    foreach (auto parameter, node->operation->uniformParameters<int>())
     {
         stream.writeStartElement("parameter");
         stream.writeAttribute("name", parameter->name());
         stream.writeAttribute("type", "int");
-        for (auto number: parameter->numbers())
+        foreach (auto number, parameter->numbers())
         {
             stream.writeStartElement("number");
             stream.writeCharacters(QString::number(number->value()));
@@ -151,12 +147,12 @@ void ConfigurationParser::writeOperationNode(ImageOperationNode* node)
         stream.writeEndElement();
     }
 
-    for (auto parameter: node->operation->uniformParameters<unsigned int>())
+    foreach (auto parameter, node->operation->uniformParameters<unsigned int>())
     {
         stream.writeStartElement("parameter");
         stream.writeAttribute("name", parameter->name());
         stream.writeAttribute("type", "unsigned int");
-        for (auto number: parameter->numbers())
+        foreach (auto number, parameter->numbers())
         {
             stream.writeStartElement("number");
             stream.writeCharacters(QString::number(number->value()));
