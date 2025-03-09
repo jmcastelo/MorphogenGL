@@ -11,7 +11,9 @@
 
 template <typename T>
 UniformParameter<T>::UniformParameter(QString theName, QString theUniformName, int theUniformType, int numItems, bool isEditable, QList<T> theValues, T theMin, T theMax, T theInf, T theSup, ImageOperation* theOperation) :
-    Parameter(theName, theUniformName, theUniformType, isEditable, theOperation),
+    Parameter(theName, isEditable, theOperation),
+    mUniformName { theUniformName },
+    mUniformType { theUniformType },
     nItems { numItems }
 {
     for (T value : theValues)
@@ -28,7 +30,9 @@ UniformParameter<T>::UniformParameter(QString theName, QString theUniformName, i
 
 template <typename T>
 UniformParameter<T>::UniformParameter(QString theName, QString theUniformName, int theUniformType, int numItems, bool isEditable, QList<QPair<QUuid, T>> theIdValuePairs, T theMin, T theMax, T theInf, T theSup, ImageOperation* theOperation) :
-    Parameter(theName, theUniformName, theUniformType, isEditable, theOperation),
+    Parameter(theName, isEditable, theOperation),
+    mUniformName { theUniformName },
+    mUniformType { theUniformType },
     nItems { numItems }
 {
     foreach (auto pair, theIdValuePairs)
@@ -56,6 +60,8 @@ UniformParameter<T>::UniformParameter(const UniformParameter<T>& parameter) :
     for (int i = 0; i < mNumbers.size(); i++)
         connect(mNumbers[i], &NumberSignals::valueChanged, this, [=, this](QVariant value){ emit valueChanged(i, value); });
 
+    mUniformName = parameter.mUniformName;
+    mUniformType = parameter.mUniformType;
     nItems = parameter.nItems;
 }
 
@@ -66,6 +72,13 @@ UniformParameter<T>::~UniformParameter()
 {
     qDeleteAll(mNumbers);
 }
+
+
+template <typename T>
+QString UniformParameter<T>::uniformName() { return mUniformName; }
+
+template <typename T>
+int UniformParameter<T>::uniformType() { return mUniformType; }
 
 
 

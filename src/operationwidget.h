@@ -152,6 +152,7 @@ private slots:
     void updateWidgetRowCol(QWidget* widget, int row, int col);
     void toggleBody(bool visible);
     void toggleEdit(bool state);
+    void setEditableWidgets(bool state);
 };
 
 

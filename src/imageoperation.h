@@ -50,7 +50,7 @@
 class ImageOperation : protected QOpenGLExtraFunctions
 {
 public:
-    ImageOperation(QString theName, bool on, QOpenGLContext* mainContext);
+    ImageOperation(QString theName, QOpenGLContext* mainContext);
 
     ImageOperation(const ImageOperation& operation);
 
@@ -113,9 +113,11 @@ public:
 
 private:
     QString mName;
+
     QString vertexShader;
     QString fragmentShader;
-    bool enabled;
+
+    bool enabled = false;
     bool noParameters = false;
     bool blenderEnabled = false;
     bool blitEnabled = false;

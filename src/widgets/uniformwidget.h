@@ -12,6 +12,7 @@
 #include <QGridLayout>
 #include <QStackedLayout>
 #include <QGroupBox>
+#include <QScrollBar>
 
 
 
@@ -29,6 +30,8 @@ public:
     void setInf(T theInf);
     void setSup(T theSup);
 
+    bool isEditable();
+
     void setRow(int i);
     void setCol(int i);
 
@@ -36,14 +39,18 @@ public:
 
     void setCurrentStack(int index);
 
-    LayoutFormat layoutFormat();
-    void setLayoutFormat(LayoutFormat format);
+    int layoutFormatIndex();
+    void setLayoutFormatIndex(int index);
+
+    QList<QString> availableLayoutFormats();
 
 private:
     UniformParameter<T>* mUniformParameter;
     LayoutFormat mLayoutFormat;
     QList<FocusLineEdit*> mLineEdits;
     QStackedLayout* mStackedLayout;
+    QScrollBar* mScrollBar;
+    QList<LayoutFormat> mAvailFormats;
     QList<QWidget*> mItemWidgets;
     QWidget* mColWidget;
     QWidget* mRowWidget;
@@ -54,6 +61,7 @@ private:
     void clearLayouts();
     void removeLayout(QLayout* layout);
     void setDefaultLayoutFormat();
+    void setLayoutFormat(LayoutFormat format);
 };
 
 

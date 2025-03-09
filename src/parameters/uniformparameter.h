@@ -20,6 +20,9 @@ public:
 
     ~UniformParameter();
 
+    QString uniformName();
+    int uniformType();
+
     T value(int i);
     void setValue(int i, T theValue);
 
@@ -47,6 +50,8 @@ public:
     QPair<int, int> colsRowsPerItem();
 
 private:
+    QString mUniformName;
+    int mUniformType;
     QList<Number<T>*> mNumbers;
     int nItems;
 };

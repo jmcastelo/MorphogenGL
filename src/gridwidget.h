@@ -33,19 +33,32 @@ protected:
 
 private:
     QGridLayout* gridLayout;
+
     int margin = 20;
     int spacing = 10;
-    int minWidth, minHeight;
+
+    int minWidgetWidth = -1;
+    int minWidgetHeight = -1;
+
     QMap<QLayoutItem*, QList<int>> itemCoords;
+    QMap<QWidget*, QList<int>> widgetCoords;
+
     QLayoutItem* sourceItem = nullptr;
     QPoint sourceOffset;
     QSize sourceSize;
     QPoint dragPoint;
 
+    void computeMinWidgetSize();
+
+    int getRowSpan(QWidget* widget);
+    int getColSpan(QWidget* widget);
+
     void setRowColSizes();
 
     int getMaxRow();
     int getMaxCol();
+
+    void lowestFreeCell(int& lowestRow, int& lowestCol, int row, int col);
 
     int countItemsInRow(int row, int colMax);
     int countItemsInCol(int col, int rowCount);

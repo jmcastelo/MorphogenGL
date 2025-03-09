@@ -1,5 +1,5 @@
 #include "operationbuilder.h"
-#include "operationwidget.h"
+#include "imageoperation.h"
 
 #include <QTabWidget>
 #include <QFileDialog>
@@ -10,11 +10,10 @@
 
 
 
-OperationBuilder::OperationBuilder(ImageOperation *operation, OperationWidget *opWidget, QWidget *parent) :
+OperationBuilder::OperationBuilder(ImageOperation *operation, QWidget *parent) :
     QWidget {parent},
     QOpenGLExtraFunctions(operation->context()),
-    mOperation { operation },
-    mOpWidget { opWidget }
+    mOperation { operation }
 {
     mContext = new QOpenGLContext();
     mContext->setFormat(mOperation->context()->format());
@@ -135,6 +134,8 @@ void OperationBuilder::parseShaders()
     {
         parseAttributes();
         parseUniforms();
+
+        emit shadersParsed();
     }
 }
 
@@ -142,7 +143,7 @@ void OperationBuilder::parseShaders()
 
 void OperationBuilder::parseUniforms()
 {
-    newParamMap.clear();
+    newParamList.clear();
 
     mProgram->bind();
 
@@ -163,45 +164,50 @@ void OperationBuilder::parseUniforms()
         int uniformType = values.at(1);
         int numItems = values.at(2);
 
-        if (!paramMap.contains(uniformName))
+        if (!paramList.contains(uniformName))
         {
             addUniformParameter(uniformName, uniformType, numItems);
         }
-        else if (paramMap[uniformName]->uniformType() != uniformType || paramMap[uniformName]->numItems() != numItems)
+        else if (fParamMap.contains(uniformName) && (fParamMap[uniformName]->uniformType() != uniformType || fParamMap[uniformName]->numItems() != numItems))
         {
-            if (fParamMap.contains(uniformName))
-                fParamMap.remove(uniformName);
-            else if (iParamMap.contains(uniformName))
-                iParamMap.remove(uniformName);
-            else if (uiParamMap.contains(uniformName))
-                uiParamMap.remove(uniformName);
-
-            paramMap.remove(uniformName);
-
+            fParamMap.remove(uniformName);
+            paramList.removeOne(uniformName);
+            addUniformParameter(uniformName, uniformType, numItems);
+        }
+        else if (iParamMap.contains(uniformName) && (iParamMap[uniformName]->uniformType() != uniformType || iParamMap[uniformName]->numItems() != numItems))
+        {
+            iParamMap.remove(uniformName);
+            paramList.removeOne(uniformName);
+            addUniformParameter(uniformName, uniformType, numItems);
+        }
+        else if (uiParamMap.contains(uniformName) && (uiParamMap[uniformName]->uniformType() != uniformType || uiParamMap[uniformName]->numItems() != numItems))
+        {
+            uiParamMap.remove(uniformName);
+            paramList.removeOne(uniformName);
             addUniformParameter(uniformName, uniformType, numItems);
         }
         else
         {
-            newParamMap.insert(uniformName, paramMap[uniformName]);
+            newParamList.append(uniformName);
         }
     }
 
     mProgram->release();
 
-    for (auto [uniformName, parameter] : paramMap.asKeyValueRange())
+    foreach (QString name, paramList)
     {
-        if (!newParamMap.contains(uniformName))
+        if (!newParamList.contains(name))
         {
-            if (fParamMap.contains(uniformName))
-                fParamMap.remove(uniformName);
-            else if (iParamMap.contains(uniformName))
-                iParamMap.remove(uniformName);
-            else if (uiParamMap.contains(uniformName))
-                uiParamMap.remove(uniformName);
+            if (fParamMap.contains(name))
+                fParamMap.remove(name);
+            else if (iParamMap.contains(name))
+                iParamMap.remove(name);
+            else if (uiParamMap.contains(name))
+                uiParamMap.remove(name);
         }
     }
 
-    paramMap = newParamMap;
+    paramList = newParamList;
 
     mOperation->clearParameters();
 
@@ -211,8 +217,6 @@ void OperationBuilder::parseUniforms()
         mOperation->addUniformParameter<int>(parameter);
     for (auto [uniformName, parameter] : uiParamMap.asKeyValueRange())
         mOperation->addUniformParameter<unsigned int>(parameter);
-
-    mOpWidget->recreate(mOperation, false);
 }
 
 
@@ -309,22 +313,9 @@ void OperationBuilder::addUniformParameter(QString uniformName, int uniformType,
     {
         parameter->setUpdateOperation(false);
 
-        parameter->setRow(maxRow() + 1);
+        parameter->setRow(0);
         parameter->setCol(0);
 
-        newParamMap.insert(uniformName, parameter);
+        newParamList.append(uniformName);
     }
-}
-
-
-
-int OperationBuilder::maxRow()
-{
-    int row = -1;
-
-    for (auto [uniformName, parameter] : newParamMap.asKeyValueRange())
-        if (parameter->row() > row)
-            row = parameter->row();
-
-    return row;
 }

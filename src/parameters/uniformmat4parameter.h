@@ -54,6 +54,8 @@ public:
     QList<QString> numberNames();
 
 private:
+    QString mUniformName;
+    int mUniformType = GL_FLOAT_MAT4;
     UniformMat4Type mType;
     QList<Number<float>*> mNumbers;
     QList<QString> mNumberNames;

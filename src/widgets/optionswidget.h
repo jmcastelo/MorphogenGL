@@ -21,6 +21,10 @@ public:
         mOptionsParameter { theOptionsParameter }
     {
         mGroupBox->setTitle(mOptionsParameter->name());
+        mGroupBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+        mGroupBox->setStyleSheet("QGroupBox::title { subcontrol-origin: margin; subcontrol-position: top center; font-size: 18pt; margin: 7px; }");
+        mGroupBox->setCheckable(false);
+        mGroupBox->setVisible(mOptionsParameter->editable());
 
         // Set up combo box
 
@@ -53,6 +57,10 @@ public:
     void setCol(int i) { mOptionsParameter->setCol(i); }
 
     QGroupBox* widget() { return mGroupBox; }
+    void setCheckable(bool checkable) { mGroupBox->setCheckable(checkable); }
+
+    void toggleVisibility(bool visible) { mGroupBox->setVisible(visible); }
+    void setDefaultVisibility() { mGroupBox->setVisible(mOptionsParameter->editable()); }
 
 private:
     OptionsParameter<T>* mOptionsParameter;

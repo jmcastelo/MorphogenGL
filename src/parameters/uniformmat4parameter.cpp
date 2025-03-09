@@ -7,7 +7,8 @@
 
 
 UniformMat4Parameter::UniformMat4Parameter(QString theName, QString theUniformName, bool isEditable, UniformMat4Type theMat4Type, QList<float> theValues, float theMin, float theMax, float theInf, float theSup, ImageOperation* theOperation) :
-    Parameter(theName, theUniformName, GL_FLOAT_MAT4, isEditable, theOperation),
+    Parameter(theName, isEditable, theOperation),
+mUniformName { theUniformName },
     mType { theMat4Type }
 {
     if (mType == UniformMat4Type::TRANSLATION)
@@ -44,7 +45,8 @@ UniformMat4Parameter::UniformMat4Parameter(QString theName, QString theUniformNa
 
 
 UniformMat4Parameter::UniformMat4Parameter(QString theName, QString theUniformName, bool isEditable, UniformMat4Type theMat4Type, QList<QPair<QUuid, float>> theIdValuePairs, float theMin, float theMax, float theInf, float theSup, ImageOperation* theOperation) :
-    Parameter(theName, theUniformName, GL_FLOAT_MAT4, isEditable, theOperation),
+    Parameter(theName, isEditable, theOperation),
+    mUniformName { theUniformName },
     mType { theMat4Type }
 {
     if (mType == UniformMat4Type::TRANSLATION)
@@ -83,6 +85,7 @@ UniformMat4Parameter::UniformMat4Parameter(QString theName, QString theUniformNa
 UniformMat4Parameter::UniformMat4Parameter(const UniformMat4Parameter& parameter) :
     Parameter(parameter)
 {
+    mUniformName = parameter.mUniformName;
     mNumberNames = parameter.mNumberNames;
 
     for (const Number<float>* number : parameter.mNumbers)

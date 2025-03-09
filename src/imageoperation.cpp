@@ -28,10 +28,9 @@
 
 // Image operation base class
 
-ImageOperation::ImageOperation(QString theName, bool on, QOpenGLContext* mainContext) :
+ImageOperation::ImageOperation(QString theName, QOpenGLContext* mainContext) :
     QOpenGLExtraFunctions(mainContext),
     mName { theName },
-    enabled { on },
     mContext { mainContext }
 {
     blender = new Blender(":/shaders/screen.vert", ":/shaders/blend.frag", mContext);

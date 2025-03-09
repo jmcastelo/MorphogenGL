@@ -54,12 +54,12 @@ signals:
 
 class Parameter : public ParameterSignals
 {
+    Q_OBJECT
+
 public:
-    Parameter(QString theName, QString theUniformName, int theUniformType, bool isEditable, ImageOperation* theOperation) :
+    Parameter(QString theName, bool isEditable, ImageOperation* theOperation) :
         ParameterSignals(),
         mName { theName },
-        mUniformName { theUniformName },
-        mUniformType { theUniformType },
         mEditable { isEditable },
         mOperation { theOperation }
     {}
@@ -68,16 +68,11 @@ public:
         ParameterSignals()
     {
         mName = parameter.mName;
-        mUniformName = parameter.mUniformName;
-        mUniformType = parameter.mUniformType;
         mEditable = parameter.mEditable;
     }
 
     QString name() { return mName; }
     void setName(QString theName) { mName = theName; }
-
-    QString uniformName() { return mUniformName; }
-    int uniformType() { return mUniformType; }
 
     bool editable() { return mEditable; }
 
@@ -93,10 +88,11 @@ public:
 
     void setOperation(ImageOperation* operation) { mOperation = operation; }
 
+public slots:
+    void setEditable(bool set) { mEditable = set; }
+
 protected:
     QString mName;
-    QString mUniformName;
-    int mUniformType;
     bool mEditable;
     int mRow, mCol;
     bool mUpdate = true;

@@ -10,6 +10,8 @@ UniformParameterWidget<T>::UniformParameterWidget(UniformParameter<T>* theUnifor
     ParameterWidget<T>(parent),
     mUniformParameter { theUniformParameter }
 {
+    ParameterWidget<T>::mParameter = mUniformParameter;
+
     ParameterWidget<T>::mGroupBox->setTitle(mUniformParameter->name());
 
     // Set up line edits
@@ -37,9 +39,17 @@ UniformParameterWidget<T>::UniformParameterWidget(UniformParameter<T>* theUnifor
     ParameterWidget<T>::mLastFocusedWidget = mLineEdits[0];
     mLastIndex = 0;
 
-    // Set up layouts
+    // Set up widgets and layouts
 
     mStackedLayout = new QStackedLayout;
+
+    mScrollBar = new QScrollBar(Qt::Horizontal);
+    mScrollBar->setFocusPolicy(Qt::ClickFocus);
+    mScrollBar->setVisible(false);
+
+    QVBoxLayout* layout = new QVBoxLayout;
+    layout->addLayout(mStackedLayout);
+    layout->addWidget(mScrollBar);
 
     mColWidget = new QWidget;
     mColWidget->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
@@ -52,7 +62,8 @@ UniformParameterWidget<T>::UniformParameterWidget(UniformParameter<T>* theUnifor
 
     setItemsLayouts();
     setDefaultLayoutFormat();
-    ParameterWidget<T>::mGroupBox->setLayout(mStackedLayout);
+    ParameterWidget<T>::mGroupBox->setLayout(layout);
+    ParameterWidget<T>::mGroupBox->setVisible(mUniformParameter->editable());
 
     // Connections
 
@@ -86,6 +97,8 @@ UniformParameterWidget<T>::UniformParameterWidget(UniformParameter<T>* theUnifor
             mLineEdits[i]->setCursorPosition(0);
         });
     }
+
+    ParameterWidget<T>::connect(mScrollBar, &QScrollBar::valueChanged, mStackedLayout, &QStackedLayout::setCurrentIndex);
 }
 
 
@@ -117,6 +130,11 @@ void UniformParameterWidget<T>::setSup(T theSup) { mUniformParameter->setSup(the
 
 
 template <typename T>
+bool UniformParameterWidget<T>::isEditable(){ return mUniformParameter->editable(); }
+
+
+
+template <typename T>
 void UniformParameterWidget<T>::setRow(int i) { mUniformParameter->setRow(i); }
 
 template <typename T>
@@ -139,7 +157,40 @@ void UniformParameterWidget<T>::setCurrentStack(int index)
 
 
 template <typename T>
-LayoutFormat UniformParameterWidget<T>::layoutFormat() { return mLayoutFormat; }
+int UniformParameterWidget<T>::layoutFormatIndex() { return mAvailFormats.indexOf(mLayoutFormat); }
+
+
+
+template <typename T>
+QList<QString> UniformParameterWidget<T>::availableLayoutFormats()
+{
+    QList<QString> formats;
+
+    foreach (auto format, mAvailFormats)
+    {
+        if (format == LayoutFormat::Column)
+            formats.append("Column");
+        else if (format == LayoutFormat::Row)
+            formats.append("Row");
+        else if (format == LayoutFormat::Grid)
+            formats.append("Grid");
+        else if (format == LayoutFormat::Stacked)
+            formats.append("Stacked");
+    }
+
+    return formats;
+}
+
+
+
+template <typename T>
+void UniformParameterWidget<T>::setLayoutFormatIndex(int index)
+{
+    if (index >= 0 && index < mAvailFormats.size())
+        setLayoutFormat(mAvailFormats.at(index));
+}
+
+
 
 template <typename T>
 void UniformParameterWidget<T>::setLayoutFormat(LayoutFormat format)
@@ -164,6 +215,7 @@ void UniformParameterWidget<T>::setLayoutFormat(LayoutFormat format)
 
         mColWidget->setLayout(gridLayout);
         mStackedLayout->addWidget(mColWidget);
+        mScrollBar->setVisible(false);
     }
     else if (format == LayoutFormat::Row)
     {
@@ -181,6 +233,7 @@ void UniformParameterWidget<T>::setLayoutFormat(LayoutFormat format)
 
         mRowWidget->setLayout(gridLayout);
         mStackedLayout->addWidget(mRowWidget);
+        mScrollBar->setVisible(false);
     }
     else if (format == LayoutFormat::Grid)
     {
@@ -209,11 +262,16 @@ void UniformParameterWidget<T>::setLayoutFormat(LayoutFormat format)
 
         mGridWidget->setLayout(gridLayout);
         mStackedLayout->addWidget(mGridWidget);
+        mScrollBar->setVisible(false);
     }
     else if (format == LayoutFormat::Stacked)
     {
         foreach (QWidget* widget, mItemWidgets)
-        mStackedLayout->addWidget(widget);
+            mStackedLayout->addWidget(widget);
+
+        mScrollBar->setRange(0, mItemWidgets.size() - 1);
+        mScrollBar->setValue(0);
+        mScrollBar->setVisible(true);
     }
 
     mStackedLayout->setCurrentIndex(0);
@@ -260,9 +318,19 @@ void UniformParameterWidget<T>::setItemsLayouts()
             QWidget* widget = new QWidget;
             widget->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
             widget->setLayout(itemGridLayout);
+
             mItemWidgets.append(widget);
         }
     }
+
+    // Allow specific layout formats depending on the number of item widgets
+
+    mAvailFormats.clear();
+
+    if (mItemWidgets.size() == 2)
+        mAvailFormats = QList<LayoutFormat>({ LayoutFormat::Column, LayoutFormat::Row, LayoutFormat::Stacked });
+    else if (mItemWidgets.size() > 2)
+        mAvailFormats = QList<LayoutFormat>({ LayoutFormat::Column, LayoutFormat::Row, LayoutFormat::Grid, LayoutFormat::Stacked });
 }
 
 
@@ -317,8 +385,9 @@ void UniformParameterWidget<T>::setDefaultLayoutFormat()
     else if (colsRowsPerItem.second <= 1)
     {
         // Multiple items with one row
-        if (colsRowsPerItem.first <= 1)
+        if (colsRowsPerItem.first <= 1 || colsRowsPerItem.first < mUniformParameter->numItems())
             // Multiple items with one row and one column
+            // Multiple items with one row and less columns per item than items
             mLayoutFormat = LayoutFormat::Grid;
         else
             // Multiple items with one row and more than one column

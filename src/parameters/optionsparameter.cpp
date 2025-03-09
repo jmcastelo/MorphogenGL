@@ -8,7 +8,7 @@
 
 template <typename T>
 OptionsParameter<T>::OptionsParameter(QString theName, bool isEditable, QList<QString> theValueNames, QList<T> theValues, T theValue, ImageOperation* theOperation) :
-    Parameter(theName, "", 0, isEditable, theOperation),
+    Parameter(theName, isEditable, theOperation),
     mValueNames { theValueNames },
     mValues { theValues },
     mCurrentValue { theValue }

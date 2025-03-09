@@ -9,6 +9,8 @@ UniformMat4ParameterWidget::UniformMat4ParameterWidget(UniformMat4Parameter* the
     ParameterWidget<float>(parent),
     mUniformMat4Parameter { theUniformMat4Parameter }
 {
+    mParameter = mUniformMat4Parameter;
+
     mGroupBox->setTitle(mUniformMat4Parameter->name());
 
     // Set up line edits

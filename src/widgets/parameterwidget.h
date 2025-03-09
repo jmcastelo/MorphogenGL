@@ -4,6 +4,7 @@
 
 
 #include "../parameters/number.h"
+#include "../parameters/parameter.h"
 #include "focuswidgets.h"
 
 #include <QObject>
@@ -38,26 +39,53 @@ public:
         mGroupBox = new QGroupBox;
         mGroupBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
         mGroupBox->setStyleSheet("QGroupBox::title { subcontrol-origin: margin; subcontrol-position: top center; font-size: 18pt; margin: 7px; }");
+        mGroupBox->setCheckable(false);
     }
 
     Number<T>* selectedNumber() { return mSelectedNumber; }
-    FocusLineEdit* lastFocusedWidget() { return mLastFocusedWidget; }
-    QGroupBox* widget() { return mGroupBox; }
 
-    virtual void setRow(int i) = 0;
-    virtual void setCol(int i) = 0;
+    FocusLineEdit* lastFocusedWidget() { return mLastFocusedWidget; }
+
+    QGroupBox* widget() { return mGroupBox; }
+    void setCheckable(bool checkable)
+    {
+        mGroupBox->setCheckable(checkable);
+
+        if (checkable)
+        {
+            mGroupBox->setChecked(mParameter->editable());
+            connect(mGroupBox, &QGroupBox::toggled, mParameter, &Parameter::setEditable);
+        }
+        else
+        {
+            disconnect(mGroupBox, &QGroupBox::toggled, mParameter, &Parameter::setEditable);
+        }
+    }
+    void toggleVisibility(bool visible) { mGroupBox->setVisible(visible); }
+    void setDefaultVisibility() { mGroupBox->setVisible(mParameter->editable()); }
+
+    void setRow(int i) { mParameter->setRow(i); }
+    void setCol(int i) { mParameter->setCol(i); }
+
+    QString name(){ return mParameter->name(); }
+
+    void setName(QString theName)
+    {
+        mParameter->setName(theName);
+        mGroupBox->setTitle(theName);
+    }
 
     virtual void setValueFromIndex(int index) = 0;
-
-    virtual QString name() = 0;
-    virtual void setName(QString theName) = 0;
 
     virtual void setMin(T theMin) = 0;
     virtual void setMax(T theMax) = 0;
     virtual void setInf(T theInf) = 0;
     virtual void setSup(T theSup) = 0;
 
+    bool isEditable(){ return mParameter->editable(); }
+
 protected:
+    Parameter* mParameter;
     Number<T>* mSelectedNumber;
     FocusLineEdit* mLastFocusedWidget;
     QGroupBox* mGroupBox;

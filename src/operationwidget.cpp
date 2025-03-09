@@ -10,9 +10,13 @@
 
 OperationWidget::OperationWidget(ImageOperation* operation, bool midiEnabled, QWidget* parent) : QFrame(parent)
 {
-    mOpBuilder = new OperationBuilder(operation, this);
+    mOpBuilder = new OperationBuilder(operation);
     mOpBuilder->installEventFilter(this);
     mOpBuilder->setVisible(false);
+
+    connect(mOpBuilder, &OperationBuilder::shadersParsed, this, [=, this](){
+        recreate(operation, midiEnabled);
+    });
 
     mainLayout = new QVBoxLayout;
     mainLayout->setSizeConstraint(QLayout::SetMinAndMaxSize);
@@ -26,7 +30,7 @@ OperationWidget::OperationWidget(ImageOperation* operation, bool midiEnabled, QW
     // Enable button
 
     enableButton = new QPushButton;
-    enableButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+    //enableButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
     enableButton->setFixedSize(32, 32);
     enableButton->setStyleSheet("QPushButton { image: url(:/icons/circle-grey.png); background-color: transparent; border: 0; } QPushButton:checked { image: url(:/icons/circle-green.png); }");
     enableButton->setCheckable(true);
@@ -34,24 +38,27 @@ OperationWidget::OperationWidget(ImageOperation* operation, bool midiEnabled, QW
     // Edit button
 
     editButton = new QPushButton;
-    editButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+    //editButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
     editButton->setFixedSize(32, 32);
     editButton->setStyleSheet("QPushButton { image: url(:/icons/applications-development.png); background-color: transparent; border: 0; }");
     editButton->setCheckable(true);
     editButton->setChecked(false);
 
     connect(editButton, &QPushButton::toggled, this, &OperationWidget::toggleEdit);
+    connect(editButton, &QPushButton::toggled, this, &OperationWidget::setEditableWidgets);
 
     // Operation name label
 
     opNameLabel = new QLabel;
-    opNameLabel->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+    //opNameLabel->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
     //opNameLabel->setMargin(10);
+    opNameLabel->setFixedHeight(32);
 
     // Operation name line edit
 
     opNameLineEdit = new QLineEdit;
-    opNameLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+    //opNameLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+    opNameLineEdit->setFixedHeight(32);
     opNameLineEdit->setVisible(false);
 
     connect(opNameLineEdit, &QLineEdit::textEdited, this, [=, this](QString name){
@@ -63,7 +70,7 @@ OperationWidget::OperationWidget(ImageOperation* operation, bool midiEnabled, QW
     // Toggle body button
 
     toggleButton = new QPushButton;
-    toggleButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+    //toggleButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
     toggleButton->setFixedSize(32, 32);
     toggleButton->setStyleSheet("QPushButton{ image: url(:/icons/go-up.png); background-color: transparent; border: 0; } QPushButton:checked { image: url(:/icons/go-down.png); }");
     toggleButton->setCheckable(true);
@@ -143,10 +150,6 @@ OperationWidget::OperationWidget(ImageOperation* operation, bool midiEnabled, QW
     layoutComboBox = new QComboBox;
     layoutComboBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
     layoutComboBox->setVisible(false);
-    layoutComboBox->addItem("Column");
-    layoutComboBox->addItem("Row");
-    layoutComboBox->addItem("Grid");
-    layoutComboBox->addItem("Stacked");
 
     QHBoxLayout* defaultLayout = new QHBoxLayout;
     defaultLayout->addWidget(midiLinkButton);
@@ -193,6 +196,14 @@ void OperationWidget::setup(ImageOperation* operation, bool midiEnabled)
 {
     // Parameter widgets
 
+    foreach (auto parameter, operation->mat4UniformParameters())
+    {
+        UniformMat4ParameterWidget* widget = new UniformMat4ParameterWidget(parameter);
+        gridWidget->addWidget(widget->widget(), parameter->row(), parameter->col());
+        floatParamWidgets.append(widget);
+        mat4ParamWidgets.append(widget);
+    }
+
     foreach (auto parameter, operation->uniformParameters<float>())
     {
         UniformParameterWidget<float>* widget = new UniformParameterWidget<float>(parameter);
@@ -222,14 +233,6 @@ void OperationWidget::setup(ImageOperation* operation, bool midiEnabled)
         OptionsParameterWidget<GLenum>* widget = new OptionsParameterWidget<GLenum>(parameter);
         gridWidget->addWidget(widget->widget(), parameter->row(), parameter->col());
         glenumOptionsWidgets.append(widget);
-    }
-
-    foreach (auto parameter, operation->mat4UniformParameters())
-    {
-        UniformMat4ParameterWidget* widget = new UniformMat4ParameterWidget(parameter);
-        gridWidget->addWidget(widget->widget(), parameter->row(), parameter->col());
-        floatParamWidgets.append(widget);
-        mat4ParamWidgets.append(widget);
     }
 
     if (gridWidget->isVisible())
@@ -276,6 +279,10 @@ void OperationWidget::setup(ImageOperation* operation, bool midiEnabled)
     connect(enableButton, &QPushButton::toggled, this, [=](bool checked){
         operation->enable(checked);
     });
+
+    // Toggle editable widgets
+
+    setEditableWidgets(editMode);
 }
 
 
@@ -312,14 +319,22 @@ void OperationWidget::connectUniformParameterWidgets(QList<UniformParameterWidge
             if (editMode)
             {
                 layoutComboBox->disconnect();
+                layoutComboBox->clear();
 
-                layoutComboBox->setCurrentIndex(static_cast<int>(widget->layoutFormat()));
+                if (widget->availableLayoutFormats().size() == 0)
+                    layoutComboBox->setVisible(false);
+                else
+                {
+                    layoutComboBox->setVisible(true);
 
-                connect(layoutComboBox, &QComboBox::currentIndexChanged, this, [=, this](int index){
-                    LayoutFormat format = static_cast<LayoutFormat>(index);
-                    widget->setLayoutFormat(format);
-                    gridWidget->optimizeLayout();
-                });
+                    layoutComboBox->addItems(widget->availableLayoutFormats());
+                    layoutComboBox->setCurrentIndex(widget->layoutFormatIndex());
+
+                    connect(layoutComboBox, &QComboBox::currentIndexChanged, this, [=, this](int index){
+                        widget->setLayoutFormatIndex(index);
+                        gridWidget->optimizeLayout();
+                    });
+                }
             }
         });
     }
@@ -805,4 +820,50 @@ void OperationWidget::toggleEdit(bool state)
     layoutComboBox->setVisible(state);
 
     editMode = state;
+}
+
+
+
+void OperationWidget::setEditableWidgets(bool state)
+{
+    foreach (auto paramWidget, floatParamWidgets)
+    {
+        paramWidget->setCheckable(state);
+
+        if (state)
+            paramWidget->toggleVisibility(true);
+        else
+            paramWidget->setDefaultVisibility();
+    }
+
+    foreach (auto paramWidget, intParamWidgets)
+    {
+        paramWidget->setCheckable(state);
+
+        if (state)
+            paramWidget->toggleVisibility(true);
+        else
+            paramWidget->setDefaultVisibility();
+    }
+
+    foreach (auto paramWidget, uintParamWidgets)
+    {
+        paramWidget->setCheckable(state);
+
+        if (state)
+            paramWidget->toggleVisibility(true);
+        else
+            paramWidget->setDefaultVisibility();
+
+    }
+
+    foreach (auto paramWidget, glenumOptionsWidgets)
+    {
+        paramWidget->setCheckable(state);
+
+        if (state)
+            paramWidget->toggleVisibility(true);
+        else
+            paramWidget->setDefaultVisibility();
+    }
 }

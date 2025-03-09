@@ -19,8 +19,6 @@
 
 class ImageOperation;
 
-class OperationWidget;
-
 
 
 class OperationBuilder : public QWidget, public QOpenGLExtraFunctions
@@ -28,8 +26,11 @@ class OperationBuilder : public QWidget, public QOpenGLExtraFunctions
     Q_OBJECT
 
 public:
-    explicit OperationBuilder(ImageOperation* operation, OperationWidget* opWidget, QWidget *parent = nullptr);
+    explicit OperationBuilder(ImageOperation* operation, QWidget *parent = nullptr);
     ~OperationBuilder();
+
+signals:
+    void shadersParsed();
 
 private:
     QOpenGLContext* mContext;
@@ -44,10 +45,10 @@ private:
 
     QPushButton* parseButton;
 
-    QMap<QString, Parameter*> newParamMap;
-    QMap<QString, Parameter*> paramMap;
+    QList<QString> newParamList;
+    QList<QString> paramList;
+
     ImageOperation* mOperation;
-    OperationWidget* mOpWidget;
 
     QMap<QString, UniformParameter<float>*> fParamMap;
     QMap<QString, UniformParameter<int>*> iParamMap;
@@ -58,8 +59,6 @@ private:
     void parseAttributes();
 
     void addUniformParameter(QString uniformName, int uniformType, int numItems);
-
-    int maxRow();
 
 private slots:
     void loadVertexShader();
