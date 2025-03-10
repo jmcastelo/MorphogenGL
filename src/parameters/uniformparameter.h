@@ -3,13 +3,12 @@
 
 
 
-#include "parameter.h"
-#include "number.h"
+#include "baseuniformparameter.h"
 
 
 
 template <typename T>
-class UniformParameter : public Parameter
+class UniformParameter : public BaseUniformParameter<T>
 {
 public:
     UniformParameter(QString theName, QString theUniformName, int theUniformType, int numItems, bool isEditable, QList<T> theValues, T theMin, T theMax, T theInf, T theSup, ImageOperation* theOperation);
@@ -18,30 +17,7 @@ public:
 
     UniformParameter(const UniformParameter<T>& parameter);
 
-    ~UniformParameter();
-
-    QString uniformName();
-    int uniformType();
-
-    T value(int i);
-    void setValue(int i, T theValue);
-
-    void setValueFromIndex(int i, int index);
-
-    void setUniform();
-
-    void setMin(T theMin);
-    void setMax(T theMax);
-
-    void setInf(T theInf);
-    void setSup(T theSup);
-
-    QList<T> values();
-
-    QList<Number<T>*> numbers();
-
-    Number<T>* number(QUuid theId);
-    Number<T>* number(int i);
+    void setUniform() override;
 
     int size();
 
@@ -50,9 +26,6 @@ public:
     QPair<int, int> colsRowsPerItem();
 
 private:
-    QString mUniformName;
-    int mUniformType;
-    QList<Number<T>*> mNumbers;
     int nItems;
 };
 

@@ -41,7 +41,6 @@ private:
     int minWidgetHeight = -1;
 
     QMap<QLayoutItem*, QList<int>> itemCoords;
-    QMap<QWidget*, QList<int>> widgetCoords;
 
     QLayoutItem* sourceItem = nullptr;
     QPoint sourceOffset;

@@ -46,15 +46,21 @@ public:
 
 private:
     UniformParameter<T>* mUniformParameter;
+
     LayoutFormat mLayoutFormat;
+    QList<LayoutFormat> mAvailFormats;
+
     QList<FocusLineEdit*> mLineEdits;
+
     QStackedLayout* mStackedLayout;
     QScrollBar* mScrollBar;
-    QList<LayoutFormat> mAvailFormats;
+
     QList<QWidget*> mItemWidgets;
+
     QWidget* mColWidget;
     QWidget* mRowWidget;
     QWidget* mGridWidget;
+
     int mLastIndex;
 
     void setItemsLayouts();

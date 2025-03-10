@@ -23,35 +23,19 @@ GridWidget::GridWidget(QWidget *parent) :
 
 void GridWidget::addWidget(QWidget* widget, int row, int column)
 {
-    // Widget geometry depends on it being set on the layout
+    // Widget added to cell with row and column coordinates
+    // If cell is occupied, add widget to lowest free cell
 
     int lowRow, lowCol;
     lowestFreeCell(lowRow, lowCol, row, column);
 
     gridLayout->addWidget(widget, lowRow, lowCol, Qt::AlignCenter);
 
+    // Widget must be shown to be able to compute its geometry
+
     widget->show();
 
-    //widgetCoords.insert(widget, QList<int>{ row, column, 1, 1 });
-
-    /*int rowSpan = getRowSpan(widget);
-    int colSpan = getColSpan(widget);
-
-    gridLayout->removeWidget(widget);
-
-    // Present widgets on layout must be readjusted with new row and columns spans
-
-    optimizeLayout();
-
-    int lowRow, lowCol;
-    lowestFreeCell(lowRow, lowCol, row, column, rowSpan, colSpan);
-
-    gridLayout->addWidget(widget, lowRow, lowCol, rowSpan, colSpan, Qt::AlignCenter);
-
-    //optimizeLayout();
-    //computeMinCellSize();
-
-    emit itemRowColChanged(widget, lowRow, lowCol);*/
+    emit itemRowColChanged(widget, lowRow, lowCol);
 }
 
 
@@ -66,8 +50,6 @@ void GridWidget::clear()
         delete widget;
         delete child;
     }
-
-    //widgetCoords.clear();
 }
 
 
@@ -117,27 +99,9 @@ int GridWidget::getColSpan(QWidget* widget)
 
 void GridWidget::optimizeLayout()
 {
-    // Set row and column spans in proportion to minimum size
-
     computeMinWidgetSize();
 
-    //for (auto [widget, coords] : widgetCoords.asKeyValueRange())
-        //widgetCoords[widget] = QList<int>{ coords[0], coords[1], getRowSpan(widget), getColSpan(widget) };
-
-
-    /*for (auto [widget, coords] : widgetCoords.asKeyValueRange())
-    {
-        int lowRow, lowCol;
-        lowestFreeCell(lowRow, lowCol, coords[0], coords[1], coords[2], coords[3]);
-
-        //gridLayout->addWidget(widget, lowRow, lowCol, coords[2], coords[3], Qt::AlignCenter);
-
-        widgetCoords[widget] = QList<int>{ lowRow, lowCol, coords[2], coords[3] };
-
-        //emit itemRowColChanged(widget, lowRow, lowCol);
-    }*/
-
-    // Compute item row and column spans
+    // Set row and column spans in proportion to minimum size
 
     itemCoords.clear();
 
@@ -152,7 +116,7 @@ void GridWidget::optimizeLayout()
         itemCoords.insert(item, QList<int>{ row, col, getRowSpan(widget), getColSpan(widget) });
     }
 
-    // Compute new positions (row, col) considering the spans
+    // Compute new positions (row, col) considering spans
 
     QList<QLayoutItem*> computedItems;
 
@@ -283,61 +247,25 @@ int GridWidget::getMaxCol()
 
 
 
-/*void GridWidget::lowestFreeCell(int &lowestRow, int &lowestCol, int initRow, int initCol, int rowSpan, int colSpan)
-{
-    int lowRow = getMaxRow() + 1;
-    int lowCol = getMaxCol() + 1;
-
-    for (int col = initCol; col <= getMaxCol() + 1; col++)
-    {
-        for (int row = initRow; row <= getMaxRow() + 1; row++)
-        {
-            QLayoutItem* item = gridLayout->itemAtPosition(row, col);
-
-            if ((!item || item->isEmpty()) && (qSqrt(row * row + col * col) < qSqrt(lowRow * lowRow + lowCol * lowCol)))
-            {
-                bool nextCellsFree = true;
-
-                for (int nextCol = col; nextCol < col + colSpan; nextCol++)
-                {
-                    for (int nextRow = row; nextRow < row + rowSpan; nextRow++)
-                    {
-                        QLayoutItem* nextItem = gridLayout->itemAtPosition(row, col);
-
-                        if (!nextItem || nextItem->isEmpty())
-                            nextCellsFree = false;
-                    }
-                }
-
-                if (nextCellsFree)
-                {
-                    lowRow = row;
-                    lowCol = col;
-                }
-            }
-        }
-    }
-
-    lowestRow = lowRow;
-    lowestCol = lowCol;
-}*/
-
 void GridWidget::lowestFreeCell(int &lowestRow, int &lowestCol, int initRow, int initCol)
 {
-    if (initRow > getMaxCol() || initCol > getMaxCol())
+    // Get lowest free cell, nearest to (initRow, initCol) cell
+    // Assume each item spans only one row and one column
+
+    int maxCol = getMaxCol() + 1;
+    int maxRow = getMaxRow() + 1;
+
+    if (initCol > getMaxCol())
+        maxCol = initCol;
+    if (initRow > getMaxRow())
+        maxRow = initRow;
+
+    int lowRow = maxRow;
+    int lowCol = maxCol;
+
+    for (int col = initCol; col <= maxCol; col++)
     {
-        lowestRow = initRow;
-        lowestCol = initCol;
-
-        return;
-    }
-
-    int lowRow = getMaxRow() + 1;
-    int lowCol = getMaxCol() + 1;
-
-    for (int col = initCol; col <= getMaxCol() + 1; col++)
-    {
-        for (int row = initRow; row <= getMaxRow() + 1; row++)
+        for (int row = initRow; row <= maxRow; row++)
         {
             QLayoutItem* item = gridLayout->itemAtPosition(row, col);
 
@@ -382,8 +310,6 @@ void GridWidget::moveItem(QLayoutItem* item, int deltaRow, int deltaCol)
         gridLayout->addItem(item, newRow, newCol, rowSpan, colSpan, Qt::AlignCenter);
 
         setRowColSizes();
-
-        widgetCoords[item->widget()] = QList<int>{ newRow, newCol, rowSpan, colSpan };
 
         emit itemRowColChanged(item->widget(), newRow, newCol);
     }

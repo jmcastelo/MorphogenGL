@@ -377,27 +377,23 @@ void UniformParameterWidget<T>::setDefaultLayoutFormat()
 {
     QPair<int, int> colsRowsPerItem = mUniformParameter->colsRowsPerItem();
 
+    // Any single item
     if (mUniformParameter->numItems() <= 1)
-    {
-        // Any single item
         mLayoutFormat = LayoutFormat::Column;
-    }
+    // Multiple items with one row
     else if (colsRowsPerItem.second <= 1)
     {
-        // Multiple items with one row
+        // Multiple items with one row and one column
+        // Multiple items with one row and less columns per item than items
         if (colsRowsPerItem.first <= 1 || colsRowsPerItem.first < mUniformParameter->numItems())
-            // Multiple items with one row and one column
-            // Multiple items with one row and less columns per item than items
             mLayoutFormat = LayoutFormat::Grid;
+        // Multiple items with one row and more than one column
         else
-            // Multiple items with one row and more than one column
             mLayoutFormat = LayoutFormat::Column;
     }
+    // Multiple items with more than one row
     else
-    {
-        // Multiple items with more than one row
         mLayoutFormat = LayoutFormat::Stacked;
-    }
 
     setLayoutFormat(mLayoutFormat);
 }

@@ -7,8 +7,7 @@
 
 
 UniformMat4Parameter::UniformMat4Parameter(QString theName, QString theUniformName, bool isEditable, UniformMat4Type theMat4Type, QList<float> theValues, float theMin, float theMax, float theInf, float theSup, ImageOperation* theOperation) :
-    Parameter(theName, isEditable, theOperation),
-mUniformName { theUniformName },
+    BaseUniformParameter<float>(theName, theUniformName, GL_FLOAT_MAT4, isEditable, theValues, theMin, theMax, theInf, theSup, theOperation),
     mType { theMat4Type }
 {
     if (mType == UniformMat4Type::TRANSLATION)
@@ -37,16 +36,12 @@ mUniformName { theUniformName },
         mEditable = false;
         mOperation->setOrthographicProjection(mUniformName);
     }
-
-    for (int i = 0; i < mNumbers.size(); i++)
-        connect(mNumbers[i], &NumberSignals::valueChanged, this, [=, this](QVariant value){ emit valueChanged(i, value); });
 }
 
 
 
 UniformMat4Parameter::UniformMat4Parameter(QString theName, QString theUniformName, bool isEditable, UniformMat4Type theMat4Type, QList<QPair<QUuid, float>> theIdValuePairs, float theMin, float theMax, float theInf, float theSup, ImageOperation* theOperation) :
-    Parameter(theName, isEditable, theOperation),
-    mUniformName { theUniformName },
+    BaseUniformParameter<float>(theName, theUniformName, GL_FLOAT_MAT4, isEditable, theIdValuePairs, theMin, theMax, theInf, theSup, theOperation),
     mType { theMat4Type }
 {
     if (mType == UniformMat4Type::TRANSLATION)
@@ -75,75 +70,15 @@ UniformMat4Parameter::UniformMat4Parameter(QString theName, QString theUniformNa
         mEditable = false;
         mOperation->setOrthographicProjection(mUniformName);
     }
-
-    for (int i = 0; i < mNumbers.size(); i++)
-        connect(mNumbers[i], &NumberSignals::valueChanged, this, [=, this](QVariant value){ emit valueChanged(i, value); });
 }
 
 
 
 UniformMat4Parameter::UniformMat4Parameter(const UniformMat4Parameter& parameter) :
-    Parameter(parameter)
+    BaseUniformParameter<float>(parameter)
 {
-    mUniformName = parameter.mUniformName;
+    mType = parameter.mType;
     mNumberNames = parameter.mNumberNames;
-
-    for (const Number<float>* number : parameter.mNumbers)
-    {
-        Number<float>* newNumber = new Number<float>(*number);
-        mNumbers.push_back(newNumber);
-    }
-
-    for (int i = 0; i < mNumbers.size(); i++)
-        connect(mNumbers[i], &NumberSignals::valueChanged, this, [=, this](QVariant value){ emit valueChanged(i, value); });
-}
-
-
-
-UniformMat4Parameter::~UniformMat4Parameter()
-{
-    qDeleteAll(mNumbers);
-}
-
-
-
-float UniformMat4Parameter::value(int i)
-{
-    if (i < mNumbers.size())
-        return mNumbers.at(i)->value();
-    else
-        return 0;
-}
-
-
-
-void UniformMat4Parameter::setValue(int i, float theValue)
-{
-    if (i < mNumbers.size())
-    {
-        mNumbers[i]->setValue(theValue);
-
-        //emit valueChanged(i, QVariant(theValue));
-        emit valueChanged(QVariant(theValue));
-
-        if (mUpdate)
-            setUniform();
-    }
-}
-
-
-
-void UniformMat4Parameter::setValueFromIndex(int i, int index)
-{
-    if (i < mNumbers.size())
-    {
-        mNumbers[i]->setValueFromIndex(index);
-
-        emit valueChanged(i, QVariant(mNumbers[i]->value()));
-
-        if (mUpdate)
-            setUniform();
-    }
 }
 
 
@@ -151,75 +86,6 @@ void UniformMat4Parameter::setValueFromIndex(int i, int index)
 void UniformMat4Parameter::setUniform()
 {
     mOperation->setMat4Uniform(mName, mType, values());
-}
-
-
-
-void UniformMat4Parameter::setMin(float theMin)
-{
-    foreach (Number<float>* number, mNumbers)
-    number->setMin(theMin);
-}
-
-
-
-void UniformMat4Parameter::setMax(float theMax)
-{
-    foreach (Number<float>* number, mNumbers)
-    number->setMax(theMax);
-}
-
-
-
-void UniformMat4Parameter::setInf(float theInf)
-{
-    foreach (Number<float>* number, mNumbers)
-    number->setInf(theInf);
-}
-
-
-
-void UniformMat4Parameter::setSup(float theSup)
-{
-    foreach (Number<float>* number, mNumbers)
-    number->setSup(theSup);
-}
-
-
-
-QList<float> UniformMat4Parameter::values()
-{
-    QList<float> theValues;
-    foreach (Number<float>* number, mNumbers)
-        theValues.append(number->value());
-    return theValues;
-}
-
-
-
-QList<Number<float>*> UniformMat4Parameter::numbers()
-{
-    return mNumbers;
-}
-
-
-
-Number<float>* UniformMat4Parameter::number(QUuid theId)
-{
-    foreach (Number<float>* number, mNumbers)
-    if (theId == number->id())
-        return number;
-    return nullptr;
-}
-
-
-
-Number<float>* UniformMat4Parameter::number(int i)
-{
-    if (i < mNumbers.size())
-        return mNumbers[i];
-    else
-        return new Number<float>(0, 0, 0, 0, 0);
 }
 
 

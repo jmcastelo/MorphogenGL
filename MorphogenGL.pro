@@ -60,6 +60,7 @@ HEADERS += \
     src/operationbuilder.h \
     src/operationwidget.h \
     src/overlay.h \
+    src/parameters/baseuniformparameter.h \
     src/parameters/number.h \
     src/parameters/optionsparameter.h \
     src/parameters/parameter.h \
@@ -102,6 +103,7 @@ SOURCES += \
     src/operationbuilder.cpp \
     src/operationwidget.cpp \
     src/overlay.cpp \
+    src/parameters/baseuniformparameter.cpp \
     src/parameters/optionsparameter.cpp \
     src/parameters/uniformmat4parameter.cpp \
     src/parameters/uniformparameter.cpp \

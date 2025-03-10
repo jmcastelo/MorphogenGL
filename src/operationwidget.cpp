@@ -196,14 +196,6 @@ void OperationWidget::setup(ImageOperation* operation, bool midiEnabled)
 {
     // Parameter widgets
 
-    foreach (auto parameter, operation->mat4UniformParameters())
-    {
-        UniformMat4ParameterWidget* widget = new UniformMat4ParameterWidget(parameter);
-        gridWidget->addWidget(widget->widget(), parameter->row(), parameter->col());
-        floatParamWidgets.append(widget);
-        mat4ParamWidgets.append(widget);
-    }
-
     foreach (auto parameter, operation->uniformParameters<float>())
     {
         UniformParameterWidget<float>* widget = new UniformParameterWidget<float>(parameter);
@@ -228,12 +220,22 @@ void OperationWidget::setup(ImageOperation* operation, bool midiEnabled)
         uniformUintParamWidgets.append(widget);
     }
 
+    foreach (auto parameter, operation->mat4UniformParameters())
+    {
+        UniformMat4ParameterWidget* widget = new UniformMat4ParameterWidget(parameter);
+        gridWidget->addWidget(widget->widget(), parameter->row(), parameter->col());
+        floatParamWidgets.append(widget);
+        mat4ParamWidgets.append(widget);
+    }
+
     foreach (auto parameter, operation->optionsParameters<GLenum>())
     {
         OptionsParameterWidget<GLenum>* widget = new OptionsParameterWidget<GLenum>(parameter);
         gridWidget->addWidget(widget->widget(), parameter->row(), parameter->col());
         glenumOptionsWidgets.append(widget);
     }
+
+    // Once widgets set on grid, optimize its layout to set it with proper row and column spans and sizes
 
     if (gridWidget->isVisible())
         gridWidget->optimizeLayout();

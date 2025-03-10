@@ -76,8 +76,6 @@ public:
 
     bool editable() { return mEditable; }
 
-    virtual int numItems() { return 1; }
-
     int row() { return mRow; }
     void setRow(int i) { mRow = i; }
 
