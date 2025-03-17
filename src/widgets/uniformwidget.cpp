@@ -400,6 +400,14 @@ void UniformParameterWidget<T>::setDefaultLayoutFormat()
 
 
 
+template <typename T>
+bool UniformParameterWidget<T>::isMat4Equivalent()
+{
+    return mUniformParameter->isMat4Equivalent();
+}
+
+
+
 template class UniformParameterWidget<float>;
 template class UniformParameterWidget<int>;
 template class UniformParameterWidget<unsigned int>;

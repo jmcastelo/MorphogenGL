@@ -170,20 +170,26 @@ void OperationBuilder::parseUniforms()
         }
         else if (fParamMap.contains(uniformName) && (fParamMap[uniformName]->uniformType() != uniformType || fParamMap[uniformName]->numItems() != numItems))
         {
+            mOperation->removeUniformParameter<float>(fParamMap[uniformName]);
             fParamMap.remove(uniformName);
             paramList.removeOne(uniformName);
+
             addUniformParameter(uniformName, uniformType, numItems);
         }
         else if (iParamMap.contains(uniformName) && (iParamMap[uniformName]->uniformType() != uniformType || iParamMap[uniformName]->numItems() != numItems))
         {
+            mOperation->removeUniformParameter<int>(iParamMap[uniformName]);
             iParamMap.remove(uniformName);
             paramList.removeOne(uniformName);
+
             addUniformParameter(uniformName, uniformType, numItems);
         }
         else if (uiParamMap.contains(uniformName) && (uiParamMap[uniformName]->uniformType() != uniformType || uiParamMap[uniformName]->numItems() != numItems))
         {
+            mOperation->removeUniformParameter<unsigned int>(uiParamMap[uniformName]);
             uiParamMap.remove(uniformName);
             paramList.removeOne(uniformName);
+
             addUniformParameter(uniformName, uniformType, numItems);
         }
         else
@@ -199,24 +205,24 @@ void OperationBuilder::parseUniforms()
         if (!newParamList.contains(name))
         {
             if (fParamMap.contains(name))
+            {
+                mOperation->removeUniformParameter<float>(fParamMap[name]);
                 fParamMap.remove(name);
+            }
             else if (iParamMap.contains(name))
+            {
+                mOperation->removeUniformParameter<int>(iParamMap[name]);
                 iParamMap.remove(name);
+            }
             else if (uiParamMap.contains(name))
+            {
+                mOperation->removeUniformParameter<unsigned int>(uiParamMap[name]);
                 uiParamMap.remove(name);
+            }
         }
     }
 
     paramList = newParamList;
-
-    mOperation->clearParameters();
-
-    for (auto [uniformName, parameter] : fParamMap.asKeyValueRange())
-        mOperation->addUniformParameter<float>(parameter);
-    for (auto [uniformName, parameter] : iParamMap.asKeyValueRange())
-        mOperation->addUniformParameter<int>(parameter);
-    for (auto [uniformName, parameter] : uiParamMap.asKeyValueRange())
-        mOperation->addUniformParameter<unsigned int>(parameter);
 }
 
 
@@ -273,39 +279,27 @@ bool OperationBuilder::linkProgram()
 
 void OperationBuilder::addUniformParameter(QString uniformName, int uniformType, int numItems)
 {
-    int numValuesPerItem = 0;
-
-    if (uniformType == GL_FLOAT || uniformType == GL_INT || uniformType == GL_UNSIGNED_INT)
-        numValuesPerItem = 1;
-    else if (uniformType == GL_FLOAT_VEC2 || uniformType == GL_INT_VEC2 || uniformType == GL_UNSIGNED_INT_VEC2)
-        numValuesPerItem = 2;
-    else if (uniformType == GL_FLOAT_VEC3 || uniformType == GL_INT_VEC3 || uniformType == GL_UNSIGNED_INT_VEC3)
-        numValuesPerItem = 3;
-    else if (uniformType == GL_FLOAT_VEC4 || uniformType == GL_INT_VEC4 || uniformType == GL_UNSIGNED_INT_VEC4 || uniformType == GL_FLOAT_MAT2)
-        numValuesPerItem = 4;
-    else if (uniformType == GL_FLOAT_MAT3)
-        numValuesPerItem = 9;
-    else if (uniformType == GL_FLOAT_MAT4)
-        numValuesPerItem = 16;
-
     Parameter* parameter = nullptr;
 
     if (uniformType == GL_FLOAT || uniformType == GL_FLOAT_VEC2 || uniformType == GL_FLOAT_VEC3 || uniformType == GL_FLOAT_VEC4 || uniformType == GL_FLOAT_MAT2 || uniformType == GL_FLOAT_MAT3 || uniformType == GL_FLOAT_MAT4)
     {
-        UniformParameter<float>* fParameter = new UniformParameter<float>(uniformName.toUpper(), uniformName, uniformType, numItems, true, QList<float>(numItems * numValuesPerItem, 0.0f), -1.0f, 1.0f, -1.0f, 1.0f, mOperation);
+        UniformParameter<float>* fParameter = new UniformParameter<float>(uniformName.toUpper(), uniformName, uniformType, numItems, true, mOperation);
         fParamMap.insert(uniformName, fParameter);
+        mOperation->addUniformParameter<float>(fParameter);
         parameter = fParameter;
     }
     else if (uniformType == GL_INT || uniformType == GL_INT_VEC2 || uniformType == GL_INT_VEC3 || uniformType == GL_INT_VEC4)
     {
-        UniformParameter<int>* iParameter = new UniformParameter<int>(uniformName.toUpper(), uniformName, uniformType, numItems, true, QList<int>(numItems * numValuesPerItem, 0), 0, 1, 0, 1, mOperation);
+        UniformParameter<int>* iParameter = new UniformParameter<int>(uniformName.toUpper(), uniformName, uniformType, numItems, true, mOperation);
         iParamMap.insert(uniformName, iParameter);
+        mOperation->addUniformParameter<int>(iParameter);
         parameter = iParameter;
     }
     else if (uniformType == GL_UNSIGNED_INT || uniformType == GL_UNSIGNED_INT_VEC2 || uniformType == GL_UNSIGNED_INT_VEC3 || uniformType == GL_UNSIGNED_INT_VEC4)
     {
-        UniformParameter<unsigned int>* uiParameter = new UniformParameter<unsigned int>(uniformName.toUpper(), uniformName, uniformType, numItems, true, QList<unsigned int>(numItems * numValuesPerItem, 0), 0, 1, 0, 1, mOperation);
+        UniformParameter<unsigned int>* uiParameter = new UniformParameter<unsigned int>(uniformName.toUpper(), uniformName, uniformType, numItems, true, mOperation);
         uiParamMap.insert(uniformName, uiParameter);
+        mOperation->addUniformParameter<unsigned int>(uiParameter);
         parameter = uiParameter;
     }
 
@@ -313,7 +307,7 @@ void OperationBuilder::addUniformParameter(QString uniformName, int uniformType,
     {
         parameter->setUpdateOperation(false);
 
-        parameter->setRow(0);
+        parameter->setRow(-1);
         parameter->setCol(0);
 
         newParamList.append(uniformName);

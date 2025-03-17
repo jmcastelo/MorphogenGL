@@ -47,6 +47,7 @@ public:
     FocusLineEdit* lastFocusedWidget() { return mLastFocusedWidget; }
 
     QGroupBox* widget() { return mGroupBox; }
+
     void setCheckable(bool checkable)
     {
         mGroupBox->setCheckable(checkable);
@@ -83,6 +84,8 @@ public:
     virtual void setSup(T theSup) = 0;
 
     bool isEditable(){ return mParameter->editable(); }
+
+    Parameter* parameter() const { return mParameter; }
 
 protected:
     Parameter* mParameter;

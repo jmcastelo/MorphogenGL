@@ -139,6 +139,40 @@ void ImageOperation::addUniformParameter<unsigned int>(UniformParameter<unsigned
 
 
 
+void ImageOperation::addMat4UniformParameter(UniformMat4Parameter* parameter)
+{
+    mMat4UniformParameters.append(parameter);
+}
+
+
+
+template<>
+void ImageOperation::removeUniformParameter<float>(UniformParameter<float>* parameter)
+{
+    if (floatUniformParameters.removeOne(parameter))
+        delete parameter;
+}
+
+
+
+template<>
+void ImageOperation::removeUniformParameter<int>(UniformParameter<int>* parameter)
+{
+    if (intUniformParameters.removeOne(parameter))
+        delete parameter;
+}
+
+
+
+template<>
+void ImageOperation::removeUniformParameter<unsigned int>(UniformParameter<unsigned int>* parameter)
+{
+    if (uintUniformParameters.removeOne(parameter))
+        delete parameter;
+}
+
+
+
 template<>
 QList<UniformParameter<float>*> ImageOperation::uniformParameters<float>()
 {

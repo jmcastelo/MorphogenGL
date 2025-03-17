@@ -58,8 +58,7 @@ public:
     explicit OperationWidget(ImageOperation* operation, bool midiEnabled, QWidget* parent = nullptr);
     ~OperationWidget();
 
-    void setup(ImageOperation* operation, bool midiEnabled);
-    void recreate(ImageOperation* operation, bool midiEnabled);
+    void setup();
 
     void toggleEnableButton(bool checked);
     void toggleMidiButton(bool show);
@@ -73,12 +72,18 @@ signals:
     void linkBreak(Number<int>* number);
     void linkBreak(Number<unsigned int>* number);
 
+public slots:
+    void recreate();
+
 protected:
     void closeEvent(QCloseEvent* event) override;
     void focusInEvent(QFocusEvent *event) override;
     bool eventFilter(QObject *obj, QEvent *event) override;
 
 private:
+    ImageOperation* mOperation;
+    bool mMidiEnabled;
+
     QVBoxLayout* mainLayout;
 
     QFrame* headerWidget;
@@ -96,12 +101,12 @@ private:
     QList<ParameterWidget<float>*> floatParamWidgets;
     QList<ParameterWidget<int>*> intParamWidgets;
     QList<ParameterWidget<unsigned int>*> uintParamWidgets;
+    QList<ParameterWidget<float>*> mat4ParamWidgets;
 
     QList<UniformParameterWidget<float>*> uniformFloatParamWidgets;
     QList<UniformParameterWidget<int>*> uniformIntParamWidgets;
     QList<UniformParameterWidget<unsigned int>*> uniformUintParamWidgets;
-
-    QList<UniformMat4ParameterWidget*> mat4ParamWidgets;
+    QList<UniformMat4ParameterWidget*> uniformMat4ParamWidgets;
 
     QList<OptionsParameterWidget<GLenum>*> glenumOptionsWidgets;
 
@@ -119,6 +124,7 @@ private:
     QLineEdit* paramNameLineEdit;
 
     QComboBox* layoutComboBox;
+    QComboBox* mat4TypeComboBox;
 
     QPushButton* midiLinkButton;
 
@@ -127,14 +133,22 @@ private:
     OperationBuilder* mOpBuilder;
     bool editMode = false;
 
+    Parameter* lastFocusedParameter;
     QWidget* lastFocusedWidget = nullptr;
     bool lastFocused = false;
 
     template <typename T>
-    void connectParameterWidgets(QList<ParameterWidget<T>*> widgets);
+    void setFocusedWidget(ParameterWidget<T>* widget);
 
     template <typename T>
-    void connectUniformParameterWidgets(QList<UniformParameterWidget<T>*> widgets);
+    void connectParamWidgets(QList<ParameterWidget<T>*> widgets);
+
+    template <typename T>
+    void connectUniformParamWidgets(QList<UniformParameterWidget<T>*> widgets);
+
+    void connectUniformFloatParamWidgets();
+
+    void connectUniformMat4ParamWidgets();
 
     template <typename T>
     void updateSelParamControls(ParameterWidget<T>* widget);

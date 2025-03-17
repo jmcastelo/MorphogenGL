@@ -19,6 +19,7 @@ public:
     explicit GridWidget(QWidget *parent = nullptr);
 
     void addWidget(QWidget* widget, int row, int column);
+    void removeWidget(QWidget* widget);
     void clear();
     void optimizeLayout();
 

@@ -3,9 +3,44 @@
 
 #include "uniformparameter.h"
 #include "../imageoperation.h"
+#include "uniformmat4parameter.h"
 
 #include <QPair>
 #include <QOpenGLFunctions>
+
+
+
+template <typename T>
+UniformParameter<T>::UniformParameter(QString theName, QString theUniformName, int theUniformType, int numItems, bool isEditable, ImageOperation* theOperation) :
+    BaseUniformParameter<T>(theName, theUniformName, theUniformType, isEditable, theOperation),
+    nItems { numItems }
+{
+    int numValuesPerItem = 0;
+
+    if (BaseUniformParameter<T>::mUniformType == GL_FLOAT || BaseUniformParameter<T>::mUniformType == GL_INT || BaseUniformParameter<T>::mUniformType == GL_UNSIGNED_INT)
+        numValuesPerItem = 1;
+    else if (BaseUniformParameter<T>::mUniformType == GL_FLOAT_VEC2 || BaseUniformParameter<T>::mUniformType == GL_INT_VEC2 || BaseUniformParameter<T>::mUniformType == GL_UNSIGNED_INT_VEC2)
+        numValuesPerItem = 2;
+    else if (BaseUniformParameter<T>::mUniformType == GL_FLOAT_VEC3 || BaseUniformParameter<T>::mUniformType == GL_INT_VEC3 || BaseUniformParameter<T>::mUniformType == GL_UNSIGNED_INT_VEC3)
+        numValuesPerItem = 3;
+    else if (BaseUniformParameter<T>::mUniformType == GL_FLOAT_VEC4 || BaseUniformParameter<T>::mUniformType == GL_INT_VEC4 || BaseUniformParameter<T>::mUniformType == GL_UNSIGNED_INT_VEC4 || BaseUniformParameter<T>::mUniformType == GL_FLOAT_MAT2)
+        numValuesPerItem = 4;
+    else if (BaseUniformParameter<T>::mUniformType == GL_FLOAT_MAT3)
+        numValuesPerItem = 9;
+    else if (BaseUniformParameter<T>::mUniformType == GL_FLOAT_MAT4)
+        numValuesPerItem = 16;
+
+    QList<T> theValues = QList<T>(nItems * numValuesPerItem, 0);
+
+    for (T value : theValues)
+    {
+        Number<T>* number = new Number<T>(value, 0, 1, 0, 1);
+        BaseUniformParameter<T>::mNumbers.append(number);
+    }
+
+    for (int i = 0; i < BaseUniformParameter<T>::mNumbers.size(); i++)
+        BaseUniformParameter<T>::connect(BaseUniformParameter<T>::mNumbers[i], &NumberSignals::valueChanged, this, [=, this](QVariant value){ emit BaseUniformParameter<T>::valueChanged(i, value); });
+}
 
 
 
@@ -27,10 +62,9 @@ UniformParameter<T>::UniformParameter(QString theName, QString theUniformName, i
 
 template <typename T>
 UniformParameter<T>::UniformParameter(const UniformParameter<T>& parameter) :
-    BaseUniformParameter<T>(parameter)
-{
-    nItems = parameter.nItems;
-}
+    BaseUniformParameter<T>(parameter),
+    nItems { parameter.nItems }
+{}
 
 
 
@@ -77,6 +111,14 @@ QPair<int, int> UniformParameter<T>::colsRowsPerItem()
         return QPair<int, int>(4, 4);
 
     return QPair<int, int>(0, 0);
+}
+
+
+
+template <typename T>
+bool UniformParameter<T>::isMat4Equivalent()
+{
+    return (nItems == 1) && (BaseUniformParameter<T>::mUniformType == GL_FLOAT_MAT4);
 }
 
 

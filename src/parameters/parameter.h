@@ -51,7 +51,6 @@ signals:
 
 
 
-
 class Parameter : public ParameterSignals
 {
     Q_OBJECT
@@ -68,23 +67,31 @@ public:
         ParameterSignals()
     {
         mName = parameter.mName;
+
         mEditable = parameter.mEditable;
+
+        mRow = parameter.mRow;
+        mCol = parameter.mCol;
+
+        mUpdate = parameter.mUpdate;
     }
 
-    QString name() { return mName; }
+    QString name() const { return mName; }
     void setName(QString theName) { mName = theName; }
 
-    bool editable() { return mEditable; }
+    bool editable() const { return mEditable; }
 
-    int row() { return mRow; }
+    int row() const { return mRow; }
     void setRow(int i) { mRow = i; }
 
-    int col() { return mCol; }
+    int col() const { return mCol; }
     void setCol(int i) { mCol = i; }
 
+    bool updateOperation() const { return mUpdate; }
     void setUpdateOperation(bool set){ mUpdate = set; }
 
-    void setOperation(ImageOperation* operation) { mOperation = operation; }
+    ImageOperation* operation() const { return mOperation; }
+    void setOperation(ImageOperation* theOperation) { mOperation = theOperation; }
 
 public slots:
     void setEditable(bool set) { mEditable = set; }

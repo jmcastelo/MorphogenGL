@@ -2,21 +2,22 @@
 
 
 #include "operationwidget.h"
-#include "parameters/uniformparameter.h"
+#include "parameters/uniformmat4parameter.h"
 
 #include <limits>
 
 
 
-OperationWidget::OperationWidget(ImageOperation* operation, bool midiEnabled, QWidget* parent) : QFrame(parent)
+OperationWidget::OperationWidget(ImageOperation* operation, bool midiEnabled, QWidget* parent) :
+    QFrame(parent),
+    mOperation { operation },
+    mMidiEnabled {midiEnabled }
 {
-    mOpBuilder = new OperationBuilder(operation);
+    mOpBuilder = new OperationBuilder(mOperation);
     mOpBuilder->installEventFilter(this);
     mOpBuilder->setVisible(false);
 
-    connect(mOpBuilder, &OperationBuilder::shadersParsed, this, [=, this](){
-        recreate(operation, midiEnabled);
-    });
+    connect(mOpBuilder, &OperationBuilder::shadersParsed, this, &OperationWidget::recreate);
 
     mainLayout = new QVBoxLayout;
     mainLayout->setSizeConstraint(QLayout::SetMinAndMaxSize);
@@ -123,6 +124,7 @@ OperationWidget::OperationWidget(ImageOperation* operation, bool midiEnabled, QW
     selParamDial = new QDial;
     selParamDial->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
     selParamDial->setRange(0, 100'000);
+    selParamDial->setWrapping(false);
 
     midiLinkButton = new QPushButton;
     midiLinkButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
@@ -151,6 +153,11 @@ OperationWidget::OperationWidget(ImageOperation* operation, bool midiEnabled, QW
     layoutComboBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
     layoutComboBox->setVisible(false);
 
+    mat4TypeComboBox = new QComboBox;
+    mat4TypeComboBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+    mat4TypeComboBox->setVisible(false);
+    mat4TypeComboBox->addItems(QList<QString>{ "Translation", "Rotation", "Scaling", "Orthographic", "Mat4" });
+
     QHBoxLayout* defaultLayout = new QHBoxLayout;
     defaultLayout->addWidget(midiLinkButton);
     defaultLayout->addWidget(selParamDial);
@@ -159,6 +166,7 @@ OperationWidget::OperationWidget(ImageOperation* operation, bool midiEnabled, QW
 
     QHBoxLayout* extraLayout = new QHBoxLayout;
     extraLayout->addWidget(layoutComboBox);
+    extraLayout->addWidget(mat4TypeComboBox);
     extraLayout->addWidget(selParamInfLineEdit);
     extraLayout->addWidget(selParamSupLineEdit);
 
@@ -180,7 +188,7 @@ OperationWidget::OperationWidget(ImageOperation* operation, bool midiEnabled, QW
     setFrameStyle(QFrame::Box | QFrame::Plain);
     setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
 
-    setup(operation, midiEnabled);
+    setup();
 }
 
 
@@ -192,46 +200,61 @@ OperationWidget::~OperationWidget()
 
 
 
-void OperationWidget::setup(ImageOperation* operation, bool midiEnabled)
+void OperationWidget::setup()
 {
+    lastFocusedWidget = nullptr;
+
     // Parameter widgets
 
-    foreach (auto parameter, operation->uniformParameters<float>())
+    foreach (auto parameter, mOperation->uniformParameters<float>())
     {
         UniformParameterWidget<float>* widget = new UniformParameterWidget<float>(parameter);
         gridWidget->addWidget(widget->widget(), parameter->row(), parameter->col());
+
         floatParamWidgets.append(widget);
         uniformFloatParamWidgets.append(widget);
+
+        setFocusedWidget(widget);
     }
 
-    foreach (auto parameter, operation->uniformParameters<int>())
+    foreach (auto parameter, mOperation->uniformParameters<int>())
     {
         UniformParameterWidget<int>* widget = new UniformParameterWidget<int>(parameter);
         gridWidget->addWidget(widget->widget(), parameter->row(), parameter->col());
+
         intParamWidgets.append(widget);
         uniformIntParamWidgets.append(widget);
+
+        setFocusedWidget(widget);
     }
 
-    foreach (auto parameter, operation->uniformParameters<unsigned int>())
+    foreach (auto parameter, mOperation->uniformParameters<unsigned int>())
     {
         UniformParameterWidget<unsigned int>* widget = new UniformParameterWidget<unsigned int>(parameter);
         gridWidget->addWidget(widget->widget(), parameter->row(), parameter->col());
+
         uintParamWidgets.append(widget);
         uniformUintParamWidgets.append(widget);
+
+        setFocusedWidget(widget);
     }
 
-    foreach (auto parameter, operation->mat4UniformParameters())
+    foreach (auto parameter, mOperation->mat4UniformParameters())
     {
         UniformMat4ParameterWidget* widget = new UniformMat4ParameterWidget(parameter);
         gridWidget->addWidget(widget->widget(), parameter->row(), parameter->col());
-        floatParamWidgets.append(widget);
+
         mat4ParamWidgets.append(widget);
+        uniformMat4ParamWidgets.append(widget);
+
+        setFocusedWidget(widget);
     }
 
-    foreach (auto parameter, operation->optionsParameters<GLenum>())
+    foreach (auto parameter, mOperation->optionsParameters<GLenum>())
     {
         OptionsParameterWidget<GLenum>* widget = new OptionsParameterWidget<GLenum>(parameter);
         gridWidget->addWidget(widget->widget(), parameter->row(), parameter->col());
+
         glenumOptionsWidgets.append(widget);
     }
 
@@ -242,19 +265,25 @@ void OperationWidget::setup(ImageOperation* operation, bool midiEnabled)
 
     // Selected parameter widget
 
-    if (!floatParamWidgets.empty() || !intParamWidgets.empty() || !uintParamWidgets.empty())
+    if (!floatParamWidgets.empty() || !intParamWidgets.empty() || !uintParamWidgets.empty() || !mat4ParamWidgets.empty())
     {
         selParamGroupBox->setVisible(true);
 
-        connectParameterWidgets<float>(floatParamWidgets);
-        connectParameterWidgets<int>(intParamWidgets);
-        connectParameterWidgets<unsigned int>(uintParamWidgets);
+        connectParamWidgets<float>(floatParamWidgets);
+        connectParamWidgets<int>(intParamWidgets);
+        connectParamWidgets<unsigned int>(uintParamWidgets);
+        connectParamWidgets<float>(mat4ParamWidgets);
 
-        connectUniformParameterWidgets<float>(uniformFloatParamWidgets);
-        connectUniformParameterWidgets<int>(uniformIntParamWidgets);
-        connectUniformParameterWidgets<unsigned int>(uniformUintParamWidgets);
+        connectUniformParamWidgets<float>(uniformFloatParamWidgets);
+        connectUniformParamWidgets<int>(uniformIntParamWidgets);
+        connectUniformParamWidgets<unsigned int>(uniformUintParamWidgets);
 
-        lastFocusedWidget = nullptr;
+        connectUniformFloatParamWidgets();
+
+        connectUniformMat4ParamWidgets();
+
+        if (lastFocusedWidget)
+            lastFocusedWidget->setFocus();
     }
     else
     {
@@ -263,34 +292,82 @@ void OperationWidget::setup(ImageOperation* operation, bool midiEnabled)
 
     // Operation name controls
 
-    opNameLabel->setText(operation->name());
+    opNameLabel->setText(mOperation->name());
 
-    opNameLineEdit->setText(operation->name());
-    opNameLineEdit->setFixedWidth(20 + opNameLineEdit->fontMetrics().horizontalAdvance(operation->name()));
+    opNameLineEdit->setText(mOperation->name());
+    opNameLineEdit->setFixedWidth(20 + opNameLineEdit->fontMetrics().horizontalAdvance(mOperation->name()));
 
     // Midi link button
 
-    midiLinkButton->setVisible(midiEnabled);
+    midiLinkButton->setVisible(mMidiEnabled);
 
     // Enable button
 
-    enableButton->setChecked(operation->isEnabled());
+    enableButton->setChecked(mOperation->isEnabled());
 
     disconnect(enableButton, &QPushButton::toggled, this, nullptr);
 
-    connect(enableButton, &QPushButton::toggled, this, [=](bool checked){
-        operation->enable(checked);
+    connect(enableButton, &QPushButton::toggled, this, [=, this](bool checked){
+        mOperation->enable(checked);
     });
 
     // Toggle editable widgets
 
     setEditableWidgets(editMode);
+
+    //bodyWidget->updateGeometry();
+}
+
+
+
+void OperationWidget::recreate()
+{
+    minValidator = nullptr;
+    maxValidator = nullptr;
+
+    infValidator = nullptr;
+    supValidator = nullptr;
+
+    gridWidget->clear();
+
+    qDeleteAll(floatParamWidgets);
+    floatParamWidgets.clear();
+    uniformFloatParamWidgets.clear();
+
+    qDeleteAll(intParamWidgets);
+    intParamWidgets.clear();
+    uniformIntParamWidgets.clear();
+
+    qDeleteAll(uintParamWidgets);
+    uintParamWidgets.clear();
+    uniformUintParamWidgets.clear();
+
+    qDeleteAll(mat4ParamWidgets);
+    mat4ParamWidgets.clear();
+    uniformMat4ParamWidgets.clear();
+
+    qDeleteAll(glenumOptionsWidgets);
+    glenumOptionsWidgets.clear();
+
+    setup();
 }
 
 
 
 template <typename T>
-void OperationWidget::connectParameterWidgets(QList<ParameterWidget<T>*> widgets)
+void OperationWidget::setFocusedWidget(ParameterWidget<T>* widget)
+{
+    if (widget->parameter() == lastFocusedParameter)
+    {
+        lastFocusedWidget = widget->lastFocusedWidget();
+        lastFocused = true;
+    }
+}
+
+
+
+template <typename T>
+void OperationWidget::connectParamWidgets(QList<ParameterWidget<T>*> widgets)
 {
     foreach (auto widget, widgets)
     {
@@ -304,6 +381,7 @@ void OperationWidget::connectParameterWidgets(QList<ParameterWidget<T>*> widgets
         });
 
         connect(widget, &ParameterWidget<T>::focusIn, this, [=, this](){
+            lastFocusedParameter = widget->parameter();
             lastFocusedWidget = widget->lastFocusedWidget();
             lastFocused = true;
         });
@@ -313,13 +391,15 @@ void OperationWidget::connectParameterWidgets(QList<ParameterWidget<T>*> widgets
 
 
 template <typename T>
-void OperationWidget::connectUniformParameterWidgets(QList<UniformParameterWidget<T>*> widgets)
+void OperationWidget::connectUniformParamWidgets(QList<UniformParameterWidget<T>*> widgets)
 {
     foreach (auto widget, widgets)
     {
         connect(widget, &UniformParameterWidget<T>::focusIn, this, [=, this](){
             if (editMode)
             {
+                // Set up layout controller combo box
+
                 layoutComboBox->disconnect();
                 layoutComboBox->clear();
 
@@ -344,33 +424,74 @@ void OperationWidget::connectUniformParameterWidgets(QList<UniformParameterWidge
 
 
 
-void OperationWidget::recreate(ImageOperation* operation, bool midiEnabled)
+void OperationWidget::connectUniformFloatParamWidgets()
 {
-    minValidator = nullptr;
-    maxValidator = nullptr;
+    foreach (auto widget, uniformFloatParamWidgets)
+    {
+        connect(widget, &UniformParameterWidget<float>::focusIn, this, [=, this](){
+            if (editMode)
+            {
+                // Set up Mat4 parameter switcher combo box
 
-    infValidator = nullptr;
-    supValidator = nullptr;
+                mat4TypeComboBox->disconnect();
 
-    gridWidget->clear();
+                if (widget->isMat4Equivalent())
+                {
+                    mat4TypeComboBox->setVisible(true);
+                    mat4TypeComboBox->setCurrentIndex(4);
 
-    qDeleteAll(floatParamWidgets);
-    floatParamWidgets.clear();
-    mat4ParamWidgets.clear();
-    uniformFloatParamWidgets.clear();
+                    connect(mat4TypeComboBox, &QComboBox::currentIndexChanged, this, [=, this](int index){
+                        if (index < 4)
+                        {
+                            UniformParameter<float>* parameter = widget->parameter();
 
-    qDeleteAll(intParamWidgets);
-    intParamWidgets.clear();
-    uniformIntParamWidgets.clear();
+                            UniformMat4Parameter* newParam = new UniformMat4Parameter(*parameter, static_cast<UniformMat4Type>(index));
+                            mOperation->addMat4UniformParameter(newParam);
+                            mOperation->removeUniformParameter<float>(parameter);
 
-    qDeleteAll(uintParamWidgets);
-    uintParamWidgets.clear();
-    uniformUintParamWidgets.clear();
+                            lastFocusedParameter = newParam;
 
-    qDeleteAll(glenumOptionsWidgets);
-    glenumOptionsWidgets.clear();
+                            recreate();
+                        }
+                    });
+                }
+                else
+                    mat4TypeComboBox->setVisible(false);
+            }
+        });
+    }
+}
 
-    setup(operation, midiEnabled);
+
+
+void OperationWidget::connectUniformMat4ParamWidgets()
+{
+    foreach (auto widget, uniformMat4ParamWidgets)
+    {
+        connect(widget, &UniformMat4ParameterWidget::focusIn, this, [=, this](){
+            if (editMode)
+            {
+                // Set up Mat4 parameter switcher combo box
+
+                mat4TypeComboBox->disconnect();
+
+                mat4TypeComboBox->setVisible(true);
+                mat4TypeComboBox->setCurrentIndex(widget->typeIndex());
+
+                connect(mat4TypeComboBox, &QComboBox::currentIndexChanged, this, [=, this](int index){
+                    if (index < 4)
+                    {
+                        UniformMat4Parameter* parameter = widget->parameter();
+                        parameter->setType(static_cast<UniformMat4Type>(index));
+
+                        lastFocusedParameter = parameter;
+
+                        recreate();
+                    }
+                });
+            }
+        });
+    }
 }
 
 
@@ -791,12 +912,7 @@ void OperationWidget::toggleBody(bool visible)
 {
     bodyWidget->setVisible(visible);
 
-    if (visible)
-    {
-        gridWidget->optimizeLayout();
-        //setFixedSize(QSize(qMax(bodyWidget->width(), headerWidget->width()), headerWidget->height() + bodyWidget->height()));
-    }
-    else
+    if (!visible)
     {
         setFixedSize(headerWidget->size());
         updateGeometry();
@@ -818,8 +934,6 @@ void OperationWidget::toggleEdit(bool state)
 
     selParamInfLineEdit->setVisible(state);
     selParamSupLineEdit->setVisible(state);
-
-    layoutComboBox->setVisible(state);
 
     editMode = state;
 }
@@ -856,7 +970,16 @@ void OperationWidget::setEditableWidgets(bool state)
             paramWidget->toggleVisibility(true);
         else
             paramWidget->setDefaultVisibility();
+    }
 
+    foreach (auto paramWidget, mat4ParamWidgets)
+    {
+        paramWidget->setCheckable(state);
+
+        if (state)
+            paramWidget->toggleVisibility(true);
+        else
+            paramWidget->setDefaultVisibility();
     }
 
     foreach (auto paramWidget, glenumOptionsWidgets)

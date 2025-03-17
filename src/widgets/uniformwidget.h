@@ -44,6 +44,9 @@ public:
 
     QList<QString> availableLayoutFormats();
 
+    bool isMat4Equivalent();
+    UniformParameter<T>* parameter() const { return mUniformParameter; }
+
 private:
     UniformParameter<T>* mUniformParameter;
 

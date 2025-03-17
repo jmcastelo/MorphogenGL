@@ -9,9 +9,9 @@ UniformMat4ParameterWidget::UniformMat4ParameterWidget(UniformMat4Parameter* the
     ParameterWidget<float>(parent),
     mUniformMat4Parameter { theUniformMat4Parameter }
 {
-    mParameter = mUniformMat4Parameter;
+    ParameterWidget<float>::mParameter = mUniformMat4Parameter;
 
-    mGroupBox->setTitle(mUniformMat4Parameter->name());
+    ParameterWidget<float>::mGroupBox->setTitle(mUniformMat4Parameter->name());
 
     // Set up line edits
 
@@ -27,7 +27,8 @@ UniformMat4ParameterWidget::UniformMat4ParameterWidget(UniformMat4Parameter* the
         mLineEdits.append(lineEdit);
     }
 
-    mLastFocusedWidget = mLineEdits[0];
+    if (!mLineEdits.empty())
+        ParameterWidget<float>::mLastFocusedWidget = mLineEdits[0];
     mLastIndex = 0;
 
     // Set up form layout
@@ -38,25 +39,25 @@ UniformMat4ParameterWidget::UniformMat4ParameterWidget(UniformMat4Parameter* the
     foreach (QString numberName, mUniformMat4Parameter->numberNames())
         formLayout->addRow(numberName, mLineEdits[i++]);
 
-    mGroupBox->setLayout(formLayout);
+    ParameterWidget<float>::mGroupBox->setLayout(formLayout);
 
     // Connections
 
     for (int i = 0; i < mUniformMat4Parameter->numbers().size(); i++)
     {
-        connect(mLineEdits[i], &FocusLineEdit::editingFinished, this, [=, this](){
+        ParameterWidget<float>::connect(mLineEdits[i], &FocusLineEdit::editingFinished, this, [=, this](){
             mUniformMat4Parameter->setValue(i, mLineEdits[i]->text().toFloat());
         });
 
-        connect(mLineEdits[i], &FocusLineEdit::focusIn, this, [=, this](){
-            mSelectedNumber = mUniformMat4Parameter->number(i);
-            mLastFocusedWidget = mLineEdits[i];
+        ParameterWidget<float>::connect(mLineEdits[i], &FocusLineEdit::focusIn, this, [=, this](){
+            ParameterWidget<float>::mSelectedNumber = mUniformMat4Parameter->number(i);
+            ParameterWidget<float>::mLastFocusedWidget = mLineEdits[i];
             mLastIndex = i;
         });
-        connect(mLineEdits[i], &FocusLineEdit::focusIn, this, &UniformMat4ParameterWidget::focusIn);
-        connect(mLineEdits[i], &FocusLineEdit::focusOut, this, &UniformMat4ParameterWidget::focusOut);
+        ParameterWidget<float>::connect(mLineEdits[i], &FocusLineEdit::focusIn, this, &UniformMat4ParameterWidget::focusIn);
+        ParameterWidget<float>::connect(mLineEdits[i], &FocusLineEdit::focusOut, this, &UniformMat4ParameterWidget::focusOut);
 
-        connect(mUniformMat4Parameter, QOverload<int, QVariant>::of(&Parameter::valueChanged), this, [=, this](int i, QVariant newValue){
+        ParameterWidget<float>::connect(mUniformMat4Parameter, QOverload<int, QVariant>::of(&Parameter::valueChanged), this, [=, this](int i, QVariant newValue){
             mLineEdits[i]->setText(QString::number(newValue.toFloat()));
         });
     }
@@ -71,7 +72,7 @@ QString UniformMat4ParameterWidget::name() { return mUniformMat4Parameter->name(
 void UniformMat4ParameterWidget::setName(QString theName)
 {
     mUniformMat4Parameter->setName(theName);
-    mGroupBox->setTitle(theName);
+    ParameterWidget<float>::mGroupBox->setTitle(theName);
 }
 
 
@@ -92,4 +93,11 @@ void UniformMat4ParameterWidget::setValueFromIndex(int index) { mUniformMat4Para
 
 
 
-QGroupBox* UniformMat4ParameterWidget::widget() { return mGroupBox; }
+int UniformMat4ParameterWidget::typeIndex() const
+{
+    return mUniformMat4Parameter->typeIndex();
+}
+
+
+
+QGroupBox* UniformMat4ParameterWidget::widget() { return ParameterWidget<float>::mGroupBox; }

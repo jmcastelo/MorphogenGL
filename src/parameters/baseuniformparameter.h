@@ -16,11 +16,13 @@ public:
 
     BaseUniformParameter(QString theName, QString theUniformName, int theUniformType, bool isEditable, QList<QPair<QUuid, T>> theIdValuePairs, T theMin, T theMax, T theInf, T theSup, ImageOperation* theOperation);
 
+    BaseUniformParameter(QString theName, QString theUniformName, int theUniformType, bool isEditable, ImageOperation* theOperation);
+
     BaseUniformParameter(const BaseUniformParameter<T>& parameter);
 
     ~BaseUniformParameter();
 
-    QString uniformName();
+    QString uniformName() const;
     int uniformType();
 
     T value(int i);

@@ -30,6 +30,9 @@ public:
 
     void setValueFromIndex(int index);
 
+    UniformMat4Parameter* parameter() { return mUniformMat4Parameter; }
+    int typeIndex() const;
+
     QGroupBox* widget();
 
 private:

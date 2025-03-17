@@ -7,6 +7,15 @@
 
 
 template <typename T>
+BaseUniformParameter<T>::BaseUniformParameter(QString theName, QString theUniformName, int theUniformType, bool isEditable, ImageOperation* theOperation) :
+    Parameter(theName, isEditable, theOperation),
+    mUniformName { theUniformName },
+    mUniformType { theUniformType }
+{}
+
+
+
+template <typename T>
 BaseUniformParameter<T>::BaseUniformParameter(QString theName, QString theUniformName, int theUniformType, bool isEditable, QList<T> theValues, T theMin, T theMax, T theInf, T theSup, ImageOperation* theOperation) :
     Parameter(theName, isEditable, theOperation),
     mUniformName { theUniformName },
@@ -69,7 +78,7 @@ BaseUniformParameter<T>::~BaseUniformParameter()
 
 
 template <typename T>
-QString BaseUniformParameter<T>::uniformName() { return mUniformName; }
+QString BaseUniformParameter<T>::uniformName() const { return mUniformName; }
 
 template <typename T>
 int BaseUniformParameter<T>::uniformType() { return mUniformType; }
