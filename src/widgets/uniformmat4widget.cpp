@@ -6,12 +6,10 @@
 
 
 UniformMat4ParameterWidget::UniformMat4ParameterWidget(UniformMat4Parameter* theUniformMat4Parameter, QObject* parent) :
-    ParameterWidget<float>(parent),
+    ParameterWidget<float>(theUniformMat4Parameter, parent),
     mUniformMat4Parameter { theUniformMat4Parameter }
 {
-    ParameterWidget<float>::mParameter = mUniformMat4Parameter;
-
-    ParameterWidget<float>::mGroupBox->setTitle(mUniformMat4Parameter->name());
+    mGroupBox->setTitle(mUniformMat4Parameter->name());
 
     // Set up line edits
 
@@ -28,7 +26,15 @@ UniformMat4ParameterWidget::UniformMat4ParameterWidget(UniformMat4Parameter* the
     }
 
     if (!mLineEdits.empty())
+    {
         ParameterWidget<float>::mLastFocusedWidget = mLineEdits[0];
+        ParameterWidget<float>::mSelectedNumber = mUniformMat4Parameter->number(0);
+    }
+    else
+    {
+        ParameterWidget<float>::mLastFocusedWidget = ParameterWidget<float>::mGroupBox;
+    }
+
     mLastIndex = 0;
 
     // Set up form layout
@@ -39,7 +45,13 @@ UniformMat4ParameterWidget::UniformMat4ParameterWidget(UniformMat4Parameter* the
     foreach (QString numberName, mUniformMat4Parameter->numberNames())
         formLayout->addRow(numberName, mLineEdits[i++]);
 
-    ParameterWidget<float>::mGroupBox->setLayout(formLayout);
+    // Layout
+
+    QVBoxLayout* layout = new QVBoxLayout;
+    layout->addLayout(formLayout);
+    layout->addWidget(mPresetsComboBox);
+
+    mGroupBox->setLayout(layout);
 
     // Connections
 

@@ -35,7 +35,7 @@ protected:
 private:
     QGridLayout* gridLayout;
 
-    int margin = 20;
+    int margin = 25;
     int spacing = 10;
 
     int minWidgetWidth = -1;
@@ -45,7 +45,6 @@ private:
 
     QLayoutItem* sourceItem = nullptr;
     QPoint sourceOffset;
-    QSize sourceSize;
     QPoint dragPoint;
 
     void computeMinWidgetSize();

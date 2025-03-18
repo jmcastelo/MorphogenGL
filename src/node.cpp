@@ -28,6 +28,7 @@
 
 #include <QWidget>
 #include <QPainter>
+#include <QGraphicsSceneResizeEvent>
 /*#include <QGraphicsSceneMouseEvent>
 #include <QPainter>
 #include <QStyleOption>
@@ -45,14 +46,10 @@ Node::Node(QWidget *widget, QGraphicsItem* parent) :
     setFlags(ItemIsMovable | ItemIsSelectable | ItemSendsGeometryChanges);
     setCacheMode(DeviceCoordinateCache);
 
-    setPreferredSize(mWidget->size());
-
     mWidget->installEventFilter(this);
 
     mProxyWidget = new QGraphicsProxyWidget(this);
     mProxyWidget->setWidget(mWidget);
-    mProxyWidget->setPos(0, 0);
-    mProxyWidget->setGeometry(rect());
 }
 
 
@@ -67,44 +64,32 @@ void Node::closeEvent(QCloseEvent* event)
 
 void Node::resizeEvent(QGraphicsSceneResizeEvent *event)
 {
+    mProxyWidget->resize(event->newSize());
     QGraphicsWidget::resizeEvent(event);
-
-    mProxyWidget->setPos(0, 0);
-    mProxyWidget->setGeometry(rect());
 }
 
 
 
-QSizeF Node::sizeHint(Qt::SizeHint which, const QSizeF &constraint) const
+/*QSizeF Node::sizeHint(Qt::SizeHint which, const QSizeF &constraint) const
 {
     if (which == Qt::PreferredSize)
-    {
         return preferredSize();
-    }
+
     return QGraphicsWidget::sizeHint(which, constraint);
-}
+}*/
 
 
 
 bool Node::eventFilter(QObject *obj, QEvent *event)
 {
-    if (obj == mProxyWidget->widget() && event->type() == QEvent::Resize)
+    if (obj == mWidget && event->type() == QEvent::Resize)
     {
         QResizeEvent *resizeEvent = static_cast<QResizeEvent*>(event);
-        QSize newSize = resizeEvent->size();
+        QSizeF newSize = resizeEvent->size();
 
-        // Update the QGraphicsWidget's preferred size.
-        setPreferredSize(newSize);
+        resize(newSize);
 
-        // Update the proxy's geometry to fill the QGraphicsWidget.
-        setGeometry(QRectF(pos(), newSize));
-
-        mProxyWidget->setPos(0, 0);
-        mProxyWidget->setGeometry(rect());
-
-        // Notify the layout system of the change.
-        updateGeometry();
-        return false; // Continue processing, unless you want to block further handling.
+        return false;
     }
     return QGraphicsWidget::eventFilter(obj, event);
 }

@@ -147,6 +147,14 @@ void ImageOperation::addMat4UniformParameter(UniformMat4Parameter* parameter)
 
 
 template<>
+void ImageOperation::addOptionsParameter<GLenum>(OptionsParameter<GLenum>* parameter)
+{
+    glenumOptionsParameters.append(parameter);
+}
+
+
+
+template<>
 void ImageOperation::removeUniformParameter<float>(UniformParameter<float>* parameter)
 {
     if (floatUniformParameters.removeOne(parameter))
@@ -171,6 +179,22 @@ void ImageOperation::removeUniformParameter<unsigned int>(UniformParameter<unsig
         delete parameter;
 }
 
+
+
+void ImageOperation::removeMat4UniformParameter(UniformMat4Parameter* parameter)
+{
+    if (mMat4UniformParameters.removeOne(parameter))
+        delete parameter;
+}
+
+
+
+template<>
+void ImageOperation::removeOptionsParameter<GLenum>(OptionsParameter<GLenum>* parameter)
+{
+    if (glenumOptionsParameters.removeOne(parameter))
+        delete parameter;
+}
 
 
 template<>

@@ -42,7 +42,6 @@ UniformMat4Parameter::UniformMat4Parameter(QString theName, QString theUniformNa
     }
     else if (mType == UniformMat4Type::ORTHOGRAPHIC)
     {
-        mEditable = false;
         mOperation->setOrthographicProjection(mUniformName);
     }
 }
@@ -100,9 +99,12 @@ void UniformMat4Parameter::setType(UniformMat4Type type)
     }
     else if (mType == UniformMat4Type::ORTHOGRAPHIC)
     {
-        mEditable = false;
         mOperation->setOrthographicProjection(mUniformName);
     }
+
+    mPresets.clear();
+
+    mEmpty = mNumbers.empty();
 
     for (int i = 0; i < mNumbers.size(); i++)
         connect(mNumbers[i], &NumberSignals::valueChanged, this, [=, this](QVariant value){ emit valueChanged(i, value); });

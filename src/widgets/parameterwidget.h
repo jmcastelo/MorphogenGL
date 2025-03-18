@@ -4,7 +4,7 @@
 
 
 #include "../parameters/number.h"
-#include "../parameters/parameter.h"
+#include "../parameters/baseuniformparameter.h"
 #include "focuswidgets.h"
 
 #include <QObject>
@@ -34,17 +34,36 @@ template <typename T>
 class ParameterWidget : public ParameterWidgetSignals
 {
 public:
-    ParameterWidget(QObject* parent = nullptr) : ParameterWidgetSignals(parent)
+    ParameterWidget(BaseUniformParameter<T>* parameter, QObject* parent = nullptr) :
+        ParameterWidgetSignals(parent),
+        mParameter { parameter }
     {
-        mGroupBox = new QGroupBox;
+        mGroupBox = new FocusGroupBox;
         mGroupBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
         mGroupBox->setStyleSheet("QGroupBox::title { subcontrol-origin: margin; subcontrol-position: top center; font-size: 18pt; margin: 7px; }");
         mGroupBox->setCheckable(false);
+
+        connect(mGroupBox, &FocusGroupBox::focusIn, this, &ParameterWidgetSignals::focusIn);
+
+        mPresetsComboBox = new QComboBox;
+        mPresetsComboBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+        mPresetsComboBox->setEditable(false);
+        mPresetsComboBox->setPlaceholderText("Presets");
+        mPresetsComboBox->addItems(mParameter->presetNames());
+        mPresetsComboBox->setVisible(mPresetsComboBox->count() != 0);
+
+        connect(mPresetsComboBox, &QComboBox::activated, this, [=, this](int index){
+            if (index >= 0)
+            {
+                QString name = mPresetsComboBox->currentText();
+                mParameter->setPreset(name);
+            }
+        });
     }
 
     Number<T>* selectedNumber() { return mSelectedNumber; }
 
-    FocusLineEdit* lastFocusedWidget() { return mLastFocusedWidget; }
+    QWidget* lastFocusedWidget() { return mLastFocusedWidget; }
 
     QGroupBox* widget() { return mGroupBox; }
 
@@ -62,13 +81,14 @@ public:
             disconnect(mGroupBox, &QGroupBox::toggled, mParameter, &Parameter::setEditable);
         }
     }
+
     void toggleVisibility(bool visible) { mGroupBox->setVisible(visible); }
     void setDefaultVisibility() { mGroupBox->setVisible(mParameter->editable()); }
 
     void setRow(int i) { mParameter->setRow(i); }
     void setCol(int i) { mParameter->setCol(i); }
 
-    QString name(){ return mParameter->name(); }
+    QString name() { return mParameter->name(); }
 
     void setName(QString theName)
     {
@@ -83,15 +103,41 @@ public:
     virtual void setInf(T theInf) = 0;
     virtual void setSup(T theSup) = 0;
 
-    bool isEditable(){ return mParameter->editable(); }
+    bool isEditable() { return mParameter->editable(); }
 
     Parameter* parameter() const { return mParameter; }
 
+    void addPreset(QString name)
+    {
+        if (!name.isEmpty())
+        {
+            mParameter->addPreset(name);
+
+            mPresetsComboBox->addItem(name);
+            mPresetsComboBox->setCurrentText(name);
+            mPresetsComboBox->setVisible(mPresetsComboBox->count() != 0);
+        }
+    }
+
+    void removeCurrentPreset()
+    {
+        QString name = mPresetsComboBox->currentText();
+        if (!name.isEmpty())
+            mParameter->removePreset(name);
+
+        int index = mPresetsComboBox->currentIndex();
+        if (index >= 0)
+            mPresetsComboBox->removeItem(index);
+
+        mPresetsComboBox->setVisible(mPresetsComboBox->count() != 0);
+    }
+
 protected:
-    Parameter* mParameter;
+    BaseUniformParameter<T>* mParameter;
     Number<T>* mSelectedNumber;
-    FocusLineEdit* mLastFocusedWidget;
-    QGroupBox* mGroupBox;
+    QWidget* mLastFocusedWidget;
+    FocusGroupBox* mGroupBox;
+    QComboBox* mPresetsComboBox;
 };
 
 

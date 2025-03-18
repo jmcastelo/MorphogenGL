@@ -52,6 +52,7 @@ OperationBuilder::OperationBuilder(ImageOperation *operation, QWidget *parent) :
     fragmentEditor->setLineWrapMode(QPlainTextEdit::NoWrap);
 
     QTabWidget* shadersTabWidget = new QTabWidget;
+    shadersTabWidget->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
     shadersTabWidget->addTab(vertexEditor, "Vertex shader");
     shadersTabWidget->addTab(fragmentEditor, "Fragment shader");
 
@@ -82,6 +83,44 @@ OperationBuilder::~OperationBuilder()
     delete mProgram;
     delete mContext;
     delete mSurface;
+}
+
+
+
+void OperationBuilder::addMat4UniformParameter(UniformMat4Parameter* parameter)
+{
+    mat4ParamMap.insert(parameter->uniformName(), parameter);
+    mOperation->addMat4UniformParameter(parameter);
+}
+
+
+
+void OperationBuilder::removeMat4UniformParameter(UniformMat4Parameter* parameter)
+{
+    if (mat4ParamMap.contains(parameter->uniformName()))
+    {
+        mat4ParamMap.remove(parameter->uniformName());
+        mOperation->removeMat4UniformParameter(parameter);
+    }
+}
+
+
+
+void OperationBuilder::addUniformFloatParameter(UniformParameter<float>* parameter)
+{
+    fParamMap.insert(parameter->uniformName(), parameter);
+    mOperation->addUniformParameter<float>(parameter);
+}
+
+
+
+void OperationBuilder::removeUniformFloatParameter(UniformParameter<float>* parameter)
+{
+    if (fParamMap.contains(parameter->uniformName()))
+    {
+        fParamMap.remove(parameter->uniformName());
+        mOperation->removeUniformParameter<float>(parameter);
+    }
 }
 
 
@@ -219,6 +258,11 @@ void OperationBuilder::parseUniforms()
                 mOperation->removeUniformParameter<unsigned int>(uiParamMap[name]);
                 uiParamMap.remove(name);
             }
+            else if (mat4ParamMap.contains(name))
+            {
+                mOperation->removeMat4UniformParameter(mat4ParamMap[name]);
+                mat4ParamMap.remove(name);
+            }
         }
     }
 
@@ -306,10 +350,6 @@ void OperationBuilder::addUniformParameter(QString uniformName, int uniformType,
     if (parameter)
     {
         parameter->setUpdateOperation(false);
-
-        parameter->setRow(-1);
-        parameter->setCol(0);
-
         newParamList.append(uniformName);
     }
 }

@@ -55,7 +55,7 @@ class OperationWidget : public QFrame
     Q_OBJECT
 
 public:
-    explicit OperationWidget(ImageOperation* operation, bool midiEnabled, QWidget* parent = nullptr);
+    explicit OperationWidget(ImageOperation* operation, bool midiEnabled, bool editMode, QWidget* parent = nullptr);
     ~OperationWidget();
 
     void setup();
@@ -86,7 +86,7 @@ private:
 
     QVBoxLayout* mainLayout;
 
-    QFrame* headerWidget;
+    QWidget* headerWidget;
 
     QPushButton* enableButton;
     QPushButton* editButton;
@@ -106,9 +106,12 @@ private:
     QList<UniformParameterWidget<float>*> uniformFloatParamWidgets;
     QList<UniformParameterWidget<int>*> uniformIntParamWidgets;
     QList<UniformParameterWidget<unsigned int>*> uniformUintParamWidgets;
+
     QList<UniformMat4ParameterWidget*> uniformMat4ParamWidgets;
 
     QList<OptionsParameterWidget<GLenum>*> glenumOptionsWidgets;
+
+    QGroupBox* selParamGroupBox;
 
     QDial* selParamDial;
     FocusLineEdit* selParamMinLineEdit;
@@ -128,14 +131,17 @@ private:
 
     QPushButton* midiLinkButton;
 
-    QGroupBox* selParamGroupBox;
+    QGroupBox* presetsGroupBox;
+
+    QPushButton* removePresetButton;
+    QPushButton* addPresetButton;
+    QLineEdit* presetNameLineEdit;
 
     OperationBuilder* mOpBuilder;
-    bool editMode = false;
+    bool mEditMode;
 
-    Parameter* lastFocusedParameter;
+    Parameter* lastFocusedParameter = nullptr;
     QWidget* lastFocusedWidget = nullptr;
-    bool lastFocused = false;
 
     template <typename T>
     void setFocusedWidget(ParameterWidget<T>* widget);
@@ -151,6 +157,9 @@ private:
     void connectUniformMat4ParamWidgets();
 
     template <typename T>
+    void setSelParamNameWidgets(ParameterWidget<T>* widget);
+
+    template <typename T>
     void updateSelParamControls(ParameterWidget<T>* widget);
 
     template <typename T>
@@ -162,11 +171,15 @@ private:
     template <typename T>
     void updateMidiButtons(ParameterWidget<T>* widget);
 
+    void toggleSelParamWidgets(bool visible);
+
+    void addInterpolation();
+    void removeInterpolation();
+
 private slots:
     void updateWidgetRowCol(QWidget* widget, int row, int col);
     void toggleBody(bool visible);
-    void toggleEdit(bool state);
-    void setEditableWidgets(bool state);
+    void toggleEditMode(bool mode);
 };
 
 

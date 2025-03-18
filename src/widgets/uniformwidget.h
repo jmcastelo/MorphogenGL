@@ -6,6 +6,7 @@
 #include "parameterwidget.h"
 #include "../parameters/uniformparameter.h"
 #include "layoutformat.h"
+#include "focuswidgets.h"
 
 #include <cmath>
 

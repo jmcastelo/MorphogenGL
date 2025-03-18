@@ -105,7 +105,15 @@ public:
     void addMat4UniformParameter(UniformMat4Parameter* parameter);
 
     template<typename T>
+    void addOptionsParameter(OptionsParameter<T>* parameter);
+
+    template<typename T>
     void removeUniformParameter(UniformParameter<T>* parameter);
+
+    void removeMat4UniformParameter(UniformMat4Parameter* parameter);
+
+    template<typename T>
+    void removeOptionsParameter(OptionsParameter<T>* parameter);
 
     void clearParameters();
 

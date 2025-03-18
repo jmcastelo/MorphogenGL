@@ -720,7 +720,7 @@ void NodeManager::connectLoadedOperations(QMap<QUuid, QMap<QUuid, InputData*>> c
 OperationWidget* NodeManager::addNewOperation()
 {
     ImageOperation* operation = new ImageOperation("New Operation", sharedContext);
-    OperationWidget* opWidget = new OperationWidget(operation, false);
+    OperationWidget* opWidget = new OperationWidget(operation, false, true);
 
     QUuid id = QUuid::createUuid();
 

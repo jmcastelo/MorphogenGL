@@ -2,8 +2,8 @@
 
 
 #include "uniformparameter.h"
-#include "../imageoperation.h"
 #include "uniformmat4parameter.h"
+#include "../imageoperation.h"
 
 #include <QPair>
 #include <QOpenGLFunctions>
@@ -15,6 +15,8 @@ UniformParameter<T>::UniformParameter(QString theName, QString theUniformName, i
     BaseUniformParameter<T>(theName, theUniformName, theUniformType, isEditable, theOperation),
     nItems { numItems }
 {
+    // Determine number of values per item
+
     int numValuesPerItem = 0;
 
     if (BaseUniformParameter<T>::mUniformType == GL_FLOAT || BaseUniformParameter<T>::mUniformType == GL_INT || BaseUniformParameter<T>::mUniformType == GL_UNSIGNED_INT)
@@ -30,6 +32,8 @@ UniformParameter<T>::UniformParameter(QString theName, QString theUniformName, i
     else if (BaseUniformParameter<T>::mUniformType == GL_FLOAT_MAT4)
         numValuesPerItem = 16;
 
+    // Set values and numbers with default values
+
     QList<T> theValues = QList<T>(nItems * numValuesPerItem, 0);
 
     for (T value : theValues)
@@ -38,8 +42,23 @@ UniformParameter<T>::UniformParameter(QString theName, QString theUniformName, i
         BaseUniformParameter<T>::mNumbers.append(number);
     }
 
+    BaseUniformParameter<T>::mEmpty = theValues.empty();
+
+    // Connections
+
     for (int i = 0; i < BaseUniformParameter<T>::mNumbers.size(); i++)
         BaseUniformParameter<T>::connect(BaseUniformParameter<T>::mNumbers[i], &NumberSignals::valueChanged, this, [=, this](QVariant value){ emit BaseUniformParameter<T>::valueChanged(i, value); });
+}
+
+
+
+template <typename T>
+UniformParameter<T>::UniformParameter(const UniformMat4Parameter& parameter) :
+    UniformParameter<T>(parameter.name(), parameter.uniformName(), parameter.uniformType(), 1, parameter.editable(), parameter.operation())
+{
+    BaseUniformParameter<T>::mRow = parameter.row();
+    BaseUniformParameter<T>::mCol = parameter.col();
+    BaseUniformParameter<T>::mUpdate = parameter.updateOperation();
 }
 
 

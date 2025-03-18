@@ -37,7 +37,6 @@ public:
 
 private:
     UniformMat4Parameter* mUniformMat4Parameter;
-    QGroupBox* mGroupBox;
     QList<FocusLineEdit*> mLineEdits;
     int mLastIndex;
 };

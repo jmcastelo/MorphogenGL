@@ -12,18 +12,18 @@ template <typename T>
 class BaseUniformParameter : public Parameter
 {
 public:
+    BaseUniformParameter(QString theName, QString theUniformName, int theUniformType, bool isEditable, ImageOperation* theOperation);
+
     BaseUniformParameter(QString theName, QString theUniformName, int theUniformType, bool isEditable, QList<T> theValues, T theMin, T theMax, T theInf, T theSup, ImageOperation* theOperation);
 
     BaseUniformParameter(QString theName, QString theUniformName, int theUniformType, bool isEditable, QList<QPair<QUuid, T>> theIdValuePairs, T theMin, T theMax, T theInf, T theSup, ImageOperation* theOperation);
-
-    BaseUniformParameter(QString theName, QString theUniformName, int theUniformType, bool isEditable, ImageOperation* theOperation);
 
     BaseUniformParameter(const BaseUniformParameter<T>& parameter);
 
     ~BaseUniformParameter();
 
     QString uniformName() const;
-    int uniformType();
+    int uniformType() const;
 
     T value(int i);
     void setValue(int i, T theValue);
@@ -44,10 +44,17 @@ public:
     Number<T>* number(QUuid theId);
     Number<T>* number(int i);
 
+    QList<QString> presetNames();
+
+    void addPreset(QString name);
+    void removePreset(QString name);
+    void setPreset(QString name);
+
 protected:
     QString mUniformName;
     int mUniformType;
     QList<Number<T>*> mNumbers;
+    QMap<QString, QList<T>> mPresets;
 };
 
 #endif // BASEUNIFORMPARAMETER_H

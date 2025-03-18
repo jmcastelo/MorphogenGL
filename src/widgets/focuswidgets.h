@@ -31,6 +31,7 @@
 #include <QSlider>
 #include <QComboBox>
 #include <QPushButton>
+#include <QGroupBox>
 
 
 
@@ -134,6 +135,34 @@ protected:
     void focusInEvent(QFocusEvent* event)
     {
         QPushButton::focusInEvent(event);
+        emit focusIn();
+    }
+
+signals:
+    void focusOut();
+    void focusIn();
+};
+
+
+
+// A custom QPushButton that signals focus out and in
+
+class FocusGroupBox : public QGroupBox
+{
+    Q_OBJECT
+
+public:
+    FocusGroupBox(QWidget* parent = nullptr) : QGroupBox(parent) {}
+
+protected:
+    void focusOutEvent(QFocusEvent* event)
+    {
+        QGroupBox::focusOutEvent(event);
+        emit focusOut();
+    }
+    void focusInEvent(QFocusEvent* event)
+    {
+        QGroupBox::focusInEvent(event);
         emit focusIn();
     }
 

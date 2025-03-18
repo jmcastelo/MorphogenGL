@@ -78,10 +78,7 @@ void GridWidget::computeMinWidgetSize()
 int GridWidget::getRowSpan(QWidget* widget)
 {
     QRect widgetRect = widget->geometry();
-
-    qreal heightRatio = static_cast<qreal>(widgetRect.height()) / minWidgetHeight;
-    int rowSpan = qFloor(heightRatio + 0.5);
-
+    int rowSpan = widgetRect.height() / minWidgetHeight;
     return rowSpan;
 }
 
@@ -90,10 +87,7 @@ int GridWidget::getRowSpan(QWidget* widget)
 int GridWidget::getColSpan(QWidget* widget)
 {
     QRect widgetRect = widget->geometry();
-
-    qreal widthRatio = static_cast<qreal>(widgetRect.width()) / minWidgetWidth;
-    int colSpan = qFloor(widthRatio + 0.5);
-
+    int colSpan = widgetRect.width() / minWidgetWidth;
     return colSpan;
 }
 
@@ -159,6 +153,8 @@ void GridWidget::optimizeLayout()
 
     // Relocate items
 
+    hide();
+
     for (auto [item, coords] : itemCoords.asKeyValueRange())
     {
         gridLayout->removeItem(item);
@@ -167,7 +163,11 @@ void GridWidget::optimizeLayout()
         emit itemRowColChanged(item->widget(), coords[0], coords[1]);
     }
 
+    show();
+
     setRowColSizes();
+
+    adjustSize();
 }
 
 
@@ -178,39 +178,18 @@ void GridWidget::setRowColSizes()
     int maxCol = getMaxCol();
 
     for (int row = 0; row <= maxRow; row++)
-    {
-        if (countItemsInRow(row, maxCol) == 0)
-            gridLayout->setRowMinimumHeight(row, minWidgetHeight);
-        else
-            gridLayout->setRowMinimumHeight(row, 0);
-    }
+        gridLayout->setRowMinimumHeight(row, minWidgetHeight);
 
     int maxGridRow = gridLayout->rowCount() - 1;
     for (int row = maxRow + 1; row <= maxGridRow; row++)
         gridLayout->setRowMinimumHeight(row, 0);
 
     for (int col = 0; col <= maxCol; col++)
-    {
-        if (countItemsInCol(col, maxRow) == 0)
-            gridLayout->setColumnMinimumWidth(col, minWidgetWidth);
-        else
-            gridLayout->setColumnMinimumWidth(col, 0);
-    }
+        gridLayout->setColumnMinimumWidth(col, minWidgetWidth);
 
     int maxGridCol = gridLayout->columnCount() - 1;
     for (int col = maxCol + 1; col <= maxGridCol; col++)
         gridLayout->setColumnMinimumWidth(col, 0);
-}
-
-
-
-int GridWidget::itemIndex(QPoint pos)
-{
-    for (int index = 0; index < gridLayout->count(); index++)
-        if (gridLayout->itemAt(index)->geometry().contains(pos))
-            return index;
-
-    return -1;
 }
 
 
@@ -221,11 +200,15 @@ int GridWidget::getMaxRow()
 
     for (int index = 0; index < gridLayout->count(); index++)
     {
-        int row, col, rowSpan, colSpan;
-        gridLayout->getItemPosition(index, &row, &col, &rowSpan, &colSpan);
+        QLayoutItem* item = gridLayout->itemAt(index);
+        if (!item->isEmpty() && item->widget()->isVisible())
+        {
+            int row, col, rowSpan, colSpan;
+            gridLayout->getItemPosition(index, &row, &col, &rowSpan, &colSpan);
 
-        if (row + rowSpan - 1 > maxRow)
-            maxRow = row + rowSpan - 1;
+            if (row + rowSpan - 1 > maxRow)
+                maxRow = row + rowSpan - 1;
+        }
     }
 
     return maxRow;
@@ -239,11 +222,15 @@ int GridWidget::getMaxCol()
 
     for (int index = 0; index < gridLayout->count(); index++)
     {
-        int row, col, rowSpan, colSpan;
-        gridLayout->getItemPosition(index, &row, &col, &rowSpan, &colSpan);
+        QLayoutItem* item = gridLayout->itemAt(index);
+        if (!item->isEmpty() && item->widget()->isVisible())
+        {
+            int row, col, rowSpan, colSpan;
+            gridLayout->getItemPosition(index, &row, &col, &rowSpan, &colSpan);
 
-        if (col + colSpan - 1 > maxCol)
-            maxCol = col + colSpan - 1;
+            if (col + colSpan - 1 > maxCol)
+                maxCol = col + colSpan - 1;
+        }
     }
 
     return maxCol;
@@ -272,6 +259,8 @@ void GridWidget::moveItem(QLayoutItem* item, int deltaRow, int deltaCol)
         gridLayout->addItem(item, newRow, newCol, rowSpan, colSpan, Qt::AlignCenter);
 
         setRowColSizes();
+
+        adjustSize();
 
         emit itemRowColChanged(item->widget(), newRow, newCol);
     }
@@ -322,6 +311,17 @@ int GridWidget::countItemsInCol(int col, int rowMax)
 
 
 
+int GridWidget::itemIndex(QPoint pos)
+{
+    for (int index = 0; index < gridLayout->count(); index++)
+        if (gridLayout->itemAt(index)->widget()->geometry().contains(pos))
+            return index;
+
+    return -1;
+}
+
+
+
 void GridWidget::mousePressEvent(QMouseEvent* event)
 {
     if (event->buttons() == Qt::LeftButton && acceptDrops())
@@ -340,7 +340,7 @@ void GridWidget::mousePressEvent(QMouseEvent* event)
 
             QByteArray itemData;
             QDataStream dataStream(&itemData, QIODevice::WriteOnly);
-            dataStream << sourceIndex << offset << widget->size();
+            dataStream << sourceIndex << offset;
 
             QMimeData *mimeData = new QMimeData;
             mimeData->setData("application/x-dnditemdata", itemData);
@@ -351,7 +351,12 @@ void GridWidget::mousePressEvent(QMouseEvent* event)
             drag->setHotSpot(offset);
             drag->exec(Qt::MoveAction);
         }
+
+        event->accept();
+        return;
     }
+
+    event->ignore();
 }
 
 
@@ -368,7 +373,6 @@ void GridWidget::dragEnterEvent(QDragEnterEvent* event)
             int sourceIndex;
             dataStream >> sourceIndex;
             dataStream >> sourceOffset;
-            dataStream >> sourceSize;
 
             sourceItem = gridLayout->itemAt(sourceIndex);
         }

@@ -81,6 +81,8 @@ public:
 
     bool editable() const { return mEditable; }
 
+    bool empty() const { return mEmpty; }
+
     int row() const { return mRow; }
     void setRow(int i) { mRow = i; }
 
@@ -99,7 +101,9 @@ public slots:
 protected:
     QString mName;
     bool mEditable;
-    int mRow, mCol;
+    bool mEmpty = true;
+    int mRow = -1;
+    int mCol = 0;
     bool mUpdate = true;
     ImageOperation* mOperation;
 };

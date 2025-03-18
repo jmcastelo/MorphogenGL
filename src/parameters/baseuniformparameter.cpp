@@ -81,7 +81,7 @@ template <typename T>
 QString BaseUniformParameter<T>::uniformName() const { return mUniformName; }
 
 template <typename T>
-int BaseUniformParameter<T>::uniformType() { return mUniformType; }
+int BaseUniformParameter<T>::uniformType() const { return mUniformType; }
 
 
 
@@ -202,6 +202,52 @@ Number<T>* BaseUniformParameter<T>::number(int i)
         return mNumbers[i];
     else
         return new Number<T>(0, 0, 0, 0, 0);
+}
+
+
+
+template <typename T>
+QList<QString> BaseUniformParameter<T>::presetNames()
+{
+    return mPresets.keys();
+}
+
+
+
+template <typename T>
+void BaseUniformParameter<T>::addPreset(QString name)
+{
+    if (mPresets.contains(name))
+        mPresets.remove(name);
+
+    mPresets.insert(name, values());
+}
+
+
+
+template <typename T>
+void BaseUniformParameter<T>::removePreset(QString name)
+{
+    if (mPresets.contains(name))
+        mPresets.remove(name);
+}
+
+
+
+template <typename T>
+void BaseUniformParameter<T>::setPreset(QString name)
+{
+    if (mPresets.contains(name))
+    {
+        for (int i = 0; i < mNumbers.size(); i++)
+        {
+            mNumbers[i]->setValue(mPresets[name][i]);
+            emit valueChanged(i, QVariant(mNumbers[i]->value()));
+        }
+
+        if (mUpdate)
+            setUniform();
+    }
 }
 
 

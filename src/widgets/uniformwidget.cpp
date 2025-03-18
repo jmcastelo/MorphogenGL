@@ -2,16 +2,15 @@
 
 
 #include "uniformwidget.h"
+#include <QValidator>
 
 
 
 template <typename T>
 UniformParameterWidget<T>::UniformParameterWidget(UniformParameter<T>* theUniformParameter, QObject* parent) :
-    ParameterWidget<T>(parent),
+    ParameterWidget<T>(theUniformParameter, parent),
     mUniformParameter { theUniformParameter }
 {
-    ParameterWidget<T>::mParameter = mUniformParameter;
-
     ParameterWidget<T>::mGroupBox->setTitle(mUniformParameter->name());
 
     // Set up line edits
@@ -37,6 +36,7 @@ UniformParameterWidget<T>::UniformParameterWidget(UniformParameter<T>* theUnifor
     }
 
     ParameterWidget<T>::mLastFocusedWidget = mLineEdits[0];
+    ParameterWidget<T>::mSelectedNumber = mUniformParameter->number(0);
     mLastIndex = 0;
 
     // Set up widgets and layouts
@@ -50,6 +50,7 @@ UniformParameterWidget<T>::UniformParameterWidget(UniformParameter<T>* theUnifor
     QVBoxLayout* layout = new QVBoxLayout;
     layout->addLayout(mStackedLayout);
     layout->addWidget(mScrollBar);
+    layout->addWidget(ParameterWidget<T>::mPresetsComboBox);
 
     mColWidget = new QWidget;
     mColWidget->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);

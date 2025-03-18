@@ -8,7 +8,7 @@
 
 
 
-OperationWidget::OperationWidget(ImageOperation* operation, bool midiEnabled, QWidget* parent) :
+OperationWidget::OperationWidget(ImageOperation* operation, bool midiEnabled, bool editMode, QWidget* parent) :
     QFrame(parent),
     mOperation { operation },
     mMidiEnabled {midiEnabled }
@@ -24,14 +24,13 @@ OperationWidget::OperationWidget(ImageOperation* operation, bool midiEnabled, QW
 
     // Header widget
 
-    headerWidget = new QFrame;
-    headerWidget->setFrameStyle(QFrame::Box | QFrame::Plain);
+    headerWidget = new QWidget;
     headerWidget->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
 
     // Enable button
 
     enableButton = new QPushButton;
-    //enableButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+    enableButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
     enableButton->setFixedSize(32, 32);
     enableButton->setStyleSheet("QPushButton { image: url(:/icons/circle-grey.png); background-color: transparent; border: 0; } QPushButton:checked { image: url(:/icons/circle-green.png); }");
     enableButton->setCheckable(true);
@@ -39,27 +38,23 @@ OperationWidget::OperationWidget(ImageOperation* operation, bool midiEnabled, QW
     // Edit button
 
     editButton = new QPushButton;
-    //editButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+    editButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
     editButton->setFixedSize(32, 32);
     editButton->setStyleSheet("QPushButton { image: url(:/icons/applications-development.png); background-color: transparent; border: 0; }");
     editButton->setCheckable(true);
     editButton->setChecked(false);
 
-    connect(editButton, &QPushButton::toggled, this, &OperationWidget::toggleEdit);
-    connect(editButton, &QPushButton::toggled, this, &OperationWidget::setEditableWidgets);
+    connect(editButton, &QPushButton::toggled, this, &OperationWidget::toggleEditMode);
 
     // Operation name label
 
     opNameLabel = new QLabel;
-    //opNameLabel->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
-    //opNameLabel->setMargin(10);
-    opNameLabel->setFixedHeight(32);
+    opNameLabel->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
 
     // Operation name line edit
 
     opNameLineEdit = new QLineEdit;
-    //opNameLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
-    opNameLineEdit->setFixedHeight(32);
+    opNameLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
     opNameLineEdit->setVisible(false);
 
     connect(opNameLineEdit, &QLineEdit::textEdited, this, [=, this](QString name){
@@ -71,7 +66,7 @@ OperationWidget::OperationWidget(ImageOperation* operation, bool midiEnabled, QW
     // Toggle body button
 
     toggleButton = new QPushButton;
-    //toggleButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+    toggleButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
     toggleButton->setFixedSize(32, 32);
     toggleButton->setStyleSheet("QPushButton{ image: url(:/icons/go-up.png); background-color: transparent; border: 0; } QPushButton:checked { image: url(:/icons/go-down.png); }");
     toggleButton->setCheckable(true);
@@ -83,11 +78,11 @@ OperationWidget::OperationWidget(ImageOperation* operation, bool midiEnabled, QW
     headerLayout->setSizeConstraint(QLayout::SetMinAndMaxSize);
     headerLayout->setContentsMargins(10, 10, 10, 10);
     headerLayout->setSpacing(20);
-    headerLayout->addWidget(enableButton, 0, Qt::AlignLeft | Qt::AlignVCenter);
-    headerLayout->addWidget(editButton, 0, Qt::AlignLeft | Qt::AlignVCenter);
-    headerLayout->addWidget(opNameLabel, 0, Qt::AlignHCenter | Qt::AlignVCenter);
-    headerLayout->addWidget(opNameLineEdit, 0, Qt::AlignHCenter | Qt::AlignVCenter);
-    headerLayout->addWidget(toggleButton, 0, Qt::AlignRight | Qt::AlignVCenter);
+    headerLayout->addWidget(enableButton, 0, Qt::AlignVCenter);
+    headerLayout->addWidget(editButton, 0, Qt::AlignVCenter);
+    headerLayout->addWidget(opNameLabel, 0, Qt::AlignVCenter);
+    headerLayout->addWidget(opNameLineEdit, 0, Qt::AlignVCenter);
+    headerLayout->addWidget(toggleButton, 0, Qt::AlignVCenter);
 
     headerWidget->setLayout(headerLayout);
     mainLayout->addWidget(headerWidget, 0, Qt::AlignTop | Qt::AlignLeft);
@@ -95,8 +90,7 @@ OperationWidget::OperationWidget(ImageOperation* operation, bool midiEnabled, QW
     // Body widget
 
     bodyWidget = new QWidget;
-    bodyWidget->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-    bodyWidget->installEventFilter(this);
+    bodyWidget->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
 
     mainLayout->addWidget(bodyWidget, 1, Qt::AlignTop | Qt::AlignLeft);
 
@@ -122,14 +116,14 @@ OperationWidget::OperationWidget(ImageOperation* operation, bool midiEnabled, QW
     paramNameLineEdit->setVisible(false);
 
     selParamDial = new QDial;
-    selParamDial->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+    selParamDial->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
     selParamDial->setRange(0, 100'000);
     selParamDial->setWrapping(false);
 
     midiLinkButton = new QPushButton;
     midiLinkButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
     midiLinkButton->setCheckable(true);
-    midiLinkButton->setStyleSheet("QPushButton{ qproperty-icon: url(:/icons/circle-grey.png); }");
+    midiLinkButton->setStyleSheet("QPushButton { image: url(:/icons/circle-grey.png); background-color: transparent; border: 0; }");
 
     selParamMinLineEdit = new FocusLineEdit;
     selParamMinLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
@@ -158,22 +152,44 @@ OperationWidget::OperationWidget(ImageOperation* operation, bool midiEnabled, QW
     mat4TypeComboBox->setVisible(false);
     mat4TypeComboBox->addItems(QList<QString>{ "Translation", "Rotation", "Scaling", "Orthographic", "Mat4" });
 
-    QHBoxLayout* defaultLayout = new QHBoxLayout;
-    defaultLayout->addWidget(midiLinkButton);
-    defaultLayout->addWidget(selParamDial);
-    defaultLayout->addWidget(selParamMinLineEdit);
-    defaultLayout->addWidget(selParamMaxLineEdit);
+    // Presets widgets
 
-    QHBoxLayout* extraLayout = new QHBoxLayout;
-    extraLayout->addWidget(layoutComboBox);
-    extraLayout->addWidget(mat4TypeComboBox);
-    extraLayout->addWidget(selParamInfLineEdit);
-    extraLayout->addWidget(selParamSupLineEdit);
+    removePresetButton = new QPushButton;
+    removePresetButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+    removePresetButton->setFixedSize(32, 32);
+    removePresetButton->setStyleSheet("QPushButton { image: url(:/icons/list-remove.png); background-color: transparent; border: 0; }");
 
-    QVBoxLayout* selParamLayout = new QVBoxLayout;
-    selParamLayout->addWidget(paramNameLineEdit, 0, Qt::AlignLeft | Qt::AlignTop);
-    selParamLayout->addLayout(defaultLayout);
-    selParamLayout->addLayout(extraLayout);
+    addPresetButton = new QPushButton;
+    addPresetButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+    addPresetButton->setFixedSize(32, 32);
+    addPresetButton->setStyleSheet("QPushButton { image: url(:/icons/list-add.png); background-color: transparent; border: 0; }");
+
+    presetNameLineEdit = new QLineEdit;
+    presetNameLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+    presetNameLineEdit->setMaximumWidth(100);
+    presetNameLineEdit->setPlaceholderText("Preset name");
+
+    QHBoxLayout* presetsLayout = new QHBoxLayout;
+    presetsLayout->addWidget(removePresetButton);
+    presetsLayout->addWidget(addPresetButton);
+    presetsLayout->addWidget(presetNameLineEdit);
+
+    presetsGroupBox = new QGroupBox("Presets");
+    presetsGroupBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+    presetsGroupBox->setLayout(presetsLayout);
+    presetsGroupBox->setVisible(false);
+
+    QGridLayout* selParamLayout = new QGridLayout;
+    selParamLayout->addWidget(paramNameLineEdit, 0, 0, 1, 3, Qt::AlignLeft);
+    selParamLayout->addWidget(selParamDial, 1, 0, 2, 1, Qt::AlignCenter);
+    selParamLayout->addWidget(selParamMinLineEdit, 1, 1, Qt::AlignBottom | Qt::AlignLeft);
+    selParamLayout->addWidget(selParamMaxLineEdit, 2, 1, Qt::AlignTop | Qt::AlignLeft);
+    selParamLayout->addWidget(selParamInfLineEdit, 1, 2, Qt::AlignBottom | Qt::AlignLeft);
+    selParamLayout->addWidget(selParamSupLineEdit, 2, 2, Qt::AlignTop | Qt::AlignLeft);
+    selParamLayout->addWidget(layoutComboBox, 1, 3, Qt::AlignCenter);
+    selParamLayout->addWidget(mat4TypeComboBox, 2, 3, Qt::AlignCenter);
+    selParamLayout->addWidget(midiLinkButton, 3, 0, Qt::AlignCenter);
+    selParamLayout->addWidget(presetsGroupBox, 3, 1, 1, 3, Qt::AlignTop | Qt::AlignLeft);
 
     selParamGroupBox = new QGroupBox("No parameter selected");
     selParamGroupBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
@@ -186,7 +202,10 @@ OperationWidget::OperationWidget(ImageOperation* operation, bool midiEnabled, QW
     setLayout(mainLayout);
 
     setFrameStyle(QFrame::Box | QFrame::Plain);
-    setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+    setLineWidth(5);
+    setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+
+    toggleEditMode(editMode);
 
     setup();
 }
@@ -211,6 +230,11 @@ void OperationWidget::setup()
         UniformParameterWidget<float>* widget = new UniformParameterWidget<float>(parameter);
         gridWidget->addWidget(widget->widget(), parameter->row(), parameter->col());
 
+        widget->setCheckable(mEditMode);
+
+        if (!mEditMode && !parameter->editable())
+            widget->toggleVisibility(false);
+
         floatParamWidgets.append(widget);
         uniformFloatParamWidgets.append(widget);
 
@@ -221,6 +245,11 @@ void OperationWidget::setup()
     {
         UniformParameterWidget<int>* widget = new UniformParameterWidget<int>(parameter);
         gridWidget->addWidget(widget->widget(), parameter->row(), parameter->col());
+
+        widget->setCheckable(mEditMode);
+
+        if (!mEditMode && !parameter->editable())
+            widget->toggleVisibility(false);
 
         intParamWidgets.append(widget);
         uniformIntParamWidgets.append(widget);
@@ -233,6 +262,11 @@ void OperationWidget::setup()
         UniformParameterWidget<unsigned int>* widget = new UniformParameterWidget<unsigned int>(parameter);
         gridWidget->addWidget(widget->widget(), parameter->row(), parameter->col());
 
+        widget->setCheckable(mEditMode);
+
+        if (!mEditMode && !parameter->editable())
+            widget->toggleVisibility(false);
+
         uintParamWidgets.append(widget);
         uniformUintParamWidgets.append(widget);
 
@@ -244,6 +278,11 @@ void OperationWidget::setup()
         UniformMat4ParameterWidget* widget = new UniformMat4ParameterWidget(parameter);
         gridWidget->addWidget(widget->widget(), parameter->row(), parameter->col());
 
+        widget->setCheckable(mEditMode);
+
+        if (!mEditMode && !parameter->editable())
+            widget->toggleVisibility(false);
+
         mat4ParamWidgets.append(widget);
         uniformMat4ParamWidgets.append(widget);
 
@@ -254,6 +293,11 @@ void OperationWidget::setup()
     {
         OptionsParameterWidget<GLenum>* widget = new OptionsParameterWidget<GLenum>(parameter);
         gridWidget->addWidget(widget->widget(), parameter->row(), parameter->col());
+
+        widget->setCheckable(mEditMode);
+
+        if (!mEditMode && !parameter->editable())
+            widget->toggleVisibility(false);
 
         glenumOptionsWidgets.append(widget);
     }
@@ -311,11 +355,8 @@ void OperationWidget::setup()
         mOperation->enable(checked);
     });
 
-    // Toggle editable widgets
-
-    setEditableWidgets(editMode);
-
-    //bodyWidget->updateGeometry();
+    bodyWidget->adjustSize();
+    adjustSize();
 }
 
 
@@ -358,10 +399,7 @@ template <typename T>
 void OperationWidget::setFocusedWidget(ParameterWidget<T>* widget)
 {
     if (widget->parameter() == lastFocusedParameter)
-    {
         lastFocusedWidget = widget->lastFocusedWidget();
-        lastFocused = true;
-    }
 }
 
 
@@ -372,18 +410,8 @@ void OperationWidget::connectParamWidgets(QList<ParameterWidget<T>*> widgets)
     foreach (auto widget, widgets)
     {
         connect(widget, &ParameterWidget<T>::focusIn, this, [=, this](){
-            if (editMode)
-                updateSelParamEditControls<T>(widget);
-            else
-                updateSelParamControls<T>(widget);
-
-            updateMidiButtons<T>(widget);
-        });
-
-        connect(widget, &ParameterWidget<T>::focusIn, this, [=, this](){
             lastFocusedParameter = widget->parameter();
             lastFocusedWidget = widget->lastFocusedWidget();
-            lastFocused = true;
         });
     }
 }
@@ -396,7 +424,18 @@ void OperationWidget::connectUniformParamWidgets(QList<UniformParameterWidget<T>
     foreach (auto widget, widgets)
     {
         connect(widget, &UniformParameterWidget<T>::focusIn, this, [=, this](){
-            if (editMode)
+            if (mEditMode)
+                updateSelParamEditControls<T>(widget);
+            else
+                updateSelParamControls<T>(widget);
+
+            updateMidiButtons<T>(widget);
+
+            setSelParamNameWidgets<T>(widget);
+        });
+
+        connect(widget, &UniformParameterWidget<T>::focusIn, this, [=, this](){
+            if (mEditMode)
             {
                 // Set up layout controller combo box
 
@@ -415,6 +454,7 @@ void OperationWidget::connectUniformParamWidgets(QList<UniformParameterWidget<T>
                     connect(layoutComboBox, &QComboBox::currentIndexChanged, this, [=, this](int index){
                         widget->setLayoutFormatIndex(index);
                         gridWidget->optimizeLayout();
+                        adjustSize();
                     });
                 }
             }
@@ -429,7 +469,7 @@ void OperationWidget::connectUniformFloatParamWidgets()
     foreach (auto widget, uniformFloatParamWidgets)
     {
         connect(widget, &UniformParameterWidget<float>::focusIn, this, [=, this](){
-            if (editMode)
+            if (mEditMode)
             {
                 // Set up Mat4 parameter switcher combo box
 
@@ -441,15 +481,18 @@ void OperationWidget::connectUniformFloatParamWidgets()
                     mat4TypeComboBox->setCurrentIndex(4);
 
                     connect(mat4TypeComboBox, &QComboBox::currentIndexChanged, this, [=, this](int index){
-                        if (index < 4)
+                        if (index >= 0 && index < 4)
                         {
                             UniformParameter<float>* parameter = widget->parameter();
 
                             UniformMat4Parameter* newParam = new UniformMat4Parameter(*parameter, static_cast<UniformMat4Type>(index));
-                            mOperation->addMat4UniformParameter(newParam);
-                            mOperation->removeUniformParameter<float>(parameter);
+                            mOpBuilder->addMat4UniformParameter(newParam);
+                            mOpBuilder->removeUniformFloatParameter(parameter);
 
                             lastFocusedParameter = newParam;
+
+                            if (index < 3)
+                                addInterpolation();
 
                             recreate();
                         }
@@ -469,7 +512,23 @@ void OperationWidget::connectUniformMat4ParamWidgets()
     foreach (auto widget, uniformMat4ParamWidgets)
     {
         connect(widget, &UniformMat4ParameterWidget::focusIn, this, [=, this](){
-            if (editMode)
+            if (!widget->parameter()->empty())
+            {
+                if (mEditMode)
+                    updateSelParamEditControls<float>(widget);
+                else
+                    updateSelParamControls<float>(widget);
+
+                updateMidiButtons<float>(widget);
+            }
+            else
+                toggleSelParamWidgets(false);
+
+            setSelParamNameWidgets<float>(widget);
+        });
+
+        connect(widget, &UniformMat4ParameterWidget::focusIn, this, [=, this](){
+            if (mEditMode)
             {
                 // Set up Mat4 parameter switcher combo box
 
@@ -479,18 +538,65 @@ void OperationWidget::connectUniformMat4ParamWidgets()
                 mat4TypeComboBox->setCurrentIndex(widget->typeIndex());
 
                 connect(mat4TypeComboBox, &QComboBox::currentIndexChanged, this, [=, this](int index){
-                    if (index < 4)
+                    if (index >= 0 && index < 4)
                     {
                         UniformMat4Parameter* parameter = widget->parameter();
                         parameter->setType(static_cast<UniformMat4Type>(index));
 
                         lastFocusedParameter = parameter;
 
+                        if (index < 3)
+                            addInterpolation();
+                        else if (index == 3)
+                            removeInterpolation();
+
+                        recreate();
+                    }
+                    else if (index == 4)
+                    {
+                        UniformMat4Parameter* parameter = widget->parameter();
+
+                        UniformParameter<float>* newParam = new UniformParameter<float>(*parameter);
+                        mOpBuilder->addUniformFloatParameter(newParam);
+                        mOpBuilder->removeMat4UniformParameter(parameter);
+
+                        lastFocusedParameter = newParam;
+
+                        removeInterpolation();
+
                         recreate();
                     }
                 });
             }
         });
+    }
+}
+
+
+
+void OperationWidget::addInterpolation()
+{
+    bool interpolationExists = false;
+
+    foreach (auto optionsWidget, glenumOptionsWidgets)
+        if (optionsWidget->name() == "Interpolation")
+            interpolationExists = true;
+
+    if (!interpolationExists)
+    {
+        OptionsParameter<GLenum>* newParam = new OptionsParameter<GLenum>("Interpolation", true, QList<QString>({ "Nearest neighbor", "Linear" }), QList<GLenum>({ GL_NEAREST, GL_LINEAR }), GL_NEAREST, mOperation);
+        mOperation->addOptionsParameter<GLenum>(newParam);
+    }
+}
+
+
+
+void OperationWidget::removeInterpolation()
+{
+    foreach (auto optionsWidget, glenumOptionsWidgets)
+    {
+        if (optionsWidget->name() == "Interpolation")
+            mOperation->removeOptionsParameter<GLenum>(optionsWidget->parameter());
     }
 }
 
@@ -510,6 +616,18 @@ void OperationWidget::toggleMidiButton(bool show)
 
 
 
+void OperationWidget::toggleSelParamWidgets(bool visible)
+{
+    selParamDial->setVisible(visible);
+    selParamMinLineEdit->setVisible(visible);
+    selParamMaxLineEdit->setVisible(visible);
+    selParamInfLineEdit->setVisible(visible);
+    selParamSupLineEdit->setVisible(visible);
+    layoutComboBox->setVisible(visible);
+    presetsGroupBox->setVisible(visible);
+}
+
+
 void OperationWidget::closeEvent(QCloseEvent* event)
 {
     mOpBuilder->close();
@@ -520,33 +638,23 @@ void OperationWidget::closeEvent(QCloseEvent* event)
 
 bool OperationWidget::eventFilter(QObject *obj, QEvent *event)
 {
-    if (obj == bodyWidget && event->type() == QEvent::Resize)
-    {
-        QResizeEvent *resizeEvent = static_cast<QResizeEvent*>(event);
-        QSize newSize = resizeEvent->size();
-
-        resize(QSize(qMax(newSize.width(), headerWidget->width()), newSize.height() + headerWidget->height()));
-        updateGeometry();
-        return false;
-    }
-    else if (obj == mOpBuilder && event->type() == QEvent::Close)
+    if (obj == mOpBuilder && event->type() == QEvent::Close)
     {
         editButton->setChecked(false);
         return false;
     }
+
     return QWidget::eventFilter(obj, event);
 }
 
 
 
 template <class T>
-void OperationWidget::updateSelParamControls(ParameterWidget<T>* widget)
+void OperationWidget::setSelParamNameWidgets(ParameterWidget<T>* widget)
 {
-    Number<T>* number = widget->selectedNumber();
-
     // Title
 
-    selParamGroupBox->setTitle("Selected parameter: " + widget->name());
+    selParamGroupBox->setTitle(widget->name());
 
     // Name line edit
 
@@ -557,11 +665,22 @@ void OperationWidget::updateSelParamControls(ParameterWidget<T>* widget)
 
     connect(paramNameLineEdit, &QLineEdit::textEdited, this, [=, this](QString name){
         widget->setName(name);
-        selParamGroupBox->setTitle("Selected parameter: " + name);
+        selParamGroupBox->setTitle(name);
         paramNameLineEdit->setFixedWidth(20 + paramNameLineEdit->fontMetrics().horizontalAdvance(name));
+        gridWidget->optimizeLayout();
     });
+}
+
+
+
+template <class T>
+void OperationWidget::updateSelParamControls(ParameterWidget<T>* widget)
+{
+    Number<T>* number = widget->selectedNumber();
 
     // Dial
+
+    selParamDial->setVisible(true);
 
     selParamDial->disconnect();
     selParamDial->setRange(0, number->indexMax());
@@ -571,6 +690,8 @@ void OperationWidget::updateSelParamControls(ParameterWidget<T>* widget)
     connect(number, &Number<T>::indexChanged, selParamDial, &QAbstractSlider::setValue);
 
     // Minimum
+
+    selParamMinLineEdit->setVisible(true);
 
     selParamMinLineEdit->disconnect();
 
@@ -597,6 +718,8 @@ void OperationWidget::updateSelParamControls(ParameterWidget<T>* widget)
 
     // Maximum
 
+    selParamMaxLineEdit->setVisible(true);
+
     selParamMaxLineEdit->disconnect();
 
     setValidator<T>(maxValidator, selParamMaxLineEdit, number->min(), number->sup());
@@ -620,16 +743,14 @@ void OperationWidget::updateSelParamControls(ParameterWidget<T>* widget)
         selParamMaxLineEdit->setText(QString::number(number->max()));
     });
 
-    // Focus in
+    // Focus-in connections
 
     connect(selParamMinLineEdit, &FocusLineEdit::focusIn, this, [=, this](){
         lastFocusedWidget = selParamMinLineEdit;
-        lastFocused = true;
     });
 
     connect(selParamMaxLineEdit, &FocusLineEdit::focusIn, this, [=, this](){
         lastFocusedWidget = selParamMaxLineEdit;
-        lastFocused = true;
     });
 }
 
@@ -640,24 +761,9 @@ void OperationWidget::updateSelParamEditControls(ParameterWidget<T>* widget)
 {
     Number<T>* number = widget->selectedNumber();
 
-    // Title
-
-    selParamGroupBox->setTitle("Selected parameter: " + widget->name());
-
-    // Name line edit
-
-    paramNameLineEdit->setText(widget->name());
-    paramNameLineEdit->setFixedWidth(20 + paramNameLineEdit->fontMetrics().horizontalAdvance(widget->name()));
-
-    paramNameLineEdit->disconnect();
-
-    connect(paramNameLineEdit, &QLineEdit::textEdited, this, [=, this](QString name){
-        widget->setName(name);
-        selParamGroupBox->setTitle("Selected parameter: " + name);
-        paramNameLineEdit->setFixedWidth(20 + paramNameLineEdit->fontMetrics().horizontalAdvance(name));
-    });
-
     // Dial
+
+    selParamDial->setVisible(true);
 
     selParamDial->disconnect();
     selParamDial->setRange(0, number->indexMax());
@@ -667,6 +773,8 @@ void OperationWidget::updateSelParamEditControls(ParameterWidget<T>* widget)
     connect(number, &Number<T>::indexChanged, selParamDial, &QAbstractSlider::setValue);
 
     // Inf (lowest)
+
+    selParamInfLineEdit->setVisible(true);
 
     selParamInfLineEdit->disconnect();
 
@@ -696,6 +804,8 @@ void OperationWidget::updateSelParamEditControls(ParameterWidget<T>* widget)
 
     // Minimum
 
+    selParamMinLineEdit->setVisible(true);
+
     selParamMinLineEdit->disconnect();
 
     setValidator<T>(minValidator, selParamMinLineEdit, number->inf(), number->max());
@@ -721,6 +831,8 @@ void OperationWidget::updateSelParamEditControls(ParameterWidget<T>* widget)
     });
 
     // Sup (highest)
+
+    selParamSupLineEdit->setVisible(true);
 
     selParamSupLineEdit->disconnect();
 
@@ -749,6 +861,8 @@ void OperationWidget::updateSelParamEditControls(ParameterWidget<T>* widget)
 
     // Maximum
 
+    selParamMaxLineEdit->setVisible(true);
+
     selParamMaxLineEdit->disconnect();
 
     setValidator<T>(maxValidator, selParamMaxLineEdit, number->min(), number->sup());
@@ -773,26 +887,45 @@ void OperationWidget::updateSelParamEditControls(ParameterWidget<T>* widget)
         selParamMaxLineEdit->setText(QString::number(number->max()));
     });
 
-    // Focus in
+    // Presets
+
+    presetsGroupBox->setVisible(true);
+
+    removePresetButton->disconnect();
+
+    connect(removePresetButton, &QPushButton::clicked, this, [=, this](){
+        widget->removeCurrentPreset();
+
+        gridWidget->optimizeLayout();
+        adjustSize();
+    });
+
+    addPresetButton->disconnect();
+
+    connect(addPresetButton, &QPushButton::clicked, this, [=, this](){
+        QString name = presetNameLineEdit->text();
+        widget->addPreset(name);
+
+        gridWidget->optimizeLayout();
+        adjustSize();
+    });
+
+    // Focus-in connections
 
     connect(selParamInfLineEdit, &FocusLineEdit::focusIn, this, [=, this](){
         lastFocusedWidget = selParamInfLineEdit;
-        lastFocused = true;
     });
 
     connect(selParamMinLineEdit, &FocusLineEdit::focusIn, this, [=, this](){
         lastFocusedWidget = selParamMinLineEdit;
-        lastFocused = true;
     });
 
     connect(selParamMaxLineEdit, &FocusLineEdit::focusIn, this, [=, this](){
         lastFocusedWidget = selParamMaxLineEdit;
-        lastFocused = true;
     });
 
     connect(selParamSupLineEdit, &FocusLineEdit::focusIn, this, [=, this](){
         lastFocusedWidget = selParamSupLineEdit;
-        lastFocused = true;
     });
 }
 
@@ -830,28 +963,28 @@ void OperationWidget::updateMidiButtons(ParameterWidget<T>* widget)
     midiLinkButton->setChecked(number->midiLinked());
 
     if (number->midiLinked())
-        midiLinkButton->setStyleSheet("QPushButton{ qproperty-icon: url(:/icons/circle-green.png); }");
+        midiLinkButton->setStyleSheet("QPushButton { image: url(:/icons/circle-green.png); background-color: transparent; border: 0; }");
     else
-        midiLinkButton->setStyleSheet("QPushButton{ qproperty-icon: url(:/icons/circle-grey.png); }");
+        midiLinkButton->setStyleSheet("QPushButton { image: url(:/icons/circle-grey.png); background-color: transparent; border: 0; }");
 
     connect(midiLinkButton, &QPushButton::clicked, this, [=, this](bool checked){
         if (checked)
         {
-            midiLinkButton->setStyleSheet("QPushButton{ qproperty-icon: url(:/icons/circle-orange.png); }");
+            midiLinkButton->setStyleSheet("QPushButton { image: url(:/icons/circle-orange.png); background-color: transparent; border: 0; }");
             emit linkWait(number);
         }
         else
         {
-            midiLinkButton->setStyleSheet("QPushButton{ qproperty-icon: url(:/icons/circle-grey.png); }");
+            midiLinkButton->setStyleSheet("QPushButton { image: url(:/icons/circle-grey.png); background-color: transparent; border: 0; }");
             emit linkBreak(number);
         }
     });
 
     connect(number, &Number<T>::linked, this, [=, this](bool set){
         if (set)
-            midiLinkButton->setStyleSheet("QPushButton{ qproperty-icon: url(:/icons/circle-green.png); }");
+            midiLinkButton->setStyleSheet("QPushButton { image: url(:/icons/circle-green.png); background-color: transparent; border: 0; }");
         else
-            midiLinkButton->setStyleSheet("QPushButton{ qproperty-icon: url(:/icons/circle-grey.png); }");
+            midiLinkButton->setStyleSheet("QPushButton { image: url(:/icons/circle-grey.png); background-color: transparent; border: 0; }");
     });
 }
 
@@ -868,6 +1001,9 @@ void OperationWidget::focusInEvent(QFocusEvent *event)
 
 void OperationWidget::updateWidgetRowCol(QWidget* widget, int row, int col)
 {
+    bodyWidget->adjustSize();
+    adjustSize();
+
     foreach (auto paramWidget, floatParamWidgets)
     {
         if (paramWidget->widget() == widget)
@@ -887,6 +1023,15 @@ void OperationWidget::updateWidgetRowCol(QWidget* widget, int row, int col)
         }
     }
     foreach (auto paramWidget, uintParamWidgets)
+    {
+        if (paramWidget->widget() == widget)
+        {
+            paramWidget->setRow(row);
+            paramWidget->setCol(col);
+            return;
+        }
+    }
+    foreach (auto paramWidget, mat4ParamWidgets)
     {
         if (paramWidget->widget() == widget)
         {
@@ -912,83 +1057,42 @@ void OperationWidget::toggleBody(bool visible)
 {
     bodyWidget->setVisible(visible);
 
-    if (!visible)
-    {
-        setFixedSize(headerWidget->size());
-        updateGeometry();
-    }
+    if (visible)
+        mainLayout->setStretchFactor(bodyWidget, 1);
+    else
+        mainLayout->setStretchFactor(bodyWidget, 0);
+
+    adjustSize();
 }
 
 
 
-void OperationWidget::toggleEdit(bool state)
+void OperationWidget::toggleEditMode(bool mode)
 {
-    mOpBuilder->setVisible(state);
+    mEditMode = mode;
 
-    opNameLabel->setVisible(!state);
-    opNameLineEdit->setVisible(state);
+    mOpBuilder->setVisible(mEditMode);
 
-    gridWidget->setAcceptDrops(state);
+    opNameLabel->setVisible(!mEditMode);
+    opNameLineEdit->setVisible(mEditMode);
 
-    paramNameLineEdit->setVisible(state);
+    headerWidget->adjustSize();
 
-    selParamInfLineEdit->setVisible(state);
-    selParamSupLineEdit->setVisible(state);
+    gridWidget->setAcceptDrops(mEditMode);
 
-    editMode = state;
+    paramNameLineEdit->setVisible(mEditMode);
+
+    selParamInfLineEdit->setVisible(mEditMode);
+    selParamSupLineEdit->setVisible(mEditMode);
+
+    if (!mEditMode && mat4TypeComboBox->isVisible())
+        mat4TypeComboBox->setVisible(false);
+
+    if (!mEditMode && layoutComboBox->isVisible())
+        layoutComboBox->setVisible(false);
+
+    selParamGroupBox->adjustSize();
+
+    recreate();
 }
 
-
-
-void OperationWidget::setEditableWidgets(bool state)
-{
-    foreach (auto paramWidget, floatParamWidgets)
-    {
-        paramWidget->setCheckable(state);
-
-        if (state)
-            paramWidget->toggleVisibility(true);
-        else
-            paramWidget->setDefaultVisibility();
-    }
-
-    foreach (auto paramWidget, intParamWidgets)
-    {
-        paramWidget->setCheckable(state);
-
-        if (state)
-            paramWidget->toggleVisibility(true);
-        else
-            paramWidget->setDefaultVisibility();
-    }
-
-    foreach (auto paramWidget, uintParamWidgets)
-    {
-        paramWidget->setCheckable(state);
-
-        if (state)
-            paramWidget->toggleVisibility(true);
-        else
-            paramWidget->setDefaultVisibility();
-    }
-
-    foreach (auto paramWidget, mat4ParamWidgets)
-    {
-        paramWidget->setCheckable(state);
-
-        if (state)
-            paramWidget->toggleVisibility(true);
-        else
-            paramWidget->setDefaultVisibility();
-    }
-
-    foreach (auto paramWidget, glenumOptionsWidgets)
-    {
-        paramWidget->setCheckable(state);
-
-        if (state)
-            paramWidget->toggleVisibility(true);
-        else
-            paramWidget->setDefaultVisibility();
-    }
-}

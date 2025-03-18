@@ -20,6 +20,7 @@ public:
         ParameterWidgetSignals(parent),
         mOptionsParameter { theOptionsParameter }
     {
+        mGroupBox = new QGroupBox;
         mGroupBox->setTitle(mOptionsParameter->name());
         mGroupBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
         mGroupBox->setStyleSheet("QGroupBox::title { subcontrol-origin: margin; subcontrol-position: top center; font-size: 18pt; margin: 7px; }");
@@ -46,7 +47,7 @@ public:
         });
     }
 
-    QString name() { return mOptionsParameter->name; }
+    QString name() { return mOptionsParameter->name(); }
     void setName(QString theName)
     {
         mOptionsParameter->setName(theName);
@@ -61,6 +62,8 @@ public:
 
     void toggleVisibility(bool visible) { mGroupBox->setVisible(visible); }
     void setDefaultVisibility() { mGroupBox->setVisible(mOptionsParameter->editable()); }
+
+    OptionsParameter<T>* parameter() { return mOptionsParameter; }
 
 private:
     OptionsParameter<T>* mOptionsParameter;

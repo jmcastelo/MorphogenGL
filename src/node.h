@@ -77,7 +77,7 @@ public:
 
 protected:
     void resizeEvent(QGraphicsSceneResizeEvent *event) override;
-    QSizeF sizeHint(Qt::SizeHint which, const QSizeF &constraint = QSizeF()) const override;
+    //QSizeF sizeHint(Qt::SizeHint which, const QSizeF &constraint = QSizeF()) const override;
     bool eventFilter(QObject *obj, QEvent *event) override;
     void closeEvent(QCloseEvent* event) override;
 

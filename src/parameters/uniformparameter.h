@@ -4,7 +4,6 @@
 
 
 #include "baseuniformparameter.h"
-#include "uniformmat4parameter.h"
 
 
 
@@ -23,6 +22,8 @@ public:
     UniformParameter(QString theName, QString theUniformName, int theUniformType, int numItems, bool isEditable, QList<QPair<QUuid, T>> theIdValuePairs, T theMin, T theMax, T theInf, T theSup, ImageOperation* theOperation);
 
     UniformParameter(const UniformParameter<T>& parameter);
+
+    UniformParameter(const UniformMat4Parameter& parameter);
 
     void setUniform() override;
 

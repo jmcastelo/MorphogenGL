@@ -29,6 +29,12 @@ public:
     explicit OperationBuilder(ImageOperation* operation, QWidget *parent = nullptr);
     ~OperationBuilder();
 
+    void addMat4UniformParameter(UniformMat4Parameter* parameter);
+    void removeMat4UniformParameter(UniformMat4Parameter* parameter);
+
+    void addUniformFloatParameter(UniformParameter<float>* parameter);
+    void removeUniformFloatParameter(UniformParameter<float>* parameter);
+
 signals:
     void shadersParsed();
 
@@ -53,6 +59,7 @@ private:
     QMap<QString, UniformParameter<float>*> fParamMap;
     QMap<QString, UniformParameter<int>*> iParamMap;
     QMap<QString, UniformParameter<unsigned int>*> uiParamMap;
+    QMap<QString, UniformMat4Parameter*> mat4ParamMap;
 
     bool linkProgram();
     void parseUniforms();
