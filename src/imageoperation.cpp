@@ -295,28 +295,31 @@ void ImageOperation::setInputData(QList<InputData *> data)
 template <>
 void ImageOperation::setUniform<float>(QString name, int type, GLsizei count, const float* values)
 {
-    fbo->makeCurrent();
-    fbo->program->bind();
+    if (mUpdate)
+    {
+        fbo->makeCurrent();
+        fbo->program->bind();
 
-    int location = fbo->program->uniformLocation(name);
+        int location = fbo->program->uniformLocation(name);
 
-    if (type == GL_FLOAT)
-        glUniform1fv(location, count, values);
-    else if (type == GL_FLOAT_VEC2)
-        glUniform2fv(location, count, values);
-    else if (type == GL_FLOAT_VEC3)
-        glUniform3fv(location, count, values);
-    else if (type == GL_FLOAT_VEC4)
-        glUniform4fv(location, count, values);
-    else if (type == GL_FLOAT_MAT2)
-        glUniformMatrix2fv(location, count, GL_FALSE, values);
-    else if (type == GL_FLOAT_MAT3)
-        glUniformMatrix3fv(location, count, GL_FALSE, values);
-    else if (type == GL_FLOAT_MAT4)
-        glUniformMatrix4fv(location, count, GL_FALSE, values);
+        if (type == GL_FLOAT)
+            glUniform1fv(location, count, values);
+        else if (type == GL_FLOAT_VEC2)
+            glUniform2fv(location, count, values);
+        else if (type == GL_FLOAT_VEC3)
+            glUniform3fv(location, count, values);
+        else if (type == GL_FLOAT_VEC4)
+            glUniform4fv(location, count, values);
+        else if (type == GL_FLOAT_MAT2)
+            glUniformMatrix2fv(location, count, GL_FALSE, values);
+        else if (type == GL_FLOAT_MAT3)
+            glUniformMatrix3fv(location, count, GL_FALSE, values);
+        else if (type == GL_FLOAT_MAT4)
+            glUniformMatrix4fv(location, count, GL_FALSE, values);
 
-    fbo->program->release();
-    fbo->doneCurrent();
+        fbo->program->release();
+        fbo->doneCurrent();
+    }
 }
 
 
@@ -324,22 +327,25 @@ void ImageOperation::setUniform<float>(QString name, int type, GLsizei count, co
 template <>
 void ImageOperation::setUniform<int>(QString name, int type, GLsizei count, const int* values)
 {
-    fbo->makeCurrent();
-    fbo->program->bind();
+    if (mUpdate)
+    {
+        fbo->makeCurrent();
+        fbo->program->bind();
 
-    int location = fbo->program->uniformLocation(name);
+        int location = fbo->program->uniformLocation(name);
 
-    if (type == GL_INT)
-        glUniform1iv(location, count, values);
-    else if (type == GL_INT_VEC2)
-        glUniform2iv(location, count, values);
-    else if (type == GL_INT_VEC3)
-        glUniform3iv(location, count, values);
-    else if (type == GL_INT_VEC4)
-        glUniform4iv(location, count, values);
+        if (type == GL_INT)
+            glUniform1iv(location, count, values);
+        else if (type == GL_INT_VEC2)
+            glUniform2iv(location, count, values);
+        else if (type == GL_INT_VEC3)
+            glUniform3iv(location, count, values);
+        else if (type == GL_INT_VEC4)
+            glUniform4iv(location, count, values);
 
-    fbo->program->release();
-    fbo->doneCurrent();
+        fbo->program->release();
+        fbo->doneCurrent();
+    }
 }
 
 
@@ -347,22 +353,25 @@ void ImageOperation::setUniform<int>(QString name, int type, GLsizei count, cons
 template <>
 void ImageOperation::setUniform<unsigned int>(QString name, int type, GLsizei count, const unsigned int* values)
 {
-    fbo->makeCurrent();
-    fbo->program->bind();
+    if (mUpdate)
+    {
+        fbo->makeCurrent();
+        fbo->program->bind();
 
-    int location = fbo->program->uniformLocation(name);
+        int location = fbo->program->uniformLocation(name);
 
-    if (type == GL_UNSIGNED_INT)
-        glUniform1uiv(location, count, values);
-    else if (type == GL_UNSIGNED_INT_VEC2)
-        glUniform2uiv(location, count, values);
-    else if (type == GL_UNSIGNED_INT_VEC3)
-        glUniform3uiv(location, count, values);
-    else if (type == GL_UNSIGNED_INT_VEC4)
-        glUniform4uiv(location, count, values);
+        if (type == GL_UNSIGNED_INT)
+            glUniform1uiv(location, count, values);
+        else if (type == GL_UNSIGNED_INT_VEC2)
+            glUniform2uiv(location, count, values);
+        else if (type == GL_UNSIGNED_INT_VEC3)
+            glUniform3uiv(location, count, values);
+        else if (type == GL_UNSIGNED_INT_VEC4)
+            glUniform4uiv(location, count, values);
 
-    fbo->program->release();
-    fbo->doneCurrent();
+        fbo->program->release();
+        fbo->doneCurrent();
+    }
 }
 
 
@@ -370,31 +379,35 @@ void ImageOperation::setUniform<unsigned int>(QString name, int type, GLsizei co
 template <>
 void ImageOperation::setOptionsParameter<GLenum>(OptionsParameter<GLenum>* parameter)
 {
-    fbo->setMinMagFilter(parameter->value());
+    if (mUpdate)
+        fbo->setMinMagFilter(parameter->value());
 }
 
 
 
 void ImageOperation::setMat4Uniform(QString name, UniformMat4Type type, QList<float> values)
 {
-    QMatrix4x4 matrix;
-    matrix.setToIdentity();
+    if (mUpdate)
+    {
+        QMatrix4x4 matrix;
+        matrix.setToIdentity();
 
-    if (type == UniformMat4Type::TRANSLATION)
-        matrix.translate(values.at(0) * FBO::width, values.at(1) * FBO::height);
-    else if (type == UniformMat4Type::ROTATION)
-        matrix.rotate(values.at(0), 0.0f, 0.0f, 1.0f);
-    else if (type == UniformMat4Type::SCALING)
-        matrix.scale(values.at(0), values.at(1));
+        if (type == UniformMat4Type::TRANSLATION)
+            matrix.translate(values.at(0) * FBO::width, values.at(1) * FBO::height);
+        else if (type == UniformMat4Type::ROTATION)
+            matrix.rotate(values.at(0), 0.0f, 0.0f, 1.0f);
+        else if (type == UniformMat4Type::SCALING)
+            matrix.scale(values.at(0), values.at(1));
 
-    fbo->makeCurrent();
-    fbo->program->bind();
+        fbo->makeCurrent();
+        fbo->program->bind();
 
-    int location = fbo->program->uniformLocation(name);
-    fbo->program->setUniformValue(location, matrix);
+        int location = fbo->program->uniformLocation(name);
+        fbo->program->setUniformValue(location, matrix);
 
-    fbo->program->release();
-    fbo->doneCurrent();
+        fbo->program->release();
+        fbo->doneCurrent();
+    }
 }
 
 

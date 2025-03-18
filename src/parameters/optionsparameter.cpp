@@ -31,9 +31,7 @@ template <typename T>
 void OptionsParameter<T>::setValue(int valueIndex)
 {
     mCurrentValue = mValues[valueIndex];
-
-    if (mUpdate)
-        mOperation->setOptionsParameter<T>(this);
+    mOperation->setOptionsParameter<T>(this);
 }
 
 

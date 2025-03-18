@@ -106,8 +106,7 @@ void BaseUniformParameter<T>::setValue(int i, T theValue)
         //emit valueChanged(i, QVariant(theValue));
         emit valueChanged(QVariant(theValue));
 
-        if (mUpdate)
-            setUniform();
+        setUniform();
     }
 }
 
@@ -122,8 +121,7 @@ void BaseUniformParameter<T>::setValueFromIndex(int i, int index)
 
         emit valueChanged(i, QVariant(mNumbers[i]->value()));
 
-        if (mUpdate)
-            setUniform();
+        setUniform();
     }
 }
 
@@ -245,8 +243,7 @@ void BaseUniformParameter<T>::setPreset(QString name)
             emit valueChanged(i, QVariant(mNumbers[i]->value()));
         }
 
-        if (mUpdate)
-            setUniform();
+        setUniform();
     }
 }
 

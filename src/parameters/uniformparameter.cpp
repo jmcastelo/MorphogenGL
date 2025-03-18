@@ -58,7 +58,6 @@ UniformParameter<T>::UniformParameter(const UniformMat4Parameter& parameter) :
 {
     BaseUniformParameter<T>::mRow = parameter.row();
     BaseUniformParameter<T>::mCol = parameter.col();
-    BaseUniformParameter<T>::mUpdate = parameter.updateOperation();
 }
 
 

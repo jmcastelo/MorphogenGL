@@ -118,7 +118,6 @@ OperationWidget::OperationWidget(ImageOperation* operation, bool midiEnabled, bo
     selParamDial = new QDial;
     selParamDial->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
     selParamDial->setRange(0, 100'000);
-    selParamDial->setWrapping(false);
 
     midiLinkButton = new QPushButton;
     midiLinkButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);

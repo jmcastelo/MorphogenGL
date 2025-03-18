@@ -10,10 +10,10 @@
 #include <QOpenGLContext>
 #include <QOffscreenSurface>
 #include <QOpenGLShaderProgram>
-#include <QLineEdit>
-#include <QPushButton>
 #include <QPlainTextEdit>
-#include <QListWidget>
+#include <QComboBox>
+#include <QPushButton>
+#include <QTabWidget>
 
 
 
@@ -49,10 +49,16 @@ private:
     QString vertexShader;
     QString fragmentShader;
 
-    QPushButton* parseButton;
+    QList<QString> inAttribList;
+
+    QComboBox* attrComboBox;
 
     QList<QString> newParamList;
     QList<QString> paramList;
+
+    QPushButton* setupOperationButton;
+
+    QTabWidget* shadersTabWidget;
 
     ImageOperation* mOperation;
 
@@ -62,10 +68,14 @@ private:
     QMap<QString, UniformMat4Parameter*> mat4ParamMap;
 
     bool linkProgram();
+    void parseInputAttributes();
     void parseUniforms();
-    void parseAttributes();
 
     void addUniformParameter(QString uniformName, int uniformType, int numItems);
+
+    bool checkInputAttributes();
+
+    void setAttribComboBox();
 
 private slots:
     void loadVertexShader();

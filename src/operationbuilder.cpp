@@ -1,12 +1,11 @@
 #include "operationbuilder.h"
 #include "imageoperation.h"
 
-#include <QTabWidget>
 #include <QFileDialog>
 #include <QFormLayout>
 #include <QHBoxLayout>
-#include <QVBoxLayout>
 #include <QMessageBox>
+#include <QVBoxLayout>
 
 
 
@@ -15,6 +14,8 @@ OperationBuilder::OperationBuilder(ImageOperation *operation, QWidget *parent) :
     QOpenGLExtraFunctions(operation->context()),
     mOperation { operation }
 {
+    // OpenGL context
+
     mContext = new QOpenGLContext();
     mContext->setFormat(mOperation->context()->format());
     mContext->setShareContext(mOperation->context());
@@ -30,6 +31,8 @@ OperationBuilder::OperationBuilder(ImageOperation *operation, QWidget *parent) :
 
     mProgram = new QOpenGLShaderProgram();
 
+    // Buttons
+
     QPushButton* loadVertexButton = new QPushButton("Load vertex shader");
     loadVertexButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
 
@@ -40,10 +43,12 @@ OperationBuilder::OperationBuilder(ImageOperation *operation, QWidget *parent) :
 
     connect(loadFragmentButton, &QPushButton::clicked, this, &OperationBuilder::loadFragmentShader);
 
-    parseButton = new QPushButton("Parse shaders");
+    QPushButton* parseButton = new QPushButton("Parse shaders");
     parseButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
 
     connect(parseButton, &QPushButton::clicked, this, &OperationBuilder::parseShaders);
+
+    // Tabs
 
     vertexEditor = new QPlainTextEdit;
     vertexEditor->setLineWrapMode(QPlainTextEdit::NoWrap);
@@ -51,13 +56,41 @@ OperationBuilder::OperationBuilder(ImageOperation *operation, QWidget *parent) :
     fragmentEditor = new QPlainTextEdit;
     fragmentEditor->setLineWrapMode(QPlainTextEdit::NoWrap);
 
-    QTabWidget* shadersTabWidget = new QTabWidget;
+    attrComboBox = new QComboBox;
+    attrComboBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+    attrComboBox->setEditable(false);
+
+    QFormLayout* attrFormLayout = new QFormLayout;
+    attrFormLayout->addRow("Select vertex position input attribute:", attrComboBox);
+
+    setupOperationButton = new QPushButton("Setup operation");
+    setupOperationButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+    setupOperationButton->setEnabled(false);
+
+    QVBoxLayout* overviewLayout = new QVBoxLayout;
+    overviewLayout->addLayout(attrFormLayout);
+    overviewLayout->addWidget(setupOperationButton);
+
+    QWidget* overviewWidget = new QWidget;
+    overviewWidget->setLayout(overviewLayout);
+
+    shadersTabWidget = new QTabWidget;
     shadersTabWidget->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
     shadersTabWidget->addTab(vertexEditor, "Vertex shader");
     shadersTabWidget->addTab(fragmentEditor, "Fragment shader");
+    shadersTabWidget->addTab(overviewWidget, "Overview");
 
-    connect(loadVertexButton, &QPushButton::clicked, this, [=](){ shadersTabWidget->setCurrentIndex(0); });
-    connect(loadFragmentButton, &QPushButton::clicked, this, [=](){ shadersTabWidget->setCurrentIndex(1); });
+    connect(loadVertexButton, &QPushButton::clicked, this, [=, this](){
+        shadersTabWidget->setCurrentIndex(0);
+    });
+    connect(loadFragmentButton, &QPushButton::clicked, this, [=, this](){
+        shadersTabWidget->setCurrentIndex(1);
+    });
+    connect(setupOperationButton, &QPushButton::clicked, this, [=, this](){
+        mOperation->setup(vertexShader, fragmentShader);
+        emit shadersParsed();
+        mOperation->enableUpdate(true);
+    });
 
     // Layouts
 
@@ -169,12 +202,92 @@ void OperationBuilder::loadFragmentShader()
 
 void OperationBuilder::parseShaders()
 {
+    mOperation->enableUpdate(false);
+
     if (linkProgram())
     {
-        parseAttributes();
         parseUniforms();
+        parseInputAttributes();
+    }
+}
 
-        emit shadersParsed();
+
+
+bool OperationBuilder::linkProgram()
+{
+    mProgram->removeAllShaders();
+
+    if (!mProgram->addShaderFromSourceCode(QOpenGLShader::Vertex, vertexEditor->toPlainText()))
+    {
+        QMessageBox::information(this, "Vertex shader error", mProgram->log());
+        return false;
+    }
+    if (!mProgram->addShaderFromSourceCode(QOpenGLShader::Fragment, fragmentEditor->toPlainText()))
+    {
+        QMessageBox::information(this, "Fragment shader error", mProgram->log());
+        return false;
+    }
+    if (!mProgram->link())
+    {
+        QMessageBox::information(this, "Shader link error", mProgram->log());
+        return false;
+    }
+
+    return true;
+}
+
+
+
+void OperationBuilder::parseInputAttributes()
+{
+    QList<QString> newInAttribList;
+
+    mProgram->bind();
+
+    GLint numAttributes;
+    glGetProgramInterfaceiv(mProgram->programId(), GL_PROGRAM_INPUT, GL_ACTIVE_RESOURCES, &numAttributes);
+
+    for (GLint index = 0; index < numAttributes; index++)
+    {
+        QList<GLenum> properties = { GL_NAME_LENGTH, GL_TYPE, GL_ARRAY_SIZE };
+        QList<GLint> values(properties.size());
+
+        glGetProgramResourceiv(mProgram->programId(), GL_PROGRAM_INPUT, index, properties.size(), properties.data(), values.size(), NULL, values.data());
+
+        QList<GLchar> name(values.at(0));
+        glGetProgramResourceName(mProgram->programId(), GL_PROGRAM_INPUT, index, name.size(), nullptr, name.data());
+
+        QString attributeName(name.constData());
+        int attributeType = values.at(1);
+        int numItems = values.at(2);
+
+        qDebug() << attributeName << attributeType << numItems;
+
+        if (attributeType == GL_FLOAT_VEC2 && numItems == 1)
+            newInAttribList.append(attributeName);
+    }
+
+    mProgram->release();
+
+    if (newInAttribList != inAttribList)
+    {
+        inAttribList = newInAttribList;
+
+        if (checkInputAttributes())
+        {
+            setAttribComboBox();
+            setupOperationButton->setEnabled(true);
+            shadersTabWidget->setCurrentIndex(2);
+        }
+        else
+        {
+            inAttribList.clear();
+            setupOperationButton->setEnabled(false);
+        }
+    }
+    else
+    {
+        shadersTabWidget->setCurrentIndex(2);
     }
 }
 
@@ -271,56 +384,6 @@ void OperationBuilder::parseUniforms()
 
 
 
-void OperationBuilder::parseAttributes()
-{
-    mProgram->bind();
-
-    GLint numAttributes;
-    glGetProgramInterfaceiv(mProgram->programId(), GL_PROGRAM_INPUT, GL_ACTIVE_RESOURCES, &numAttributes);
-
-    for (GLint index = 0; index < numAttributes; index++)
-    {
-        QList<GLenum> properties = { GL_NAME_LENGTH, GL_TYPE, GL_ARRAY_SIZE };
-        QList<GLint> values(properties.size());
-
-        glGetProgramResourceiv(mProgram->programId(), GL_PROGRAM_INPUT, index, properties.size(), properties.data(), values.size(), NULL, values.data());
-
-        QList<GLchar> name(values.at(0));
-        glGetProgramResourceName(mProgram->programId(), GL_PROGRAM_INPUT, index, name.size(), nullptr, name.data());
-
-        QString attributeName(name.constData());
-    }
-
-    mProgram->release();
-}
-
-
-
-bool OperationBuilder::linkProgram()
-{
-    mProgram->removeAllShaders();
-
-    if (!mProgram->addShaderFromSourceCode(QOpenGLShader::Vertex, vertexEditor->toPlainText()))
-    {
-        QMessageBox::information(this, "Vertex shader error", mProgram->log());
-        return false;
-    }
-    if (!mProgram->addShaderFromSourceCode(QOpenGLShader::Fragment, fragmentEditor->toPlainText()))
-    {
-        QMessageBox::information(this, "Fragment shader error", mProgram->log());
-        return false;
-    }
-    if (!mProgram->link())
-    {
-        QMessageBox::information(this, "Shader link error", mProgram->log());
-        return false;
-    }
-
-    return true;
-}
-
-
-
 void OperationBuilder::addUniformParameter(QString uniformName, int uniformType, int numItems)
 {
     Parameter* parameter = nullptr;
@@ -348,8 +411,43 @@ void OperationBuilder::addUniformParameter(QString uniformName, int uniformType,
     }
 
     if (parameter)
-    {
-        parameter->setUpdateOperation(false);
         newParamList.append(uniformName);
-    }
 }
+
+
+
+bool OperationBuilder::checkInputAttributes()
+{
+    if (inAttribList.size() != 2)
+    {
+        QString message = "Exactly two vec2 input attributes must be specified in the vertex shader, corresponding to the 2D vertex position and texture coordinates.";
+        QMessageBox::information(this, "Input attributes error", message);
+        return false;
+    }
+
+    return true;
+}
+
+
+
+void OperationBuilder::setAttribComboBox()
+{
+    attrComboBox->disconnect();
+    attrComboBox->clear();
+
+    attrComboBox->addItems(inAttribList);
+
+    attrComboBox->setCurrentIndex(0);
+
+    mOperation->setPosInAttribName(inAttribList.at(0));
+    mOperation->setTexInAttribName(inAttribList.at(1));
+
+    connect(attrComboBox, &QComboBox::activated, this, [=, this](int index){
+        if (index >= 0 && index < 2)
+        {
+            mOperation->setPosInAttribName(inAttribList.at(index));
+            mOperation->setTexInAttribName(inAttribList.at((index + 1) % 2));
+        }
+    });
+}
+

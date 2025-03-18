@@ -72,8 +72,6 @@ public:
 
         mRow = parameter.mRow;
         mCol = parameter.mCol;
-
-        mUpdate = parameter.mUpdate;
     }
 
     QString name() const { return mName; }
@@ -89,9 +87,6 @@ public:
     int col() const { return mCol; }
     void setCol(int i) { mCol = i; }
 
-    bool updateOperation() const { return mUpdate; }
-    void setUpdateOperation(bool set){ mUpdate = set; }
-
     ImageOperation* operation() const { return mOperation; }
     void setOperation(ImageOperation* theOperation) { mOperation = theOperation; }
 
@@ -104,7 +99,6 @@ protected:
     bool mEmpty = true;
     int mRow = -1;
     int mCol = 0;
-    bool mUpdate = true;
     ImageOperation* mOperation;
 };
 

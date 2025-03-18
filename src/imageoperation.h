@@ -67,6 +67,8 @@ public:
 
     void enableBlit(bool on) { blitEnabled = on; }
 
+    void enableUpdate(bool on) { mUpdate = on; }
+
     bool hasParameters() { return !noParameters; }
 
     QString name() { return mName; }
@@ -80,6 +82,9 @@ public:
     void setInputData(QList<InputData*> data);
 
     void resize() { blender->resize(); fbo->resize(); }
+
+    void setPosInAttribName(QString name) { fbo->setPosInAttribName(name); };
+    void setTexInAttribName(QString name) { fbo->setTexInAttribName(name); };
 
     template <typename T>
     QList<UniformParameter<T>*> uniformParameters();
@@ -134,6 +139,8 @@ private:
     bool noParameters = false;
     bool blenderEnabled = false;
     bool blitEnabled = false;
+
+    bool mUpdate = false;
 
     QOpenGLContext* mContext;
     FBO* fbo;

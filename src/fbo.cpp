@@ -20,8 +20,11 @@
 *  along with MorphogenGL.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+
+
 #include "fbo.h"
-#include <QDebug>
+
+#include <QMessageBox>
 
 
 
@@ -387,7 +390,7 @@ void FBO::generateFramebuffer(GLuint& framebuffer, GLuint& texture)
 
     glGenTextures(1, &texture);
     glBindTexture(GL_TEXTURE_2D, texture);
-    glTexImage2D(GL_TEXTURE_2D, 0, static_cast<GLenum>(FBO::texFormat), width, height, 0, getFormat(static_cast<GLenum>(FBO::texFormat)), GL_UNSIGNED_BYTE, nullptr);
+    glTexImage2D(GL_TEXTURE_2D, 0, static_cast<GLenum>(texFormat), width, height, 0, getFormat(static_cast<GLenum>(texFormat)), GL_UNSIGNED_BYTE, nullptr);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glBindTexture(GL_TEXTURE_2D, 0);
@@ -415,12 +418,29 @@ void FBO::doneCurrent()
 
 
 
+void FBO::setPosInAttribName(QString name)
+{
+    mPosInAttribName = name;
+}
+
+
+
+void FBO::setTexInAttribName(QString name)
+{
+    mTexInAttribName = name;
+}
+
+
+
 void FBO::resizeVertices()
 {
     // Recompute vertices and texture coordinates
 
-    /*GLfloat left, right, bottom, top;
-    GLfloat ratio = static_cast<GLfloat>(width) / static_cast<GLfloat>(height);
+    GLfloat w = static_cast<GLfloat>(width);
+    GLfloat h = static_cast<GLfloat>(height);
+
+    GLfloat left, right, bottom, top;
+    GLfloat ratio = w / h;
 
     if (width > height)
     {
@@ -438,30 +458,14 @@ void FBO::resizeVertices()
     }
 
     GLfloat vertices[] = {
-        left, top,
         left, bottom,
-        right, bottom,
         left, top,
         right, bottom,
         right, top
-    };*/
-
-    GLfloat w = static_cast<GLfloat>(width);
-    GLfloat h = static_cast<GLfloat>(height);
-
-    GLfloat vertices[] = {
-        -0.5f * w, 0.5f * h,
-        -0.5f * w, -0.5f * h,
-        0.5f * w, -0.5f * h,
-        -0.5f * w, 0.5f * h,
-        0.5f * w, -0.5f * h,
-        0.5f * w, 0.5f * h
     };
 
     GLfloat texCoords[] = {
-        0.0f, h,
         0.0f, 0.0f,
-        w, 0.0f,
         0.0f, h,
         w, 0.0f,
         w, h
@@ -472,28 +476,28 @@ void FBO::resizeVertices()
     vao->bind();
 
     vboPos->bind();
-    vboPos->allocate(vertices, 12 * sizeof(GLfloat));
+    vboPos->allocate(vertices, 8 * sizeof(GLfloat));
 
     // Map vbo data to shader attribute location
 
     if (program->isLinked())
     {
         program->bind();
-        int posLocation = program->attributeLocation("pos");
+        int posLocation = program->attributeLocation(mPosInAttribName);
         program->setAttributeBuffer(posLocation, GL_FLOAT, 0, 2);
         program->enableAttributeArray(posLocation);
         program->release();
     }
 
     vboTex->bind();
-    vboTex->allocate(texCoords, 12 * sizeof(GLfloat));
+    vboTex->allocate(texCoords, 8 * sizeof(GLfloat));
 
     // Map vbo data to shader attribute location
 
     if (program->isLinked())
     {
         program->bind();
-        int texcoordLocation = program->attributeLocation("tex");
+        int texcoordLocation = program->attributeLocation(mTexInAttribName);
         program->setAttributeBuffer(texcoordLocation, GL_FLOAT, 0, 2);
         program->enableAttributeArray(texcoordLocation);
         program->release();
@@ -518,35 +522,31 @@ void FBO::setOrthographic(QString name)
 
 void FBO::adjustOrtho()
 {
-    /*GLfloat left, right, bottom, top;
-    GLfloat ratio = static_cast<GLfloat>(width) / static_cast<GLfloat>(height);
-
-    if (width > height)
-    {
-        top = 1.0f;
-        bottom = -top;
-        right = top * ratio;
-        left = -right;
-    }
-    else
-    {
-        right = 1.0f;
-        left = -right;
-        top = right / ratio;
-        bottom = -top;
-    }*/
-
     if (mOrthoEnabled)
     {
-        GLfloat w = static_cast<GLfloat>(width);
-        GLfloat h = static_cast<GLfloat>(height);
+        GLfloat left, right, bottom, top;
+        GLfloat ratio = static_cast<GLfloat>(width) / static_cast<GLfloat>(height);
+
+        if (width > height)
+        {
+            top = 1.0f;
+            bottom = -top;
+            right = top * ratio;
+            left = -right;
+        }
+        else
+        {
+            right = 1.0f;
+            left = -right;
+            top = right / ratio;
+            bottom = -top;
+        }
 
         // Maintain aspect ratio
 
         QMatrix4x4 transform;
         transform.setToIdentity();
-        //transform.ortho(left, right, bottom, top, -1.0, 1.0);
-        transform.ortho(-0.5f * w, 0.5f * w, -0.5f * h, 0.5f * h, -1.0, 1.0);
+        transform.ortho(left, right, bottom, top, -1.0, 1.0);
 
         context->makeCurrent(surface);
 
@@ -616,7 +616,7 @@ void FBO::resize()
 
     context->doneCurrent();
 
-    // Keep size
+    // Keep old size
 
     widthOld = width;
     heightOld = height;
@@ -642,7 +642,7 @@ void FBO::draw()
     glBindTexture(GL_TEXTURE_2D, *inputTextureID);
     glBindSampler(0, samplerID);
 
-    glDrawArrays(GL_TRIANGLES, 0, 6);
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
     glBindSampler(0, 0);
     glBindTexture(GL_TEXTURE_2D, 0);
@@ -662,7 +662,7 @@ void FBO::blit()
     glBindFramebuffer(GL_READ_FRAMEBUFFER, fbo);
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fboBlit);
 
-    glBlitFramebuffer(0, 0, FBO::width, FBO::height, 0, 0, FBO::width, FBO::height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+    glBlitFramebuffer(0, 0, width, height, 0, 0, width, height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 

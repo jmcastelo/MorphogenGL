@@ -64,6 +64,9 @@ public:
     void setMinMagFilter(GLenum filter);
     void setTextureFormat();
 
+    void setPosInAttribName(QString name);
+    void setTexInAttribName(QString name);
+
     void makeCurrent();
     void doneCurrent();
 
@@ -101,6 +104,9 @@ protected:
     GLuint widthOld;
     GLuint heightOld;
     GLsync fence = 0;
+
+    QString mPosInAttribName;
+    QString mTexInAttribName;
 
     bool mOrthoEnabled = false;
     QString mOrthoName;

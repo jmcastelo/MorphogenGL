@@ -62,7 +62,6 @@ UniformMat4Parameter::UniformMat4Parameter(const UniformParameter<float>& parame
 {
     mRow = parameter.row();
     mCol = parameter.col();
-    mUpdate = parameter.updateOperation();
 }
 
 
