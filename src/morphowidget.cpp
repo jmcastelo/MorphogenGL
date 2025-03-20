@@ -41,6 +41,8 @@ MorphoWidget::MorphoWidget(int w, int h, Overlay* overlay_, QWidget* parent)
     cursor = QPointF(0.0, 0.0);
 
     overlay->setViewportRect(w, h);
+
+    setUpdatesEnabled(true);
 }
 
 

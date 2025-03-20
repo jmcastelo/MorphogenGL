@@ -89,7 +89,7 @@ UniformParameter<T>::UniformParameter(const UniformParameter<T>& parameter) :
 template <typename T>
 void UniformParameter<T>::setUniform()
 {
-    BaseUniformParameter<T>::mOperation->setUniform(BaseUniformParameter<T>::mName, BaseUniformParameter<T>::mUniformType, nItems, BaseUniformParameter<T>::values().constData());
+    BaseUniformParameter<T>::mOperation->setUniform(BaseUniformParameter<T>::mUniformName, BaseUniformParameter<T>::mUniformType, nItems, BaseUniformParameter<T>::values().constData());
 }
 
 

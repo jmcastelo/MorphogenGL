@@ -83,7 +83,10 @@ public:
 
     void resize() { blender->resize(); fbo->resize(); }
 
+    QString posInAttribName() const { return fbo->posInAttribName(); }
     void setPosInAttribName(QString name) { fbo->setPosInAttribName(name); };
+
+    QString texInAttribName() const { return fbo->texInAttribName(); }
     void setTexInAttribName(QString name) { fbo->setTexInAttribName(name); };
 
     template <typename T>
@@ -102,7 +105,7 @@ public:
 
     void setMat4Uniform(QString name, UniformMat4Type type, QList<float> values);
 
-    void setOrthographicProjection(QString name) { fbo->setOrthographic(name); }
+    void setOrthographicProjection(QString name) { fbo->setOrthographicProjection(name); }
 
     template<typename T>
     void addUniformParameter(UniformParameter<T>* parameter);

@@ -64,7 +64,10 @@ public:
     void setMinMagFilter(GLenum filter);
     void setTextureFormat();
 
+    QString posInAttribName() const { return mPosInAttribName; }
     void setPosInAttribName(QString name);
+
+    QString texInAttribName() const { return mTexInAttribName; }
     void setTexInAttribName(QString name);
 
     void makeCurrent();
@@ -77,7 +80,7 @@ public:
     void identity();
     void clear();
 
-    void setOrthographic(QString name);
+    void setOrthographicProjection(QString name);
     void adjustOrtho();
 
     QImage outputImage();

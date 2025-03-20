@@ -261,8 +261,6 @@ void OperationBuilder::parseInputAttributes()
         int attributeType = values.at(1);
         int numItems = values.at(2);
 
-        qDebug() << attributeName << attributeType << numItems;
-
         if (attributeType == GL_FLOAT_VEC2 && numItems == 1)
             newInAttribList.append(attributeName);
     }
@@ -420,7 +418,7 @@ bool OperationBuilder::checkInputAttributes()
 {
     if (inAttribList.size() != 2)
     {
-        QString message = "Exactly two vec2 input attributes must be specified in the vertex shader, corresponding to the 2D vertex position and texture coordinates.";
+        QString message = "Exactly two active vec2 input attributes must be specified in the vertex shader, corresponding to the 2D vertex position and texture coordinates.";
         QMessageBox::information(this, "Input attributes error", message);
         return false;
     }

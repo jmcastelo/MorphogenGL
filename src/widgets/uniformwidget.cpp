@@ -19,21 +19,12 @@ UniformParameterWidget<T>::UniformParameterWidget(UniformParameter<T>* theUnifor
     {
         FocusLineEdit* lineEdit = new FocusLineEdit;
         lineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
-
-        QValidator* validator = nullptr;
-
-        if (std::is_same<T, float>::value)
-            validator = new QDoubleValidator(number->inf(), number->sup(), 5, lineEdit);
-        else if (std::is_same<T, int>::value || std::is_same<T, unsigned int>::value)
-            validator = new QIntValidator(number->inf(), number->sup(), lineEdit);
-
-        if (validator)
-            lineEdit->setValidator(validator);
-
         lineEdit->setText(QString::number(number->value()));
 
         mLineEdits.append(lineEdit);
     }
+
+    setValidators();
 
     ParameterWidget<T>::mLastFocusedWidget = mLineEdits[0];
     ParameterWidget<T>::mSelectedNumber = mUniformParameter->number(0);
@@ -84,6 +75,11 @@ UniformParameterWidget<T>::UniformParameterWidget(UniformParameter<T>* theUnifor
             ParameterWidget<T>::mLastFocusedWidget = mLineEdits[i];
             mLastIndex = i;
         });
+        ParameterWidget<T>::connect(mLineEdits[i], &FocusLineEdit::focusOut, this, [=, this](){
+            mLineEdits[i]->setText(QString::number(mUniformParameter->number(i)->value()));
+            mLineEdits[i]->setCursorPosition(0);
+        });
+
         ParameterWidget<T>::connect(mLineEdits[i], &FocusLineEdit::focusIn, this, &UniformParameterWidget::focusIn);
         ParameterWidget<T>::connect(mLineEdits[i], &FocusLineEdit::focusOut, this, &UniformParameterWidget::focusOut);
 
@@ -100,6 +96,29 @@ UniformParameterWidget<T>::UniformParameterWidget(UniformParameter<T>* theUnifor
     }
 
     ParameterWidget<T>::connect(mScrollBar, &QScrollBar::valueChanged, mStackedLayout, &QStackedLayout::setCurrentIndex);
+}
+
+
+
+template <typename T>
+void UniformParameterWidget<T>::setValidators()
+{
+    int i = 0;
+
+    foreach (Number<T>* number, mUniformParameter->numbers())
+    {
+        QValidator* validator = nullptr;
+
+        if (std::is_same<T, float>::value)
+            validator = new QDoubleValidator(number->inf(), number->sup(), 5, mLineEdits[i]);
+        else if (std::is_same<T, int>::value || std::is_same<T, unsigned int>::value)
+            validator = new QIntValidator(number->inf(), number->sup(), mLineEdits[i]);
+
+        if (validator)
+            mLineEdits[i]->setValidator(validator);
+
+        i++;
+    }
 }
 
 
@@ -123,10 +142,18 @@ template <typename T>
 void UniformParameterWidget<T>::setMax(T theMax) { mUniformParameter->setMax(theMax); }
 
 template <typename T>
-void UniformParameterWidget<T>::setInf(T theInf) { mUniformParameter->setInf(theInf); }
+void UniformParameterWidget<T>::setInf(T theInf)
+{
+    mUniformParameter->setInf(theInf);
+    setValidators();
+}
 
 template <typename T>
-void UniformParameterWidget<T>::setSup(T theSup) { mUniformParameter->setSup(theSup); }
+void UniformParameterWidget<T>::setSup(T theSup)
+{
+    mUniformParameter->setSup(theSup);
+    setValidators();
+}
 
 
 

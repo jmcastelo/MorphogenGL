@@ -350,8 +350,10 @@ void NodeManager::sortOperations()
             }
         }
 
-        for (ImageOperationNode* node : computedNodes)
+        foreach (ImageOperationNode* node, computedNodes)
+        {
             pendingNodes.remove(node->id);
+        }
 
         if (computedNodes.empty())
             break;
@@ -365,17 +367,23 @@ void NodeManager::sortOperations()
 
 void NodeManager::iterate()
 {
-    foreach(ImageOperation* operation, sortedOperations)
+    foreach (ImageOperation* operation, sortedOperations)
+    {
         operation->blit();
+    }
 
-    foreach(ImageOperation* operation, sortedOperations)
+    foreach (ImageOperation* operation, sortedOperations)
+    {
         operation->applyOperation();
+    }
 
     iteration++;
 
     foreach (Seed* seed, seeds)
+    {
         if (!seed->isFixed() && !seed->isCleared())
             seed->clear();
+    }
 }
 
 
@@ -391,7 +399,9 @@ void NodeManager::clearOperation(QUuid id)
 void NodeManager::clearAllOperations()
 {
     foreach (ImageOperationNode* node, operationNodes)
+    {
         node->operation->clear();
+    }
 }
 
 
@@ -412,6 +422,7 @@ void NodeManager::setOutput(QUuid id)
 
         operationNodes.value(id)->operation->enableBlit(true);
         outputTextureID = operationNodes.value(id)->operation->getTextureBlit();
+
         emit outputTextureChanged(**outputTextureID);
         emit outputFBOChanged(operationNodes.value(id)->operation->getFBO());
     }
@@ -419,6 +430,7 @@ void NodeManager::setOutput(QUuid id)
     {
         outputID = id;
         outputTextureID = seeds.value(id)->getTextureID();
+
         emit outputTextureChanged(**outputTextureID);
         emit outputFBOChanged(seeds.value(id)->getFBO());
     }
@@ -720,6 +732,7 @@ void NodeManager::connectLoadedOperations(QMap<QUuid, QMap<QUuid, InputData*>> c
 OperationWidget* NodeManager::addNewOperation()
 {
     ImageOperation* operation = new ImageOperation("New Operation", sharedContext);
+
     OperationWidget* opWidget = new OperationWidget(operation, false, true);
 
     QUuid id = QUuid::createUuid();
@@ -727,6 +740,18 @@ OperationWidget* NodeManager::addNewOperation()
     ImageOperationNode *node = new ImageOperationNode(id);
     node->operation = operation;
     operationNodes.insert(id, node);
+
+    connect(opWidget, &OperationWidget::outputChanged, this, [=, this](bool checked){
+        if (checked)
+        {
+            setOutput(id);
+            emit outputNodeChanged(opWidget);
+        }
+        else
+            emit outputNodeChanged(nullptr);
+    });
+
+    connect(this, &NodeManager::outputNodeChanged, opWidget, &OperationWidget::toggleOutputAction);
 
     return opWidget;
 

@@ -70,6 +70,7 @@ HEADERS += \
     src/recorder.h \
     src/rgbwidget.h \
     src/seed.h \
+    src/seedwidget.h \
     src/texformat.h \
     src/timerthread.h \
     src/widgets/focuswidgets.h \
@@ -111,6 +112,7 @@ SOURCES += \
     src/recorder.cpp \
     src/rgbwidget.cpp \
     src/seed.cpp \
+    src/seedwidget.cpp \
     src/timerthread.cpp \
     src/widgets/uniformmat4widget.cpp \
     src/widgets/uniformwidget.cpp

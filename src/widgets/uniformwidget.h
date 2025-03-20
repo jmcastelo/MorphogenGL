@@ -67,6 +67,7 @@ private:
 
     int mLastIndex;
 
+    void setValidators();
     void setItemsLayouts();
     void clearLayouts();
     void removeLayout(QLayout* layout);

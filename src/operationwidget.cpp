@@ -4,14 +4,12 @@
 #include "operationwidget.h"
 #include "parameters/uniformmat4parameter.h"
 
-#include <limits>
-
 
 
 OperationWidget::OperationWidget(ImageOperation* operation, bool midiEnabled, bool editMode, QWidget* parent) :
     QFrame(parent),
     mOperation { operation },
-    mMidiEnabled {midiEnabled }
+    mMidiEnabled { midiEnabled }
 {
     mOpBuilder = new OperationBuilder(mOperation);
     mOpBuilder->installEventFilter(this);
@@ -21,103 +19,110 @@ OperationWidget::OperationWidget(ImageOperation* operation, bool midiEnabled, bo
 
     mainLayout = new QVBoxLayout;
     mainLayout->setSizeConstraint(QLayout::SetMinAndMaxSize);
+    mainLayout->setContentsMargins(0, 0, 0, 0);
+    mainLayout->setSpacing(0);
 
     // Header widget
 
     headerWidget = new QWidget;
-    headerWidget->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+    headerWidget->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Maximum);
+    headerWidget->setStyleSheet("QWidget { background-color: rgb(16, 64, 128); }");
 
-    // Enable button
+    // Header toolbar
 
-    enableButton = new QPushButton;
-    enableButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
-    enableButton->setFixedSize(32, 32);
-    enableButton->setStyleSheet("QPushButton { image: url(:/icons/circle-grey.png); background-color: transparent; border: 0; } QPushButton:checked { image: url(:/icons/circle-green.png); }");
-    enableButton->setCheckable(true);
+    headerToolBar = new QToolBar;
+    headerToolBar->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Maximum);
 
-    // Edit button
+    // Enable action
 
-    editButton = new QPushButton;
-    editButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
-    editButton->setFixedSize(32, 32);
-    editButton->setStyleSheet("QPushButton { image: url(:/icons/applications-development.png); background-color: transparent; border: 0; }");
-    editButton->setCheckable(true);
-    editButton->setChecked(false);
+    enableAction = headerToolBar->addAction(mOperation->isEnabled() ? QIcon(QPixmap(":/icons/circle-green.png")) : QIcon(QPixmap(":/icons/circle-grey.png")), mOperation->isEnabled() ? "Enabled" : "Disabled", this, &OperationWidget::enableOperation);
+    enableAction->setCheckable(true);
+    enableAction->setChecked(mOperation->isEnabled());
 
-    connect(editButton, &QPushButton::toggled, this, &OperationWidget::toggleEditMode);
+    // Output action
+
+    outputAction = headerToolBar->addAction(QIcon(QPixmap(":/icons/eye.png")), "Set as output", this, &OperationWidget::outputChanged);
+    outputAction->setCheckable(true);
+
+    // Edit action
+
+    editAction = headerToolBar->addAction(QIcon(QPixmap(":/icons/applications-development.png")), "Edit", this, &OperationWidget::toggleEditMode);
+    editAction->setCheckable(true);
+    editAction->setChecked(editMode);
+
+    // Toggle body action
+
+    toggleBodyAction = headerToolBar->addAction(QIcon(QPixmap(":/icons/go-down.png")), "Hide", this, &OperationWidget::toggleBody);
+    toggleBodyAction->setCheckable(true);
+    toggleBodyAction->setChecked(true);
 
     // Operation name label
 
     opNameLabel = new QLabel;
-    opNameLabel->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+    opNameLabel->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Maximum);
+    opNameLabel->setStyleSheet("QLabel { font-size: 16pt; }");
 
     // Operation name line edit
 
     opNameLineEdit = new QLineEdit;
-    opNameLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+    opNameLineEdit->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Maximum);
+    opNameLineEdit->setStyleSheet("QLineEdit { font-size: 16pt; }");
     opNameLineEdit->setVisible(false);
 
     connect(opNameLineEdit, &QLineEdit::textEdited, this, [=, this](QString name){
         operation->setName(name);
-        opNameLineEdit->setFixedWidth(20 + opNameLineEdit->fontMetrics().horizontalAdvance(name));
         opNameLabel->setText(name);
+
+        opNameLineEdit->setMinimumWidth(20 + opNameLineEdit->fontMetrics().horizontalAdvance(name));
+
+        adjustSize();
     });
 
-    // Toggle body button
-
-    toggleButton = new QPushButton;
-    toggleButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
-    toggleButton->setFixedSize(32, 32);
-    toggleButton->setStyleSheet("QPushButton{ image: url(:/icons/go-up.png); background-color: transparent; border: 0; } QPushButton:checked { image: url(:/icons/go-down.png); }");
-    toggleButton->setCheckable(true);
-    toggleButton->setChecked(true);
-
-    connect(toggleButton, &QPushButton::toggled, this, &OperationWidget::toggleBody);
-
     QHBoxLayout* headerLayout = new QHBoxLayout;
-    headerLayout->setSizeConstraint(QLayout::SetMinAndMaxSize);
-    headerLayout->setContentsMargins(10, 10, 10, 10);
-    headerLayout->setSpacing(20);
-    headerLayout->addWidget(enableButton, 0, Qt::AlignVCenter);
-    headerLayout->addWidget(editButton, 0, Qt::AlignVCenter);
-    headerLayout->addWidget(opNameLabel, 0, Qt::AlignVCenter);
-    headerLayout->addWidget(opNameLineEdit, 0, Qt::AlignVCenter);
-    headerLayout->addWidget(toggleButton, 0, Qt::AlignVCenter);
+    headerLayout->addWidget(headerToolBar, 0);
+    headerLayout->addWidget(opNameLabel, 1, Qt::AlignLeft);
+    headerLayout->addWidget(opNameLineEdit, 1, Qt::AlignLeft);
 
     headerWidget->setLayout(headerLayout);
-    mainLayout->addWidget(headerWidget, 0, Qt::AlignTop | Qt::AlignLeft);
 
-    // Body widget
+    mainLayout->addWidget(headerWidget, 0);
 
-    bodyWidget = new QWidget;
-    bodyWidget->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+    // Separator
 
-    mainLayout->addWidget(bodyWidget, 1, Qt::AlignTop | Qt::AlignLeft);
+    separator[0] = new QFrame;
+    separator[0]->setFrameShape(QFrame::HLine);
 
-    QVBoxLayout* bodyLayout = new QVBoxLayout;
-    bodyLayout->setSizeConstraint(QLayout::SetMinAndMaxSize);
-
-    bodyWidget->setLayout(bodyLayout);
+    mainLayout->addWidget(separator[0], 0, Qt::AlignTop);
 
     // Grid widget containing parameter widgets
 
     gridWidget = new GridWidget;
-    gridWidget->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+    gridWidget->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
 
     connect(gridWidget, &GridWidget::itemRowColChanged, this, &OperationWidget::updateWidgetRowCol);
 
-    bodyLayout->addWidget(gridWidget, 0, Qt::AlignTop | Qt::AlignLeft);
+    mainLayout->addWidget(gridWidget, 1, Qt::AlignTop | Qt::AlignLeft);
+
+    // Separator
+
+    separator[1] = new QFrame;
+    separator[1]->setFrameShape(QFrame::HLine);
+
+    mainLayout->addWidget(separator[1], 0, Qt::AlignTop);
 
     // Selected parameter widgets
+
+    paramNameLabel = new QLabel;
+    paramNameLabel->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
 
     paramNameLineEdit = new QLineEdit;
     paramNameLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
     paramNameLineEdit->setPlaceholderText("Parameter name");
     paramNameLineEdit->setVisible(false);
 
-    selParamDial = new QDial;
-    selParamDial->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
-    selParamDial->setRange(0, 100'000);
+    selParamSlider = new QSlider(Qt::Horizontal);
+    selParamSlider->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Maximum);
+    selParamSlider->setRange(0, 100'000);
 
     midiLinkButton = new QPushButton;
     midiLinkButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
@@ -175,38 +180,61 @@ OperationWidget::OperationWidget(ImageOperation* operation, bool midiEnabled, bo
 
     presetsGroupBox = new QGroupBox("Presets");
     presetsGroupBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+    presetsGroupBox->setStyleSheet("QGroupBox::title { subcontrol-origin: margin; subcontrol-position: top center; font-size: 18pt; margin: 7px; }");
     presetsGroupBox->setLayout(presetsLayout);
     presetsGroupBox->setVisible(false);
 
-    QGridLayout* selParamLayout = new QGridLayout;
-    selParamLayout->addWidget(paramNameLineEdit, 0, 0, 1, 3, Qt::AlignLeft);
-    selParamLayout->addWidget(selParamDial, 1, 0, 2, 1, Qt::AlignCenter);
-    selParamLayout->addWidget(selParamMinLineEdit, 1, 1, Qt::AlignBottom | Qt::AlignLeft);
-    selParamLayout->addWidget(selParamMaxLineEdit, 2, 1, Qt::AlignTop | Qt::AlignLeft);
-    selParamLayout->addWidget(selParamInfLineEdit, 1, 2, Qt::AlignBottom | Qt::AlignLeft);
-    selParamLayout->addWidget(selParamSupLineEdit, 2, 2, Qt::AlignTop | Qt::AlignLeft);
-    selParamLayout->addWidget(layoutComboBox, 1, 3, Qt::AlignCenter);
-    selParamLayout->addWidget(mat4TypeComboBox, 2, 3, Qt::AlignCenter);
-    selParamLayout->addWidget(midiLinkButton, 3, 0, Qt::AlignCenter);
-    selParamLayout->addWidget(presetsGroupBox, 3, 1, 1, 3, Qt::AlignTop | Qt::AlignLeft);
+    // Selected parameter layout
 
-    selParamGroupBox = new QGroupBox("No parameter selected");
-    selParamGroupBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
-    selParamGroupBox->setStyleSheet("QGroupBox::title { subcontrol-origin: margin; subcontrol-position: top center; font-size: 18pt; margin: 7px; }");
-    selParamGroupBox->setLayout(selParamLayout);
-    selParamGroupBox->setVisible(false);
+    QVBoxLayout* selParamLayout = new QVBoxLayout;
 
-    bodyLayout->addWidget(selParamGroupBox, 0, Qt::AlignTop | Qt::AlignHCenter);
+    selParamLayout->addWidget(paramNameLabel);
+    selParamLayout->addWidget(paramNameLineEdit);
+
+    QHBoxLayout* sliderLayout = new QHBoxLayout;
+    sliderLayout->addWidget(midiLinkButton, 0);
+    sliderLayout->addWidget(selParamSlider, 1);
+
+    selParamLayout->addLayout(sliderLayout);
+
+    QHBoxLayout* minMaxLayout = new QHBoxLayout;
+    minMaxLayout->addWidget(selParamMinLineEdit);
+    minMaxLayout->addWidget(selParamMaxLineEdit);
+
+    selParamLayout->addLayout(minMaxLayout);
+
+    QHBoxLayout* infSupLayout = new QHBoxLayout;
+    infSupLayout->addWidget(selParamInfLineEdit);
+    infSupLayout->addWidget(selParamSupLineEdit);
+
+    selParamLayout->addLayout(infSupLayout);
+
+    QHBoxLayout* combosLayout = new QHBoxLayout;
+    combosLayout->addWidget(layoutComboBox);
+    combosLayout->addWidget(mat4TypeComboBox);
+
+    selParamLayout->addLayout(combosLayout);
+
+    selParamLayout->addWidget(presetsGroupBox);
+
+    // Selected parameter widget
+
+    selParamWidget = new QWidget;
+    selParamWidget->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Maximum);
+
+    selParamWidget->setLayout(selParamLayout);
+
+    mainLayout->addWidget(selParamWidget, 0, Qt::AlignTop);
 
     setLayout(mainLayout);
 
-    setFrameStyle(QFrame::Box | QFrame::Plain);
-    setLineWidth(5);
+    setFrameShape(QFrame::Box);
+    setFrameShadow(QFrame::Raised);
+    setMidLineWidth(3);
+    setLineWidth(3);
     setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
 
     toggleEditMode(editMode);
-
-    setup();
 }
 
 
@@ -301,17 +329,10 @@ void OperationWidget::setup()
         glenumOptionsWidgets.append(widget);
     }
 
-    // Once widgets set on grid, optimize its layout to set it with proper row and column spans and sizes
-
-    if (gridWidget->isVisible())
-        gridWidget->optimizeLayout();
-
     // Selected parameter widget
 
     if (!floatParamWidgets.empty() || !intParamWidgets.empty() || !uintParamWidgets.empty() || !mat4ParamWidgets.empty())
     {
-        selParamGroupBox->setVisible(true);
-
         connectParamWidgets<float>(floatParamWidgets);
         connectParamWidgets<int>(intParamWidgets);
         connectParamWidgets<unsigned int>(uintParamWidgets);
@@ -328,10 +349,6 @@ void OperationWidget::setup()
         if (lastFocusedWidget)
             lastFocusedWidget->setFocus();
     }
-    else
-    {
-        selParamGroupBox->setVisible(false);
-    }
 
     // Operation name controls
 
@@ -344,17 +361,11 @@ void OperationWidget::setup()
 
     midiLinkButton->setVisible(mMidiEnabled);
 
-    // Enable button
+    // Once widgets set on grid, optimize its layout to set it with proper row and column spans and sizes
 
-    enableButton->setChecked(mOperation->isEnabled());
+    if (gridWidget->isVisible())
+        gridWidget->optimizeLayout();
 
-    disconnect(enableButton, &QPushButton::toggled, this, nullptr);
-
-    connect(enableButton, &QPushButton::toggled, this, [=, this](bool checked){
-        mOperation->enable(checked);
-    });
-
-    bodyWidget->adjustSize();
     adjustSize();
 }
 
@@ -428,7 +439,7 @@ void OperationWidget::connectUniformParamWidgets(QList<UniformParameterWidget<T>
             else
                 updateSelParamControls<T>(widget);
 
-            updateMidiButtons<T>(widget);
+            updateMidiButton<T>(widget);
 
             setSelParamNameWidgets<T>(widget);
         });
@@ -518,7 +529,7 @@ void OperationWidget::connectUniformMat4ParamWidgets()
                 else
                     updateSelParamControls<float>(widget);
 
-                updateMidiButtons<float>(widget);
+                updateMidiButton<float>(widget);
             }
             else
                 toggleSelParamWidgets(false);
@@ -601,9 +612,15 @@ void OperationWidget::removeInterpolation()
 
 
 
-void OperationWidget::toggleEnableButton(bool checked)
+void OperationWidget::toggleOutputAction(OperationWidget* widget)
 {
-    enableButton->setChecked(checked);
+    if (widget != this)
+    {
+        outputAction->setChecked(false);
+        headerWidget->setStyleSheet("QWidget { background-color: rgb(16, 64, 128); }");
+    }
+    else
+        headerWidget->setStyleSheet("QWidget { background-color: rgb(128, 64, 16); }");
 }
 
 
@@ -617,7 +634,7 @@ void OperationWidget::toggleMidiButton(bool show)
 
 void OperationWidget::toggleSelParamWidgets(bool visible)
 {
-    selParamDial->setVisible(visible);
+    selParamSlider->setVisible(visible);
     selParamMinLineEdit->setVisible(visible);
     selParamMaxLineEdit->setVisible(visible);
     selParamInfLineEdit->setVisible(visible);
@@ -625,6 +642,17 @@ void OperationWidget::toggleSelParamWidgets(bool visible)
     layoutComboBox->setVisible(visible);
     presetsGroupBox->setVisible(visible);
 }
+
+
+
+void OperationWidget::enableOperation(bool checked)
+{
+    mOperation->enable(checked);
+
+    enableAction->setIcon(checked ? QIcon(QPixmap(":/icons/circle-green.png")) : QIcon(QPixmap(":/icons/circle-grey.png")));
+    enableAction->setText(checked ? "Enabled" : "Disabled");
+}
+
 
 
 void OperationWidget::closeEvent(QCloseEvent* event)
@@ -639,7 +667,8 @@ bool OperationWidget::eventFilter(QObject *obj, QEvent *event)
 {
     if (obj == mOpBuilder && event->type() == QEvent::Close)
     {
-        editButton->setChecked(false);
+        editAction->setChecked(false);
+        toggleEditMode(false);
         return false;
     }
 
@@ -651,11 +680,9 @@ bool OperationWidget::eventFilter(QObject *obj, QEvent *event)
 template <class T>
 void OperationWidget::setSelParamNameWidgets(ParameterWidget<T>* widget)
 {
-    // Title
-
-    selParamGroupBox->setTitle(widget->name());
-
     // Name line edit
+
+    paramNameLabel->setText(widget->name());
 
     paramNameLineEdit->setText(widget->name());
     paramNameLineEdit->setFixedWidth(20 + paramNameLineEdit->fontMetrics().horizontalAdvance(widget->name()));
@@ -664,8 +691,11 @@ void OperationWidget::setSelParamNameWidgets(ParameterWidget<T>* widget)
 
     connect(paramNameLineEdit, &QLineEdit::textEdited, this, [=, this](QString name){
         widget->setName(name);
-        selParamGroupBox->setTitle(name);
+
+        paramNameLabel->setText(name);
+
         paramNameLineEdit->setFixedWidth(20 + paramNameLineEdit->fontMetrics().horizontalAdvance(name));
+
         gridWidget->optimizeLayout();
     });
 }
@@ -677,16 +707,16 @@ void OperationWidget::updateSelParamControls(ParameterWidget<T>* widget)
 {
     Number<T>* number = widget->selectedNumber();
 
-    // Dial
+    // Slider
 
-    selParamDial->setVisible(true);
+    selParamSlider->setVisible(true);
 
-    selParamDial->disconnect();
-    selParamDial->setRange(0, number->indexMax());
-    selParamDial->setValue(number->index());
+    selParamSlider->disconnect();
+    selParamSlider->setRange(0, number->indexMax());
+    selParamSlider->setValue(number->index());
 
-    connect(selParamDial, &QAbstractSlider::sliderMoved, widget, &ParameterWidget<T>::setValueFromIndex);
-    connect(number, &Number<T>::indexChanged, selParamDial, &QAbstractSlider::setValue);
+    connect(selParamSlider, &QAbstractSlider::sliderMoved, widget, &ParameterWidget<T>::setValueFromIndex);
+    connect(number, &Number<T>::indexChanged, selParamSlider, &QAbstractSlider::setValue);
 
     // Minimum
 
@@ -760,16 +790,16 @@ void OperationWidget::updateSelParamEditControls(ParameterWidget<T>* widget)
 {
     Number<T>* number = widget->selectedNumber();
 
-    // Dial
+    // Slider
 
-    selParamDial->setVisible(true);
+    selParamSlider->setVisible(true);
 
-    selParamDial->disconnect();
-    selParamDial->setRange(0, number->indexMax());
-    selParamDial->setValue(number->index());
+    selParamSlider->disconnect();
+    selParamSlider->setRange(0, number->indexMax());
+    selParamSlider->setValue(number->index());
 
-    connect(selParamDial, &QAbstractSlider::sliderMoved, widget, &ParameterWidget<T>::setValueFromIndex);
-    connect(number, &Number<T>::indexChanged, selParamDial, &QAbstractSlider::setValue);
+    connect(selParamSlider, &QAbstractSlider::sliderMoved, widget, &ParameterWidget<T>::setValueFromIndex);
+    connect(number, &Number<T>::indexChanged, selParamSlider, &QAbstractSlider::setValue);
 
     // Inf (lowest)
 
@@ -896,7 +926,6 @@ void OperationWidget::updateSelParamEditControls(ParameterWidget<T>* widget)
         widget->removeCurrentPreset();
 
         gridWidget->optimizeLayout();
-        adjustSize();
     });
 
     addPresetButton->disconnect();
@@ -906,7 +935,6 @@ void OperationWidget::updateSelParamEditControls(ParameterWidget<T>* widget)
         widget->addPreset(name);
 
         gridWidget->optimizeLayout();
-        adjustSize();
     });
 
     // Focus-in connections
@@ -951,7 +979,7 @@ void OperationWidget::setValidator(QValidator* validator, QLineEdit* lineEdit, T
 
 
 template <typename T>
-void OperationWidget::updateMidiButtons(ParameterWidget<T>* widget)
+void OperationWidget::updateMidiButton(ParameterWidget<T>* widget)
 {
     Number<T>* number = widget->selectedNumber();
 
@@ -1000,7 +1028,6 @@ void OperationWidget::focusInEvent(QFocusEvent *event)
 
 void OperationWidget::updateWidgetRowCol(QWidget* widget, int row, int col)
 {
-    bodyWidget->adjustSize();
     adjustSize();
 
     foreach (auto paramWidget, floatParamWidgets)
@@ -1054,12 +1081,27 @@ void OperationWidget::updateWidgetRowCol(QWidget* widget, int row, int col)
 
 void OperationWidget::toggleBody(bool visible)
 {
-    bodyWidget->setVisible(visible);
+    if (visible)
+    {
+        toggleBodyAction->setIcon(QIcon(QPixmap(":/icons/go-down.png")));
+        toggleBodyAction->setText("Hide");
+    }
+    else
+    {
+        toggleBodyAction->setIcon(QIcon(QPixmap(":/icons/go-up.png")));
+        toggleBodyAction->setText("Show");
+    }
+
+    selParamWidget->setVisible(visible);
+    gridWidget->setVisible(visible);
 
     if (visible)
-        mainLayout->setStretchFactor(bodyWidget, 1);
+        mainLayout->setStretchFactor(gridWidget, 1);
     else
-        mainLayout->setStretchFactor(bodyWidget, 0);
+        mainLayout->setStretchFactor(gridWidget, 0);
+
+    separator[0]->setVisible(visible);
+    separator[1]->setVisible(visible);
 
     adjustSize();
 }
@@ -1075,10 +1117,9 @@ void OperationWidget::toggleEditMode(bool mode)
     opNameLabel->setVisible(!mEditMode);
     opNameLineEdit->setVisible(mEditMode);
 
-    headerWidget->adjustSize();
-
     gridWidget->setAcceptDrops(mEditMode);
 
+    paramNameLabel->setVisible(!mEditMode);
     paramNameLineEdit->setVisible(mEditMode);
 
     selParamInfLineEdit->setVisible(mEditMode);
@@ -1090,7 +1131,7 @@ void OperationWidget::toggleEditMode(bool mode)
     if (!mEditMode && layoutComboBox->isVisible())
         layoutComboBox->setVisible(false);
 
-    selParamGroupBox->adjustSize();
+    presetsGroupBox->setVisible(mEditMode);
 
     recreate();
 }

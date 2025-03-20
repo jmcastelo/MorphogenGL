@@ -192,6 +192,7 @@ public slots:
     void resize(GLuint width, GLuint height);
 
 signals:
+    void outputNodeChanged(OperationWidget* widget);
     void outputFBOChanged(GLuint fbo);
     void outputTextureChanged(GLuint id);
     void sortedOperationsChanged(QList<QPair<QUuid, QString>> sortedData, QList<QUuid> unsortedData);

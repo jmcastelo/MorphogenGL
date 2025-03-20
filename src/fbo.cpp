@@ -277,7 +277,6 @@ void FBO::setShadersFromSourceCode(QString vertexShader, QString fragmentShader)
         qDebug() << "Shader link error:\n" << program->log();
 
     resizeVertices();
-    adjustOrtho();
 }
 
 
@@ -294,7 +293,6 @@ void FBO::setShadersFromSourceFile(QString vertexShader, QString fragmentShader)
         qDebug() << "Shader link error:\n" << program->log();
 
     resizeVertices();
-    adjustOrtho();
 }
 
 
@@ -512,10 +510,11 @@ void FBO::resizeVertices()
 
 
 
-void FBO::setOrthographic(QString name)
+void FBO::setOrthographicProjection(QString name)
 {
     mOrthoName = name;
     mOrthoEnabled = true;
+    adjustOrtho();
 }
 
 

@@ -44,8 +44,10 @@
 #include <QHBoxLayout>
 #include <QCloseEvent>
 #include <QGroupBox>
-#include <QDial>
+#include <QSlider>
 #include <QFrame>
+#include <QToolBar>
+#include <QAction>
 #include <QOpenGLFunctions>
 
 
@@ -60,7 +62,7 @@ public:
 
     void setup();
 
-    void toggleEnableButton(bool checked);
+    void toggleOutputAction(OperationWidget* widget);
     void toggleMidiButton(bool show);
 
 signals:
@@ -71,6 +73,8 @@ signals:
     void linkBreak(Number<float>* number);
     void linkBreak(Number<int>* number);
     void linkBreak(Number<unsigned int>* number);
+
+    void outputChanged(bool checked);
 
 public slots:
     void recreate();
@@ -88,15 +92,21 @@ private:
 
     QWidget* headerWidget;
 
-    QPushButton* enableButton;
-    QPushButton* editButton;
-    QPushButton* toggleButton;
+    QToolBar* headerToolBar;
+
+    QAction* enableAction;
+    QAction* outputAction;
+    QAction* editAction;
+    QAction* toggleBodyAction;
+
     QLabel* opNameLabel;
     QLineEdit* opNameLineEdit;
 
-    QWidget* bodyWidget;
+    QFrame* separator[2];
 
     GridWidget* gridWidget;
+
+    QWidget* selParamWidget;
 
     QList<ParameterWidget<float>*> floatParamWidgets;
     QList<ParameterWidget<int>*> intParamWidgets;
@@ -111,9 +121,7 @@ private:
 
     QList<OptionsParameterWidget<GLenum>*> glenumOptionsWidgets;
 
-    QGroupBox* selParamGroupBox;
-
-    QDial* selParamDial;
+    QSlider* selParamSlider;
     FocusLineEdit* selParamMinLineEdit;
     FocusLineEdit* selParamMaxLineEdit;
     QValidator* minValidator = nullptr;
@@ -124,6 +132,7 @@ private:
     QValidator* infValidator = nullptr;
     QValidator* supValidator = nullptr;
 
+    QLabel* paramNameLabel;
     QLineEdit* paramNameLineEdit;
 
     QComboBox* layoutComboBox;
@@ -169,7 +178,7 @@ private:
     void setValidator(QValidator* validator, QLineEdit* lineEdit, T bottom, T top);
 
     template <typename T>
-    void updateMidiButtons(ParameterWidget<T>* widget);
+    void updateMidiButton(ParameterWidget<T>* widget);
 
     void toggleSelParamWidgets(bool visible);
 
@@ -180,6 +189,7 @@ private slots:
     void updateWidgetRowCol(QWidget* widget, int row, int col);
     void toggleBody(bool visible);
     void toggleEditMode(bool mode);
+    void enableOperation(bool checked);
 };
 
 

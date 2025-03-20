@@ -112,7 +112,7 @@ void UniformMat4Parameter::setType(UniformMat4Type type)
 
 void UniformMat4Parameter::setUniform()
 {
-    mOperation->setMat4Uniform(mName, mType, values());
+    mOperation->setMat4Uniform(mUniformName, mType, values());
 }
 
 

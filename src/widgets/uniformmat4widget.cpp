@@ -16,14 +16,12 @@ UniformMat4ParameterWidget::UniformMat4ParameterWidget(UniformMat4Parameter* the
     foreach (Number<float>* number, mUniformMat4Parameter->numbers())
     {
         FocusLineEdit* lineEdit = new FocusLineEdit;
-
-        QDoubleValidator* validator = new QDoubleValidator(number->inf(), number->sup(), 5, lineEdit);
-        lineEdit->setValidator(validator);
-
         lineEdit->setText(QString::number(number->value()));
 
         mLineEdits.append(lineEdit);
     }
+
+    setValidators();
 
     if (!mLineEdits.empty())
     {
@@ -66,12 +64,32 @@ UniformMat4ParameterWidget::UniformMat4ParameterWidget(UniformMat4Parameter* the
             ParameterWidget<float>::mLastFocusedWidget = mLineEdits[i];
             mLastIndex = i;
         });
+        ParameterWidget<float>::connect(mLineEdits[i], &FocusLineEdit::focusOut, this, [=, this](){
+            mLineEdits[i]->setText(QString::number(mUniformMat4Parameter->number(i)->value()));
+            mLineEdits[i]->setCursorPosition(0);
+        });
+
         ParameterWidget<float>::connect(mLineEdits[i], &FocusLineEdit::focusIn, this, &UniformMat4ParameterWidget::focusIn);
         ParameterWidget<float>::connect(mLineEdits[i], &FocusLineEdit::focusOut, this, &UniformMat4ParameterWidget::focusOut);
 
         ParameterWidget<float>::connect(mUniformMat4Parameter, QOverload<int, QVariant>::of(&Parameter::valueChanged), this, [=, this](int i, QVariant newValue){
             mLineEdits[i]->setText(QString::number(newValue.toFloat()));
+            mLineEdits[i]->setCursorPosition(0);
         });
+    }
+}
+
+
+
+void UniformMat4ParameterWidget::setValidators()
+{
+    int i = 0;
+
+    foreach (Number<float>* number, mUniformMat4Parameter->numbers())
+    {
+        QDoubleValidator* validator =  new QDoubleValidator(number->inf(), number->sup(), 5, mLineEdits[i]);
+        mLineEdits[i]->setValidator(validator);
+        i++;
     }
 }
 
@@ -91,8 +109,18 @@ void UniformMat4ParameterWidget::setName(QString theName)
 
 void UniformMat4ParameterWidget::setMin(float theMin) { mUniformMat4Parameter->setMin(theMin); }
 void UniformMat4ParameterWidget::setMax(float theMax) { mUniformMat4Parameter->setMax(theMax); }
-void UniformMat4ParameterWidget::setInf(float theInf) { mUniformMat4Parameter->setInf(theInf); }
-void UniformMat4ParameterWidget::setSup(float theSup) { mUniformMat4Parameter->setSup(theSup); }
+
+void UniformMat4ParameterWidget::setInf(float theInf)
+{
+    mUniformMat4Parameter->setInf(theInf);
+    setValidators();
+}
+
+void UniformMat4ParameterWidget::setSup(float theSup)
+{
+    mUniformMat4Parameter->setSup(theSup);
+    setValidators();
+}
 
 
 

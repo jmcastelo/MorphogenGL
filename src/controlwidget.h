@@ -197,7 +197,7 @@ private slots:
     void record();
     void setScreenshotFilename();
     void setOutputDir();
-    //void toggleDisplayOptionsWidget();
+    void toggleDisplayOptionsWidget();
     //void toggleRecordingOptionsWidget();
     //void toggleSortedOperationWidget();
     void plotsActionTriggered();

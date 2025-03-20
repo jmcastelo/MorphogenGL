@@ -39,6 +39,8 @@ private:
     UniformMat4Parameter* mUniformMat4Parameter;
     QList<FocusLineEdit*> mLineEdits;
     int mLastIndex;
+
+    void setValidators();
 };
 
 

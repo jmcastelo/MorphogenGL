@@ -183,7 +183,9 @@ ControlWidget::~ControlWidget()
 
 void ControlWidget::closeEvent(QCloseEvent* event)
 {
+    displayOptionsWidget->close();
     graphWidget->close();
+
     event->accept();
 }
 
@@ -247,7 +249,8 @@ void ControlWidget::constructSystemToolBar()
     connect(resetAction, &QAction::triggered, this, &ControlWidget::reset);
     connect(screenshotAction, &QAction::triggered, this, &ControlWidget::setScreenshotFilename);
     connect(recordAction, &QAction::triggered, this, &ControlWidget::record);
-    //connect(displayOptionsAction, &QAction::triggered, this, &ControlWidget::toggleDisplayOptionsWidget);
+    //connect(displayOptionsAction, &QAction::toggled, displayOptionsWidget, &QWidget::setVisible);
+    connect(displayOptionsAction, &QAction::triggered, this, &ControlWidget::toggleDisplayOptionsWidget);
     //connect(recordingOptionsAction, &QAction::triggered, this, &ControlWidget::toggleRecordingOptionsWidget);
     //connect(loadConfigAction, &QAction::triggered, this, &ControlWidget::loadConfig);
     //connect(saveConfigAction, &QAction::triggered, this, &ControlWidget::saveConfig);
@@ -305,20 +308,10 @@ void ControlWidget::setScreenshotFilename()
 
 
 
-/*void ControlWidget::toggleDisplayOptionsWidget()
+void ControlWidget::toggleDisplayOptionsWidget()
 {
     displayOptionsWidget->setVisible(!displayOptionsWidget->isVisible());
-
-    if (displayOptionsWidget->isVisible())
-    {
-        scrollLayout->addWidget(displayOptionsWidget);
-        scrollArea->ensureWidgetVisible(displayOptionsWidget);
-    }
-    else
-        scrollLayout->removeWidget(displayOptionsWidget);
-
-    updateScrollArea();
-}*/
+}
 
 
 
@@ -735,18 +728,11 @@ void ControlWidget::constructDisplayOptionsWidget(double itsFPS, double updFPS)
     formLayout->addRow("Height (px):", windowHeightLineEdit);
     formLayout->addRow("Format:", texFormatComboBox);
 
-    QGroupBox* displayGroupBox = new QGroupBox("Display options");
-    displayGroupBox->setLayout(formLayout);
-
-    QVBoxLayout* mainLayout = new QVBoxLayout;
-    mainLayout->setAlignment(Qt::AlignCenter);
-    mainLayout->setSizeConstraint(QLayout::SetFixedSize);
-    mainLayout->addWidget(displayGroupBox);
-
     displayOptionsWidget = new QWidget;
-    displayOptionsWidget->setLayout(mainLayout);
+    displayOptionsWidget->setWindowTitle("Display options");
     displayOptionsWidget->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
     displayOptionsWidget->setVisible(false);
+    displayOptionsWidget->setLayout(formLayout);
 
     // Signals + Slots
 
