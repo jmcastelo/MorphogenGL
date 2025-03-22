@@ -25,7 +25,8 @@
 
 
 
-Seed::Seed(QOpenGLContext* mainContext)
+Seed::Seed(QOpenGLContext* mainContext) :
+    QOpenGLExtraFunctions()
 {
     context = new QOpenGLContext();
     context->setFormat(mainContext->format());
@@ -181,8 +182,9 @@ Seed::Seed(QOpenGLContext* mainContext)
 
 
 
-Seed::Seed(const Seed& seed) : QOpenGLExtraFunctions(),
-    type { seed.type },
+Seed::Seed(const Seed& seed) :
+    QOpenGLExtraFunctions(),
+    mType { seed.mType },
     fixed { seed.fixed },
     imageFilename { seed.imageFilename }
 {
@@ -620,9 +622,12 @@ void Seed::resize()
 
 void Seed::draw()
 {
-    if (type == 0) drawRandom(false);
-    else if (type == 1) drawRandom(true);
-    else if (type == 2) drawImage();
+    if (mType == 0)
+        drawRandom(false);
+    else if (mType == 1)
+        drawRandom(true);
+    else if (mType == 2)
+        drawImage();
 
     cleared = false;
 }

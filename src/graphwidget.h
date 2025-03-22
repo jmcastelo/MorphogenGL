@@ -144,7 +144,7 @@ private:
 private slots:
     //void newSelectedNodes();
     //void addOperationNodeUnderCursor(QAction* action);
-    //void addSeedNodeUnderCursor();
+    void addSeedNode();
     //void pasteCopiedNodes();
     void addNewOperationNode();
 };

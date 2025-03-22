@@ -29,13 +29,13 @@
 #include <QWidget>
 #include <QPainter>
 #include <QGraphicsSceneResizeEvent>
-/*#include <QGraphicsSceneMouseEvent>
-#include <QPainter>
+//#include <QGraphicsSceneMouseEvent>
+//#include <QPainter>
 #include <QStyleOption>
-#include <QFileDialog>
-#include <QWidgetAction>
-#include <QLabel>
-#include <QActionGroup>*/
+//#include <QFileDialog>
+//#include <QWidgetAction>
+//#include <QLabel>
+//#include <QActionGroup>
 
 
 
@@ -239,6 +239,18 @@ QRectF Node::textBoundingRect() const
     painter->drawText(textRect, Qt::AlignCenter, name);
 }*/
 
+void Node::paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget)
+{
+    Q_UNUSED(widget)
+
+    if (option->state & QStyle::State_Sunken || option->state & QStyle::State_Selected)
+    {
+        painter->setPen(QPen(QColor(128, 128, 164), 2));
+
+        QRectF rect = mWidget->rect().toRectF();
+        painter->drawRect(rect);
+    }
+}
 
 
 /*QVariant Node::itemChange(GraphicsItemChange change, const QVariant &value)

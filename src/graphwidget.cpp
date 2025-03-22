@@ -164,15 +164,15 @@ void GraphWidget::closeEvent(QCloseEvent* event)
 
 
 
-/*void GraphWidget::addSeedNodeUnderCursor()
+void GraphWidget::addSeedNode()
 {
     QAction* action = qobject_cast<QAction*>(sender());
     QVariant data = action->data();
 
-    Node *node = new SeedNode(this);
+    Node *node = new Node(mNodeManager->addSeed());
     scene()->addItem(node);
     node->setPos(mapToScene(mapFromGlobal(data.toPoint())));
-}*/
+}
 
 
 
@@ -877,6 +877,11 @@ void GraphWidget::contextMenuEvent(QContextMenuEvent *event)
     if (!pointIntersectsItem(mapToScene(mapFromGlobal(event->globalPos()))))
     {
         QMenu menu(this);
+
+        // Add seed
+
+        QAction* addSeedAction = menu.addAction("Add seed", this, &GraphWidget::addSeedNode);
+        addSeedAction->setData(QVariant(QCursor::pos()));
 
         // Build new operation
 

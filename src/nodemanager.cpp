@@ -412,7 +412,7 @@ void NodeManager::setOutput(QUuid id)
     {
         // Avoid disabling blit for output node if it is blit connected (predge)
 
-        if (!outputID.isNull() && !operationNodes.value(outputID)->isBlitConnected())
+        if (!outputID.isNull() && operationNodes.contains(outputID) && !operationNodes.value(outputID)->isBlitConnected())
             operationNodes.value(outputID)->operation->enableBlit(false);
 
         outputID = id;
@@ -733,13 +733,13 @@ OperationWidget* NodeManager::addNewOperation()
 {
     ImageOperation* operation = new ImageOperation("New Operation", sharedContext);
 
-    OperationWidget* opWidget = new OperationWidget(operation, false, true);
-
     QUuid id = QUuid::createUuid();
 
     ImageOperationNode *node = new ImageOperationNode(id);
     node->operation = operation;
     operationNodes.insert(id, node);
+
+    OperationWidget* opWidget = new OperationWidget(operation, false, true);
 
     connect(opWidget, &OperationWidget::outputChanged, this, [=, this](bool checked){
         if (checked)
@@ -980,14 +980,43 @@ ImageOperation* NodeManager::loadImageOperation(
 
 
 
-QUuid NodeManager::addSeed()
+SeedWidget *NodeManager::addSeed()
 {
     Seed* seed = new Seed(sharedContext);
 
     QUuid id = QUuid::createUuid();
     seeds.insert(id, seed);
 
-    return id;
+    SeedWidget* seedWidget = new SeedWidget(seed);
+
+    connect(seedWidget, &SeedWidget::outputChanged, this, [=, this](bool checked){
+        if (checked)
+        {
+            setOutput(id);
+            emit outputNodeChanged(seedWidget);
+        }
+        else
+            emit outputNodeChanged(nullptr);
+    });
+
+    connect(this, &NodeManager::outputNodeChanged, seedWidget, &SeedWidget::toggleOutputAction);
+
+    connect(seedWidget, &SeedWidget::typeChanged, this, [=, this](){
+        if (isOutput(id))
+            emit outputFBOChanged(seeds.value(id)->getFBO());
+    });
+
+    connect(seedWidget, &SeedWidget::seedDrawn, this, [=, this](){
+        if (isOutput(id))
+        {
+            outputTextureID = seeds.value(id)->getTextureID();
+
+            emit outputTextureChanged(**outputTextureID);
+            emit outputFBOChanged(seeds.value(id)->getFBO());
+        }
+    });
+
+    return seedWidget;
 }
 
 
@@ -1034,7 +1063,7 @@ void NodeManager::loadSeedImage(QUuid id, QString filename)
 
 int NodeManager::getSeedType(QUuid id)
 {
-    return seeds.value(id)->getType();
+    return seeds.value(id)->type();
 }
 
 

@@ -84,7 +84,7 @@ void ConfigurationParser::writeSeedNode(QUuid id, Seed* seed)
     stream.writeAttribute("id", id.toString());
 
     stream.writeStartElement("type");
-    stream.writeCharacters(QString::number(seed->getType()));
+    stream.writeCharacters(QString::number(seed->type()));
     stream.writeEndElement();
 
     stream.writeStartElement("fixed");

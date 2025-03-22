@@ -72,7 +72,7 @@ private:
 
     QGraphicsOpacityEffect* controlWidgetOpacityEffect;
     QGraphicsOpacityEffect* plotsWidgetOpacityEffect;
-    qreal opacity = 0.7;
+    qreal opacity = 0.9;
 
 private slots:
     void beat();

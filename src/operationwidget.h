@@ -62,7 +62,6 @@ public:
 
     void setup();
 
-    void toggleOutputAction(OperationWidget* widget);
     void toggleMidiButton(bool show);
 
 signals:
@@ -78,6 +77,7 @@ signals:
 
 public slots:
     void recreate();
+    void toggleOutputAction(QWidget* widget);
 
 protected:
     void closeEvent(QCloseEvent* event) override;
@@ -139,8 +139,6 @@ private:
     QComboBox* mat4TypeComboBox;
 
     QPushButton* midiLinkButton;
-
-    //QGroupBox* presetsGroupBox;
 
     QPushButton* removePresetButton;
     QPushButton* addPresetButton;

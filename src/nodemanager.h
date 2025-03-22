@@ -30,6 +30,7 @@
 #include "blender.h"
 #include "texformat.h"
 #include "operationwidget.h"
+#include "seedwidget.h"
 
 #include "fbo.h"
 #include <QObject>
@@ -55,7 +56,7 @@ struct ImageOperationNode
 
     bool computed = false;
 
-    ImageOperationNode(QUuid uuid) : id { uuid } {};
+    ImageOperationNode(QUuid uuid) : id { uuid } { outputNodes.clear(); };
     ~ImageOperationNode();
 
     void addSeedInput(QUuid id, InputData* data);
@@ -137,7 +138,7 @@ public:
         std::vector<float> kernelElements,
         std::vector<float> matrixElements);
 
-    QUuid addSeed();
+    SeedWidget* addSeed();
     QUuid copySeed(QUuid srcId);
     void removeSeed(QUuid id);
     void loadSeedImage(QUuid id, QString filename);
@@ -192,7 +193,7 @@ public slots:
     void resize(GLuint width, GLuint height);
 
 signals:
-    void outputNodeChanged(OperationWidget* widget);
+    void outputNodeChanged(QWidget* widget);
     void outputFBOChanged(GLuint fbo);
     void outputTextureChanged(GLuint id);
     void sortedOperationsChanged(QList<QPair<QUuid, QString>> sortedData, QList<QUuid> unsortedData);

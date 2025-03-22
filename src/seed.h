@@ -39,6 +39,8 @@
 #include <QString>
 #include <QDebug>
 
+
+
 class Seed : protected QOpenGLExtraFunctions
 {
 public:
@@ -46,7 +48,7 @@ public:
     Seed(const Seed& seed);
     ~Seed();
 
-    GLuint getFBO() { return type == 2 ? fboImage : fboRandom; }
+    GLuint getFBO() { return mType == 2 ? fboImage : fboRandom; }
     GLuint** getTextureID() { return &textureID; }
 
     void loadImage(QString filename);
@@ -61,18 +63,18 @@ public:
     void draw();
     void clear();
 
-    int getType() { return type; }
-    void setType(int set) { type = set; }
+    int type() const { return mType; }
+    void setType(int type) { mType = type; }
 
-    bool isFixed() { return fixed; }
+    bool isFixed() const { return fixed; }
     void setFixed(bool set) { fixed = set; }
 
-    QString getImageFilename() { return imageFilename; }
+    QString getImageFilename() const { return imageFilename; }
 
-    bool isCleared() { return cleared; }
+    bool isCleared() const { return cleared; }
 
 private:
-    int type = 0;
+    int mType = 0;
     bool fixed = false;
     QString imageFilename;
     bool cleared = false;
