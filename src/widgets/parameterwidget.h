@@ -83,7 +83,6 @@ public:
     }
 
     void toggleVisibility(bool visible) { mGroupBox->setVisible(visible); }
-    void setDefaultVisibility() { mGroupBox->setVisible(mParameter->editable()); }
 
     void setRow(int i) { mParameter->setRow(i); }
     void setCol(int i) { mParameter->setCol(i); }

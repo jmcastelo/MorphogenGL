@@ -58,10 +58,23 @@ public:
     void setCol(int i) { mOptionsParameter->setCol(i); }
 
     QGroupBox* widget() { return mGroupBox; }
-    void setCheckable(bool checkable) { mGroupBox->setCheckable(checkable); }
+
+    void setCheckable(bool checkable)
+    {
+        mGroupBox->setCheckable(checkable);
+
+        if (checkable)
+        {
+            mGroupBox->setChecked(mOptionsParameter->editable());
+            connect(mGroupBox, &QGroupBox::toggled, mOptionsParameter, &Parameter::setEditable);
+        }
+        else
+        {
+            disconnect(mGroupBox, &QGroupBox::toggled, mOptionsParameter, &Parameter::setEditable);
+        }
+    }
 
     void toggleVisibility(bool visible) { mGroupBox->setVisible(visible); }
-    void setDefaultVisibility() { mGroupBox->setVisible(mOptionsParameter->editable()); }
 
     OptionsParameter<T>* parameter() { return mOptionsParameter; }
 

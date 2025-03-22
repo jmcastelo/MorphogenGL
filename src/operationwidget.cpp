@@ -26,12 +26,12 @@ OperationWidget::OperationWidget(ImageOperation* operation, bool midiEnabled, bo
 
     headerWidget = new QWidget;
     headerWidget->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Maximum);
-    headerWidget->setStyleSheet("QWidget { background-color: rgb(16, 64, 128); }");
+    headerWidget->setStyleSheet("QWidget { background-color: rgb(128, 128, 164); }");
 
     // Header toolbar
 
     headerToolBar = new QToolBar;
-    headerToolBar->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Maximum);
+    headerToolBar->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
 
     // Enable action
 
@@ -59,15 +59,15 @@ OperationWidget::OperationWidget(ImageOperation* operation, bool midiEnabled, bo
     // Operation name label
 
     opNameLabel = new QLabel;
-    opNameLabel->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Maximum);
+    opNameLabel->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
     opNameLabel->setStyleSheet("QLabel { font-size: 16pt; }");
 
     // Operation name line edit
 
     opNameLineEdit = new QLineEdit;
-    opNameLineEdit->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Maximum);
+    opNameLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
     opNameLineEdit->setStyleSheet("QLineEdit { font-size: 16pt; }");
-    opNameLineEdit->setVisible(false);
+    //opNameLineEdit->setVisible(false);
 
     connect(opNameLineEdit, &QLineEdit::textEdited, this, [=, this](QString name){
         operation->setName(name);
@@ -114,11 +114,12 @@ OperationWidget::OperationWidget(ImageOperation* operation, bool midiEnabled, bo
 
     paramNameLabel = new QLabel;
     paramNameLabel->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+    paramNameLabel->setText("Parameter name");
 
     paramNameLineEdit = new QLineEdit;
     paramNameLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
     paramNameLineEdit->setPlaceholderText("Parameter name");
-    paramNameLineEdit->setVisible(false);
+    //paramNameLineEdit->setVisible(false);
 
     selParamSlider = new QSlider(Qt::Horizontal);
     selParamSlider->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Maximum);
@@ -140,12 +141,12 @@ OperationWidget::OperationWidget(ImageOperation* operation, bool midiEnabled, bo
     selParamInfLineEdit = new FocusLineEdit;
     selParamInfLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
     selParamInfLineEdit->setPlaceholderText("Lowest");
-    selParamInfLineEdit->setVisible(false);
+    //selParamInfLineEdit->setVisible(false);
 
     selParamSupLineEdit = new FocusLineEdit;
     selParamSupLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
     selParamSupLineEdit->setPlaceholderText("Highest");
-    selParamSupLineEdit->setVisible(false);
+    //selParamSupLineEdit->setVisible(false);
 
     layoutComboBox = new QComboBox;
     layoutComboBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
@@ -173,49 +174,46 @@ OperationWidget::OperationWidget(ImageOperation* operation, bool midiEnabled, bo
     presetNameLineEdit->setMaximumWidth(100);
     presetNameLineEdit->setPlaceholderText("Preset name");
 
-    QHBoxLayout* presetsLayout = new QHBoxLayout;
-    presetsLayout->addWidget(removePresetButton);
-    presetsLayout->addWidget(addPresetButton);
-    presetsLayout->addWidget(presetNameLineEdit);
+    QGridLayout* presetsLayout = new QGridLayout;
+    presetsLayout->addWidget(removePresetButton, 0, 0);
+    presetsLayout->addWidget(addPresetButton, 0, 1);
+    presetsLayout->addWidget(presetNameLineEdit, 0, 2);
 
-    presetsGroupBox = new QGroupBox("Presets");
+    /*presetsGroupBox = new QGroupBox("Presets");
     presetsGroupBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
     presetsGroupBox->setStyleSheet("QGroupBox::title { subcontrol-origin: margin; subcontrol-position: top center; font-size: 18pt; margin: 7px; }");
     presetsGroupBox->setLayout(presetsLayout);
-    presetsGroupBox->setVisible(false);
+    presetsGroupBox->setVisible(false);*/
 
     // Selected parameter layout
 
     QVBoxLayout* selParamLayout = new QVBoxLayout;
 
-    selParamLayout->addWidget(paramNameLabel);
-    selParamLayout->addWidget(paramNameLineEdit);
+    QHBoxLayout* paramNameLayout = new QHBoxLayout;
+    paramNameLayout->addWidget(midiLinkButton);
+    paramNameLayout->addWidget(paramNameLabel);
+    paramNameLayout->addWidget(paramNameLineEdit);
 
-    QHBoxLayout* sliderLayout = new QHBoxLayout;
-    sliderLayout->addWidget(midiLinkButton, 0);
-    sliderLayout->addWidget(selParamSlider, 1);
+    selParamLayout->addLayout(paramNameLayout);
 
-    selParamLayout->addLayout(sliderLayout);
+    selParamLayout->addWidget(selParamSlider);
 
-    QHBoxLayout* minMaxLayout = new QHBoxLayout;
-    minMaxLayout->addWidget(selParamMinLineEdit);
-    minMaxLayout->addWidget(selParamMaxLineEdit);
+    QHBoxLayout* limitsLayout = new QHBoxLayout;
+    limitsLayout->addWidget(selParamInfLineEdit);
+    limitsLayout->addWidget(selParamMinLineEdit);
+    limitsLayout->addWidget(selParamMaxLineEdit);
+    limitsLayout->addWidget(selParamSupLineEdit);
 
-    selParamLayout->addLayout(minMaxLayout);
-
-    QHBoxLayout* infSupLayout = new QHBoxLayout;
-    infSupLayout->addWidget(selParamInfLineEdit);
-    infSupLayout->addWidget(selParamSupLineEdit);
-
-    selParamLayout->addLayout(infSupLayout);
+    selParamLayout->addLayout(limitsLayout);
 
     QHBoxLayout* combosLayout = new QHBoxLayout;
+    combosLayout->addLayout(presetsLayout);
     combosLayout->addWidget(layoutComboBox);
     combosLayout->addWidget(mat4TypeComboBox);
 
     selParamLayout->addLayout(combosLayout);
 
-    selParamLayout->addWidget(presetsGroupBox);
+    //selParamLayout->addWidget(presetsGroupBox);
 
     // Selected parameter widget
 
@@ -366,6 +364,8 @@ void OperationWidget::setup()
     if (gridWidget->isVisible())
         gridWidget->optimizeLayout();
 
+    headerWidget->adjustSize();
+    selParamWidget->adjustSize();
     adjustSize();
 }
 
@@ -617,10 +617,10 @@ void OperationWidget::toggleOutputAction(OperationWidget* widget)
     if (widget != this)
     {
         outputAction->setChecked(false);
-        headerWidget->setStyleSheet("QWidget { background-color: rgb(16, 64, 128); }");
+        headerWidget->setStyleSheet("QWidget { background-color: rgb(128, 128, 164); }");
     }
     else
-        headerWidget->setStyleSheet("QWidget { background-color: rgb(128, 64, 16); }");
+        headerWidget->setStyleSheet("QWidget { background-color: rgb(164, 128, 128); }");
 }
 
 
@@ -639,8 +639,11 @@ void OperationWidget::toggleSelParamWidgets(bool visible)
     selParamMaxLineEdit->setVisible(visible);
     selParamInfLineEdit->setVisible(visible);
     selParamSupLineEdit->setVisible(visible);
+    removePresetButton->setVisible(visible);
+    addPresetButton->setVisible(visible);
+    presetNameLineEdit->setVisible(visible);
     layoutComboBox->setVisible(visible);
-    presetsGroupBox->setVisible(visible);
+    //presetsGroupBox->setVisible(visible);
 }
 
 
@@ -918,7 +921,10 @@ void OperationWidget::updateSelParamEditControls(ParameterWidget<T>* widget)
 
     // Presets
 
-    presetsGroupBox->setVisible(true);
+    //presetsGroupBox->setVisible(true);
+    removePresetButton->setVisible(true);
+    addPresetButton->setVisible(true);
+    presetNameLineEdit->setVisible(true);
 
     removePresetButton->disconnect();
 
@@ -1131,7 +1137,10 @@ void OperationWidget::toggleEditMode(bool mode)
     if (!mEditMode && layoutComboBox->isVisible())
         layoutComboBox->setVisible(false);
 
-    presetsGroupBox->setVisible(mEditMode);
+    //presetsGroupBox->setVisible(mEditMode);
+    removePresetButton->setVisible(mEditMode);
+    addPresetButton->setVisible(mEditMode);
+    presetNameLineEdit->setVisible(mEditMode);
 
     recreate();
 }

@@ -140,7 +140,7 @@ private:
 
     QPushButton* midiLinkButton;
 
-    QGroupBox* presetsGroupBox;
+    //QGroupBox* presetsGroupBox;
 
     QPushButton* removePresetButton;
     QPushButton* addPresetButton;
