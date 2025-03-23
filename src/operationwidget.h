@@ -74,6 +74,8 @@ signals:
     void linkBreak(Number<unsigned int>* number);
 
     void outputChanged(bool checked);
+    void connectTo();
+    void remove();
 
 public slots:
     void recreate();

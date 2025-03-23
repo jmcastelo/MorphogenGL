@@ -438,19 +438,28 @@ void NodeManager::setOutput(QUuid id)
 
 
 
-void NodeManager::connectOperations(QUuid srcId, QUuid dstId, float factor)
+bool NodeManager::connectOperations(QUuid srcId, QUuid dstId, float factor)
 {
-    if (operationNodes.contains(srcId) && operationNodes.contains(dstId))
+    if (srcId != dstId)
     {
-        operationNodes.value(dstId)->addInput(operationNodes.value(srcId), new InputData(InputType::Normal, operationNodes.value(srcId)->operation->getTextureID(), factor));
-        operationNodes.value(srcId)->addOutput(operationNodes.value(dstId));
-    }
-    else if (seeds.contains(srcId) && operationNodes.contains(dstId))
-    {
-        operationNodes.value(dstId)->addSeedInput(srcId, new InputData(InputType::Seed, seeds.value(srcId)->getTextureID(), factor));
+        if (operationNodes.contains(srcId) && operationNodes.contains(dstId) && !operationNodes.value(dstId)->inputNodes.contains(srcId))
+        {
+            operationNodes.value(dstId)->addInput(operationNodes.value(srcId), new InputData(InputType::Normal, operationNodes.value(srcId)->operation->getTextureID(), factor));
+            operationNodes.value(srcId)->addOutput(operationNodes.value(dstId));
+
+            sortOperations();
+            return true;
+        }
+        else if (seeds.contains(srcId) && operationNodes.contains(dstId) && !operationNodes.value(dstId)->inputNodes.contains(srcId))
+        {
+            operationNodes.value(dstId)->addSeedInput(srcId, new InputData(InputType::Seed, seeds.value(srcId)->getTextureID(), factor));
+
+            sortOperations();
+            return true;
+        }
     }
 
-    sortOperations();
+    return false;
 }
 
 
@@ -729,7 +738,7 @@ void NodeManager::connectLoadedOperations(QMap<QUuid, QMap<QUuid, InputData*>> c
 
 
 
-OperationWidget* NodeManager::addNewOperation()
+QPair<QUuid, OperationWidget*> NodeManager::addNewOperation()
 {
     ImageOperation* operation = new ImageOperation("New Operation", sharedContext);
 
@@ -753,7 +762,24 @@ OperationWidget* NodeManager::addNewOperation()
 
     connect(this, &NodeManager::outputNodeChanged, opWidget, &OperationWidget::toggleOutputAction);
 
-    return opWidget;
+    connect(opWidget, &OperationWidget::connectTo, this, [=, this](){
+        if (connSrcId.isNull())
+            connSrcId = id;
+        else if (connectOperations(connSrcId, id, 1.0))
+        {
+            emit nodesConnected(connSrcId, id);
+            connSrcId = QUuid();
+        }
+        else
+            connSrcId = QUuid();
+    });
+
+    connect(opWidget, &OperationWidget::remove, this, [=, this](){
+        emit nodeRemoved(id);
+        removeOperation(id);
+    });
+
+    return QPair<QUuid, OperationWidget*>(id, opWidget);
 
 /*
     if (operationName == BilateralFilter::name)
@@ -980,7 +1006,7 @@ ImageOperation* NodeManager::loadImageOperation(
 
 
 
-SeedWidget *NodeManager::addSeed()
+QPair<QUuid, SeedWidget *> NodeManager::addSeed()
 {
     Seed* seed = new Seed(sharedContext);
 
@@ -1001,6 +1027,18 @@ SeedWidget *NodeManager::addSeed()
 
     connect(this, &NodeManager::outputNodeChanged, seedWidget, &SeedWidget::toggleOutputAction);
 
+    connect(seedWidget, &SeedWidget::connectTo, this, [=, this](){
+        if (connSrcId.isNull())
+            connSrcId = id;
+        else if (connectOperations(connSrcId, id, 1.0))
+        {
+            emit nodesConnected(connSrcId, id);
+            connSrcId = QUuid();
+        }
+        else
+            connSrcId = QUuid();
+    });
+
     connect(seedWidget, &SeedWidget::typeChanged, this, [=, this](){
         if (isOutput(id))
             emit outputFBOChanged(seeds.value(id)->getFBO());
@@ -1016,7 +1054,13 @@ SeedWidget *NodeManager::addSeed()
         }
     });
 
-    return seedWidget;
+
+    connect(seedWidget, &SeedWidget::remove, this, [=, this](){
+        emit nodeRemoved(id);
+        removeSeed(id);
+    });
+
+    return QPair<QUuid, SeedWidget*>(id, seedWidget);
 }
 
 

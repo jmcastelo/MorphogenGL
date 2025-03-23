@@ -30,14 +30,15 @@
 #include <QGraphicsItem>
 #include <QGraphicsWidget>
 #include <QGraphicsProxyWidget>
+#include <QUuid>
 //#include <QMenu>
 //#include <QAction>
-//#include <QUuid>
+
 
 
 
 //class GraphWidget;
-//class Edge;
+class Edge;
 //class NodeManager;
 
 
@@ -49,19 +50,20 @@ class Node : public QGraphicsWidget
     Q_OBJECT
 
 public:
-    //QUuid id;
     //QString name;
 
     //bool marked = false;
 
     //Node(GraphWidget* graphWidget, QString name);
-    explicit Node(QWidget* widget, QGraphicsItem* parent = nullptr);
+    explicit Node(QPair<QUuid, QWidget*> idWidgetPair, QGraphicsItem* parent = nullptr);
 
-    //void addEdge(Edge *edge);
-    //void removeEdge(Edge *edge);
-    //QVector<Edge *> edges() const;
+    QUuid id() const { return mId; }
 
-    //bool connectedTo(Node *node);
+    void addEdge(Edge *edge);
+    void removeEdge(Edge *edge);
+    QList<Edge*> edges() const;
+
+    bool connectedTo(Node *node);
 
     //QRectF textBoundingRect() const;
 
@@ -82,10 +84,10 @@ protected:
     void closeEvent(QCloseEvent* event) override;
 
     //GraphWidget* graph;
-    //QVector<Edge*> edgeList;
+    QList<Edge*> edgeList;
     //bool menuOpen = false;
 
-    //QVariant itemChange(GraphicsItemChange change, const QVariant &value) override;
+    QVariant itemChange(GraphicsItemChange change, const QVariant &value) override;
 
     //void mousePressEvent(QGraphicsSceneMouseEvent *event) override;
     //void mouseReleaseEvent(QGraphicsSceneMouseEvent *event) override;
@@ -95,6 +97,7 @@ private:
     //qreal ellipseMargin = 10.0;
     //qreal penSize = 2.0;
     QWidget* mWidget;
+    QUuid mId;
     QGraphicsProxyWidget* mProxyWidget;
 };
 

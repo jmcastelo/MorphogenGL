@@ -23,8 +23,8 @@
 
 
 #include "graphwidget.h"
-//#include "edge.h"
 #include "node.h"
+#include "edge.h"
 //#include "cycle.h"
 //#include "cyclesearch.h"
 #include "nodemanager.h"
@@ -41,6 +41,9 @@ GraphWidget::GraphWidget(NodeManager* nodeManager, QWidget *parent) :
     QGraphicsView(parent),
     mNodeManager{ nodeManager}
 {
+    connect(mNodeManager, &NodeManager::nodesConnected, this, &GraphWidget::connectNodes);
+    connect(mNodeManager, &NodeManager::nodeRemoved, this, &GraphWidget::removeNode);
+
     QGraphicsScene *scene = new QGraphicsScene(this);
     scene->setItemIndexMethod(QGraphicsScene::NoIndex);
     scene->setFont(QFont("Arial", 8, QFont::Light));
@@ -78,21 +81,16 @@ GraphWidget::~GraphWidget()
 
 
 
-void GraphWidget::addNewOperationNode()
+Node* GraphWidget::getNode(QUuid id)
 {
-    QAction* action = qobject_cast<QAction*>(sender());
-    QVariant data = action->data();
+    const QList<QGraphicsItem*> items = scene()->items();
 
-    Node* node = new Node(mNodeManager->addNewOperation());
-    scene()->addItem(node);
-    node->setPos(mapToScene(mapFromGlobal(data.toPoint())));
+    for (QGraphicsItem* item : items)
+        if (Node* node = qgraphicsitem_cast<Node*>(item))
+            if (node->id() == id)
+                return node;
 
-    //QGraphicsProxyWidget *proxyWidget = scene()->addWidget(mNodeManager->addNewOperation());
-    //proxyWidget->setPos(mapToScene(mapFromGlobal(data.toPoint())));
-
-    /*Node* proxyWidget = new Node(mNodeManager->addNewOperation());
-    scene()->addItem(proxyWidget);
-    proxyWidget->setPos(mapToScene(mapFromGlobal(data.toPoint())));*/
+    return nullptr;
 }
 
 
@@ -164,6 +162,26 @@ void GraphWidget::closeEvent(QCloseEvent* event)
 
 
 
+
+void GraphWidget::addNewOperationNode()
+{
+    QAction* action = qobject_cast<QAction*>(sender());
+    QVariant data = action->data();
+
+    Node* node = new Node(mNodeManager->addNewOperation());
+    scene()->addItem(node);
+    node->setPos(mapToScene(mapFromGlobal(data.toPoint())));
+
+    //QGraphicsProxyWidget *proxyWidget = scene()->addWidget(mNodeManager->addNewOperation());
+    //proxyWidget->setPos(mapToScene(mapFromGlobal(data.toPoint())));
+
+    /*Node* proxyWidget = new Node(mNodeManager->addNewOperation());
+    scene()->addItem(proxyWidget);
+    proxyWidget->setPos(mapToScene(mapFromGlobal(data.toPoint())));*/
+}
+
+
+
 void GraphWidget::addSeedNode()
 {
     QAction* action = qobject_cast<QAction*>(sender());
@@ -176,7 +194,18 @@ void GraphWidget::addSeedNode()
 
 
 
-/*void GraphWidget::reconnectNodes(Node* node)
+void GraphWidget::connectNodes(QUuid srcId, QUuid dstId)
+{
+    Node* srcNode = getNode(srcId);
+    Node* dstNode = getNode(dstId);
+
+    if (srcNode && dstNode)
+        scene()->addItem(new Edge(srcNode, dstNode));
+}
+
+
+
+void GraphWidget::reconnectNodes(Node* node)
 {
     if (node->edges().size() == 2)
     {
@@ -210,9 +239,9 @@ void GraphWidget::addSeedNode()
 
             // Connect nodes
 
-            generator->connectOperations(input->sourceNode()->id, output->destNode()->id, generator->blendFactor(node->id, output->destNode()->id));
+            mNodeManager->connectOperations(input->sourceNode()->id(), output->destNode()->id(), mNodeManager->blendFactor(node->id(), output->destNode()->id()));
 
-            Edge* newEdge = new Edge(this, input->sourceNode(), output->destNode());
+            Edge* newEdge = new Edge(input->sourceNode(), output->destNode());
 
             if (input->isPredge() || output->isPredge())
                 newEdge->setPredge(true);
@@ -220,7 +249,7 @@ void GraphWidget::addSeedNode()
             scene()->addItem(newEdge);
         }
     }
-}*/
+}
 
 
 
@@ -238,32 +267,35 @@ void GraphWidget::addSeedNode()
 
 
 
-/*void GraphWidget::removeNode(Node *node)
+void GraphWidget::removeNode(QUuid id)
 {
-    reconnectNodes(node);
+    Node* node = getNode(id);
 
-    foreach (Edge *edge, node->edges())
+    if (node)
     {
-        if (edge->sourceNode())
-            edge->sourceNode()->removeEdge(edge);
-        if (edge->destNode())
-            edge->destNode()->removeEdge(edge);
+        reconnectNodes(node);
 
-        scene()->removeItem(edge);
-        delete edge;
+        foreach (Edge *edge, node->edges())
+        {
+            if (edge->sourceNode())
+                edge->sourceNode()->removeEdge(edge);
+            if (edge->destNode())
+                edge->destNode()->removeEdge(edge);
+
+            scene()->removeItem(edge);
+            delete edge;
+        }
+
+        scene()->removeItem(node);
+        node->deleteLater();
     }
 
-
-    scene()->removeItem(node);
-    delete node;
-    node = nullptr;
-
-    searchElementaryCycles();
+    //searchElementaryCycles();
 }
 
 
 
-void GraphWidget::removeEdge(Edge *edge)
+/*void GraphWidget::removeEdge(Edge *edge)
 {
     generator->disconnectOperations(edge->sourceNode()->id, edge->destNode()->id);
 

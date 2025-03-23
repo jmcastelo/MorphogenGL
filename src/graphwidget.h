@@ -33,7 +33,7 @@
 
 
 
-//class Node;
+class Node;
 //class OperationNode;
 //class SeedNode;
 //class Edge;
@@ -91,7 +91,7 @@ public:
 
     //void closeWidgets();
 
-public slots:
+//public slots:
     //void drawSelectedSeeds();
     //void enableSelectedOperations();
     //void disableSelectedOperations();
@@ -101,7 +101,8 @@ public slots:
     //void makeNodeSnapshot();
     //void removeSelectedNodes();
 
-signals:
+
+//signals:
     /*void singleNodeSelected(Node*);
     void operationNodeSelected(QUuid id);
     void multipleNodesSelected();
@@ -139,7 +140,9 @@ private:
     //void copyNodes(bool connectionA);
     bool pointIntersectsItem(QPointF point);
     //void searchElementaryCycles();
-    //void reconnectNodes(Node* node);
+    void reconnectNodes(Node* node);
+
+    Node* getNode(QUuid id);
 
 private slots:
     //void newSelectedNodes();
@@ -147,6 +150,8 @@ private slots:
     void addSeedNode();
     //void pasteCopiedNodes();
     void addNewOperationNode();
+    void connectNodes(QUuid srcId, QUuid dstId);
+    void removeNode(QUuid id);
 };
 
 

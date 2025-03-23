@@ -104,7 +104,7 @@ public:
     bool isActive() { return active; }
     void setState(bool state) { active = state; }
 
-    void connectOperations(QUuid srcId, QUuid dstId, float factor);
+    bool connectOperations(QUuid srcId, QUuid dstId, float factor);
     void connectCopiedOperationsA(QUuid srcId0, QUuid dstId0, QUuid srcId1, QUuid dstId1);
     void connectCopiedOperationsB(QUuid srcId0, QUuid dstId0, QUuid srcId1, QUuid dstId1);
     void disconnectOperations(QUuid srcId, QUuid dstId);
@@ -116,7 +116,7 @@ public:
     void equalizeBlendFactors(QUuid id);
 
     ImageOperation* getOperation(QUuid id);
-    OperationWidget* addNewOperation();
+    QPair<QUuid, OperationWidget*> addNewOperation();
     //QUuid addOperation(QString operationName);
     QUuid copyOperation(QUuid srcId);
     //void setOperation(QUuid id, QString operationName);
@@ -138,7 +138,7 @@ public:
         std::vector<float> kernelElements,
         std::vector<float> matrixElements);
 
-    SeedWidget* addSeed();
+    QPair<QUuid, SeedWidget*> addSeed();
     QUuid copySeed(QUuid srcId);
     void removeSeed(QUuid id);
     void loadSeedImage(QUuid id, QString filename);
@@ -187,7 +187,7 @@ public:
 
     bool isNode(QUuid id) { return operationNodes.contains(id) || seeds.contains(id); }
 
-    QString version = "1.0 beta";
+    QString version = "1.0 alpha";
 
 public slots:
     void resize(GLuint width, GLuint height);
@@ -197,6 +197,8 @@ signals:
     void outputFBOChanged(GLuint fbo);
     void outputTextureChanged(GLuint id);
     void sortedOperationsChanged(QList<QPair<QUuid, QString>> sortedData, QList<QUuid> unsortedData);
+    void nodesConnected(QUuid srcId, QUuid dstId);
+    void nodeRemoved(QUuid id);
 
 private:
     QMap<QUuid, ImageOperationNode*> operationNodes;
@@ -208,6 +210,8 @@ private:
     QMap<QUuid, Seed*> loadedSeeds;
 
     QList<ImageOperation*> sortedOperations;
+
+    QUuid connSrcId;
 
     QOpenGLContext* sharedContext;
     GLuint outputFBO;

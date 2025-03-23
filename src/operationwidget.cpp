@@ -50,11 +50,17 @@ OperationWidget::OperationWidget(ImageOperation* operation, bool midiEnabled, bo
     editAction->setCheckable(true);
     editAction->setChecked(editMode);
 
+    // Connect action
+
+    headerToolBar->addAction(QIcon(QPixmap(":/icons/network-connect.png")), "Connect", this, &OperationWidget::connectTo);
+
     // Toggle body action
 
     toggleBodyAction = headerToolBar->addAction(QIcon(QPixmap(":/icons/go-down.png")), "Hide", this, &OperationWidget::toggleBody);
     toggleBodyAction->setCheckable(true);
     toggleBodyAction->setChecked(true);
+
+    headerToolBar->addSeparator();
 
     // Operation name label
 
@@ -72,10 +78,16 @@ OperationWidget::OperationWidget(ImageOperation* operation, bool midiEnabled, bo
         operation->setName(name);
         opNameLabel->setText(name);
 
-        opNameLineEdit->setMinimumWidth(20 + opNameLineEdit->fontMetrics().horizontalAdvance(name));
+        opNameLineEdit->setFixedWidth(20 + opNameLineEdit->fontMetrics().horizontalAdvance(name));
 
+        headerWidget->adjustSize();
+        selParamWidget->adjustSize();
         adjustSize();
     });
+
+    headerToolBar->addSeparator();
+
+    headerToolBar->addAction(QIcon(QPixmap(":/icons/dialog-close.png")), "Delete", this, &OperationWidget::remove);
 
     QHBoxLayout* headerLayout = new QHBoxLayout;
     headerLayout->addWidget(headerToolBar, 0);
@@ -111,6 +123,8 @@ OperationWidget::OperationWidget(ImageOperation* operation, bool midiEnabled, bo
 
     // Selected parameter widgets
 
+    // Parameter name widgets
+
     paramNameLabel = new QLabel;
     paramNameLabel->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
     paramNameLabel->setText("Parameter name");
@@ -119,14 +133,20 @@ OperationWidget::OperationWidget(ImageOperation* operation, bool midiEnabled, bo
     paramNameLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
     paramNameLineEdit->setPlaceholderText("Parameter name");
 
+    // Slider
+
     selParamSlider = new QSlider(Qt::Horizontal);
     selParamSlider->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Maximum);
     selParamSlider->setRange(0, 100'000);
+
+    // Midi link button
 
     midiLinkButton = new QPushButton;
     midiLinkButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
     midiLinkButton->setCheckable(true);
     midiLinkButton->setStyleSheet("QPushButton { image: url(:/icons/circle-grey.png); background-color: transparent; border: 0; }");
+
+    // Limits widgets
 
     selParamMinLineEdit = new FocusLineEdit;
     selParamMinLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
@@ -144,9 +164,13 @@ OperationWidget::OperationWidget(ImageOperation* operation, bool midiEnabled, bo
     selParamSupLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
     selParamSupLineEdit->setPlaceholderText("Highest");
 
+    // Layout combo box
+
     layoutComboBox = new QComboBox;
     layoutComboBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
     layoutComboBox->setVisible(false);
+
+    // Mat4 combo box
 
     mat4TypeComboBox = new QComboBox;
     mat4TypeComboBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
@@ -1073,16 +1097,8 @@ void OperationWidget::updateWidgetRowCol(QWidget* widget, int row, int col)
 
 void OperationWidget::toggleBody(bool visible)
 {
-    if (visible)
-    {
-        toggleBodyAction->setIcon(QIcon(QPixmap(":/icons/go-down.png")));
-        toggleBodyAction->setText("Hide");
-    }
-    else
-    {
-        toggleBodyAction->setIcon(QIcon(QPixmap(":/icons/go-up.png")));
-        toggleBodyAction->setText("Show");
-    }
+    toggleBodyAction->setIcon(visible ? QIcon(QPixmap(":/icons/go-down.png")) : QIcon(QPixmap(":/icons/go-up.png")));
+    toggleBodyAction->setText(visible ? "Hide" : "Show");
 
     selParamWidget->setVisible(visible);
     gridWidget->setVisible(visible);

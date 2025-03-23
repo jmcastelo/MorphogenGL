@@ -22,13 +22,14 @@
 
 
 
-//#include "edge.h"
 #include "node.h"
+#include "edge.h"
 //#include "generator.h"
 
 #include <QWidget>
 #include <QPainter>
 #include <QGraphicsSceneResizeEvent>
+#include <QGraphicsScene>
 //#include <QGraphicsSceneMouseEvent>
 //#include <QPainter>
 #include <QStyleOption>
@@ -39,12 +40,14 @@
 
 
 
-Node::Node(QWidget *widget, QGraphicsItem* parent) :
+Node::Node(QPair<QUuid, QWidget*> idWidgetPair, QGraphicsItem* parent) :
     QGraphicsWidget(parent),
-    mWidget { widget }
+    mWidget { idWidgetPair.second },
+    mId { idWidgetPair.first}
 {
     setFlags(ItemIsMovable | ItemIsSelectable | ItemSendsGeometryChanges);
     setCacheMode(DeviceCoordinateCache);
+    setZValue(-1);
 
     mWidget->installEventFilter(this);
 
@@ -65,6 +68,10 @@ void Node::closeEvent(QCloseEvent* event)
 void Node::resizeEvent(QGraphicsSceneResizeEvent *event)
 {
     mProxyWidget->resize(event->newSize());
+
+    foreach (Edge *edge, edgeList)
+        edge->adjust();
+
     QGraphicsWidget::resizeEvent(event);
 }
 
@@ -129,12 +136,12 @@ void Node::selectToConnect()
 {
     graph->selectNodeToConnect(this);
 }
-
+*/
 
 
 void Node::addEdge(Edge *edge)
 {
-    edgeList << edge;
+    edgeList.append(edge);
 }
 
 
@@ -164,7 +171,7 @@ bool Node::connectedTo(Node *node)
 
 
 
-void Node::setAsOutput()
+/*void Node::setAsOutput()
 {
     graph->generator->setOutput(id);
     graph->updateNodes();
@@ -253,7 +260,7 @@ void Node::paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWid
 }
 
 
-/*QVariant Node::itemChange(GraphicsItemChange change, const QVariant &value)
+QVariant Node::itemChange(GraphicsItemChange change, const QVariant &value)
 {
     if (change == QGraphicsItem::ItemPositionChange && scene())
     {
@@ -261,7 +268,7 @@ void Node::paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWid
 
         // Keep within scene
 
-        QRectF rect = graph->scene()->sceneRect();
+        QRectF rect = scene()->sceneRect();
         if (!rect.contains(newPos))
         {
             newPos.setX(qMin(rect.right(), qMax(newPos.x(), rect.left())));
@@ -276,7 +283,7 @@ void Node::paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWid
 
         // Draw graph's background
 
-        graph->resetCachedContent();
+        //graph->resetCachedContent();
     }
     else if (change == QGraphicsItem::ItemSelectedChange)
     {
@@ -286,8 +293,8 @@ void Node::paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWid
             setZValue(-1);
     }
 
-    return QGraphicsObject::itemChange(change, value);
-}*/
+    return QGraphicsWidget::itemChange(change, value);
+}
 
 
 

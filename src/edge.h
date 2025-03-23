@@ -27,101 +27,100 @@
 
 
 
-#include <QGraphicsObject>
-#include <QAction>
-#include <QGroupBox>
+#include <QGraphicsItem>
+//#include <QAction>
+//#include <QGroupBox>
 
 
-/*
-class GraphWidget;
+
+//class GraphWidget;
 class Node;
-class Cycle;
-class BlendFactorWidget;
+//class Cycle;
+//class BlendFactorWidget;
 
 
 
-class Edge : public QGraphicsObject
+class Edge : public QGraphicsItem
 {
-    Q_OBJECT
-
 public:
-    Edge(GraphWidget* graphWidget, Node *sourceNode, Node *destNode);
-    ~Edge();
+    //Edge(GraphWidget* graphWidget, Node *sourceNode, Node *destNode);
+    explicit Edge(Node* sourceNode, Node* destNode, QGraphicsItem* parent = nullptr);
 
-    Node *sourceNode() const;
-    Node *destNode() const;
+    Node* sourceNode() const;
+    Node* destNode() const;
 
     void adjust();
 
-    enum { Type = UserType + 3 };
-    int type() const override { return Type; }
+    //enum { Type = UserType + 3 };
+    //int type() const override { return Type; }
 
-    int linkOffset = 0;
+    //int linkOffset = 0;
 
-    QPointF srcPoint() { return sourcePoint; }
-    QPointF dstPoint() { return destPoint; }
+    QPointF srcPoint() const { return sourcePoint; }
+    QPointF dstPoint() const { return destPoint; }
 
-    bool isPredge() { return predge; }
-    void setPredge(bool set);
+    bool isPredge() const { return mPredge; }
+    void setPredge(bool predge) { mPredge = predge; }
 
-    QVector<Cycle*> cycles() const { return cycleList; }
-    void addCycle(Cycle* cycle) { cycleList.push_back(cycle); }
-    void clearCycles() { cycleList.clear(); }
+    //QVector<Cycle*> cycles() const { return cycleList; }
+    //void addCycle(Cycle* cycle) { cycleList.push_back(cycle); }
+    //void clearCycles() { cycleList.clear(); }
 
-    void setBlendFactor(float factor);
+    /*void setBlendFactor(float factor);
     void drawBlendFactor(bool draw) { paintBlendFactor = draw; }
     void updateBlendFactor();
     void closeBlendFactorWidget();
-    void setBlendFactorGroupBoxTitle();
+    void setBlendFactorGroupBoxTitle();*/
 
-    void constructBlendFactorWidget();
+    //void constructBlendFactorWidget();
 
     QRectF boundingRect() const override;
 
-signals:
-    void blendFactorChanged();
-    void nodesConnected();
-    void blendFactorWidgetCreated(BlendFactorWidget* widget);
-    void blendFactorWidgetToggled(BlendFactorWidget* widget);
-    void blendFactorWidgetDeleted(BlendFactorWidget* widget);
+//signals:
+    //void blendFactorChanged();
+    //void nodesConnected();
+    //void blendFactorWidgetCreated(BlendFactorWidget* widget);
+    //void blendFactorWidgetToggled(BlendFactorWidget* widget);
+    //void blendFactorWidgetDeleted(BlendFactorWidget* widget);
 
-public slots:
-    void remove();
+//public slots:
+    //void remove();
 
 protected:
     QPainterPath shape() const override;
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) override;
-    void contextMenuEvent(QGraphicsSceneContextMenuEvent *event) override;
+    //void contextMenuEvent(QGraphicsSceneContextMenuEvent *event) override;
 
 private:
-    GraphWidget* graph;
-    Node *source, *dest;
+    //GraphWidget* graph;
+    Node* source;
+    Node* dest;
 
     QPointF sourcePoint;
     QPointF destPoint;
 
-    QVector<Cycle*> cycleList;
+    //QVector<Cycle*> cycleList;
 
-    bool predge = false;
+    bool mPredge = false;
 
     qreal arrowSize = 10;
 
-    bool paintBlendFactor = false;
+    //bool paintBlendFactor = false;
 
-    BlendFactorWidget* blendFactorWidget = nullptr;
+    //BlendFactorWidget* blendFactorWidget = nullptr;
 
-    QPointF intersectionPoint(Node *node, Node *other, QPointF offset, QLineF line);
-    void setLinkOffset();
+    QPointF intersectionPoint(Node *node, QLineF line);
+    //void setLinkOffset();
 
-    void setAsPredge();
-    void setAsEdge();
+    //void setAsPredge();
+    //void setAsEdge();
 
-    void showBlendFactorWidget();
+    //void showBlendFactorWidget();
 
-private slots:
-    void insertNode(QAction* action);
+//private slots:
+    //void insertNode(QAction* action);
 };
-*/
+
 
 
 #endif // EDGE_H

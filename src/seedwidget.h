@@ -21,6 +21,8 @@ signals:
     void outputChanged(bool checked);
     void typeChanged();
     void seedDrawn();
+    void connectTo();
+    void remove();
 
 public slots:
     void toggleOutputAction(QWidget* widget);
@@ -29,11 +31,13 @@ private:
     Seed* mSeed;
 
     QWidget* headerWidget;
+
     QAction* outputAction;
+    QAction* fixedAction;
 
 private slots:
     void drawSeed();
-    void setFixedSeed(bool checked);
+    void setFixedSeed(bool fixed);
     void setSeedType();
     void loadSeedImage();
 };

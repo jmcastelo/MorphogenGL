@@ -21,13 +21,13 @@
 */
 
 
-/*
+
 #include "edge.h"
 #include "node.h"
-#include "cycle.h"
-#include "graphwidget.h"
-#include "generator.h"
-#include "blendfactorwidget.h"
+//#include "cycle.h"
+//#include "graphwidget.h"
+//#include "generator.h"
+//#include "blendfactorwidget.h"
 
 #include <QPainter>
 #include <QtMath>
@@ -41,7 +41,7 @@
 
 
 
-Edge::Edge(GraphWidget *graphWidget, Node *sourceNode, Node *destNode)
+/*Edge::Edge(GraphWidget *graphWidget, Node *sourceNode, Node *destNode)
     : graph { graphWidget },
     source { sourceNode },
     dest { destNode }
@@ -62,15 +62,27 @@ Edge::Edge(GraphWidget *graphWidget, Node *sourceNode, Node *destNode)
 
     if (graph->generator->isNode(source->id) && graph->generator->isNode(dest->id))
         constructBlendFactorWidget();
+}*/
+
+Edge::Edge(Node* sourceNode, Node* destNode, QGraphicsItem* parent) :
+    QGraphicsItem(parent),
+    source { sourceNode },
+    dest { destNode }
+{
+    setAcceptedMouseButtons(Qt::NoButton);
+    source->addEdge(this);
+    dest->addEdge(this);
+
+    adjust();
+
+    foreach (Edge* edge, dest->edges())
+        if (edge->destNode() == source)
+            edge->adjust();
 }
 
 
 
-Edge::~Edge(){}
-
-
-
-void Edge::remove()
+/*void Edge::remove()
 {
     source->removeEdge(this);
     dest->removeEdge(this);
@@ -83,25 +95,25 @@ void Edge::remove()
     blendFactorWidget->deleteLater();
 
     graph->removeEdge(this);
-}
+}*/
 
 
 
-Node *Edge::sourceNode() const
+Node* Edge::sourceNode() const
 {
     return source;
 }
 
 
 
-Node *Edge::destNode() const
+Node* Edge::destNode() const
 {
     return dest;
 }
 
 
 
-void Edge::setPredge(bool set)
+/*void Edge::setPredge(bool set)
 {
     predge = set;
 
@@ -111,11 +123,11 @@ void Edge::setPredge(bool set)
         graph->generator->setOperationInputType(source->id, dest->id, InputType::Normal);
 
     update();
-}
+}*/
 
 
 
-QPointF Edge::intersectionPoint(Node *node, Node *other, QPointF offset, QLineF line)
+/*QPointF Edge::intersectionPoint(Node *node, Node *other, QPointF offset, QLineF line)
 {
     QPointF center = node->mapToScene(node->boundingRect().center());
 
@@ -164,8 +176,32 @@ QPointF Edge::intersectionPoint(Node *node, Node *other, QPointF offset, QLineF 
         else
             return intersection2 - nodePoint;
     }
-}
+}*/
 
+QPointF Edge::intersectionPoint(Node *node, QLineF line)
+{
+    QRectF nodeRect = node->mapRectToScene(node->boundingRect());
+
+    QPointF intersectionPoint;
+
+    QLineF topLine(nodeRect.topLeft(), nodeRect.topRight());
+    if (line.intersects(topLine, &intersectionPoint) == QLineF::BoundedIntersection)
+        return intersectionPoint;
+
+    QLineF rightLine(nodeRect.topRight(), nodeRect.bottomRight());
+    if (line.intersects(rightLine, &intersectionPoint) == QLineF::BoundedIntersection)
+        return intersectionPoint;
+
+    QLineF bottomLine(nodeRect.bottomLeft(), nodeRect.bottomRight());
+    if (line.intersects(bottomLine, &intersectionPoint) == QLineF::BoundedIntersection)
+        return intersectionPoint;
+
+    QLineF leftLine(nodeRect.bottomLeft(), nodeRect.topLeft());
+    if (line.intersects(leftLine, &intersectionPoint) == QLineF::BoundedIntersection)
+        return intersectionPoint;
+
+    return node->mapToScene(node->boundingRect().center());
+}
 
 
 void Edge::adjust()
@@ -173,37 +209,27 @@ void Edge::adjust()
     if (!source || !dest)
         return;
 
-    setLinkOffset();
-
-    qreal scale = linkOffset * 0.25;
-    qreal bWidth = qMin(source->boundingRect().width(), dest->boundingRect().width());
-
-    QPointF offset(scale * bWidth, 0.0);
-
-    QLineF line(mapFromItem(source, source->boundingRect().center() + offset), mapFromItem(dest, dest->boundingRect().center() + offset));
-
     prepareGeometryChange();
 
-    QPointF sourceEdgeOffset = intersectionPoint(source, dest, offset, line);
-    QPointF sp = line.p1() + sourceEdgeOffset;
+    QLineF line(source->mapToScene(source->boundingRect().center()), dest->mapToScene(dest->boundingRect().center()));
 
-    QPointF destEdgeOffset = intersectionPoint(dest, source, offset, line);
-    QPointF dp = line.p2() + destEdgeOffset;
+    QPointF srcIntPoint = intersectionPoint(source, line);
+    QPointF dstIntPoint = intersectionPoint(dest, line);
 
-    if (!source->contains(mapToItem(source, dp)) && !dest->contains(mapToItem(dest, sp)))
+    if (!source->contains(source->mapFromScene(dstIntPoint)) && !dest->contains(dest->mapFromScene(srcIntPoint)))
     {
-        sourcePoint = sp;
-        destPoint = dp;
+        sourcePoint = mapFromScene(srcIntPoint);
+        destPoint = mapFromScene(dstIntPoint);
     }
     else
     {
-        sourcePoint = destPoint = line.p1();
+        destPoint = sourcePoint;
     }
 }
 
 
 
-void Edge::setLinkOffset()
+/*void Edge::setLinkOffset()
 {
     linkOffset = 0;
 
@@ -217,11 +243,11 @@ void Edge::setLinkOffset()
                 linkOffset = 1;
         }
     }
-}
+}*/
 
 
 
-void Edge::setAsPredge()
+/*void Edge::setAsPredge()
 {
     predge = true;
 
@@ -239,11 +265,11 @@ void Edge::setAsEdge()
     graph->generator->setOperationInputType(source->id, dest->id, InputType::Normal);
 
     update();
-}
+}*/
 
 
 
-void Edge::insertNode(QAction* action)
+/*void Edge::insertNode(QAction* action)
 {
     graph->insertNodeBetween(action, this);
 }
@@ -293,7 +319,7 @@ void Edge::closeBlendFactorWidget()
 {
     if (blendFactorWidget)
         blendFactorWidget->close();
-}
+}*/
 
 
 
@@ -315,14 +341,14 @@ QPainterPath Edge::shape() const
     QLineF normal2(sourcePoint, 2.0 * sourcePoint - normal1.p2());
 
     QPainterPath path;
-    path.addPolygon(QPolygonF(QVector<QPointF>{ normal2.p2(), normal1.p2(), normal1.p2() + destPoint - sourcePoint, normal2.p2() + destPoint - sourcePoint }));
+    path.addPolygon(QPolygonF(QList<QPointF>{ normal2.p2(), normal1.p2(), normal1.p2() + destPoint - sourcePoint, normal2.p2() + destPoint - sourcePoint }));
     path.closeSubpath();
     return path;
 }
 
 
 
-void Edge::paint(QPainter *painter, const QStyleOptionGraphicsItem *, QWidget *)
+void Edge::paint(QPainter* painter, const QStyleOptionGraphicsItem*, QWidget*)
 {
     if (!source || !dest)
         return;
@@ -333,15 +359,17 @@ void Edge::paint(QPainter *painter, const QStyleOptionGraphicsItem *, QWidget *)
 
     // Draw the line itself
 
-    if (predge)
+    if (mPredge)
         painter->setPen(QPen(Qt::lightGray, 2.0, Qt::DotLine, Qt::RoundCap, Qt::RoundJoin));
     else
         painter->setPen(QPen(Qt::lightGray, 2.0, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+
     painter->drawLine(line);
+
+    // Draw the arrow
 
     if (line.length() > arrowSize)
     {
-        // Draw the arrow
         double angle = std::atan2(-line.dy(), line.dx());
 
         QPointF destArrowP1 = destPoint + QPointF(sin(angle - M_PI / 2.5) * arrowSize, cos(angle - M_PI / 2.5) * arrowSize);
@@ -352,7 +380,7 @@ void Edge::paint(QPainter *painter, const QStyleOptionGraphicsItem *, QWidget *)
         painter->drawPolygon(QPolygonF() << line.p2() << destArrowP1 << destArrowP2);
     }
 
-    if (paintBlendFactor)
+    /*if (paintBlendFactor)
     {
         QString text = QString::number(graph->generator->blendFactor(source->id, dest->id));
 
@@ -361,12 +389,12 @@ void Edge::paint(QPainter *painter, const QStyleOptionGraphicsItem *, QWidget *)
 
         painter->setFont(scene()->font());
         painter->drawText(line.center() - QPointF(0.5 * textWidth, 0.0), text);
-    }
+    }*/
 }
 
 
 
-void Edge::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
+/*void Edge::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
 {
     QMenu menu;
 
@@ -409,5 +437,4 @@ void Edge::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
     menu.exec(event->screenPos());
 
     //QGraphicsObject::contextMenuEvent(event);
-}
-*/
+}*/

@@ -72,5 +72,6 @@
         <file>icons/applications-development.png</file>
         <file>icons/go-down.png</file>
         <file>icons/go-up.png</file>
+        <file>icons/dialog-close.png</file>
     </qresource>
 </RCC>
