@@ -163,7 +163,6 @@ public:
     {
         T value = static_cast<T>(mMin + (mMax - mMin) * static_cast<float>(theIndex) / static_cast<float>(mIndexMax));
         setValue(value);
-        //emit valueChanged(QVariant(mValue));
     }
 
     T value() { return mValue; }

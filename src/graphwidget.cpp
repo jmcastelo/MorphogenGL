@@ -25,6 +25,7 @@
 #include "graphwidget.h"
 #include "node.h"
 #include "edge.h"
+#include "edgewidget.h"
 //#include "cycle.h"
 //#include "cyclesearch.h"
 #include "nodemanager.h"
@@ -194,13 +195,13 @@ void GraphWidget::addSeedNode()
 
 
 
-void GraphWidget::connectNodes(QUuid srcId, QUuid dstId)
+void GraphWidget::connectNodes(QUuid srcId, QUuid dstId, EdgeWidget* widget)
 {
     Node* srcNode = getNode(srcId);
     Node* dstNode = getNode(dstId);
 
-    if (srcNode && dstNode)
-        scene()->addItem(new Edge(srcNode, dstNode));
+    if (srcNode && dstNode && srcNode != dstNode)
+        scene()->addItem(new Edge(srcNode, dstNode, widget));
 }
 
 
@@ -241,7 +242,8 @@ void GraphWidget::reconnectNodes(Node* node)
 
             mNodeManager->connectOperations(input->sourceNode()->id(), output->destNode()->id(), mNodeManager->blendFactor(node->id(), output->destNode()->id()));
 
-            Edge* newEdge = new Edge(input->sourceNode(), output->destNode());
+            EdgeWidget* edgeWidget = mNodeManager->addEdgeWidget(input->sourceNode()->id(), output->destNode()->id(), mNodeManager->blendFactor(node->id(), output->destNode()->id()));
+            Edge* newEdge = new Edge(input->sourceNode(), output->destNode(), edgeWidget);
 
             if (input->isPredge() || output->isPredge())
                 newEdge->setPredge(true);

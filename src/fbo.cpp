@@ -433,6 +433,7 @@ void FBO::setTexInAttribName(QString name)
 void FBO::resizeVertices()
 {
     // Recompute vertices and texture coordinates
+    // Keep a square aspect ratio
 
     GLfloat w = static_cast<GLfloat>(width);
     GLfloat h = static_cast<GLfloat>(height);
@@ -462,11 +463,12 @@ void FBO::resizeVertices()
         right, top
     };
 
+
     GLfloat texCoords[] = {
         0.0f, 0.0f,
-        0.0f, h,
-        w, 0.0f,
-        w, h
+        0.0f, 1.0f,
+        1.0f, 0.0f,
+        1.0f, 1.0f
     };
 
     context->makeCurrent(surface);
@@ -523,8 +525,11 @@ void FBO::adjustOrtho()
 {
     if (mOrthoEnabled)
     {
+        GLfloat w = static_cast<GLfloat>(width);
+        GLfloat h = static_cast<GLfloat>(height);
+
         GLfloat left, right, bottom, top;
-        GLfloat ratio = static_cast<GLfloat>(width) / static_cast<GLfloat>(height);
+        GLfloat ratio = w / h;
 
         if (width > height)
         {
@@ -686,7 +691,7 @@ void FBO::identity()
     glBindTexture(GL_TEXTURE_2D, *inputTextureID);
     glBindSampler(0, samplerID);
 
-    glDrawArrays(GL_TRIANGLES, 0, 6);
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
     glBindSampler(0, 0);
     glBindTexture(GL_TEXTURE_2D, 0);

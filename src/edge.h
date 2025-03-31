@@ -27,7 +27,9 @@
 
 
 
-#include <QGraphicsItem>
+#include <QGraphicsWidget>
+#include <QGraphicsProxyWidget>
+#include <QUuid>
 //#include <QAction>
 //#include <QGroupBox>
 
@@ -36,15 +38,17 @@
 //class GraphWidget;
 class Node;
 //class Cycle;
-//class BlendFactorWidget;
+class EdgeWidget;
 
 
 
-class Edge : public QGraphicsItem
+class Edge : public QGraphicsWidget
 {
+    Q_OBJECT
+
 public:
     //Edge(GraphWidget* graphWidget, Node *sourceNode, Node *destNode);
-    explicit Edge(Node* sourceNode, Node* destNode, QGraphicsItem* parent = nullptr);
+    explicit Edge(Node* sourceNode, Node* destNode, EdgeWidget* widget, QGraphicsItem* parent = nullptr);
 
     Node* sourceNode() const;
     Node* destNode() const;
@@ -90,9 +94,16 @@ protected:
     QPainterPath shape() const override;
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) override;
     //void contextMenuEvent(QGraphicsSceneContextMenuEvent *event) override;
+    void closeEvent(QCloseEvent* event) override;
 
 private:
     //GraphWidget* graph;
+
+    QUuid mId;
+
+    EdgeWidget* mWidget;
+    QGraphicsProxyWidget* mProxyWidget;
+
     Node* source;
     Node* dest;
 

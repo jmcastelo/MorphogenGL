@@ -47,7 +47,7 @@ ImageOperationNode::~ImageOperationNode()
 void ImageOperationNode::addSeedInput(QUuid id, InputData* data)
 {
     inputs.insert(id, data);
-    operation->setInputData(inputsVector());
+    operation->setInputData(inputsList());
 }
 
 
@@ -59,7 +59,7 @@ void ImageOperationNode::removeSeedInput(QUuid id)
         delete inputs.value(id);
         inputs.remove(id);
 
-        operation->setInputData(inputsVector());
+        operation->setInputData(inputsList());
     }
 }
 
@@ -70,7 +70,7 @@ void ImageOperationNode::addInput(ImageOperationNode *node, InputData* data)
     inputNodes.insert(node->id, node);
     inputs.insert(node->id, data);
 
-    operation->setInputData(inputsVector());
+    operation->setInputData(inputsList());
 }
 
 
@@ -82,7 +82,7 @@ void ImageOperationNode::removeInput(ImageOperationNode *node)
     delete inputs.value(node->id);
     inputs.remove(node->id);
 
-    operation->setInputData(inputsVector());
+    operation->setInputData(inputsList());
 }
 
 
@@ -199,12 +199,12 @@ void ImageOperationNode::equalizeBlendFactors()
 
 
 
-QVector<InputData*> ImageOperationNode::inputsVector()
+QList<InputData*> ImageOperationNode::inputsList()
 {
     QList<InputData*> inputData;
 
     foreach(InputData* inData, inputs)
-        inputData.push_back(inData);
+        inputData.append(inData);
 
     return inputData;
 }
@@ -219,7 +219,7 @@ void ImageOperationNode::setOperation(ImageOperation *newOperation)
 
     // Set operation's input data
 
-    operation->setInputData(inputsVector());
+    operation->setInputData(inputsList());
 
     // Set new texture id on output nodes
 
@@ -228,13 +228,13 @@ void ImageOperationNode::setOperation(ImageOperation *newOperation)
         if (node->inputs.value(id)->type == InputType::Normal)
         {
             node->inputs[id]->textureID = operation->getTextureID();
-            node->operation->setInputData(node->inputsVector());
+            node->operation->setInputData(node->inputsList());
             operation->enableBlit(false);
         }
         else if (node->inputs.value(id)->type == InputType::Blit)
         {
             node->inputs[id]->textureID = operation->getTextureBlit();
-            node->operation->setInputData(node->inputsVector());
+            node->operation->setInputData(node->inputsList());
             operation->enableBlit(true);
         }
     }
@@ -738,6 +738,24 @@ void NodeManager::connectLoadedOperations(QMap<QUuid, QMap<QUuid, InputData*>> c
 
 
 
+EdgeWidget* NodeManager::addEdgeWidget(QUuid srcId, QUuid dstId, float factor)
+{
+    EdgeWidget* edgeWidget = new EdgeWidget(factor);
+
+    connect(edgeWidget, &EdgeWidget::blendFactorChanged, this, [=, this](float newFactor){
+        setBlendFactor(srcId, dstId, newFactor);
+    });
+
+    connect(edgeWidget, &EdgeWidget::remove, this, [=, this](){
+        disconnectOperations(srcId, dstId);
+    });
+
+    return edgeWidget;
+}
+
+
+
+
 QPair<QUuid, OperationWidget*> NodeManager::addNewOperation()
 {
     ImageOperation* operation = new ImageOperation("New Operation", sharedContext);
@@ -767,7 +785,7 @@ QPair<QUuid, OperationWidget*> NodeManager::addNewOperation()
             connSrcId = id;
         else if (connectOperations(connSrcId, id, 1.0))
         {
-            emit nodesConnected(connSrcId, id);
+            emit nodesConnected(connSrcId, id, addEdgeWidget(connSrcId, id, 1.0));
             connSrcId = QUuid();
         }
         else
@@ -1032,7 +1050,7 @@ QPair<QUuid, SeedWidget *> NodeManager::addSeed()
             connSrcId = id;
         else if (connectOperations(connSrcId, id, 1.0))
         {
-            emit nodesConnected(connSrcId, id);
+            emit nodesConnected(connSrcId, id, addEdgeWidget(connSrcId, id, 1.0));
             connSrcId = QUuid();
         }
         else

@@ -27,17 +27,18 @@
 //#include "cycle.h"
 //#include "graphwidget.h"
 //#include "generator.h"
-//#include "blendfactorwidget.h"
+#include "edgewidget.h"
 
 #include <QPainter>
-#include <QtMath>
-#include <QGraphicsSceneContextMenuEvent>
-#include <QMenu>
-#include <QDoubleValidator>
-#include <QSlider>
-#include <QFormLayout>
-#include <QGroupBox>
-#include <QPushButton>
+#include <QGraphicsScene>
+//#include <QtMath>
+//#include <QGraphicsSceneContextMenuEvent>
+//#include <QMenu>
+//#include <QDoubleValidator>
+//#include <QSlider>
+//#include <QFormLayout>
+//#include <QGroupBox>
+//#include <QPushButton>
 
 
 
@@ -64,12 +65,18 @@
         constructBlendFactorWidget();
 }*/
 
-Edge::Edge(Node* sourceNode, Node* destNode, QGraphicsItem* parent) :
-    QGraphicsItem(parent),
+Edge::Edge(Node* sourceNode, Node* destNode, EdgeWidget *widget, QGraphicsItem* parent) :
+    QGraphicsWidget(parent),
+    mWidget { widget },
     source { sourceNode },
     dest { destNode }
 {
     setAcceptedMouseButtons(Qt::NoButton);
+    setCacheMode(DeviceCoordinateCache);
+
+    mProxyWidget = new QGraphicsProxyWidget(this);
+    mProxyWidget->setWidget(mWidget);
+
     source->addEdge(this);
     dest->addEdge(this);
 
@@ -78,6 +85,16 @@ Edge::Edge(Node* sourceNode, Node* destNode, QGraphicsItem* parent) :
     foreach (Edge* edge, dest->edges())
         if (edge->destNode() == source)
             edge->adjust();
+
+    // Connections
+
+    connect(mWidget, &EdgeWidget::remove, this, [=, this](){
+        sourceNode->removeEdge(this);
+        destNode->removeEdge(this);
+
+        scene()->removeItem(this);
+        deleteLater();
+    });
 }
 
 
@@ -225,6 +242,17 @@ void Edge::adjust()
     {
         destPoint = sourcePoint;
     }
+
+    QLineF visibleLine = QLineF(sourcePoint, destPoint);
+
+    // Make proxy and line centers coincide
+
+    QPointF proxyPos = visibleLine.center() - QPointF(0.5 * mWidget->width(), 0.5 * mWidget->height());
+    mProxyWidget->setPos(proxyPos);
+
+    // Edge widget visible if edge is long enough
+
+    mWidget->setVisible(!mProxyWidget->boundingRect().contains(mProxyWidget->mapFromScene(visibleLine.p1())) && !mProxyWidget->boundingRect().contains(mProxyWidget->mapFromScene(visibleLine.p2())));
 }
 
 
@@ -348,7 +376,7 @@ QPainterPath Edge::shape() const
 
 
 
-void Edge::paint(QPainter* painter, const QStyleOptionGraphicsItem*, QWidget*)
+void Edge::paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget)
 {
     if (!source || !dest)
         return;
@@ -380,6 +408,10 @@ void Edge::paint(QPainter* painter, const QStyleOptionGraphicsItem*, QWidget*)
         painter->drawPolygon(QPolygonF() << line.p2() << destArrowP1 << destArrowP2);
     }
 
+    // Paint the widget
+
+    mProxyWidget->paint(painter, option, widget);
+
     /*if (paintBlendFactor)
     {
         QString text = QString::number(graph->generator->blendFactor(source->id, dest->id));
@@ -392,6 +424,13 @@ void Edge::paint(QPainter* painter, const QStyleOptionGraphicsItem*, QWidget*)
     }*/
 }
 
+
+
+void Edge::closeEvent(QCloseEvent* event)
+{
+    mWidget->close();
+    event->accept();
+}
 
 
 /*void Edge::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)

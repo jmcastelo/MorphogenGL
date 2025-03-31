@@ -96,8 +96,8 @@ protected:
 private:
     //qreal ellipseMargin = 10.0;
     //qreal penSize = 2.0;
-    QWidget* mWidget;
     QUuid mId;
+    QWidget* mWidget;
     QGraphicsProxyWidget* mProxyWidget;
 };
 

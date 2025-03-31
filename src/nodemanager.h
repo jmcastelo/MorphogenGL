@@ -31,6 +31,7 @@
 #include "texformat.h"
 #include "operationwidget.h"
 #include "seedwidget.h"
+#include "edgewidget.h"
 
 #include "fbo.h"
 #include <QObject>
@@ -84,7 +85,7 @@ struct ImageOperationNode
 
     void setOperation(ImageOperation* newOperation);
 
-    QVector<InputData*> inputsVector();
+    QList<InputData *> inputsList();
 };
 
 
@@ -110,6 +111,8 @@ public:
     void disconnectOperations(QUuid srcId, QUuid dstId);
 
     void setOperationInputType(QUuid srcId, QUuid dstId, InputType type);
+
+    EdgeWidget* addEdgeWidget(QUuid srcId, QUuid dstId, float factor);
 
     float blendFactor(QUuid srcId, QUuid dstId);
     void setBlendFactor(QUuid srcId, QUuid dstId, float factor);
@@ -197,7 +200,7 @@ signals:
     void outputFBOChanged(GLuint fbo);
     void outputTextureChanged(GLuint id);
     void sortedOperationsChanged(QList<QPair<QUuid, QString>> sortedData, QList<QUuid> unsortedData);
-    void nodesConnected(QUuid srcId, QUuid dstId);
+    void nodesConnected(QUuid srcId, QUuid dstId, EdgeWidget* widget);
     void nodeRemoved(QUuid id);
 
 private:

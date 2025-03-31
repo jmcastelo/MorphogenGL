@@ -260,6 +260,7 @@ void Node::paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWid
 }
 
 
+
 QVariant Node::itemChange(GraphicsItemChange change, const QVariant &value)
 {
     if (change == QGraphicsItem::ItemPositionChange && scene())

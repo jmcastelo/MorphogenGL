@@ -36,7 +36,7 @@
 class Node;
 //class OperationNode;
 //class SeedNode;
-//class Edge;
+class EdgeWidget;
 class NodeManager;
 //struct InputData;
 
@@ -150,7 +150,7 @@ private slots:
     void addSeedNode();
     //void pasteCopiedNodes();
     void addNewOperationNode();
-    void connectNodes(QUuid srcId, QUuid dstId);
+    void connectNodes(QUuid srcId, QUuid dstId, EdgeWidget* widget);
     void removeNode(QUuid id);
 };
 

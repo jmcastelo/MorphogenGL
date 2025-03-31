@@ -60,14 +60,14 @@ public:
     Blender(QString vertexShader, QString fragmentShader, QOpenGLContext* mainContext);
     ~Blender();
 
-    void setInputData(QVector<InputData*> data) { inputs = data; }
+    void setInputData(QList<InputData*> data) { inputs = data; }
 
     void resize() override;
 
     void blend();
 
 private:
-    QVector<InputData*> inputs;
+    QList<InputData*> inputs;
     FBO* fboOut;
 };
 

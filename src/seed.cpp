@@ -68,19 +68,36 @@ Seed::Seed(QOpenGLContext* mainContext) :
 
     // In quad data
 
+    GLfloat w = static_cast<GLfloat>(FBO::width);
+    GLfloat h = static_cast<GLfloat>(FBO::height);
+
+    GLfloat left, right, bottom, top;
+    GLfloat ratio = w / h;
+
+    if (FBO::width > FBO::height)
+    {
+        top = 1.0f;
+        bottom = -top;
+        right = top * ratio;
+        left = -right;
+    }
+    else
+    {
+        right = 1.0f;
+        left = -right;
+        top = right / ratio;
+        bottom = -top;
+    }
+
     GLfloat vertices[] = {
-        -1.0f, 1.0f,
-        -1.0f, -1.0f,
-        1.0f, -1.0f,
-        -1.0f, 1.0f,
-        1.0f, -1.0f,
-        1.0f, 1.0f
+        left, bottom,
+        left, top,
+        right, bottom,
+        right, top
     };
 
-    GLfloat texcoords[] = {
-        0.0f, 1.0f,
+    GLfloat texCoords[] = {
         0.0f, 0.0f,
-        1.0f, 0.0f,
         0.0f, 1.0f,
         1.0f, 0.0f,
         1.0f, 1.0f
@@ -100,7 +117,7 @@ Seed::Seed(QOpenGLContext* mainContext) :
     vboRandom->create();
     vboRandom->setUsagePattern(QOpenGLBuffer::StaticDraw);
     vboRandom->bind();
-    vboRandom->allocate(vertices, 12 * sizeof(GLfloat));
+    vboRandom->allocate(vertices, 8 * sizeof(GLfloat));
 
     // Map vbo data to shader attribute location
 
@@ -131,7 +148,7 @@ Seed::Seed(QOpenGLContext* mainContext) :
     vboPosImage->create();
     vboPosImage->setUsagePattern(QOpenGLBuffer::StaticDraw);
     vboPosImage->bind();
-    vboPosImage->allocate(vertices, 12 * sizeof(GLfloat));
+    vboPosImage->allocate(vertices, 8 * sizeof(GLfloat));
 
     // Map vbo data to shader attribute location
 
@@ -149,7 +166,7 @@ Seed::Seed(QOpenGLContext* mainContext) :
     vboTexImage->create();
     vboTexImage->setUsagePattern(QOpenGLBuffer::StaticDraw);
     vboTexImage->bind();
-    vboTexImage->allocate(texcoords, 12 * sizeof(GLfloat));
+    vboTexImage->allocate(texCoords, 8 * sizeof(GLfloat));
 
     // Map vbo data to shader attribute location
 
@@ -228,7 +245,42 @@ Seed::Seed(const Seed& seed) :
 
     // In quad data
 
+    GLfloat w = static_cast<GLfloat>(FBO::width);
+    GLfloat h = static_cast<GLfloat>(FBO::height);
+
+    GLfloat left, right, bottom, top;
+    GLfloat ratio = w / h;
+
+    if (FBO::width > FBO::height)
+    {
+        top = 1.0f;
+        bottom = -top;
+        right = top * ratio;
+        left = -right;
+    }
+    else
+    {
+        right = 1.0f;
+        left = -right;
+        top = right / ratio;
+        bottom = -top;
+    }
+
     GLfloat vertices[] = {
+        left, bottom,
+        left, top,
+        right, bottom,
+        right, top
+    };
+
+    GLfloat texCoords[] = {
+        0.0f, 0.0f,
+        0.0f, 1.0f,
+        1.0f, 0.0f,
+        1.0f, 1.0f
+    };
+
+    /*GLfloat vertices[] = {
         -1.0f, 1.0f,
         -1.0f, -1.0f,
         1.0f, -1.0f,
@@ -244,7 +296,7 @@ Seed::Seed(const Seed& seed) :
         0.0f, 1.0f,
         1.0f, 0.0f,
         1.0f, 1.0f
-    };
+    };*/
 
     // Random
 
@@ -260,7 +312,7 @@ Seed::Seed(const Seed& seed) :
     vboRandom->create();
     vboRandom->setUsagePattern(QOpenGLBuffer::StaticDraw);
     vboRandom->bind();
-    vboRandom->allocate(vertices, 12 * sizeof(GLfloat));
+    vboRandom->allocate(vertices, 8 * sizeof(GLfloat));
 
     // Map vbo data to shader attribute location
 
@@ -289,7 +341,7 @@ Seed::Seed(const Seed& seed) :
     vboPosImage->create();
     vboPosImage->setUsagePattern(QOpenGLBuffer::StaticDraw);
     vboPosImage->bind();
-    vboPosImage->allocate(vertices, 12 * sizeof(GLfloat));
+    vboPosImage->allocate(vertices, 8 * sizeof(GLfloat));
 
     // Map vbo data to shader attribute location
 
@@ -305,7 +357,7 @@ Seed::Seed(const Seed& seed) :
     vboTexImage->create();
     vboTexImage->setUsagePattern(QOpenGLBuffer::StaticDraw);
     vboTexImage->bind();
-    vboTexImage->allocate(texcoords, 12 * sizeof(GLfloat));
+    vboTexImage->allocate(texCoords, 8 * sizeof(GLfloat));
 
     // Map vbo data to shader attribute location
 
@@ -500,7 +552,42 @@ void Seed::resizeVertices()
 {
     // Recompute vertices and texture coordinates
 
+    GLfloat w = static_cast<GLfloat>(FBO::width);
+    GLfloat h = static_cast<GLfloat>(FBO::height);
+
     GLfloat left, right, bottom, top;
+    GLfloat ratio = w / h;
+
+    if (FBO::width > FBO::height)
+    {
+        top = 1.0f;
+        bottom = -top;
+        right = top * ratio;
+        left = -right;
+    }
+    else
+    {
+        right = 1.0f;
+        left = -right;
+        top = right / ratio;
+        bottom = -top;
+    }
+
+    GLfloat vertices[] = {
+        left, bottom,
+        left, top,
+        right, bottom,
+        right, top
+    };
+
+    GLfloat texCoords[] = {
+        0.0f, 0.0f,
+        0.0f, 1.0f,
+        1.0f, 0.0f,
+        1.0f, 1.0f
+    };
+
+    /*GLfloat left, right, bottom, top;
     GLfloat ratio = static_cast<GLfloat>(FBO::width) / static_cast<GLfloat>(FBO::height);
 
     if (FBO::width > FBO::height)
@@ -525,7 +612,7 @@ void Seed::resizeVertices()
         left, top,
         right, bottom,
         right, top
-    };
+    };*/
 
     /*GLfloat texcoords[] = {
         0.0f, top,
@@ -540,18 +627,18 @@ void Seed::resizeVertices()
 
     vaoRandom->bind();
     vboRandom->bind();
-    vboRandom->allocate(vertices, 12 * sizeof(GLfloat));
+    vboRandom->allocate(vertices, 8 * sizeof(GLfloat));
     vaoRandom->release();
     vboRandom->release();
 
     vaoImage->bind();
     vboPosImage->bind();
-    vboPosImage->allocate(vertices, 12 * sizeof(GLfloat));
-    //vboTexImage->bind();
-    //vboTexImage->allocate(texcoords, 12 * sizeof(GLfloat));
+    vboPosImage->allocate(vertices, 8 * sizeof(GLfloat));
+    vboTexImage->bind();
+    vboTexImage->allocate(texCoords, 8 * sizeof(GLfloat));
     vaoImage->release();
     vboPosImage->release();
-    //vboTexImage->release();
+    vboTexImage->release();
 
     context->doneCurrent();
 }
@@ -560,8 +647,11 @@ void Seed::resizeVertices()
 
 void Seed::maintainAspectRatio()
 {
+    GLfloat w = static_cast<GLfloat>(FBO::width);
+    GLfloat h = static_cast<GLfloat>(FBO::height);
+
     GLfloat left, right, bottom, top;
-    GLfloat ratio = static_cast<GLfloat>(FBO::width) / static_cast<GLfloat>(FBO::height);
+    GLfloat ratio = w / h;
 
     if (FBO::width > FBO::height)
     {
@@ -652,7 +742,7 @@ void Seed::drawRandom(bool grayscale)
     randomProgram->setUniformValue("randomNumber", randomNumber);
     randomProgram->setUniformValue("grayscale", grayscale);
 
-    glDrawArrays(GL_TRIANGLES, 0, 6);
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
     vaoRandom->release();
     randomProgram->release();
@@ -680,7 +770,7 @@ void Seed::drawImage()
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, image->textureId());
 
-    glDrawArrays(GL_TRIANGLES, 0, 6);
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
     glBindTexture(GL_TEXTURE_2D, 0);
     vaoImage->release();

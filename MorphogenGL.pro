@@ -38,13 +38,13 @@ RESOURCES += resource.qrc
 
 HEADERS += \
     src/blender.h \
-    src/blendfactorwidget.h \
     src/colorpath.h \
     src/configparser.h \
     src/controlwidget.h \
     src/cycle.h \
     src/cyclesearch.h \
     src/edge.h \
+    src/edgewidget.h \
     src/fbo.h \
     src/graphwidget.h \
     src/gridwidget.h \
@@ -88,6 +88,7 @@ SOURCES += \
     src/cycle.cpp \
     src/cyclesearch.cpp \
     src/edge.cpp \
+    src/edgewidget.cpp \
     src/fbo.cpp \
     src/graphwidget.cpp \
     src/gridwidget.cpp \

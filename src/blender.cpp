@@ -24,7 +24,12 @@
 
 Blender::Blender(QString vertexShader, QString fragmentShader, QOpenGLContext* mainContext) : FBO(mainContext)
 {
+    mPosInAttribName = "pos";
+    mTexInAttribName = "tex";
+
     setShadersFromSourceFile(vertexShader, fragmentShader);
+
+    setOrthographicProjection("transform");
 
     context->makeCurrent(surface);
 
@@ -79,7 +84,7 @@ void Blender::blend()
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, **fboOut->getTextureID());
 
-        glDrawArrays(GL_TRIANGLES, 0, 6);
+        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
         vao->release();
         program->release();
