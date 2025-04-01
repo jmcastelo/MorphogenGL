@@ -67,6 +67,8 @@ struct ImageOperationNode
     void removeInput(ImageOperationNode* node);
     void setInputType(QUuid id, InputType type);
 
+    void setInputSeedTexId(QUuid id, GLuint** texId);
+
     int numInputs();
     int numNonNormalInputs();
     int numOutputs();
@@ -126,7 +128,6 @@ public:
     void removeOperation(QUuid id);
     void enableOperation(QUuid id, bool enabled);
     bool isOperationEnabled(QUuid id);
-    bool hasOperationParamaters(QUuid id);
 
     void clearLoadedOperations() { loadedOperationNodes.clear(); }
     void loadOperation(QUuid id, ImageOperation* operation);
@@ -147,6 +148,7 @@ public:
     void loadSeedImage(QUuid id, QString filename);
     int getSeedType(QUuid id);
     void setSeedType(QUuid id, int set);
+    void resetInputSeedTexId(QUuid id);
     bool isSeedFixed(QUuid id);
     void setSeedFixed(QUuid id, bool fixed);
     void drawSeed(QUuid id);

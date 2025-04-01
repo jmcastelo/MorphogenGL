@@ -50,7 +50,18 @@ int OptionsParameter<T>::indexOf()
 
 
 template <typename T>
-QList<QString> OptionsParameter<T>::valueNames(){ return mValueNames; }
+QList<QString> OptionsParameter<T>::valueNames()
+{
+    return mValueNames;
+}
+
+
+
+template <typename T>
+QList<T> OptionsParameter<T>::values()
+{
+    return mValues;
+}
 
 
 

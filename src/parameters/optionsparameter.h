@@ -22,6 +22,7 @@ public:
     int indexOf();
 
     QList<QString> valueNames();
+    QList<T> values();
 
 private:
     QList<QString> mValueNames;

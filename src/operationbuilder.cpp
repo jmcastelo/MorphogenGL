@@ -1,6 +1,8 @@
 #include "operationbuilder.h"
 #include "imageoperation.h"
+#include "operationparser.h"
 
+#include <QToolBar>
 #include <QFileDialog>
 #include <QFormLayout>
 #include <QHBoxLayout>
@@ -31,22 +33,22 @@ OperationBuilder::OperationBuilder(ImageOperation *operation, QWidget *parent) :
 
     mProgram = new QOpenGLShaderProgram();
 
-    // Buttons
+    // Toolbar
 
-    QPushButton* loadVertexButton = new QPushButton("Load vertex shader");
-    loadVertexButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+    QToolBar* toolBar = new QToolBar;
+    toolBar->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
 
-    connect(loadVertexButton, &QPushButton::clicked, this, &OperationBuilder::loadVertexShader);
+    toolBar->addAction(QIcon(QPixmap(":/icons/document-open.png")), "Load operation", this, &OperationBuilder::loadOperation);
 
-    QPushButton* loadFragmentButton = new QPushButton("Load fragment shader");
-    loadFragmentButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+    toolBar->addAction(QIcon(QPixmap(":/icons/document-save.png")), "Save operation", this, &OperationBuilder::saveOperation);
 
-    connect(loadFragmentButton, &QPushButton::clicked, this, &OperationBuilder::loadFragmentShader);
+    toolBar->addSeparator();
 
-    QPushButton* parseButton = new QPushButton("Parse shaders");
-    parseButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+    toolBar->addAction(QIcon(QPixmap(":/icons/letter-v.png")), "Load vertex shader", this, &OperationBuilder::loadVertexShader);
 
-    connect(parseButton, &QPushButton::clicked, this, &OperationBuilder::parseShaders);
+    toolBar->addAction(QIcon(QPixmap(":/icons/letter-f.png")), "Load fragment shader", this, &OperationBuilder::loadFragmentShader);
+
+    toolBar->addAction(QIcon(QPixmap(":/icons/run-build.png")), "Parse shaders", this, &OperationBuilder::parseShaders);
 
     // Tabs
 
@@ -80,12 +82,6 @@ OperationBuilder::OperationBuilder(ImageOperation *operation, QWidget *parent) :
     shadersTabWidget->addTab(fragmentEditor, "Fragment shader");
     shadersTabWidget->addTab(overviewWidget, "Overview");
 
-    connect(loadVertexButton, &QPushButton::clicked, this, [=, this](){
-        shadersTabWidget->setCurrentIndex(0);
-    });
-    connect(loadFragmentButton, &QPushButton::clicked, this, [=, this](){
-        shadersTabWidget->setCurrentIndex(1);
-    });
     connect(setupOperationButton, &QPushButton::clicked, this, [=, this](){
         mOperation->setup(vertexShader, fragmentShader);
         emit shadersParsed();
@@ -94,14 +90,8 @@ OperationBuilder::OperationBuilder(ImageOperation *operation, QWidget *parent) :
 
     // Layouts
 
-    QHBoxLayout* buttonsLayout = new QHBoxLayout;
-    buttonsLayout->setAlignment(Qt::AlignLeft);
-    buttonsLayout->addWidget(loadVertexButton);
-    buttonsLayout->addWidget(loadFragmentButton);
-    buttonsLayout->addWidget(parseButton);
-
     QVBoxLayout* shadersLayout = new QVBoxLayout;
-    shadersLayout->addLayout(buttonsLayout);
+    shadersLayout->addWidget(toolBar);
     shadersLayout->addWidget(shadersTabWidget);
 
     setLayout(shadersLayout);
@@ -158,6 +148,26 @@ void OperationBuilder::removeUniformFloatParameter(UniformParameter<float>* para
 
 
 
+void OperationBuilder::loadOperation()
+{
+
+}
+
+
+
+void OperationBuilder::saveOperation()
+{
+    QString path = QFileDialog::getSaveFileName(this, "Save operation", QDir::currentPath() + "/operations", "Operations (*.op)");
+
+    if (!path.isEmpty())
+    {
+        OperationParser opParser;
+        opParser.write(mOperation, path, false);
+    }
+}
+
+
+
 void OperationBuilder::loadVertexShader()
 {
     QString path = QFileDialog::getOpenFileName(this, "Load vertex shader", QDir::currentPath() + "/shaders", "Vertex shaders (*.vert)");
@@ -174,6 +184,8 @@ void OperationBuilder::loadVertexShader()
         vertexEditor->setPlainText(vertexShader);
 
         file.close();
+
+        shadersTabWidget->setCurrentIndex(0);
     }
 }
 
@@ -195,6 +207,8 @@ void OperationBuilder::loadFragmentShader()
         fragmentEditor->setPlainText(fragmentShader);
 
         file.close();
+
+        shadersTabWidget->setCurrentIndex(1);
     }
 }
 

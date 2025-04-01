@@ -78,6 +78,8 @@ private:
     void setAttribComboBox();
 
 private slots:
+    void loadOperation();
+    void saveOperation();
     void loadVertexShader();
     void loadFragmentShader();
     void parseShaders();

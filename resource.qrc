@@ -73,5 +73,8 @@
         <file>icons/go-down.png</file>
         <file>icons/go-up.png</file>
         <file>icons/dialog-close.png</file>
+        <file>icons/letter-f.png</file>
+        <file>icons/letter-v.png</file>
+        <file>icons/run-build.png</file>
     </qresource>
 </RCC>

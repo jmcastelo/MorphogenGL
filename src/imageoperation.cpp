@@ -44,16 +44,15 @@ ImageOperation::ImageOperation(QString theName, QOpenGLContext* mainContext) :
 ImageOperation::ImageOperation(const ImageOperation& operation) :
     QOpenGLExtraFunctions(operation.mContext),
     mName { operation.mName },
-    vertexShader { operation.vertexShader },
-    fragmentShader { operation.fragmentShader },
+    mVertexShader { operation.mVertexShader },
+    mFragmentShader { operation.mFragmentShader },
     enabled { operation.enabled },
-    noParameters { operation.noParameters },
     mContext { operation.mContext }
 {
     blender = new Blender(":/shaders/screen.vert", ":/shaders/blend.frag", mContext);
 
     fbo = new FBO(mContext);
-    fbo->setShadersFromSourceCode(vertexShader, fragmentShader);
+    fbo->setShadersFromSourceCode(mVertexShader, mFragmentShader);
     fbo->setInputTextureID(*blender->getTextureID());
 
     for (auto parameter: operation.floatUniformParameters)
@@ -106,10 +105,10 @@ ImageOperation::~ImageOperation()
 
 void ImageOperation::setup(QString theVertexShader, QString theFragmentShader)
 {
-    vertexShader = theVertexShader;
-    fragmentShader = theFragmentShader;
+    mVertexShader = theVertexShader;
+    mFragmentShader = theFragmentShader;
 
-    fbo->setShadersFromSourceCode(vertexShader, fragmentShader);
+    fbo->setShadersFromSourceCode(mVertexShader, mFragmentShader);
     fbo->setInputTextureID(*blender->getTextureID());
 }
 

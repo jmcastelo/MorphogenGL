@@ -46,6 +46,8 @@ public:
 
     QList<QString> presetNames();
 
+    QMap<QString, QList<T>> presets();
+
     void addPreset(QString name);
     void removePreset(QString name);
     void setPreset(QString name);

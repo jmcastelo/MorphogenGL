@@ -213,6 +213,14 @@ QList<QString> BaseUniformParameter<T>::presetNames()
 
 
 template <typename T>
+QMap<QString, QList<T>> BaseUniformParameter<T>::presets()
+{
+    return mPresets;
+}
+
+
+
+template <typename T>
 void BaseUniformParameter<T>::addPreset(QString name)
 {
     if (mPresets.contains(name))

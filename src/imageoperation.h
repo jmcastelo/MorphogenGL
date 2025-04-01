@@ -62,16 +62,14 @@ public:
 
     //ImageOperation* clone() { return new ImageOperation(*this); }
 
-    bool isEnabled() { return enabled; }
+    bool isEnabled() const { return enabled; }
     void enable(bool on) { enabled = on; }
 
     void enableBlit(bool on) { blitEnabled = on; }
 
     void enableUpdate(bool on) { mUpdate = on; }
 
-    bool hasParameters() { return !noParameters; }
-
-    QString name() { return mName; }
+    QString name() const { return mName; }
     void setName(QString theName) { mName = theName; }
 
     GLuint getFBO() { return fbo->getFBO(); }
@@ -82,6 +80,9 @@ public:
     void setInputData(QList<InputData*> data);
 
     void resize() { blender->resize(); fbo->resize(); }
+
+    QString vertexShader() const { return mVertexShader; }
+    QString fragmentShader() const { return mFragmentShader; }
 
     QString posInAttribName() const { return fbo->posInAttribName(); }
     void setPosInAttribName(QString name) { fbo->setPosInAttribName(name); };
@@ -135,11 +136,10 @@ public:
 private:
     QString mName;
 
-    QString vertexShader;
-    QString fragmentShader;
+    QString mVertexShader;
+    QString mFragmentShader;
 
     bool enabled = false;
-    bool noParameters = false;
     bool blenderEnabled = false;
     bool blitEnabled = false;
 

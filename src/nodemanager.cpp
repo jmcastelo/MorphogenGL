@@ -157,6 +157,14 @@ void ImageOperationNode::setInputType(QUuid id, InputType type)
 
 
 
+void ImageOperationNode::setInputSeedTexId(QUuid id, GLuint** texId)
+{
+    if (inputs.contains(id))
+        inputs[id]->textureID = texId;
+}
+
+
+
 bool ImageOperationNode::allInputsComputed()
 {
     foreach (ImageOperationNode* node, inputNodes)
@@ -676,13 +684,6 @@ bool NodeManager::isOperationEnabled(QUuid id)
 
 
 
-bool NodeManager::hasOperationParamaters(QUuid id)
-{
-    return operationNodes.value(id)->operation->hasParameters();
-}
-
-
-
 void NodeManager::loadOperation(QUuid id, ImageOperation* operation)
 {
     ImageOperationNode *node = new ImageOperationNode(id);
@@ -1060,6 +1061,8 @@ QPair<QUuid, SeedWidget *> NodeManager::addSeed()
     connect(seedWidget, &SeedWidget::typeChanged, this, [=, this](){
         if (isOutput(id))
             emit outputFBOChanged(seeds.value(id)->getFBO());
+
+        resetInputSeedTexId(id);
     });
 
     connect(seedWidget, &SeedWidget::seedDrawn, this, [=, this](){
@@ -1097,11 +1100,14 @@ QUuid NodeManager::copySeed(QUuid srcId)
 
 void NodeManager::removeSeed(QUuid id)
 {
-    delete seeds.value(id);
-    seeds.remove(id);
+    if (seeds.contains(id))
+    {
+        delete seeds.value(id);
+        seeds.remove(id);
 
-    foreach (ImageOperationNode* node, operationNodes)
-        node->removeSeedInput(id);
+        foreach (ImageOperationNode* node, operationNodes)
+            node->removeSeedInput(id);
+    }
 }
 
 
@@ -1133,6 +1139,17 @@ int NodeManager::getSeedType(QUuid id)
 void NodeManager::setSeedType(QUuid id, int set)
 {
     seeds.value(id)->setType(set);
+}
+
+
+
+void NodeManager::resetInputSeedTexId(QUuid id)
+{
+    if (seeds.contains(id))
+    {
+        foreach (ImageOperationNode* opNode, operationNodes)
+                opNode->setInputSeedTexId(id, seeds[id]->getTextureID());
+    }
 }
 
 

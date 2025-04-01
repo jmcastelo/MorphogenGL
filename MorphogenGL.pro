@@ -58,6 +58,7 @@ HEADERS += \
     src/node.h \
     src/nodemanager.h \
     src/operationbuilder.h \
+    src/operationparser.h \
     src/operationwidget.h \
     src/overlay.h \
     src/parameters/baseuniformparameter.h \
@@ -103,6 +104,7 @@ SOURCES += \
     src/node.cpp \
     src/nodemanager.cpp \
     src/operationbuilder.cpp \
+    src/operationparser.cpp \
     src/operationwidget.cpp \
     src/overlay.cpp \
     src/parameters/baseuniformparameter.cpp \
