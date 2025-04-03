@@ -57,6 +57,9 @@ public:
     //Node(GraphWidget* graphWidget, QString name);
     explicit Node(QPair<QUuid, QWidget*> idWidgetPair, QGraphicsItem* parent = nullptr);
 
+    enum { Type = UserType + 1 };
+    int type() const override { return Type; }
+
     QUuid id() const { return mId; }
 
     void addEdge(Edge *edge);

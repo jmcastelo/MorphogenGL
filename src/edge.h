@@ -37,7 +37,7 @@
 
 //class GraphWidget;
 class Node;
-//class Cycle;
+class Cycle;
 class EdgeWidget;
 
 
@@ -55,8 +55,8 @@ public:
 
     void adjust();
 
-    //enum { Type = UserType + 3 };
-    //int type() const override { return Type; }
+    enum { Type = UserType + 2 };
+    int type() const override { return Type; }
 
     //int linkOffset = 0;
 
@@ -64,11 +64,12 @@ public:
     QPointF dstPoint() const { return destPoint; }
 
     bool isPredge() const { return mPredge; }
-    void setPredge(bool predge) { mPredge = predge; }
 
-    //QVector<Cycle*> cycles() const { return cycleList; }
-    //void addCycle(Cycle* cycle) { cycleList.push_back(cycle); }
-    //void clearCycles() { cycleList.clear(); }
+    void setWidgetVisible(bool visible);
+
+    QList<Cycle*> cycles() const { return cycleList; }
+    void addCycle(Cycle* cycle) { cycleList.push_back(cycle); }
+    void clearCycles() { cycleList.clear(); }
 
     /*void setBlendFactor(float factor);
     void drawBlendFactor(bool draw) { paintBlendFactor = draw; }
@@ -87,8 +88,9 @@ public:
     //void blendFactorWidgetToggled(BlendFactorWidget* widget);
     //void blendFactorWidgetDeleted(BlendFactorWidget* widget);
 
-//public slots:
+public slots:
     //void remove();
+    void setPredge(bool predge);
 
 protected:
     QPainterPath shape() const override;
@@ -110,11 +112,13 @@ private:
     QPointF sourcePoint;
     QPointF destPoint;
 
-    //QVector<Cycle*> cycleList;
+    QList<Cycle*> cycleList;
 
     bool mPredge = false;
 
-    qreal arrowSize = 10;
+    qreal arrowSize = 20;
+
+    bool mWidgetVisible = false;
 
     //bool paintBlendFactor = false;
 

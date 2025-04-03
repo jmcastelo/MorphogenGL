@@ -19,19 +19,22 @@
 *  You should have received a copy of the GNU General Public License
 *  along with MorphogenGL.  If not, see <https://www.gnu.org/licenses/>.
 */
-/*
+
+
+
 #include "cycle.h"
 #include "edge.h"
 #include "node.h"
-#include "graphwidget.h"
 
+#include <QPainter>
 #include <QStyleOption>
 
 
 
-Cycle::Cycle(GraphWidget* graphWidget, QVector<Node*> nodes) : graph { graphWidget }
+Cycle::Cycle(QList<Node*> nodes, QGraphicsItem *parent) :
+    QGraphicsItem(parent)
 {
-    // Construct vector of edges
+    // Construct list of edges
     // Nodes of the cycle are ordered
 
     bool containsPredge = false;
@@ -78,7 +81,7 @@ QRectF Cycle::boundingRect() const
 {
     QRectF whole;
 
-    for (Edge* edge : edges)
+    foreach (Edge* edge, edges)
         whole = whole.united(edge->boundingRect());
 
     return whole;
@@ -107,7 +110,7 @@ QPainterPath Cycle::shape() const
 void Cycle::paint(QPainter* painter, const QStyleOptionGraphicsItem*, QWidget*)
 {
     painter->setPen(Qt::NoPen);
-    painter->setBrush(QColor(0, 0, 255, 32));
+    painter->setBrush(QColor(16, 64, 255, 32));
 
     QPolygonF boundary;
 
@@ -119,4 +122,3 @@ void Cycle::paint(QPainter* painter, const QStyleOptionGraphicsItem*, QWidget*)
 
     painter->drawPolygon(boundary);
 }
-*/

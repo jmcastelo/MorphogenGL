@@ -26,8 +26,8 @@
 #include "node.h"
 #include "edge.h"
 #include "edgewidget.h"
-//#include "cycle.h"
-//#include "cyclesearch.h"
+#include "cycle.h"
+#include "cyclesearch.h"
 #include "nodemanager.h"
 
 #include <cmath>
@@ -44,6 +44,7 @@ GraphWidget::GraphWidget(NodeManager* nodeManager, QWidget *parent) :
 {
     connect(mNodeManager, &NodeManager::nodesConnected, this, &GraphWidget::connectNodes);
     connect(mNodeManager, &NodeManager::nodeRemoved, this, &GraphWidget::removeNode);
+    connect(mNodeManager, &NodeManager::nodesDisconnected, this, &GraphWidget::removeEdge);
 
     QGraphicsScene *scene = new QGraphicsScene(this);
     scene->setItemIndexMethod(QGraphicsScene::NoIndex);
@@ -86,10 +87,24 @@ Node* GraphWidget::getNode(QUuid id)
 {
     const QList<QGraphicsItem*> items = scene()->items();
 
-    for (QGraphicsItem* item : items)
+    foreach (QGraphicsItem* item, items)
         if (Node* node = qgraphicsitem_cast<Node*>(item))
             if (node->id() == id)
                 return node;
+
+    return nullptr;
+}
+
+
+
+Edge* GraphWidget::getEdge(QUuid srcId, QUuid dstId)
+{
+    const QList<QGraphicsItem*> items = scene()->items();
+
+    foreach (QGraphicsItem* item, items)
+        if (Edge* edge = qgraphicsitem_cast<Edge*>(item))
+            if (edge->sourceNode()->id() == srcId && edge->destNode()->id() == dstId)
+                return edge;
 
     return nullptr;
 }
@@ -100,8 +115,8 @@ void GraphWidget::closeEvent(QCloseEvent* event)
 {
     const QList<QGraphicsItem*> items = scene()->items();
 
-    for (QGraphicsItem* item : items)
-        if (QGraphicsWidget* node = qgraphicsitem_cast<QGraphicsWidget*>(item))
+    foreach (QGraphicsItem* item, items)
+        if (Node* node = qgraphicsitem_cast<Node*>(item))
             node->close();
 
     event->accept();
@@ -201,7 +216,10 @@ void GraphWidget::connectNodes(QUuid srcId, QUuid dstId, EdgeWidget* widget)
     Node* dstNode = getNode(dstId);
 
     if (srcNode && dstNode && srcNode != dstNode)
+    {
         scene()->addItem(new Edge(srcNode, dstNode, widget));
+        searchElementaryCycles();
+    }
 }
 
 
@@ -290,11 +308,28 @@ void GraphWidget::removeNode(QUuid id)
 
         scene()->removeItem(node);
         node->deleteLater();
-    }
 
-    //searchElementaryCycles();
+        searchElementaryCycles();
+    }
 }
 
+
+
+void GraphWidget::removeEdge(QUuid srcId, QUuid dstId)
+{
+    Edge* edge = getEdge(srcId, dstId);
+
+    if (edge)
+    {
+        edge->sourceNode()->removeEdge(edge);
+        edge->destNode()->removeEdge(edge);
+
+        scene()->removeItem(edge);
+        edge->deleteLater();
+
+        searchElementaryCycles();
+    }
+}
 
 
 /*void GraphWidget::removeEdge(Edge *edge)
@@ -1075,22 +1110,22 @@ void GraphWidget::mousePressEvent(QMouseEvent* event)
 
 
 
-/*void GraphWidget::searchElementaryCycles()
+void GraphWidget::searchElementaryCycles()
 {
-    QVector<Node*> nodes;
-    QVector<Edge*> edges;
+    QList<Node*> nodes;
+    QList<Edge*> edges;
 
-    const QList<QGraphicsItem *> items = scene()->items();
+    QList<QGraphicsItem*> items = scene()->items();
 
     foreach (QGraphicsItem* item, items)
     {
-        if (OperationNode* node = qgraphicsitem_cast<OperationNode*>(item))
-            nodes << node;
-        else if (SeedNode* node = qgraphicsitem_cast<SeedNode*>(item))
-            nodes << node;
+        if (Node* node = qgraphicsitem_cast<Node*>(item))
+        {
+            nodes.append(node);
+        }
         else if (Edge* edge = qgraphicsitem_cast<Edge*>(item))
         {
-            edges << edge;
+            edges.append(edge);
             edge->clearCycles();
         }
         else if (Cycle* cycle = qgraphicsitem_cast<Cycle*>(item))
@@ -1100,8 +1135,8 @@ void GraphWidget::mousePressEvent(QMouseEvent* event)
         }
     }
 
-    QVector<bool> row(nodes.size(), false);
-    QVector<QVector<bool>> adjacencyMatrix(nodes.size(), row);
+    QList<bool> row(nodes.size(), false);
+    QList<QList<bool>> adjacencyMatrix(nodes.size(), row);
 
     foreach (Edge* edge, edges)
     {
@@ -1111,11 +1146,11 @@ void GraphWidget::mousePressEvent(QMouseEvent* event)
     }
 
     ElementaryCyclesSearch ecs(adjacencyMatrix, nodes);
-    QVector<QVector<Node*>> cycles = ecs.getElementaryCycles();
+    QList<QList<Node*>> cycles = ecs.getElementaryCycles();
 
-    foreach (QVector<Node*> nodeCycle, cycles)
+    foreach (QList<Node*> nodeCycle, cycles)
     {
-        Cycle* cycle = new Cycle(this, nodeCycle);
+        Cycle* cycle = new Cycle(nodeCycle);
         scene()->addItem(cycle);
     }
-}*/
+}

@@ -34,8 +34,7 @@
 
 
 class Node;
-//class OperationNode;
-//class SeedNode;
+class Edge;
 class EdgeWidget;
 class NodeManager;
 //struct InputData;
@@ -139,10 +138,12 @@ private:
 
     //void copyNodes(bool connectionA);
     bool pointIntersectsItem(QPointF point);
-    //void searchElementaryCycles();
     void reconnectNodes(Node* node);
 
+    void searchElementaryCycles();
+
     Node* getNode(QUuid id);
+    Edge* getEdge(QUuid srcId, QUuid dstId);
 
 private slots:
     //void newSelectedNodes();
@@ -152,6 +153,7 @@ private slots:
     void addNewOperationNode();
     void connectNodes(QUuid srcId, QUuid dstId, EdgeWidget* widget);
     void removeNode(QUuid id);
+    void removeEdge(QUuid srcId, QUuid dstId);
 };
 
 

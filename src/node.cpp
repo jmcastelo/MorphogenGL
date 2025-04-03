@@ -42,8 +42,8 @@
 
 Node::Node(QPair<QUuid, QWidget*> idWidgetPair, QGraphicsItem* parent) :
     QGraphicsWidget(parent),
-    mWidget { idWidgetPair.second },
-    mId { idWidgetPair.first}
+    mId { idWidgetPair.first},
+    mWidget { idWidgetPair.second }
 {
     setFlags(ItemIsMovable | ItemIsSelectable | ItemSendsGeometryChanges);
     setCacheMode(DeviceCoordinateCache);
@@ -289,9 +289,30 @@ QVariant Node::itemChange(GraphicsItemChange change, const QVariant &value)
     else if (change == QGraphicsItem::ItemSelectedChange)
     {
         if (value.toBool() == true)
+        {
             setZValue(0);
+
+            foreach (auto edge, edgeList)
+            {
+                if (edge->destNode() == this)
+                {
+                    edge->setZValue(0);
+                    edge->setWidgetVisible(true);
+                }
+            }
+        }
         else
+        {
             setZValue(-1);
+            foreach (auto edge, edgeList)
+            {
+                if (edge->destNode() == this)
+                {
+                    edge->setZValue(-1);
+                    edge->setWidgetVisible(false);
+                }
+            }
+        }
     }
 
     return QGraphicsWidget::itemChange(change, value);

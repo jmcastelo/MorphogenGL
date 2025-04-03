@@ -8,10 +8,14 @@
 
 
 
-EdgeWidget::EdgeWidget(float factor, QWidget *parent) :
+EdgeWidget::EdgeWidget(float factor, bool srcIsOp, QWidget *parent) :
     QFrame(parent)
 {
+    // Blend factor
+
     blendFactor = new Number<float>(factor, 0.0, 1.0, 0.0, 1.0);
+
+    // Blend factor line edit
 
     FocusLineEdit* lineEdit = new FocusLineEdit;
     lineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
@@ -26,9 +30,19 @@ EdgeWidget::EdgeWidget(float factor, QWidget *parent) :
     QToolBar* headerToolBar = new QToolBar;
     headerToolBar->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
 
+    // Midi link
+
     midiLinkAction = headerToolBar->addAction(QIcon(QPixmap(":/icons/circle-grey.png")), "Midi link");
     midiLinkAction->setCheckable(true);
     midiLinkAction->setVisible(false);
+
+    // Set edge type
+
+    QAction* typeAction = headerToolBar->addAction(QIcon(QPixmap(":/icons/edit-undo.png")), "Set as predge", this, &EdgeWidget::edgeTypeChanged);
+    typeAction->setCheckable(true);
+    typeAction->setVisible(srcIsOp);
+
+    // Delete
 
     headerToolBar->addAction(QIcon(QPixmap(":/icons/dialog-close.png")), "Delete", this, &EdgeWidget::remove);
 
@@ -42,7 +56,6 @@ EdgeWidget::EdgeWidget(float factor, QWidget *parent) :
     headerLayout->addWidget(headerToolBar);
 
     QVBoxLayout* layout = new QVBoxLayout;
-    //layout->setSizeConstraint(QLayout::SetMaximumSize);
     layout->addLayout(headerLayout);
     layout->addWidget(slider);
 
@@ -82,6 +95,10 @@ EdgeWidget::EdgeWidget(float factor, QWidget *parent) :
         blendFactor->setValue(lineEdit->text().toFloat());
         blendFactor->setIndex();
         emit blendFactorChanged(lineEdit->text().toFloat());
+    });
+
+    connect(lineEdit, &FocusLineEdit::focusOut, this, [=, this](){
+        lineEdit->setText(QString::number(blendFactor->value()));
     });
 
     setLayout(layout);

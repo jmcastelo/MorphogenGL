@@ -20,7 +20,7 @@ class EdgeWidget : public QFrame
     Q_OBJECT
 
 public:
-    explicit EdgeWidget(float factor, QWidget *parent = nullptr);
+    explicit EdgeWidget(float factor, bool srcIsOp, QWidget *parent = nullptr);
     ~EdgeWidget();
 
     QString const name();
@@ -32,6 +32,8 @@ public:
 
 signals:
     void blendFactorChanged(float factor);
+
+    void edgeTypeChanged(bool predge);
 
     void linkWait(Number<float>* number);
     void linkBreak(Number<float>* number);

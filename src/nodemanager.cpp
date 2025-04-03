@@ -744,14 +744,22 @@ void NodeManager::connectLoadedOperations(QMap<QUuid, QMap<QUuid, InputData*>> c
 
 EdgeWidget* NodeManager::addEdgeWidget(QUuid srcId, QUuid dstId, float factor)
 {
-    EdgeWidget* edgeWidget = new EdgeWidget(factor);
+    EdgeWidget* edgeWidget = new EdgeWidget(factor, operationNodes.contains(srcId));
 
     connect(edgeWidget, &EdgeWidget::blendFactorChanged, this, [=, this](float newFactor){
         setBlendFactor(srcId, dstId, newFactor);
     });
 
+    connect(edgeWidget, &EdgeWidget::edgeTypeChanged, this, [=, this](bool predge){
+        if (predge)
+            setOperationInputType(srcId, dstId, InputType::Blit);
+        else
+            setOperationInputType(srcId, dstId, InputType::Normal);
+    });
+
     connect(edgeWidget, &EdgeWidget::remove, this, [=, this](){
         disconnectOperations(srcId, dstId);
+        emit nodesDisconnected(srcId, dstId);
     });
 
     return edgeWidget;

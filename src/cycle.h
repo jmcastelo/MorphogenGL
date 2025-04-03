@@ -20,33 +20,40 @@
 *  along with MorphogenGL.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#pragma once
-/*
-#include <QGraphicsObject>
 
-class GraphWidget;
+
+#ifndef CYCLE_H
+#define CYCLE_H
+
+
+
+#include <QGraphicsItem>
+
+
+
 class Edge;
 class Node;
 
-class Cycle : public QGraphicsObject
+
+
+class Cycle : public QGraphicsItem
 {
-    Q_OBJECT
-
 public:
-    Cycle(GraphWidget* graphWidget, QVector<Node*> nodes);
+    Cycle(QList<Node*> nodes, QGraphicsItem* parent = nullptr);
 
-    enum { Type = UserType + 4 };
+    enum { Type = UserType + 3 };
     int type() const override { return Type; }
 
     int numPredges();
 
-protected:
     QRectF boundingRect() const override;
     QPainterPath shape() const override;
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) override;
 
 private:
-    GraphWidget* graph;
-    QVector<Edge*> edges;
+    QList<Edge*> edges;
 };
-*/
+
+
+
+#endif // CYCLE_H

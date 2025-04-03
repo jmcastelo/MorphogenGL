@@ -20,59 +20,74 @@
 *  along with MorphogenGL.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#pragma once
+
+
+#ifndef CYCLESEARCH_H
+#define CYCLESEARCH_H
+
+
 
 #include "node.h"
-#include <QVector>
+#include <QList>
+
+
 
 struct SCCResult
 {
-    QVector<QVector<int>> adjacencyList;
+    QList<QList<int>> adjacencyList;
     int lowestNodeId;
 
-    SCCResult(QVector<QVector<int>> adjList, int id) :
+    SCCResult(QList<QList<int>> adjList, int id) :
         adjacencyList { adjList },
         lowestNodeId { id }
     {}
 };
 
+
+
 class ElementaryCyclesSearch
 {
 public:
-    ElementaryCyclesSearch(QVector<QVector<bool>> matrix, QVector<Node*> nodes);
-    QVector<QVector<Node*>> getElementaryCycles();
+    ElementaryCyclesSearch(QList<QList<bool>> matrix, QList<Node*> nodes);
+    QList<QList<Node*>> getElementaryCycles();
 
 private:
-    QVector<QVector<Node*>> cycles;
-    QVector<QVector<int>> adjacencyList;
-    QVector<Node*> graphNodes;
-    QVector<bool> blocked;
-    QVector<QVector<int>> B;
-    QVector<int> stack;
+    QList<QList<Node*>> cycles;
+    QList<QList<int>> adjacencyList;
+    QList<Node*> graphNodes;
+    QList<bool> blocked;
+    QList<QList<int>> B;
+    QList<int> stack;
 
-    QVector<QVector<int>> getAdjacencyList(QVector<QVector<bool>> matrix);
-    bool findCycles(int v, int s, QVector<QVector<int>> adjList);
+    QList<QList<int>> getAdjacencyList(QList<QList<bool>> matrix);
+    bool findCycles(int v, int s, QList<QList<int>> adjList);
     void unblock(int node);
 };
+
+
 
 class StrongConnectedComponents
 {
 public:
-    StrongConnectedComponents(QVector<QVector<int>> adjList);
+    StrongConnectedComponents(QList<QList<int>> adjList);
     SCCResult* getAdjacencyList(int node);
 
 private:
-    QVector<QVector<int>> adjacencyListOriginal;
-    QVector<QVector<int>> adjacencyList;
-    QVector<bool> visited;
-    QVector<int> stack;
-    QVector<int> lowlink;
-    QVector<int> number;
+    QList<QList<int>> adjacencyListOriginal;
+    QList<QList<int>> adjacencyList;
+    QList<bool> visited;
+    QList<int> stack;
+    QList<int> lowlink;
+    QList<int> number;
     int sccCounter = 0;
-    QVector<QVector<int>> currentSCCs;
+    QList<QList<int>> currentSCCs;
 
     void makeAdjListSubgraph(int node);
-    QVector<int> getLowestIdComponent();
-    QVector<QVector<int>> getAdjList(QVector<int> nodes);
+    QList<int> getLowestIdComponent();
+    QList<QList<int>> getAdjList(QList<int> nodes);
     void getStrongConnectedComponents(int root);
 };
+
+
+
+#endif // CYCLESEARCH_H

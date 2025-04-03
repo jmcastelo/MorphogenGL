@@ -204,6 +204,7 @@ signals:
     void sortedOperationsChanged(QList<QPair<QUuid, QString>> sortedData, QList<QUuid> unsortedData);
     void nodesConnected(QUuid srcId, QUuid dstId, EdgeWidget* widget);
     void nodeRemoved(QUuid id);
+    void nodesDisconnected(QUuid srcId, QUuid dstId);
 
 private:
     QMap<QUuid, ImageOperationNode*> operationNodes;

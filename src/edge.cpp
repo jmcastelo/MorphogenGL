@@ -73,12 +73,19 @@ Edge::Edge(Node* sourceNode, Node* destNode, EdgeWidget *widget, QGraphicsItem* 
 {
     setAcceptedMouseButtons(Qt::NoButton);
     setCacheMode(DeviceCoordinateCache);
+    setZValue(-1);
+
+    // Set proxy
 
     mProxyWidget = new QGraphicsProxyWidget(this);
     mProxyWidget->setWidget(mWidget);
 
+    // Add this edge to source and dest nodes
+
     source->addEdge(this);
     dest->addEdge(this);
+
+    setWidgetVisible(false);
 
     adjust();
 
@@ -88,13 +95,7 @@ Edge::Edge(Node* sourceNode, Node* destNode, EdgeWidget *widget, QGraphicsItem* 
 
     // Connections
 
-    connect(mWidget, &EdgeWidget::remove, this, [=, this](){
-        sourceNode->removeEdge(this);
-        destNode->removeEdge(this);
-
-        scene()->removeItem(this);
-        deleteLater();
-    });
+    connect(mWidget, &EdgeWidget::edgeTypeChanged, this, &Edge::setPredge);
 }
 
 
@@ -128,6 +129,21 @@ Node* Edge::destNode() const
     return dest;
 }
 
+
+
+void Edge::setWidgetVisible(bool visible)
+{
+    mWidgetVisible = visible;
+    mWidget->setVisible(visible);
+}
+
+
+
+void Edge::setPredge(bool predge)
+{
+    mPredge = predge;
+    update();
+}
 
 
 /*void Edge::setPredge(bool set)
@@ -252,7 +268,8 @@ void Edge::adjust()
 
     // Edge widget visible if edge is long enough
 
-    mWidget->setVisible(!mProxyWidget->boundingRect().contains(mProxyWidget->mapFromScene(visibleLine.p1())) && !mProxyWidget->boundingRect().contains(mProxyWidget->mapFromScene(visibleLine.p2())));
+    if (mWidgetVisible)
+        mWidget->setVisible(!mProxyWidget->boundingRect().contains(mProxyWidget->mapFromScene(visibleLine.p1())) && !mProxyWidget->boundingRect().contains(mProxyWidget->mapFromScene(visibleLine.p2())));
 }
 
 

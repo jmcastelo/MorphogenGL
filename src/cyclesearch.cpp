@@ -24,19 +24,19 @@
 
 // Elementary cycles search
 
-ElementaryCyclesSearch::ElementaryCyclesSearch(QVector<QVector<bool>> matrix, QVector<Node*> nodes)
+ElementaryCyclesSearch::ElementaryCyclesSearch(QList<QList<bool>> matrix, QList<Node*> nodes)
 {
     graphNodes = nodes;
     adjacencyList = getAdjacencyList(matrix);
 }
 
-QVector<QVector<int>> ElementaryCyclesSearch::getAdjacencyList(QVector<QVector<bool>> matrix)
+QList<QList<int>> ElementaryCyclesSearch::getAdjacencyList(QList<QList<bool>> matrix)
 {
-     QVector<QVector<int>> list;
+     QList<QList<int>> list;
 
      for (int i = 0; i < matrix.size(); i++)
      {
-         QVector<int> v;
+         QList<int> v;
 
          for (int j = 0; j < matrix[i].size(); j++)
              if (matrix[i][j])
@@ -48,7 +48,7 @@ QVector<QVector<int>> ElementaryCyclesSearch::getAdjacencyList(QVector<QVector<b
      return list;
 }
 
-QVector<QVector<Node*>> ElementaryCyclesSearch::getElementaryCycles()
+QList<QList<Node*>> ElementaryCyclesSearch::getElementaryCycles()
 {
     cycles.clear();
     blocked.clear();
@@ -67,7 +67,7 @@ QVector<QVector<Node*>> ElementaryCyclesSearch::getElementaryCycles()
 
         if(sccResult && !sccResult->adjacencyList.empty())
         {
-            QVector<QVector<int>> scc = sccResult->adjacencyList;
+            QList<QList<int>> scc = sccResult->adjacencyList;
             s = sccResult->lowestNodeId;
 
             for (int i = 0; i < scc.size(); i++)
@@ -90,7 +90,7 @@ QVector<QVector<Node*>> ElementaryCyclesSearch::getElementaryCycles()
     return cycles;
 }
 
-bool ElementaryCyclesSearch::findCycles(int v, int s, QVector<QVector<int>> adjList)
+bool ElementaryCyclesSearch::findCycles(int v, int s, QList<QList<int>> adjList)
 {
     bool f = false;
     stack.push_back(v);
@@ -102,7 +102,7 @@ bool ElementaryCyclesSearch::findCycles(int v, int s, QVector<QVector<int>> adjL
 
         if (w == s)
         {
-            QVector<Node*> cycle;
+            QList<Node*> cycle;
 
             for (int j = 0; j < stack.size(); j++)
                 cycle.push_back(graphNodes[stack[j]]);
@@ -141,7 +141,7 @@ void ElementaryCyclesSearch::unblock(int node)
 {
     blocked[node] = false;
 
-    QVector<int> Bnode = B[node];
+    QList<int> Bnode = B[node];
 
     while (Bnode.size() > 0)
     {
@@ -154,7 +154,7 @@ void ElementaryCyclesSearch::unblock(int node)
 
 // Strong connected components
 
-StrongConnectedComponents::StrongConnectedComponents(QVector<QVector<int>> adjList)
+StrongConnectedComponents::StrongConnectedComponents(QList<QList<int>> adjList)
 {
     adjacencyListOriginal = adjList;
 }
@@ -180,7 +180,7 @@ SCCResult* StrongConnectedComponents::getAdjacencyList(int node)
         {
             getStrongConnectedComponents(i);
 
-            QVector<int> nodes = getLowestIdComponent();
+            QList<int> nodes = getLowestIdComponent();
 
             if(!nodes.contains(node) && !nodes.contains(node + 1))
             {
@@ -188,7 +188,7 @@ SCCResult* StrongConnectedComponents::getAdjacencyList(int node)
             }
             else
             {
-                QVector<QVector<int>> adjList = getAdjList(nodes);
+                QList<QList<int>> adjList = getAdjList(nodes);
                 if (!adjList.empty())
                     for (int j = 0; j < adjacencyListOriginal.size(); j++)
                         if (!adjList[j].empty())
@@ -207,7 +207,7 @@ void StrongConnectedComponents::makeAdjListSubgraph(int node)
 
     for (int i = node; i < adjacencyList.size(); i++)
     {
-        QVector<int> successors;
+        QList<int> successors;
 
         for (int j = 0; j < adjacencyListOriginal[i].size(); j++)
             if (adjacencyListOriginal[i][j] >= node)
@@ -224,15 +224,15 @@ void StrongConnectedComponents::makeAdjListSubgraph(int node)
     }
 }
 
-QVector<int> StrongConnectedComponents::getLowestIdComponent()
+QList<int> StrongConnectedComponents::getLowestIdComponent()
 {
     int min = adjacencyList.size();
 
-    QVector<int> currScc;
+    QList<int> currScc;
 
     for (int i = 0; i < currentSCCs.size(); i++)
     {
-        QVector<int> scc = currentSCCs[i];
+        QList<int> scc = currentSCCs[i];
 
         for (int j = 0; j < scc.size(); j++)
         {
@@ -248,9 +248,9 @@ QVector<int> StrongConnectedComponents::getLowestIdComponent()
     return currScc;
 }
 
-QVector<QVector<int>> StrongConnectedComponents::getAdjList(QVector<int> nodes)
+QList<QList<int>> StrongConnectedComponents::getAdjList(QList<int> nodes)
 {
-    QVector<QVector<int>> lowestIdAdjacencyList;
+    QList<QList<int>> lowestIdAdjacencyList;
 
     if (!nodes.empty())
     {
@@ -299,7 +299,7 @@ void StrongConnectedComponents::getStrongConnectedComponents(int root)
     if (lowlink[root] == number[root] && !stack.empty())
     {
         int next = -1;
-        QVector<int> scc;
+        QList<int> scc;
 
         do
         {
