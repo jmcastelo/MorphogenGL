@@ -14,9 +14,9 @@ class BaseUniformParameter : public Parameter
 public:
     BaseUniformParameter(QString theName, QString theUniformName, int theUniformType, bool isEditable, ImageOperation* theOperation);
 
-    BaseUniformParameter(QString theName, QString theUniformName, int theUniformType, bool isEditable, QList<T> theValues, T theMin, T theMax, T theInf, T theSup, ImageOperation* theOperation);
+    BaseUniformParameter(QString theName, QString theUniformName, int theUniformType, bool isEditable, QList<T> theValues, QList<T> theMin, QList<T> theMax, QList<T> theInf, QList<T> theSup, ImageOperation* theOperation);
 
-    BaseUniformParameter(QString theName, QString theUniformName, int theUniformType, bool isEditable, QList<QPair<QUuid, T>> theIdValuePairs, T theMin, T theMax, T theInf, T theSup, ImageOperation* theOperation);
+    BaseUniformParameter(QString theName, QString theUniformName, int theUniformType, bool isEditable, QList<QUuid> theIds, QList<T> theValues, QList<T> theMin, QList<T> theMax, QList<T> theInf, QList<T> theSup, ImageOperation* theOperation);
 
     BaseUniformParameter(const BaseUniformParameter<T>& parameter);
 
@@ -47,6 +47,7 @@ public:
     QList<QString> presetNames();
 
     QMap<QString, QList<T>> presets();
+    void setPresets(QMap<QString, QList<T>>);
 
     void addPreset(QString name);
     void removePreset(QString name);

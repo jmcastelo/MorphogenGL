@@ -16,6 +16,7 @@ public:
     OptionsParameter(const OptionsParameter<T>& parameter);
 
     void setValue(int valueIndex);
+    void setValue();
 
     T value();
 

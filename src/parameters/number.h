@@ -67,7 +67,10 @@ public:
         emit deleting();
     }
 
-    QUuid id(){ return mId; }
+    QUuid id() const
+    {
+        return mId;
+    }
 
     void setLimits()
     {
@@ -124,7 +127,10 @@ public:
         setIndex();
     }
 
-    T min(){ return mMin; }
+    T min() const
+    {
+        return mMin;
+    }
 
     void setMax(T theMax)
     {
@@ -133,7 +139,10 @@ public:
         setIndex();
     }
 
-    T max(){ return mMax; }
+    T max() const
+    {
+        return mMax;
+    }
 
     void setInf(T theInf)
     {
@@ -141,7 +150,10 @@ public:
         setLimits();
     }
 
-    T inf(){ return mInf; }
+    T inf() const
+    {
+        return mInf;
+    }
 
     void setSup(T theSup)
     {
@@ -149,7 +161,10 @@ public:
         setLimits();
     }
 
-    T sup(){ return mSup; }
+    T sup() const
+    {
+        return mSup;
+    }
 
     void setValue(T theValue)
     {
@@ -165,7 +180,10 @@ public:
         setValue(value);
     }
 
-    T value() { return mValue; }
+    T value() const
+    {
+        return mValue;
+    }
 
     void setIndex()
     {
@@ -173,15 +191,25 @@ public:
         emit indexChanged(index);
     }
 
-    int index()
+    int index() const
     {
         return static_cast<int>(mIndexMax * static_cast<float>(mValue - mMin) / static_cast<float>(mMax - mMin));
     }
 
-    int indexMax() { return mIndexMax; }
-    void setIndexMax(int theIndexMax){ mIndexMax = theIndexMax; }
+    int indexMax() const
+    {
+        return mIndexMax;
+    }
 
-    bool midiLinked(){ return mMidiLinked; }
+    void setIndexMax(int theIndexMax)
+    {
+        mIndexMax = theIndexMax;
+    }
+
+    bool midiLinked() const
+    {
+        return mMidiLinked;
+    }
 
     void setMidiLinked(bool set)
     {

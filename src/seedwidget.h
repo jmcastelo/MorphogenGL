@@ -34,9 +34,9 @@ private:
 
     QAction* outputAction;
     QAction* fixedAction;
+    QAction* imageAction;
 
 private slots:
-    void drawSeed();
     void setFixedSeed(bool fixed);
     void setSeedType();
     void loadSeedImage();

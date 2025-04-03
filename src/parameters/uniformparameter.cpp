@@ -63,7 +63,7 @@ UniformParameter<T>::UniformParameter(const UniformMat4Parameter& parameter) :
 
 
 template <typename T>
-UniformParameter<T>::UniformParameter(QString theName, QString theUniformName, int theUniformType, int numItems, bool isEditable, QList<T> theValues, T theMin, T theMax, T theInf, T theSup, ImageOperation* theOperation) :
+UniformParameter<T>::UniformParameter(QString theName, QString theUniformName, int theUniformType, int numItems, bool isEditable, QList<T> theValues, QList<T> theMin, QList<T> theMax, QList<T> theInf, QList<T> theSup, ImageOperation* theOperation) :
     BaseUniformParameter<T>(theName, theUniformName, theUniformType, isEditable, theValues, theMin, theMax, theInf, theSup, theOperation),
     nItems { numItems }
 {}
@@ -71,8 +71,8 @@ UniformParameter<T>::UniformParameter(QString theName, QString theUniformName, i
 
 
 template <typename T>
-UniformParameter<T>::UniformParameter(QString theName, QString theUniformName, int theUniformType, int numItems, bool isEditable, QList<QPair<QUuid, T>> theIdValuePairs, T theMin, T theMax, T theInf, T theSup, ImageOperation* theOperation) :
-    BaseUniformParameter<T>(theName, theUniformName, theUniformType, isEditable, theIdValuePairs, theMin, theMax, theInf, theSup, theOperation),
+UniformParameter<T>::UniformParameter(QString theName, QString theUniformName, int theUniformType, int numItems, bool isEditable, QList<QUuid> theIds, QList<T> theValues, QList<T> theMin, QList<T> theMax, QList<T> theInf, QList<T> theSup, ImageOperation* theOperation) :
+    BaseUniformParameter<T>(theName, theUniformName, theUniformType, isEditable, theIds, theValues, theMin, theMax, theInf, theSup, theOperation),
     nItems { numItems }
 {}
 

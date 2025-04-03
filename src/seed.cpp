@@ -522,6 +522,20 @@ void Seed::setTextureFormat()
 
 
 
+void Seed::setType(int type)
+{
+    mType = type;
+
+    if (mType == 0 || mType == 1)
+        textureID = &texRandom;
+    else if (mType == 2)
+        textureID = &texImage;
+
+    draw();
+}
+
+
+
 void Seed::resizeFBO(GLuint &fbo, GLuint &texture)
 {
     context->makeCurrent(surface);
@@ -749,8 +763,6 @@ void Seed::drawRandom(bool grayscale)
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     context->doneCurrent();
-
-    textureID = &texRandom;
 }
 
 
@@ -778,8 +790,6 @@ void Seed::drawImage()
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     context->doneCurrent();
-
-    textureID = &texImage;
 }
 
 

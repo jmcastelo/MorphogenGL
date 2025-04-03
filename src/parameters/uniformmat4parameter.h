@@ -26,7 +26,9 @@ class UniformMat4Parameter : public BaseUniformParameter<float>
 public:
     UniformMat4Parameter(QString theName, QString theUniformName, bool isEditable, UniformMat4Type theMat4Type, ImageOperation* theOperation);
 
-    UniformMat4Parameter(QString theName, QString theUniformName, bool isEditable, UniformMat4Type theMat4Type, QList<QPair<QUuid, float>> theIdValuePairs, float theMin, float theMax, float theInf, float theSup, ImageOperation* theOperation);
+    UniformMat4Parameter(QString theName, QString theUniformName, bool isEditable, UniformMat4Type theMat4Type, QList<float> theValues, QList<float> theMin, QList<float> theMax, QList<float> theInf, QList<float> theSup, ImageOperation* theOperation);
+
+    UniformMat4Parameter(QString theName, QString theUniformName, bool isEditable, UniformMat4Type theMat4Type, QList<QUuid> theIds, QList<float> theValues, QList<float> theMin, QList<float> theMax, QList<float> theInf, QList<float> theSup, ImageOperation* theOperation);
 
     UniformMat4Parameter(const UniformMat4Parameter& parameter);
     UniformMat4Parameter(const UniformParameter<float>& parameter, UniformMat4Type theMat4Type);

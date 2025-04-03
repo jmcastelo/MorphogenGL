@@ -64,7 +64,7 @@ public:
     void clear();
 
     int type() const { return mType; }
-    void setType(int type) { mType = type; }
+    void setType(int type);
 
     bool isFixed() const { return fixed; }
     void setFixed(bool set) { fixed = set; }

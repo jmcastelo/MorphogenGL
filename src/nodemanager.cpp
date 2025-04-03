@@ -160,7 +160,10 @@ void ImageOperationNode::setInputType(QUuid id, InputType type)
 void ImageOperationNode::setInputSeedTexId(QUuid id, GLuint** texId)
 {
     if (inputs.contains(id))
+    {
         inputs[id]->textureID = texId;
+        operation->setInputData(inputsList());
+    }
 }
 
 
@@ -1060,21 +1063,15 @@ QPair<QUuid, SeedWidget *> NodeManager::addSeed()
 
     connect(seedWidget, &SeedWidget::typeChanged, this, [=, this](){
         if (isOutput(id))
-            emit outputFBOChanged(seeds.value(id)->getFBO());
-
-        resetInputSeedTexId(id);
-    });
-
-    connect(seedWidget, &SeedWidget::seedDrawn, this, [=, this](){
-        if (isOutput(id))
         {
             outputTextureID = seeds.value(id)->getTextureID();
 
             emit outputTextureChanged(**outputTextureID);
             emit outputFBOChanged(seeds.value(id)->getFBO());
         }
-    });
 
+        resetInputSeedTexId(id);
+    });
 
     connect(seedWidget, &SeedWidget::remove, this, [=, this](){
         emit nodeRemoved(id);
@@ -1148,7 +1145,7 @@ void NodeManager::resetInputSeedTexId(QUuid id)
     if (seeds.contains(id))
     {
         foreach (ImageOperationNode* opNode, operationNodes)
-                opNode->setInputSeedTexId(id, seeds[id]->getTextureID());
+            opNode->setInputSeedTexId(id, seeds[id]->getTextureID());
     }
 }
 

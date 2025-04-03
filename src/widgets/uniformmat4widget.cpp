@@ -95,7 +95,10 @@ void UniformMat4ParameterWidget::setValidators()
 
 
 
-QString UniformMat4ParameterWidget::name() { return mUniformMat4Parameter->name(); }
+QString UniformMat4ParameterWidget::name()
+{
+    return mUniformMat4Parameter->name();
+}
 
 
 
@@ -107,29 +110,54 @@ void UniformMat4ParameterWidget::setName(QString theName)
 
 
 
-void UniformMat4ParameterWidget::setMin(float theMin) { mUniformMat4Parameter->setMin(theMin); }
-void UniformMat4ParameterWidget::setMax(float theMax) { mUniformMat4Parameter->setMax(theMax); }
+void UniformMat4ParameterWidget::setMin(float theMin)
+{
+    ParameterWidget<float>::mSelectedNumber->setMin(theMin);
+}
+
+
+
+void UniformMat4ParameterWidget::setMax(float theMax)
+{
+   ParameterWidget<float>::mSelectedNumber->setMax(theMax);
+}
+
+
 
 void UniformMat4ParameterWidget::setInf(float theInf)
 {
-    mUniformMat4Parameter->setInf(theInf);
+    ParameterWidget<float>::mSelectedNumber->setInf(theInf);
     setValidators();
 }
+
+
 
 void UniformMat4ParameterWidget::setSup(float theSup)
 {
-    mUniformMat4Parameter->setSup(theSup);
+    ParameterWidget<float>::mSelectedNumber->setSup(theSup);
     setValidators();
 }
 
 
 
-void UniformMat4ParameterWidget::setRow(int i) { mUniformMat4Parameter->setRow(i); }
-void UniformMat4ParameterWidget::setCol(int i) { mUniformMat4Parameter->setCol(i); }
+void UniformMat4ParameterWidget::setRow(int i)
+{
+    mUniformMat4Parameter->setRow(i);
+}
 
 
 
-void UniformMat4ParameterWidget::setValueFromIndex(int index) { mUniformMat4Parameter->setValueFromIndex(mLastIndex, index); }
+void UniformMat4ParameterWidget::setCol(int i)
+{
+    mUniformMat4Parameter->setCol(i);
+}
+
+
+
+void UniformMat4ParameterWidget::setValueFromIndex(int index)
+{
+    mUniformMat4Parameter->setValueFromIndex(mLastIndex, index);
+}
 
 
 
@@ -140,4 +168,7 @@ int UniformMat4ParameterWidget::typeIndex() const
 
 
 
-QGroupBox* UniformMat4ParameterWidget::widget() { return ParameterWidget<float>::mGroupBox; }
+QGroupBox* UniformMat4ParameterWidget::widget()
+{
+    return ParameterWidget<float>::mGroupBox;
+}

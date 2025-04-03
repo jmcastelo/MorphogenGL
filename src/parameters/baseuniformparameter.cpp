@@ -16,14 +16,14 @@ BaseUniformParameter<T>::BaseUniformParameter(QString theName, QString theUnifor
 
 
 template <typename T>
-BaseUniformParameter<T>::BaseUniformParameter(QString theName, QString theUniformName, int theUniformType, bool isEditable, QList<T> theValues, T theMin, T theMax, T theInf, T theSup, ImageOperation* theOperation) :
+BaseUniformParameter<T>::BaseUniformParameter(QString theName, QString theUniformName, int theUniformType, bool isEditable, QList<T> theValues, QList<T> theMin, QList<T> theMax, QList<T> theInf, QList<T> theSup, ImageOperation* theOperation) :
     Parameter(theName, isEditable, theOperation),
     mUniformName { theUniformName },
     mUniformType { theUniformType }
 {
-    for (T value : theValues)
+    for (int i = 0; i < theValues.size(); i++)
     {
-        Number<T>* number = new Number<T>(value, theMin, theMax, theInf, theSup);
+        Number<T>* number = new Number<T>(theValues.at(i), theMin.at(i), theMax.at(i), theInf.at(i), theSup.at(i));
         mNumbers.append(number);
     }
 
@@ -34,14 +34,14 @@ BaseUniformParameter<T>::BaseUniformParameter(QString theName, QString theUnifor
 
 
 template <typename T>
-BaseUniformParameter<T>::BaseUniformParameter(QString theName, QString theUniformName, int theUniformType, bool isEditable, QList<QPair<QUuid, T>> theIdValuePairs, T theMin, T theMax, T theInf, T theSup, ImageOperation* theOperation) :
+BaseUniformParameter<T>::BaseUniformParameter(QString theName, QString theUniformName, int theUniformType, bool isEditable, QList<QUuid> theIds, QList<T> theValues, QList<T> theMin, QList<T> theMax, QList<T> theInf, QList<T> theSup, ImageOperation* theOperation) :
     Parameter(theName, isEditable, theOperation),
     mUniformName { theUniformName },
     mUniformType { theUniformType }
 {
-    foreach (auto pair, theIdValuePairs)
+    for (int i = 0; i < theValues.size(); i++)
     {
-        Number<T>* number = new Number<T>(pair.first, pair.second, theMin, theMax, theInf, theSup);
+        Number<T>* number = new Number<T>(theIds.at(i), theValues.at(i), theMin.at(i), theMax.at(i), theInf.at(i), theSup.at(i));
         mNumbers.append(number);
     }
 
@@ -77,11 +77,20 @@ BaseUniformParameter<T>::~BaseUniformParameter()
 }
 
 
-template <typename T>
-QString BaseUniformParameter<T>::uniformName() const { return mUniformName; }
 
 template <typename T>
-int BaseUniformParameter<T>::uniformType() const { return mUniformType; }
+QString BaseUniformParameter<T>::uniformName() const
+{
+    return mUniformName;
+}
+
+
+
+template <typename T>
+int BaseUniformParameter<T>::uniformType() const
+{
+    return mUniformType;
+}
 
 
 
@@ -216,6 +225,14 @@ template <typename T>
 QMap<QString, QList<T>> BaseUniformParameter<T>::presets()
 {
     return mPresets;
+}
+
+
+
+template <typename T>
+void BaseUniformParameter<T>::setPresets(QMap<QString, QList<T>> thePresets)
+{
+    mPresets = thePresets;
 }
 
 

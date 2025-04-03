@@ -279,12 +279,12 @@ void ImageOperation::clear()
 
 void ImageOperation::setInputData(QList<InputData *> data)
 {
-    /*if (data.size() == 1)
+    if (data.size() == 1)
     {
         blenderEnabled = false;
         fbo->setInputTextureID(*data[0]->textureID);
     }
-    else*/
+    else
     {
         blenderEnabled = true;
         fbo->setInputTextureID(*blender->getTextureID());

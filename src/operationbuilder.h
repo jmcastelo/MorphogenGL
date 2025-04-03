@@ -36,7 +36,7 @@ public:
     void removeUniformFloatParameter(UniformParameter<float>* parameter);
 
 signals:
-    void shadersParsed();
+    void operationSetUp();
 
 private:
     QOpenGLContext* mContext;

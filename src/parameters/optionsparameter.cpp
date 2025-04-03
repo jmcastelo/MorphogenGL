@@ -37,6 +37,14 @@ void OptionsParameter<T>::setValue(int valueIndex)
 
 
 template <typename T>
+void OptionsParameter<T>::setValue()
+{
+    mOperation->setOptionsParameter<T>(this);
+}
+
+
+
+template <typename T>
 T OptionsParameter<T>::value(){ return mCurrentValue; }
 
 

@@ -24,23 +24,6 @@ SeedWidget::SeedWidget(Seed *seed, QWidget *parent) :
     QToolBar* headerToolBar = new QToolBar;
     headerToolBar->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
 
-    // Draw seed action
-
-    headerToolBar->addAction(QIcon(QPixmap(":/icons/applications-graphics.png")), "Draw", this, &SeedWidget::drawSeed);
-
-    // Set as output action
-
-    outputAction = headerToolBar->addAction(QIcon(QPixmap(":/icons/eye.png")), "Set as output", this, &SeedWidget::outputChanged);
-    outputAction->setCheckable(true);
-
-    // Set fixed action
-
-    fixedAction = headerToolBar->addAction(mSeed->isFixed() ? QIcon(QPixmap(":/icons/document-encrypt.png")) : QIcon(QPixmap(":/icons/document-decrypt.png")), mSeed->isFixed() ? "Fixed" : "Not fixed", this, &SeedWidget::setFixedSeed);
-    fixedAction->setCheckable(true);
-    fixedAction->setChecked(mSeed->isFixed());
-
-    headerToolBar->addSeparator();
-
     // Seed type actions
 
     QAction* colorAction = headerToolBar->addAction(QIcon(QPixmap(":/icons/color-chooser.png")), "Random: color", this, &SeedWidget::setSeedType);
@@ -51,7 +34,8 @@ SeedWidget::SeedWidget(Seed *seed, QWidget *parent) :
     grayScaleAction->setCheckable(true);
     grayScaleAction->setData(QVariant(1));
 
-    QAction* imageAction = headerToolBar->addAction(QIcon(QPixmap(":/icons/image-x-generic.png")), "Image", this, &SeedWidget::setSeedType);
+    imageAction = headerToolBar->addAction(QIcon(QPixmap(":/icons/image-x-generic.png")), "Image", this, &SeedWidget::setSeedType);
+    imageAction->setEnabled(false);
     imageAction->setCheckable(true);
     imageAction->setData(QVariant(2));
 
@@ -69,6 +53,19 @@ SeedWidget::SeedWidget(Seed *seed, QWidget *parent) :
     // Load seed image action
 
     headerToolBar->addAction(QIcon(QPixmap(":/icons/folder-image.png")), "Load image", this, &SeedWidget::loadSeedImage);
+
+    headerToolBar->addSeparator();
+
+    // Set as output action
+
+    outputAction = headerToolBar->addAction(QIcon(QPixmap(":/icons/eye.png")), "Set as output", this, &SeedWidget::outputChanged);
+    outputAction->setCheckable(true);
+
+    // Set fixed action
+
+    fixedAction = headerToolBar->addAction(mSeed->isFixed() ? QIcon(QPixmap(":/icons/document-encrypt.png")) : QIcon(QPixmap(":/icons/document-decrypt.png")), mSeed->isFixed() ? "Fixed" : "Not fixed", this, &SeedWidget::setFixedSeed);
+    fixedAction->setCheckable(true);
+    fixedAction->setChecked(mSeed->isFixed());
 
     headerToolBar->addSeparator();
 
@@ -105,14 +102,6 @@ SeedWidget::SeedWidget(Seed *seed, QWidget *parent) :
 
 
 
-void SeedWidget::drawSeed()
-{
-    mSeed->draw();
-    emit seedDrawn();
-}
-
-
-
 void SeedWidget::setFixedSeed(bool fixed)
 {
     mSeed->setFixed(fixed);
@@ -126,7 +115,10 @@ void SeedWidget::setFixedSeed(bool fixed)
 void SeedWidget::setSeedType()
 {
     QAction* action = qobject_cast<QAction*>(sender());
-    mSeed->setType(action->data().toInt());
+    int type = action->data().toInt();
+
+    mSeed->setType(type);
+
     emit typeChanged();
 }
 
@@ -137,7 +129,10 @@ void SeedWidget::loadSeedImage()
     QString filename = QFileDialog::getOpenFileName(this, "Load image", QDir::homePath(), "Images (*.bmp *.jpeg *.jpg *.png *.tif *.tiff)");
 
     if (!filename.isEmpty())
+    {
         mSeed->loadImage(filename);
+        imageAction->setEnabled(true);
+    }
 }
 
 

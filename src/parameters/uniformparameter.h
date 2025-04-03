@@ -17,9 +17,9 @@ class UniformParameter : public BaseUniformParameter<T>
 public:
     UniformParameter(QString theName, QString theUniformName, int theUniformType, int numItems, bool isEditable, ImageOperation* theOperation);
 
-    UniformParameter(QString theName, QString theUniformName, int theUniformType, int numItems, bool isEditable, QList<T> theValues, T theMin, T theMax, T theInf, T theSup, ImageOperation* theOperation);
+    UniformParameter(QString theName, QString theUniformName, int theUniformType, int numItems, bool isEditable, QList<T> theValues, QList<T> theMin, QList<T> theMax, QList<T> theInf, QList<T> theSup, ImageOperation* theOperation);
 
-    UniformParameter(QString theName, QString theUniformName, int theUniformType, int numItems, bool isEditable, QList<QPair<QUuid, T>> theIdValuePairs, T theMin, T theMax, T theInf, T theSup, ImageOperation* theOperation);
+    UniformParameter(QString theName, QString theUniformName, int theUniformType, int numItems, bool isEditable, QList<QUuid> theIds, QList<T> theValues, QList<T> theMin, QList<T> theMax, QList<T> theInf, QList<T> theSup, ImageOperation* theOperation);
 
     UniformParameter(const UniformParameter<T>& parameter);
 

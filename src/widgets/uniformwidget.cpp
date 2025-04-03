@@ -124,7 +124,12 @@ void UniformParameterWidget<T>::setValidators()
 
 
 template <typename T>
-QString UniformParameterWidget<T>::name() { return mUniformParameter->name(); }
+QString UniformParameterWidget<T>::name()
+{
+    return mUniformParameter->name();
+}
+
+
 
 template <typename T>
 void UniformParameterWidget<T>::setName(QString theName)
@@ -136,42 +141,68 @@ void UniformParameterWidget<T>::setName(QString theName)
 
 
 template <typename T>
-void UniformParameterWidget<T>::setMin(T theMin) { mUniformParameter->setMin(theMin); }
+void UniformParameterWidget<T>::setMin(T theMin)
+{
+    ParameterWidget<T>::mSelectedNumber->setMin(theMin);
+}
+
+
 
 template <typename T>
-void UniformParameterWidget<T>::setMax(T theMax) { mUniformParameter->setMax(theMax); }
+void UniformParameterWidget<T>::setMax(T theMax)
+{
+    ParameterWidget<T>::mSelectedNumber->setMax(theMax);
+}
+
+
 
 template <typename T>
 void UniformParameterWidget<T>::setInf(T theInf)
 {
-    mUniformParameter->setInf(theInf);
+    ParameterWidget<T>::mSelectedNumber->setInf(theInf);
     setValidators();
 }
+
+
 
 template <typename T>
 void UniformParameterWidget<T>::setSup(T theSup)
 {
-    mUniformParameter->setSup(theSup);
+    ParameterWidget<T>::mSelectedNumber->setSup(theSup);
     setValidators();
 }
 
 
 
 template <typename T>
-bool UniformParameterWidget<T>::isEditable(){ return mUniformParameter->editable(); }
+bool UniformParameterWidget<T>::isEditable()
+{
+    return mUniformParameter->editable();
+}
 
 
 
 template <typename T>
-void UniformParameterWidget<T>::setRow(int i) { mUniformParameter->setRow(i); }
+void UniformParameterWidget<T>::setRow(int i)
+{
+    mUniformParameter->setRow(i);
+}
+
+
 
 template <typename T>
-void UniformParameterWidget<T>::setCol(int i) { mUniformParameter->setCol(i); }
+void UniformParameterWidget<T>::setCol(int i)
+{
+    mUniformParameter->setCol(i);
+}
 
 
 
 template <typename T>
-void UniformParameterWidget<T>::setValueFromIndex(int index) { mUniformParameter->setValueFromIndex(mLastIndex, index); }
+void UniformParameterWidget<T>::setValueFromIndex(int index)
+{
+    mUniformParameter->setValueFromIndex(mLastIndex, index);
+}
 
 
 
@@ -185,7 +216,10 @@ void UniformParameterWidget<T>::setCurrentStack(int index)
 
 
 template <typename T>
-int UniformParameterWidget<T>::layoutFormatIndex() { return mAvailFormats.indexOf(mLayoutFormat); }
+int UniformParameterWidget<T>::layoutFormatIndex()
+{
+    return mAvailFormats.indexOf(mLayoutFormat);
+}
 
 
 

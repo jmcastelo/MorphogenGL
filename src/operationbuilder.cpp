@@ -83,8 +83,8 @@ OperationBuilder::OperationBuilder(ImageOperation *operation, QWidget *parent) :
     shadersTabWidget->addTab(overviewWidget, "Overview");
 
     connect(setupOperationButton, &QPushButton::clicked, this, [=, this](){
-        mOperation->setup(vertexShader, fragmentShader);
-        emit shadersParsed();
+        mOperation->setup(vertexEditor->toPlainText(), fragmentEditor->toPlainText());
+        emit operationSetUp();
         mOperation->enableUpdate(true);
     });
 
@@ -150,6 +150,67 @@ void OperationBuilder::removeUniformFloatParameter(UniformParameter<float>* para
 
 void OperationBuilder::loadOperation()
 {
+    QString path = QFileDialog::getOpenFileName(this, "Load operation", QDir::currentPath() + "/operations", "Operations (*.op)");
+
+    if (!path.isEmpty())
+    {
+        mOperation->enableUpdate(true);
+
+        OperationParser opParser;
+        opParser.read(mOperation, path, false);
+
+        // Shaders
+
+        vertexShader = mOperation->vertexShader();
+        fragmentShader = mOperation->fragmentShader();
+
+        vertexEditor->setPlainText(vertexShader);
+        fragmentEditor->setPlainText(fragmentShader);
+
+        // Uniforms
+
+        fParamMap.clear();
+        iParamMap.clear();
+        uiParamMap.clear();
+        mat4ParamMap.clear();
+        paramList.clear();
+
+        foreach (auto parameter, mOperation->uniformParameters<float>())
+        {
+            fParamMap.insert(parameter->uniformName(), parameter);
+            paramList.append(parameter->uniformName());
+        }
+
+        foreach (auto parameter, mOperation->uniformParameters<int>())
+        {
+            iParamMap.insert(parameter->uniformName(), parameter);
+            paramList.append(parameter->uniformName());
+        }
+
+        foreach (auto parameter, mOperation->uniformParameters<unsigned int>())
+        {
+            uiParamMap.insert(parameter->uniformName(), parameter);
+            paramList.append(parameter->uniformName());
+        }
+
+        foreach (auto parameter, mOperation->mat4UniformParameters())
+        {
+            mat4ParamMap.insert(parameter->uniformName(), parameter);
+            paramList.append(parameter->uniformName());
+        }
+
+        // Input attributes
+
+        inAttribList.clear();
+        inAttribList.append(mOperation->posInAttribName());
+        inAttribList.append(mOperation->texInAttribName());
+
+        setAttribComboBox();
+
+        setupOperationButton->setEnabled(true);
+
+        emit operationSetUp();
+    }
 
 }
 

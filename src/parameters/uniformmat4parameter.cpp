@@ -15,30 +15,63 @@ UniformMat4Parameter::UniformMat4Parameter(QString theName, QString theUniformNa
 
 
 
-UniformMat4Parameter::UniformMat4Parameter(QString theName, QString theUniformName, bool isEditable, UniformMat4Type theMat4Type, QList<QPair<QUuid, float>> theIdValuePairs, float theMin, float theMax, float theInf, float theSup, ImageOperation* theOperation) :
+UniformMat4Parameter::UniformMat4Parameter(QString theName, QString theUniformName, bool isEditable, UniformMat4Type theMat4Type, QList<float> theValues, QList<float> theMin, QList<float> theMax, QList<float> theInf, QList<float> theSup, ImageOperation* theOperation) :
     BaseUniformParameter<float>(theName, theUniformName, GL_FLOAT_MAT4, isEditable, theOperation),
     mType { theMat4Type }
 {
     if (mType == UniformMat4Type::TRANSLATION)
     {
         mNumberNames.append("X");
-        mNumbers.append(new Number<float>(theIdValuePairs.at(0).first, theIdValuePairs.at(0).second, theMin, theMax, theInf, theSup));
+        mNumbers.append(new Number<float>(theValues.at(0), theMin.at(0), theMax.at(0), theInf.at(0), theSup.at(0)));
 
         mNumberNames.append("Y");
-        mNumbers.append(new Number<float>(theIdValuePairs.at(1).first, theIdValuePairs.at(1).second, theMin, theMax, theInf, theSup));
+        mNumbers.append(new Number<float>(theValues.at(1), theMin.at(1), theMax.at(1), theInf.at(1), theSup.at(1)));
     }
     else if (mType == UniformMat4Type::ROTATION)
     {
         mNumberNames.append("Angle");
-        mNumbers.append(new Number<float>(theIdValuePairs.at(0).first, theIdValuePairs.at(0).second, theMin, theMax, theInf, theSup));
+        mNumbers.append(new Number<float>(theValues.at(0), theMin.at(0), theMax.at(0), theInf.at(0), theSup.at(0)));
     }
     else if (mType == UniformMat4Type::SCALING)
     {
         mNumberNames.append("X");
-        mNumbers.append(new Number<float>(theIdValuePairs.at(0).first, theIdValuePairs.at(0).second, theMin, theMax, theInf, theSup));
+        mNumbers.append(new Number<float>(theValues.at(0), theMin.at(0), theMax.at(0), theInf.at(0), theSup.at(0)));
 
         mNumberNames.append("Y");
-        mNumbers.append(new Number<float>(theIdValuePairs.at(1).first, theIdValuePairs.at(1).second, theMin, theMax, theInf, theSup));
+        mNumbers.append(new Number<float>(theValues.at(1), theMin.at(1), theMax.at(1), theInf.at(1), theSup.at(1)));
+    }
+    else if (mType == UniformMat4Type::ORTHOGRAPHIC)
+    {
+        mOperation->setOrthographicProjection(mUniformName);
+    }
+}
+
+
+
+UniformMat4Parameter::UniformMat4Parameter(QString theName, QString theUniformName, bool isEditable, UniformMat4Type theMat4Type, QList<QUuid> theIds, QList<float> theValues, QList<float> theMin, QList<float> theMax, QList<float> theInf, QList<float> theSup, ImageOperation* theOperation) :
+    BaseUniformParameter<float>(theName, theUniformName, GL_FLOAT_MAT4, isEditable, theOperation),
+    mType { theMat4Type }
+{
+    if (mType == UniformMat4Type::TRANSLATION)
+    {
+        mNumberNames.append("X");
+        mNumbers.append(new Number<float>(theIds.at(0), theValues.at(0), theMin.at(0), theMax.at(0), theInf.at(0), theSup.at(0)));
+
+        mNumberNames.append("Y");
+        mNumbers.append(new Number<float>(theIds.at(1), theValues.at(1), theMin.at(1), theMax.at(1), theInf.at(1), theSup.at(1)));
+    }
+    else if (mType == UniformMat4Type::ROTATION)
+    {
+        mNumberNames.append("Angle");
+        mNumbers.append(new Number<float>(theIds.at(0), theValues.at(0), theMin.at(0), theMax.at(0), theInf.at(0), theSup.at(0)));
+    }
+    else if (mType == UniformMat4Type::SCALING)
+    {
+        mNumberNames.append("X");
+        mNumbers.append(new Number<float>(theIds.at(0), theValues.at(0), theMin.at(0), theMax.at(0), theInf.at(0), theSup.at(0)));
+
+        mNumberNames.append("Y");
+        mNumbers.append(new Number<float>(theIds.at(1), theValues.at(1), theMin.at(1), theMax.at(1), theInf.at(1), theSup.at(1)));
     }
     else if (mType == UniformMat4Type::ORTHOGRAPHIC)
     {

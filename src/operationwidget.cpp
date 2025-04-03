@@ -15,7 +15,7 @@ OperationWidget::OperationWidget(ImageOperation* operation, bool midiEnabled, bo
     mOpBuilder->installEventFilter(this);
     mOpBuilder->setVisible(false);
 
-    connect(mOpBuilder, &OperationBuilder::shadersParsed, this, &OperationWidget::recreate);
+    connect(mOpBuilder, &OperationBuilder::operationSetUp, this, &OperationWidget::recreate);
 
     mainLayout = new QVBoxLayout;
     mainLayout->setSizeConstraint(QLayout::SetMinAndMaxSize);
@@ -62,6 +62,10 @@ OperationWidget::OperationWidget(ImageOperation* operation, bool midiEnabled, bo
 
     headerToolBar->addSeparator();
 
+    // Delete action
+
+    headerToolBar->addAction(QIcon(QPixmap(":/icons/dialog-close.png")), "Delete", this, &OperationWidget::remove);
+
     // Operation name label
 
     opNameLabel = new QLabel;
@@ -84,10 +88,6 @@ OperationWidget::OperationWidget(ImageOperation* operation, bool midiEnabled, bo
         selParamWidget->adjustSize();
         adjustSize();
     });
-
-    headerToolBar->addSeparator();
-
-    headerToolBar->addAction(QIcon(QPixmap(":/icons/dialog-close.png")), "Delete", this, &OperationWidget::remove);
 
     QHBoxLayout* headerLayout = new QHBoxLayout;
     headerLayout->addWidget(headerToolBar, 0);
@@ -857,16 +857,16 @@ void OperationWidget::updateSelParamEditControls(ParameterWidget<T>* widget)
 
     connect(number, &Number<T>::minChanged, this, [=, this](){
         selParamMinLineEdit->setText(QString::number(number->min()));
-        widget->setMin(number->min());
+        number->setMin(number->min());
     });
 
     connect(selParamMinLineEdit, &FocusLineEdit::editingFinished, this, [=, this](){
         if (std::is_same<T, float>::value)
-            widget->setMin(selParamMinLineEdit->text().toFloat());
+            number->setMin(selParamMinLineEdit->text().toFloat());
         else if (std::is_same<T, int>::value)
-            widget->setMin(selParamMinLineEdit->text().toInt());
+            number->setMin(selParamMinLineEdit->text().toInt());
         else if (std::is_same<T, unsigned int>::value)
-            widget->setMin(selParamMinLineEdit->text().toUInt());
+            number->setMin(selParamMinLineEdit->text().toUInt());
     });
 
     connect(selParamMinLineEdit, &FocusLineEdit::focusOut, this, [=, this](){
@@ -914,16 +914,16 @@ void OperationWidget::updateSelParamEditControls(ParameterWidget<T>* widget)
 
     connect(number, &Number<T>::maxChanged, this, [=, this](){
         selParamMaxLineEdit->setText(QString::number(number->max()));
-        widget->setMax(number->max());
+        number->setMax(number->max());
     });
 
     connect(selParamMaxLineEdit, &FocusLineEdit::editingFinished, this, [=, this](){
         if (std::is_same<T, float>::value)
-            widget->setMax(selParamMaxLineEdit->text().toFloat());
+            number->setMax(selParamMaxLineEdit->text().toFloat());
         else if (std::is_same<T, int>::value)
-            widget->setMax(selParamMaxLineEdit->text().toInt());
+            number->setMax(selParamMaxLineEdit->text().toInt());
         else if (std::is_same<T, unsigned int>::value)
-            widget->setMax(selParamMaxLineEdit->text().toUInt());
+            number->setMax(selParamMaxLineEdit->text().toUInt());
     });
 
     connect(selParamMaxLineEdit, &FocusLineEdit::focusOut, this, [=, this](){
