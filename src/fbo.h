@@ -51,7 +51,7 @@ public:
     FBO(QOpenGLContext* mainContext);
     virtual ~FBO();
 
-    void setShadersFromSourceCode(QString vertexShader, QString fragmentShader);
+    bool setShadersFromSourceCode(QString vertexShader, QString fragmentShader);
     void setShadersFromSourceFile(QString vertexShader, QString fragmentShader);
 
     GLuint getFBO() { return fboBlit; }

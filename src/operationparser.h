@@ -16,10 +16,10 @@ public:
     OperationParser();
 
     void write(ImageOperation* operation, QString filename, bool writeIds);
-    void read(ImageOperation* operation, QString filename, bool readIds);
+    bool read(ImageOperation* operation, QString filename, bool readIds);
 
     void writeOperation(ImageOperation* operation, QXmlStreamWriter& stream, bool writeIds);
-    void readOperation(ImageOperation* operation, QXmlStreamReader& stream, bool readIds);
+    bool readOperation(ImageOperation* operation, QXmlStreamReader& stream, bool readIds);
 
     void writeMat4Parameters(ImageOperation* operation, QXmlStreamWriter& stream, bool writeIds);
     void readMat4Parameters(ImageOperation* operation, QXmlStreamReader& stream, bool readIds);

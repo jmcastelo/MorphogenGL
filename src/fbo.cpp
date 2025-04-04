@@ -24,6 +24,7 @@
 
 #include "fbo.h"
 
+#include <QApplication>
 #include <QMessageBox>
 
 
@@ -265,18 +266,28 @@ FBO::~FBO()
 
 
 
-void FBO::setShadersFromSourceCode(QString vertexShader, QString fragmentShader)
+bool FBO::setShadersFromSourceCode(QString vertexShader, QString fragmentShader)
 {
     program->removeAllShaders();
 
     if (!program->addShaderFromSourceCode(QOpenGLShader::Vertex, vertexShader))
-        qDebug() << "Vertex shader error:\n" << program->log();
+    {
+        QMessageBox::information(qApp->activeWindow(), "Vertex shader error", program->log());
+        return false;
+    }
     if (!program->addShaderFromSourceCode(QOpenGLShader::Fragment, fragmentShader))
-        qDebug() << "Fragment shader error:\n" << program->log();
+    {
+        QMessageBox::information(qApp->activeWindow(), "Fragment shader error", program->log());
+        return false;
+    }
     if (!program->link())
-        qDebug() << "Shader link error:\n" << program->log();
+    {
+        QMessageBox::information(qApp->activeWindow(), "Shader link error", program->log());
+        return false;
+    }
 
     resizeVertices();
+    return true;
 }
 
 

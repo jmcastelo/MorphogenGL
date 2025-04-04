@@ -103,13 +103,13 @@ ImageOperation::~ImageOperation()
 
 
 
-void ImageOperation::setup(QString theVertexShader, QString theFragmentShader)
+bool ImageOperation::setup(QString theVertexShader, QString theFragmentShader)
 {
     mVertexShader = theVertexShader;
     mFragmentShader = theFragmentShader;
 
-    fbo->setShadersFromSourceCode(mVertexShader, mFragmentShader);
     fbo->setInputTextureID(*blender->getTextureID());
+    return fbo->setShadersFromSourceCode(mVertexShader, mFragmentShader);
 }
 
 

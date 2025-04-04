@@ -56,7 +56,7 @@ public:
 
     ~ImageOperation();
 
-    void setup(QString theVertexShader, QString theFragmentShader);
+    bool setup(QString theVertexShader, QString theFragmentShader);
 
     QOpenGLContext* context(){ return mContext; }
 

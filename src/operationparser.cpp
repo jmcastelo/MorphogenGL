@@ -35,7 +35,7 @@ void OperationParser::write(ImageOperation *operation, QString filename, bool wr
 
 
 
-void OperationParser::read(ImageOperation* operation, QString filename, bool readIds)
+bool OperationParser::read(ImageOperation* operation, QString filename, bool readIds)
 {
     QFile inFile(filename);
     inFile.open(QIODevice::ReadOnly);
@@ -43,16 +43,20 @@ void OperationParser::read(ImageOperation* operation, QString filename, bool rea
     QXmlStreamReader mStream;
     mStream.setDevice(&inFile);
 
-    if (mStream.readNextStartElement() && mStream.name() == "fosforo")
-        readOperation(operation, mStream, readIds);
+    bool success = false;
 
-    if (mStream.tokenType() == QXmlStreamReader::Invalid)
+    if (mStream.readNextStartElement() && mStream.name() == "fosforo")
+        success = readOperation(operation, mStream, readIds);
+
+    /*if (mStream.tokenType() == QXmlStreamReader::Invalid)
         mStream.readNext();
 
     if (mStream.hasError())
-        mStream.raiseError();
+        mStream.raiseError();*/
 
     inFile.close();
+
+    return success;
 }
 
 
@@ -66,14 +70,14 @@ void OperationParser::writeOperation(ImageOperation *operation, QXmlStreamWriter
     stream.writeAttribute("name", operation->name());
     stream.writeAttribute("enabled", QString::number(operation->isEnabled()));
 
-    // Shaders
+    // Shaders: encoded in base64
 
     stream.writeStartElement("vertex_shader");
-    stream.writeCharacters(operation->vertexShader());
+    stream.writeCharacters(QString::fromUtf8(operation->vertexShader().toUtf8().toBase64()));
     stream.writeEndElement();
 
     stream.writeStartElement("fragment_shader");
-    stream.writeCharacters(operation->fragmentShader());
+    stream.writeCharacters(QString::fromUtf8(operation->fragmentShader().toUtf8().toBase64()));
     stream.writeEndElement();
 
     // In attributes
@@ -105,7 +109,7 @@ void OperationParser::writeOperation(ImageOperation *operation, QXmlStreamWriter
 
 
 
-void OperationParser::readOperation(ImageOperation* operation, QXmlStreamReader& stream, bool readIds)
+bool OperationParser::readOperation(ImageOperation* operation, QXmlStreamReader& stream, bool readIds)
 {
     // Operation
 
@@ -126,15 +130,25 @@ void OperationParser::readOperation(ImageOperation* operation, QXmlStreamReader&
         {
             if (stream.name() == "vertex_shader")
             {
-                vertexShader = stream.readElementText();
+                vertexShader = QString::fromUtf8(QByteArray::fromBase64(stream.readElementText().toUtf8()));
+
                 if (!vertexShader.isEmpty() && !fragmentShader.isEmpty())
-                    operation->setup(vertexShader, fragmentShader);
+                    if (!operation->setup(vertexShader, fragmentShader))
+                    {
+                        stream.raiseError("GLSL Shaders error");
+                        return false;
+                    }
             }
             else if (stream.name() == "fragment_shader")
             {
-                fragmentShader = stream.readElementText();
+                fragmentShader = QString::fromUtf8(QByteArray::fromBase64(stream.readElementText().toUtf8()));
+
                 if (!vertexShader.isEmpty() && !fragmentShader.isEmpty())
-                    operation->setup(vertexShader, fragmentShader);
+                    if (!operation->setup(vertexShader, fragmentShader))
+                    {
+                        stream.raiseError("GLSL Shaders error");
+                        return false;
+                    }
             }
             else if (stream.name() == "input_attributes")
             {
@@ -174,7 +188,11 @@ void OperationParser::readOperation(ImageOperation* operation, QXmlStreamReader&
         }
 
         operation->resize();
+
+        return true;
     }
+
+    return false;
 }
 
 

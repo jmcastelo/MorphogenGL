@@ -83,9 +83,15 @@ OperationBuilder::OperationBuilder(ImageOperation *operation, QWidget *parent) :
     shadersTabWidget->addTab(overviewWidget, "Overview");
 
     connect(setupOperationButton, &QPushButton::clicked, this, [=, this](){
-        mOperation->setup(vertexEditor->toPlainText(), fragmentEditor->toPlainText());
-        emit operationSetUp();
-        mOperation->enableUpdate(true);
+        if (mOperation->setup(vertexEditor->toPlainText(), fragmentEditor->toPlainText()))
+        {
+            emit operationSetUp();
+            mOperation->enableUpdate(true);
+        }
+        else
+        {
+             QMessageBox::information(this, "GLSL Shaders error", "Could not set up operation due to GLSL shaders error.");
+        }
     });
 
     // Layouts
@@ -154,10 +160,33 @@ void OperationBuilder::loadOperation()
 
     if (!path.isEmpty())
     {
+        // Clear data
+
+        vertexEditor->clear();
+        fragmentEditor->clear();
+
+        fParamMap.clear();
+        iParamMap.clear();
+        uiParamMap.clear();
+        mat4ParamMap.clear();
+        paramList.clear();
+
+        inAttribList.clear();
+
+        attrComboBox->clear();
+
+        setupOperationButton->setEnabled(false);
+
+        // Parse operation
+
         mOperation->enableUpdate(true);
 
         OperationParser opParser;
-        opParser.read(mOperation, path, false);
+        if (!opParser.read(mOperation, path, false))
+        {
+            emit operationSetUp();
+            return;
+        }
 
         // Shaders
 
@@ -168,12 +197,6 @@ void OperationBuilder::loadOperation()
         fragmentEditor->setPlainText(fragmentShader);
 
         // Uniforms
-
-        fParamMap.clear();
-        iParamMap.clear();
-        uiParamMap.clear();
-        mat4ParamMap.clear();
-        paramList.clear();
 
         foreach (auto parameter, mOperation->uniformParameters<float>())
         {
@@ -201,7 +224,6 @@ void OperationBuilder::loadOperation()
 
         // Input attributes
 
-        inAttribList.clear();
         inAttribList.append(mOperation->posInAttribName());
         inAttribList.append(mOperation->texInAttribName());
 
@@ -211,7 +233,6 @@ void OperationBuilder::loadOperation()
 
         emit operationSetUp();
     }
-
 }
 
 
