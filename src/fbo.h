@@ -28,6 +28,7 @@
 
 
 #include "texformat.h"
+#include "imageoperation.h"
 
 #include <QOpenGLExtraFunctions>
 #include <QOpenGLContext>
@@ -47,15 +48,14 @@ public:
     FBO(QOpenGLContext* shareContext);
     ~FBO();
 
-    GLuint fboId() const;
-    GLuint textureId() const;
-
     //GLuint** getTextureID() { return &texID; }
     //void setInputTextureID(GLuint* id) { inputTextureID = id; }
 
+    void render();
+    void blend();
+
     void generateFramebuffer(GLuint& framebuffer, GLuint& texture);
 
-    void setMinMagFilter(GLenum filter);
     void setTextureFormat();
 
     void resize();
@@ -70,14 +70,8 @@ private:
     QOffscreenSurface* mSurface;
 
     GLuint mFbo;
-    GLuint mTextureId = 0;
 
-    //GLuint *texID;
-
-    GLenum mMinMagFilter = GL_NEAREST;
-    //GLuint* inputTextureID;
-
-    GLuint mSamplerId = 0;
+    QList<ImageOperation*> sortedOperations;
 
     GLuint widthOld;
     GLuint heightOld;

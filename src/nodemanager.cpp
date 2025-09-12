@@ -99,7 +99,7 @@ int ImageOperationNode::numNonNormalInputs()
     int count = 0;
 
     foreach (InputData* data, inputs)
-        if (data->type != InputType::Normal)
+        if (data->type() != InputType::Normal)
             count++;
 
     return count;
@@ -118,7 +118,7 @@ bool ImageOperationNode::isBlitConnected()
 {
     foreach (ImageOperationNode* node, outputNodes)
         foreach (InputData* input, node->inputs)
-            if (input->type == InputType::Blit)
+            if (input->type() == InputType::Blit)
                 return true;
     return false;
 }
@@ -141,27 +141,27 @@ void ImageOperationNode::removeOutput(ImageOperationNode *node)
 
 void ImageOperationNode::setInputType(QUuid id, InputType type)
 {
-    inputs[id]->type = type;
+    inputs[id]->setType(type);
 
     if (type == InputType::Normal)
     {
-        inputs[id]->textureID = inputNodes.value(id)->operation->getTextureID();
+        inputs[id]->setTextureId(inputNodes.value(id)->operation->outTextureId());
         inputNodes.value(id)->operation->enableBlit(false);
     }
     else if (type == InputType::Blit)
     {
-        inputs[id]->textureID = inputNodes.value(id)->operation->getTextureBlit();
+        inputs[id]->setTextureId(inputNodes.value(id)->operation->blitTextureId());
         inputNodes.value(id)->operation->enableBlit(true);
     }
 }
 
 
 
-void ImageOperationNode::setInputSeedTexId(QUuid id, GLuint** texId)
+void ImageOperationNode::setInputSeedTexId(QUuid id, GLuint texId)
 {
     if (inputs.contains(id))
     {
-        inputs[id]->textureID = texId;
+        inputs[id]->setTextureId(texId);
         operation->setInputData(inputsList());
     }
 }
@@ -171,7 +171,7 @@ void ImageOperationNode::setInputSeedTexId(QUuid id, GLuint** texId)
 bool ImageOperationNode::allInputsComputed()
 {
     foreach (ImageOperationNode* node, inputNodes)
-        if(!node->computed && inputs.value(node->id)->type == InputType::Normal)
+        if(!node->computed && inputs.value(node->id)->type() == InputType::Normal)
             return false;
 
     return true;
@@ -188,14 +188,14 @@ void ImageOperationNode::setComputed(bool done)
 
 float ImageOperationNode::blendFactor(QUuid id)
 {
-    return inputs.value(id)->blendFactor;
+    return inputs.value(id)->blendFactor();
 }
 
 
 
 void ImageOperationNode::setBlendFactor(QUuid id, float factor)
 {
-    inputs[id]->blendFactor = factor;
+    inputs[id]->setBlendFactor(factor);
 }
 
 
@@ -205,7 +205,7 @@ void ImageOperationNode::equalizeBlendFactors()
     int numInputs = inputs.size();
 
     foreach (InputData* data, inputs)
-        data->blendFactor = 1.0 / numInputs;
+        data->setBlendFactor(1.0 / numInputs);
 }
 
 
@@ -236,15 +236,15 @@ void ImageOperationNode::setOperation(ImageOperation *newOperation)
 
     foreach (ImageOperationNode* node, outputNodes)
     {
-        if (node->inputs.value(id)->type == InputType::Normal)
+        if (node->inputs.value(id)->type() == InputType::Normal)
         {
-            node->inputs[id]->textureID = operation->getTextureID();
+            node->inputs[id]->setTextureId(operation->outTextureId());
             node->operation->setInputData(node->inputsList());
             operation->enableBlit(false);
         }
-        else if (node->inputs.value(id)->type == InputType::Blit)
+        else if (node->inputs.value(id)->type() == InputType::Blit)
         {
-            node->inputs[id]->textureID = operation->getTextureBlit();
+            node->inputs[id]->setTextureId(operation->blitTextureId());
             node->operation->setInputData(node->inputsList());
             operation->enableBlit(true);
         }
@@ -287,9 +287,9 @@ NodeManager::NodeManager()
 
 
 
-void NodeManager::init(QOpenGLContext* mainContext)
+void NodeManager::init(QOpenGLContext* shareContext)
 {
-    sharedContext = mainContext;
+    mShareContext = shareContext;
 }
 
 
@@ -423,27 +423,27 @@ void NodeManager::setOutput(QUuid id)
     {
         // Avoid disabling blit for output node if it is blit connected (predge)
 
-        if (!outputID.isNull() && operationNodes.contains(outputID) && !operationNodes.value(outputID)->isBlitConnected())
-            operationNodes.value(outputID)->operation->enableBlit(false);
+        if (!mOutputId.isNull() && operationNodes.contains(mOutputId) && !operationNodes.value(mOutputId)->isBlitConnected())
+            operationNodes.value(mOutputId)->operation->enableBlit(false);
 
-        outputID = id;
+        mOutputId = id;
 
         // We enable blit for output node so that QOpenGLWidget renders the previous texture
         // This kind of double buffering allows for smoother, flickerless rendering
 
         operationNodes.value(id)->operation->enableBlit(true);
-        outputTextureID = operationNodes.value(id)->operation->getTextureBlit();
+        mOutputTextureId = operationNodes.value(id)->operation->blitTextureId();
 
-        emit outputTextureChanged(**outputTextureID);
-        emit outputFBOChanged(operationNodes.value(id)->operation->getFBO());
+        emit outputTextureChanged(mOutputTextureId);
+        //emit outputFBOChanged(operationNodes.value(id)->operation->getFBO());
     }
     else if (seeds.contains(id))
     {
-        outputID = id;
-        outputTextureID = seeds.value(id)->getTextureID();
+        mOutputId = id;
+        mOutputTextureId = seeds.value(id)->getTextureID();
 
-        emit outputTextureChanged(**outputTextureID);
-        emit outputFBOChanged(seeds.value(id)->getFBO());
+        emit outputTextureChanged(mOutputTextureId);
+        // emit outputFBOChanged(seeds.value(id)->getFBO());
     }
 }
 
@@ -455,7 +455,7 @@ bool NodeManager::connectOperations(QUuid srcId, QUuid dstId, float factor)
     {
         if (operationNodes.contains(srcId) && operationNodes.contains(dstId) && !operationNodes.value(dstId)->inputNodes.contains(srcId))
         {
-            operationNodes.value(dstId)->addInput(operationNodes.value(srcId), new InputData(InputType::Normal, operationNodes.value(srcId)->operation->getTextureID(), factor));
+            operationNodes.value(dstId)->addInput(operationNodes.value(srcId), new InputData(InputType::Normal, operationNodes.value(srcId)->operation->outTextureId(), factor));
             operationNodes.value(srcId)->addOutput(operationNodes.value(dstId));
 
             sortOperations();
@@ -479,14 +479,14 @@ void NodeManager::connectCopiedOperationsA(QUuid srcId0, QUuid dstId0, QUuid src
 {
     if (operationNodes.contains(srcId0))
     {
-        float factor = operationNodes.value(dstId0)->inputs.value(srcId0)->blendFactor;
+        float factor = operationNodes.value(dstId0)->inputs.value(srcId0)->blendFactor();
 
-        copiedOperationNodes[0].value(dstId1)->addInput(copiedOperationNodes[0].value(srcId1), new InputData(InputType::Normal, copiedOperationNodes[0].value(srcId1)->operation->getTextureID(), factor));
+        copiedOperationNodes[0].value(dstId1)->addInput(copiedOperationNodes[0].value(srcId1), new InputData(InputType::Normal, copiedOperationNodes[0].value(srcId1)->operation->outTextureId(), factor));
         copiedOperationNodes[0].value(srcId1)->addOutput(copiedOperationNodes[0].value(dstId1));
     }
     else if (seeds.contains(srcId0))
     {
-        float factor = operationNodes.value(dstId0)->inputs.value(srcId0)->blendFactor;
+        float factor = operationNodes.value(dstId0)->inputs.value(srcId0)->blendFactor();
         copiedOperationNodes[0].value(dstId1)->addSeedInput(srcId1, new InputData(InputType::Seed, seeds.value(srcId0)->getTextureID(), factor));
     }
 }
@@ -497,14 +497,14 @@ void NodeManager::connectCopiedOperationsB(QUuid srcId0, QUuid dstId0, QUuid src
 {
     if (copiedOperationNodes[1].contains(srcId0))
     {
-        float factor = copiedOperationNodes[1].value(dstId0)->inputs.value(srcId0)->blendFactor;
+        float factor = copiedOperationNodes[1].value(dstId0)->inputs.value(srcId0)->blendFactor();
 
-        copiedOperationNodes[0].value(dstId1)->addInput(copiedOperationNodes[0].value(srcId1), new InputData(InputType::Normal, copiedOperationNodes[0].value(srcId1)->operation->getTextureID(), factor));
+        copiedOperationNodes[0].value(dstId1)->addInput(copiedOperationNodes[0].value(srcId1), new InputData(InputType::Normal, copiedOperationNodes[0].value(srcId1)->operation->outTextureId(), factor));
         copiedOperationNodes[0].value(srcId1)->addOutput(copiedOperationNodes[0].value(dstId1));
     }
     else if (copiedSeeds[1].contains(srcId0))
     {
-        float factor = copiedOperationNodes[1].value(dstId0)->inputs.value(srcId0)->blendFactor;
+        float factor = copiedOperationNodes[1].value(dstId0)->inputs.value(srcId0)->blendFactor();
         copiedOperationNodes[0].value(dstId1)->addSeedInput(srcId1, new InputData(InputType::Seed, copiedSeeds[0].value(srcId1)->getTextureID(), factor));
     }
 }
@@ -665,8 +665,8 @@ void NodeManager::removeOperation(QUuid id)
     delete operationNodes.value(id);
     operationNodes.remove(id);
 
-    if (id == outputID)
-        outputTextureID = nullptr;
+    if (id == mOutputId)
+        mOutputTextureId = 0;
 
     sortOperations();
 }
@@ -711,14 +711,14 @@ void NodeManager::connectLoadedOperations(QMap<QUuid, QMap<QUuid, InputData*>> c
            {
                InputData* inputData = src.value();
 
-               if (inputData->type == InputType::Normal)
+               if (inputData->type() == InputType::Normal)
                {
-                   inputData->textureID = loadedOperationNodes.value(src.key())->operation->getTextureID();
+                   inputData->setTextureId(loadedOperationNodes.value(src.key())->operation->textureId());
                    loadedOperationNodes.value(src.key())->operation->enableBlit(false);
                }
-               else if (inputData->type == InputType::Blit)
+               else if (inputData->type() == InputType::Blit)
                {
-                   inputData->textureID = loadedOperationNodes.value(src.key())->operation->getTextureBlit();
+                   inputData->setTextureId(loadedOperationNodes.value(src.key())->operation->blitTextureId());
                    loadedOperationNodes.value(src.key())->operation->enableBlit(true);
                }
 
@@ -728,7 +728,7 @@ void NodeManager::connectLoadedOperations(QMap<QUuid, QMap<QUuid, InputData*>> c
            else if (loadedSeeds.contains(src.key()))
            {
                InputData* inputData = src.value();
-               inputData->textureID = loadedSeeds.value(src.key())->getTextureID();
+               inputData->setTextureId(loadedSeeds.value(src.key())->getTextureID());
 
                loadedOperationNodes.value(dst.key())->addSeedInput(src.key(), inputData);
            }
@@ -770,7 +770,7 @@ EdgeWidget* NodeManager::addEdgeWidget(QUuid srcId, QUuid dstId, float factor)
 
 QPair<QUuid, OperationWidget*> NodeManager::addNewOperation()
 {
-    ImageOperation* operation = new ImageOperation("New Operation", sharedContext);
+    ImageOperation* operation = new ImageOperation("New Operation", mShareContext);
 
     QUuid id = QUuid::createUuid();
 
@@ -1038,7 +1038,7 @@ ImageOperation* NodeManager::loadImageOperation(
 
 QPair<QUuid, SeedWidget *> NodeManager::addSeed()
 {
-    Seed* seed = new Seed(sharedContext);
+    Seed* seed = new Seed(mShareContext);
 
     QUuid id = QUuid::createUuid();
     seeds.insert(id, seed);
@@ -1072,9 +1072,9 @@ QPair<QUuid, SeedWidget *> NodeManager::addSeed()
     connect(seedWidget, &SeedWidget::typeChanged, this, [=, this](){
         if (isOutput(id))
         {
-            outputTextureID = seeds.value(id)->getTextureID();
+            mOutputTextureId = seeds.value(id)->getTextureID();
 
-            emit outputTextureChanged(**outputTextureID);
+            emit outputTextureChanged(mOutputTextureId);
             emit outputFBOChanged(seeds.value(id)->getFBO());
         }
 
@@ -1119,7 +1119,7 @@ void NodeManager::removeSeed(QUuid id)
 
 void NodeManager::loadSeed(QUuid id, int type, bool fixed)
 {
-    Seed* seed = new Seed(sharedContext);
+    Seed* seed = new Seed(mShareContext);
 
     seed->setType(type);
     seed->setFixed(fixed);
@@ -1191,7 +1191,7 @@ void NodeManager::drawAllSeeds()
 
 QImage NodeManager::outputImage()
 {
-    ImageOperation* operation = getOperation(outputID);
+    ImageOperation* operation = getOperation(mOutputId);
     if (operation)
     {
         return operation->outputImage();
@@ -1216,7 +1216,7 @@ void NodeManager::setTextureFormat(TextureFormat format)
     foreach (ImageOperationNode* node, operationNodes)
         node->operation->setTextureFormat();
 
-    setOutput(outputID);
+    setOutput(outputId);
 }
 
 
@@ -1232,5 +1232,5 @@ void NodeManager::resize(GLuint width, GLuint height)
     foreach (ImageOperationNode* node, operationNodes)
         node->operation->resize();
 
-    setOutput(outputID);
+    setOutput(mOutputId);
 }

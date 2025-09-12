@@ -58,15 +58,10 @@ FBO::FBO(QOpenGLContext* shareContext)
     widthOld = width;
     heightOld = height;
 
-    // Frame buffer object
 
-    generateFramebuffer(mFbo, mTextureId);
+    // Framebuffer objects
 
-    // Sampler
-
-    glGenSamplers(1, &mSamplerId);
-    glSamplerParameteri(mSamplerId, GL_TEXTURE_MIN_FILTER, mMinMagFilter);
-    glSamplerParameteri(mSamplerId, GL_TEXTURE_MAG_FILTER, mMinMagFilter);
+    glGenFramebuffers(1, &mFbo);
 
     mContext->doneCurrent();
 }
@@ -78,7 +73,6 @@ FBO::~FBO()
     mContext->makeCurrent(mSurface);
 
     glDeleteFramebuffers(1, &mFbo);
-    glDeleteTextures(1, &mTextureId);
 
     mContext->doneCurrent();
 
@@ -88,17 +82,31 @@ FBO::~FBO()
 
 
 
-GLuint FBO::fboId() const
+void FBO::render()
 {
-    return mFbo;
+    mContext->makeCurrent(mSurface);
+    glBindFramebuffer(GL_FRAMEBUFFER, mFbo);
+
+    foreach (ImageOperation* operation, sortedOperations)
+    {
+        if (operation->enabled())
+        {
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, operation->outTextureId(), 0);
+            operation->render();
+        }
+    }
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    mContext->doneCurrent();
 }
 
 
 
-GLuint FBO::textureId() const
+void FBO::blend()
 {
-    return mTextureId;
+
 }
+
 
 
 void FBO::generateFramebuffer(GLuint& framebuffer, GLuint& texture)
@@ -118,20 +126,6 @@ void FBO::generateFramebuffer(GLuint& framebuffer, GLuint& texture)
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
         qDebug() << glCheckFramebufferStatus(GL_FRAMEBUFFER);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-}
-
-
-
-void FBO::setMinMagFilter(GLenum filter)
-{
-    mMinMagFilter = filter;
-    
-    mContext->makeCurrent(mSurface);
-
-    glSamplerParameteri(mSamplerId, GL_TEXTURE_MIN_FILTER, filter);
-    glSamplerParameteri(mSamplerId, GL_TEXTURE_MAG_FILTER, filter);
-
-    mContext->doneCurrent();
 }
 
 

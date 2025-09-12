@@ -90,8 +90,10 @@ public:
 
     void setInputData(QList<InputData*> data);
 
-    GLuint getBlitTextureId();
-    GLuint getTextureId();
+    GLuint blitTextureId();
+    GLuint outTextureId();
+
+    void render();
 
     template <typename T>
     QList<UniformParameter<T>*> uniformParameters();
@@ -119,9 +121,9 @@ public:
 
     void clearParameters();
 
-    void applyOperation();
-    void blit();
-    void clear();
+    // void applyOperation();
+    // void blit();
+    // void clear();
 
     //ImageOperation* clone() { return new ImageOperation(*this); }
 
@@ -165,8 +167,10 @@ private:
 
     QList<InputData*> mInputData;
 
-    GLuint mTextureId = 0;
+    GLuint mOutTexId = 0;
     GLuint mBlitTexId = 0;
+    GLuint mBlendTexId = 0;
+    GLuint* mInputTexId = nullptr;
 
     QList<UniformParameter<float>*> floatUniformParameters;
     QList<UniformParameter<int>*> intUniformParameters;

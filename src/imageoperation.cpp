@@ -83,6 +83,16 @@ ImageOperation::ImageOperation(QString theName, QOpenGLContext* shareContext) :
     glSamplerParameteri(mSamplerId, GL_TEXTURE_MIN_FILTER, mMinMagFilter);
     glSamplerParameteri(mSamplerId, GL_TEXTURE_MAG_FILTER, mMinMagFilter);
 
+    // Texture containing output image
+    // Allocated on immutable storage (glTexStorage2D)
+
+    glGenTextures(1, &mOutTexId);
+    glBindTexture(GL_TEXTURE_2D, mOutTexId);
+    glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, FBO::width, FBO::height);
+    glTexParameteri(mOutTexId, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(mOutTexId, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
     mContext->doneCurrent();
 }
 
@@ -405,24 +415,52 @@ void ImageOperation::setName(QString theName)
 
 
 
-void ImageOperation::setInputData(QList<InputData *> data)
+void ImageOperation::setInputData(QList<InputData*> data)
 {
-    mBlendEnabled = (data.size() == 1);
+    mBlendEnabled = (data.size() > 1);
+
     mInputData = data;
+
+    if (mBlendEnabled)
+        mInputTexId = &mBlendTexId;
+    else
+        mInputTexId = data[0]->textureId();
 }
 
 
 
-GLuint ImageOperation::getBlitTextureId()
+GLuint ImageOperation::blitTextureId()
 {
     return mBlitTexId;
 }
 
 
 
-GLuint ImageOperation::getTextureId()
+GLuint ImageOperation::outTextureId()
 {
-    return mTextureId;
+    return mOutTexId;
+}
+
+
+
+void ImageOperation::render()
+{
+    glViewport(0, 0, FBO::width, FBO::height);
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    mProgram->bind();
+    mVao->bind();
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, *mInputTexId);
+    glBindSampler(0, mSamplerId);
+
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+    glBindSampler(0, 0);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    mVao->release();
+    mProgram->release();
 }
 
 

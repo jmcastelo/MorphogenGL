@@ -67,7 +67,7 @@ struct ImageOperationNode
     void removeInput(ImageOperationNode* node);
     void setInputType(QUuid id, InputType type);
 
-    void setInputSeedTexId(QUuid id, GLuint** texId);
+    void setInputSeedTexId(QUuid id, GLuint texId);
 
     int numInputs();
     int numNonNormalInputs();
@@ -102,7 +102,7 @@ public:
 
     QList<QString> availableOperations;
 
-    void init(QOpenGLContext* mainContext);
+    void init(QOpenGLContext* shareContext);
 
     bool isActive() { return active; }
     void setState(bool state) { active = state; }
@@ -157,11 +157,11 @@ public:
     void clearLoadedSeeds() { loadedSeeds.clear(); }
     void loadSeed(QUuid id, int type, bool fixed);
 
-    bool isOutput(QUuid id) { return id == outputID; }
+    bool isOutput(QUuid id) { return id == mOutputId; }
     void setOutput(QUuid id);
-    QUuid getOutput() { return outputID; }
+    QUuid getOutput() { return mOutputId; }
     GLuint getOUtputFBO() { return outputFBO; }
-    GLuint** getOutputTextureID() { return outputTextureID; }
+    GLuint outputTextureID() { return mOutputTextureId; }
 
     QImage outputImage();
 
@@ -219,10 +219,10 @@ private:
 
     QUuid connSrcId;
 
-    QOpenGLContext* sharedContext;
+    QOpenGLContext* mShareContext;
     GLuint outputFBO;
-    QUuid outputID;
-    GLuint** outputTextureID = nullptr;
+    QUuid mOutputId;
+    GLuint mOutputTextureId = 0;
     unsigned int iteration = 0;
 
     bool active = false;
