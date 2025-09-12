@@ -23,38 +23,79 @@
 
 
 #include "imageoperation.h"
+#include "fbo.h"
+
+#include <QMessageBox>
+#include <QApplication>
 
 
 
 // Image operation base class
 
-ImageOperation::ImageOperation(QString theName, QOpenGLContext* mainContext) :
-    QOpenGLExtraFunctions(mainContext),
-    mName { theName },
-    mContext { mainContext }
+ImageOperation::ImageOperation(QString theName, QOpenGLContext* shareContext) :
+    mName { theName }
 {
-    blender = new Blender(":/shaders/screen.vert", ":/shaders/blend.frag", mContext);
+    // Create context
 
-    fbo = new FBO(mContext);
-    fbo->setInputTextureID(*blender->getTextureID());
+    mContext = new QOpenGLContext();
+    mContext->setFormat(shareContext->format());
+    mContext->setShareContext(shareContext);
+    mContext->create();
+
+    // Create surface
+
+    mSurface = new QOffscreenSurface();
+    mSurface->setFormat(shareContext->format());
+    mSurface->create();
+
+    // Make context current and initialize context-dependent variables
+
+    mContext->makeCurrent(mSurface);
+
+    // To be able to call OpenGL functions
+
+    initializeOpenGLFunctions();
+
+    // Shader program
+
+    mProgram = new QOpenGLShaderProgram();
+
+    // Vertex array object
+
+    mVao = new QOpenGLVertexArrayObject();
+    mVao->create();
+
+    // Vertex buffer object: vertices positions
+
+    mVboPos = new QOpenGLBuffer(QOpenGLBuffer::VertexBuffer);
+    mVboPos->create();
+    mVboPos->setUsagePattern(QOpenGLBuffer::StaticDraw);
+
+    // Vertex buffer object: texture coordinates
+
+    mVboTex = new QOpenGLBuffer(QOpenGLBuffer::VertexBuffer);
+    mVboTex->create();
+    mVboTex->setUsagePattern(QOpenGLBuffer::StaticDraw);
+
+    // Sampler
+
+    glGenSamplers(1, &mSamplerId);
+    glSamplerParameteri(mSamplerId, GL_TEXTURE_MIN_FILTER, mMinMagFilter);
+    glSamplerParameteri(mSamplerId, GL_TEXTURE_MAG_FILTER, mMinMagFilter);
+
+    mContext->doneCurrent();
 }
 
 
 
 ImageOperation::ImageOperation(const ImageOperation& operation) :
-    QOpenGLExtraFunctions(operation.mContext),
     mName { operation.mName },
+    mContext { operation.mContext },
     mVertexShader { operation.mVertexShader },
     mFragmentShader { operation.mFragmentShader },
-    enabled { operation.enabled },
-    mContext { operation.mContext }
+    mEnabled { operation.mEnabled },
+    mInputData { operation.mInputData }
 {
-    blender = new Blender(":/shaders/screen.vert", ":/shaders/blend.frag", mContext);
-
-    fbo = new FBO(mContext);
-    fbo->setShadersFromSourceCode(mVertexShader, mFragmentShader);
-    fbo->setInputTextureID(*blender->getTextureID());
-
     for (auto parameter: operation.floatUniformParameters)
     {
         auto newParameter = new UniformParameter<float>(*parameter);
@@ -91,25 +132,297 @@ ImageOperation::ImageOperation(const ImageOperation& operation) :
 
 ImageOperation::~ImageOperation()
 {
+    mContext->makeCurrent(mSurface);
+
+    mVao->destroy();
+    mVboPos->destroy();
+    mVboTex->destroy();
+
+    delete mVao;
+    delete mVboPos;
+    delete mVboTex;
+    delete mProgram;
+
+    mContext->doneCurrent();
+
+    delete mContext;
+    delete mSurface;
+
     qDeleteAll(floatUniformParameters);
     qDeleteAll(intUniformParameters);
     qDeleteAll(uintUniformParameters);
     qDeleteAll(glenumOptionsParameters);
     qDeleteAll(mMat4UniformParameters);
-
-    delete blender;
-    delete fbo;
 }
 
 
 
-bool ImageOperation::setup(QString theVertexShader, QString theFragmentShader)
+bool ImageOperation::setShadersFromSourceCode(QString vertexShader, QString fragmentShader)
 {
-    mVertexShader = theVertexShader;
-    mFragmentShader = theFragmentShader;
+    mProgram->removeAllShaders();
 
-    fbo->setInputTextureID(*blender->getTextureID());
-    return fbo->setShadersFromSourceCode(mVertexShader, mFragmentShader);
+    if (!mProgram->addShaderFromSourceCode(QOpenGLShader::Vertex, vertexShader))
+    {
+        QMessageBox::information(qApp->activeWindow(), "Vertex shader error", mProgram->log());
+        return false;
+    }
+    if (!mProgram->addShaderFromSourceCode(QOpenGLShader::Fragment, fragmentShader))
+    {
+        QMessageBox::information(qApp->activeWindow(), "Fragment shader error", mProgram->log());
+        return false;
+    }
+
+    if (!mProgram->link())
+    {
+        QMessageBox::information(qApp->activeWindow(), "Shader link error", mProgram->log());
+        return false;
+    }
+
+    resizeVertices();
+
+    return true;
+}
+
+
+
+QString ImageOperation::vertexShader() const
+{
+    return mVertexShader;
+}
+
+
+
+QString ImageOperation::fragmentShader() const
+{
+    return mFragmentShader;
+}
+
+
+
+QString ImageOperation::posInAttribName() const
+{
+    return mPosInAttribName;
+}
+
+
+
+void ImageOperation::setPosInAttribName(QString name)
+{
+    mPosInAttribName = name;
+}
+
+
+
+QString ImageOperation::texInAttribName() const
+{
+    return mTexInAttribName;
+}
+
+
+
+void ImageOperation::setTexInAttribName(QString name)
+{
+    mTexInAttribName = name;
+}
+
+
+
+void ImageOperation::setOrthographicProjection(QString name)
+{
+    mOrthoName = name;
+    mOrthoEnabled = true;
+    adjustOrtho();
+}
+
+
+
+template <>
+void ImageOperation::setUniform<float>(QString name, int type, GLsizei count, const float* values)
+{
+    if (mUpdate)
+    {
+        mContext->makeCurrent(mSurface);
+        mProgram->bind();
+
+        int location = mProgram->uniformLocation(name);
+
+        if (type == GL_FLOAT)
+            glUniform1fv(location, count, values);
+        else if (type == GL_FLOAT_VEC2)
+            glUniform2fv(location, count, values);
+        else if (type == GL_FLOAT_VEC3)
+            glUniform3fv(location, count, values);
+        else if (type == GL_FLOAT_VEC4)
+            glUniform4fv(location, count, values);
+        else if (type == GL_FLOAT_MAT2)
+            glUniformMatrix2fv(location, count, GL_FALSE, values);
+        else if (type == GL_FLOAT_MAT3)
+            glUniformMatrix3fv(location, count, GL_FALSE, values);
+        else if (type == GL_FLOAT_MAT4)
+            glUniformMatrix4fv(location, count, GL_FALSE, values);
+
+        mProgram->release();
+        mContext->doneCurrent();
+    }
+}
+
+
+
+template <>
+void ImageOperation::setUniform<int>(QString name, int type, GLsizei count, const int* values)
+{
+    if (mUpdate)
+    {
+        mContext->makeCurrent(mSurface);
+        mProgram->bind();
+
+        int location = mProgram->uniformLocation(name);
+
+        if (type == GL_INT)
+            glUniform1iv(location, count, values);
+        else if (type == GL_INT_VEC2)
+            glUniform2iv(location, count, values);
+        else if (type == GL_INT_VEC3)
+            glUniform3iv(location, count, values);
+        else if (type == GL_INT_VEC4)
+            glUniform4iv(location, count, values);
+
+        mProgram->release();
+        mContext->doneCurrent();
+    }
+}
+
+
+
+template <>
+void ImageOperation::setUniform<unsigned int>(QString name, int type, GLsizei count, const unsigned int* values)
+{
+    if (mUpdate)
+    {
+        mContext->makeCurrent(mSurface);
+        mProgram->bind();
+
+        int location = mProgram->uniformLocation(name);
+
+        if (type == GL_UNSIGNED_INT)
+            glUniform1uiv(location, count, values);
+        else if (type == GL_UNSIGNED_INT_VEC2)
+            glUniform2uiv(location, count, values);
+        else if (type == GL_UNSIGNED_INT_VEC3)
+            glUniform3uiv(location, count, values);
+        else if (type == GL_UNSIGNED_INT_VEC4)
+            glUniform4uiv(location, count, values);
+
+        mProgram->release();
+        mContext->doneCurrent();
+    }
+}
+
+
+
+void ImageOperation::setMat4Uniform(QString name, UniformMat4Type type, QList<float> values)
+{
+    if (mUpdate)
+    {
+        QMatrix4x4 matrix;
+        matrix.setToIdentity();
+
+        if (type == UniformMat4Type::TRANSLATION)
+            matrix.translate(values.at(0) * FBO::width, values.at(1) * FBO::height);
+        else if (type == UniformMat4Type::ROTATION)
+            matrix.rotate(values.at(0), 0.0f, 0.0f, 1.0f);
+        else if (type == UniformMat4Type::SCALING)
+            matrix.scale(values.at(0), values.at(1));
+
+        mContext->makeCurrent(mSurface);
+        mProgram->bind();
+
+        int location = mProgram->uniformLocation(name);
+        mProgram->setUniformValue(location, matrix);
+
+        mProgram->release();
+        mContext->doneCurrent();
+    }
+}
+
+
+
+template <>
+void ImageOperation::setOptionsParameter<GLenum>(OptionsParameter<GLenum>* parameter)
+{
+    if (mUpdate)
+        setMinMagFilter(parameter->value());
+}
+
+
+
+QOpenGLContext* ImageOperation::context() const
+{
+    return mContext;
+}
+
+
+
+bool ImageOperation::enabled() const
+{
+    return mEnabled;
+}
+
+
+
+void ImageOperation::enable(bool on)
+{
+    mEnabled = on;
+}
+
+
+
+void ImageOperation::enableBlit(bool on)
+{
+    mBlitEnabled = on;
+}
+
+
+
+void ImageOperation::enableUpdate(bool on)
+{
+    mUpdate = on;
+}
+
+
+
+QString ImageOperation::name() const
+{
+    return mName;
+}
+
+
+
+void ImageOperation::setName(QString theName)
+{
+    mName = theName;
+}
+
+
+
+void ImageOperation::setInputData(QList<InputData *> data)
+{
+    mBlendEnabled = (data.size() == 1);
+    mInputData = data;
+}
+
+
+
+GLuint ImageOperation::getBlitTextureId()
+{
+    return mBlitTexId;
+}
+
+
+
+GLuint ImageOperation::getTextureId()
+{
+    return mTextureId;
 }
 
 
@@ -246,170 +559,173 @@ void ImageOperation::clearParameters()
 
 
 
-void ImageOperation::applyOperation()
+/*void ImageOperation::applyOperation()
 {
     if (mUpdate)
     {
         if (blenderEnabled)
             blender->blend();
 
-        if (enabled)
+        if (mEnabled)
             fbo->draw();
         else
             fbo->identity();
     }
-}
+}*/
 
 
 
-void ImageOperation::blit()
+/*void ImageOperation::blit()
 {
     if (blitEnabled)
         fbo->blit();
-}
+}*/
 
 
 
-void ImageOperation::clear()
+/*void ImageOperation::clear()
 {
     fbo->clear();
+}*/
+
+
+
+void ImageOperation::adjustOrtho()
+{
+    if (mOrthoEnabled)
+    {
+        GLfloat w = static_cast<GLfloat>(FBO::width);
+        GLfloat h = static_cast<GLfloat>(FBO::height);
+
+        GLfloat left, right, bottom, top;
+        GLfloat ratio = w / h;
+
+        if (FBO::width > FBO::height)
+        {
+            top = 1.0f;
+            bottom = -top;
+            right = top * ratio;
+            left = -right;
+        }
+        else
+        {
+            right = 1.0f;
+            left = -right;
+            top = right / ratio;
+            bottom = -top;
+        }
+
+        // Maintain aspect ratio
+
+        QMatrix4x4 transform;
+        transform.setToIdentity();
+        transform.ortho(left, right, bottom, top, -1.0, 1.0);
+
+        mContext->makeCurrent(mSurface);
+
+        mProgram->bind();
+        int location = mProgram->uniformLocation(mOrthoName);
+        mProgram->setUniformValue(location, transform);
+        mProgram->release();
+
+        mContext->doneCurrent();
+    }
 }
 
 
 
-void ImageOperation::setInputData(QList<InputData *> data)
+void ImageOperation::resizeVertices()
 {
-    if (data.size() == 1)
+    // Recompute vertices and texture coordinates
+    // Keep a square aspect ratio
+
+    GLfloat w = static_cast<GLfloat>(FBO::width);
+    GLfloat h = static_cast<GLfloat>(FBO::height);
+
+    GLfloat left, right, bottom, top;
+    GLfloat ratio = w / h;
+
+    if (FBO::width > FBO::height)
     {
-        blenderEnabled = false;
-        fbo->setInputTextureID(*data[0]->textureID);
+        top = 1.0f;
+        bottom = -top;
+        right = top * ratio;
+        left = -right;
     }
     else
     {
-        blenderEnabled = true;
-        fbo->setInputTextureID(*blender->getTextureID());
-        blender->setInputData(data);
+        right = 1.0f;
+        left = -right;
+        top = right / ratio;
+        bottom = -top;
     }
-}
+
+    GLfloat vertCoords[] = {
+        left, bottom,
+        left, top,
+        right, bottom,
+        right, top
+    };
 
 
+    GLfloat texCoords[] = {
+        0.0f, 0.0f,
+        0.0f, 1.0f,
+        1.0f, 0.0f,
+        1.0f, 1.0f
+    };
 
-template <>
-void ImageOperation::setUniform<float>(QString name, int type, GLsizei count, const float* values)
-{
-    if (mUpdate)
+    mContext->makeCurrent(mSurface);
+
+    mVao->bind();
+
+    mVboPos->bind();
+    mVboPos->allocate(vertCoords, 8 * sizeof(GLfloat));
+
+    // Map vbo data to shader attribute location
+
+    if (mProgram->isLinked())
     {
-        fbo->makeCurrent();
-        fbo->program->bind();
-
-        int location = fbo->program->uniformLocation(name);
-
-        if (type == GL_FLOAT)
-            glUniform1fv(location, count, values);
-        else if (type == GL_FLOAT_VEC2)
-            glUniform2fv(location, count, values);
-        else if (type == GL_FLOAT_VEC3)
-            glUniform3fv(location, count, values);
-        else if (type == GL_FLOAT_VEC4)
-            glUniform4fv(location, count, values);
-        else if (type == GL_FLOAT_MAT2)
-            glUniformMatrix2fv(location, count, GL_FALSE, values);
-        else if (type == GL_FLOAT_MAT3)
-            glUniformMatrix3fv(location, count, GL_FALSE, values);
-        else if (type == GL_FLOAT_MAT4)
-            glUniformMatrix4fv(location, count, GL_FALSE, values);
-
-        fbo->program->release();
-        fbo->doneCurrent();
+        mProgram->bind();
+        int posLocation = mProgram->attributeLocation(mPosInAttribName);
+        mProgram->setAttributeBuffer(posLocation, GL_FLOAT, 0, 2);
+        mProgram->enableAttributeArray(posLocation);
+        mProgram->release();
     }
-}
 
+    mVboTex->bind();
+    mVboTex->allocate(texCoords, 8 * sizeof(GLfloat));
 
+    // Map vbo data to shader attribute location
 
-template <>
-void ImageOperation::setUniform<int>(QString name, int type, GLsizei count, const int* values)
-{
-    if (mUpdate)
+    if (mProgram->isLinked())
     {
-        fbo->makeCurrent();
-        fbo->program->bind();
-
-        int location = fbo->program->uniformLocation(name);
-
-        if (type == GL_INT)
-            glUniform1iv(location, count, values);
-        else if (type == GL_INT_VEC2)
-            glUniform2iv(location, count, values);
-        else if (type == GL_INT_VEC3)
-            glUniform3iv(location, count, values);
-        else if (type == GL_INT_VEC4)
-            glUniform4iv(location, count, values);
-
-        fbo->program->release();
-        fbo->doneCurrent();
+        mProgram->bind();
+        int texLocation = mProgram->attributeLocation(mTexInAttribName);
+        mProgram->setAttributeBuffer(texLocation, GL_FLOAT, 0, 2);
+        mProgram->enableAttributeArray(texLocation);
+        mProgram->release();
     }
+
+    mVao->release();
+    mVboPos->release();
+    mVboTex->release();
+
+    mContext->doneCurrent();
 }
 
 
 
-template <>
-void ImageOperation::setUniform<unsigned int>(QString name, int type, GLsizei count, const unsigned int* values)
+void ImageOperation::setMinMagFilter(GLenum filter)
 {
-    if (mUpdate)
-    {
-        fbo->makeCurrent();
-        fbo->program->bind();
+    mMinMagFilter = filter;
 
-        int location = fbo->program->uniformLocation(name);
+    mContext->makeCurrent(mSurface);
 
-        if (type == GL_UNSIGNED_INT)
-            glUniform1uiv(location, count, values);
-        else if (type == GL_UNSIGNED_INT_VEC2)
-            glUniform2uiv(location, count, values);
-        else if (type == GL_UNSIGNED_INT_VEC3)
-            glUniform3uiv(location, count, values);
-        else if (type == GL_UNSIGNED_INT_VEC4)
-            glUniform4uiv(location, count, values);
+    glSamplerParameteri(mSamplerId, GL_TEXTURE_MIN_FILTER, filter);
+    glSamplerParameteri(mSamplerId, GL_TEXTURE_MAG_FILTER, filter);
 
-        fbo->program->release();
-        fbo->doneCurrent();
-    }
-}
-
-
-
-template <>
-void ImageOperation::setOptionsParameter<GLenum>(OptionsParameter<GLenum>* parameter)
-{
-    if (mUpdate)
-        fbo->setMinMagFilter(parameter->value());
-}
-
-
-
-void ImageOperation::setMat4Uniform(QString name, UniformMat4Type type, QList<float> values)
-{
-    if (mUpdate)
-    {
-        QMatrix4x4 matrix;
-        matrix.setToIdentity();
-
-        if (type == UniformMat4Type::TRANSLATION)
-            matrix.translate(values.at(0) * FBO::width, values.at(1) * FBO::height);
-        else if (type == UniformMat4Type::ROTATION)
-            matrix.rotate(values.at(0), 0.0f, 0.0f, 1.0f);
-        else if (type == UniformMat4Type::SCALING)
-            matrix.scale(values.at(0), values.at(1));
-
-        fbo->makeCurrent();
-        fbo->program->bind();
-
-        int location = fbo->program->uniformLocation(name);
-        fbo->program->setUniformValue(location, matrix);
-
-        fbo->program->release();
-        fbo->doneCurrent();
-    }
+    mContext->doneCurrent();
 }
 
 

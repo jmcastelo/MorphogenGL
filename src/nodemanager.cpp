@@ -682,7 +682,7 @@ void NodeManager::enableOperation(QUuid id, bool enabled)
 
 bool NodeManager::isOperationEnabled(QUuid id)
 {
-    return operationNodes.value(id)->operation->isEnabled();
+    return operationNodes.value(id)->operation->enabled();
 }
 
 

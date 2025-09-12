@@ -50,6 +50,7 @@ HEADERS += \
     src/gridwidget.h \
     src/histogramwidget.h \
     src/imageoperation.h \
+    src/inputdata.h \
     src/mainwindow.h \
     src/message.h \
     src/midicontrol.h \

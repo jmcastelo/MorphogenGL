@@ -27,7 +27,7 @@
 
 #include "imageoperation.h"
 #include "seed.h"
-#include "blender.h"
+#include "inputdata.h"
 #include "texformat.h"
 #include "operationwidget.h"
 #include "seedwidget.h"

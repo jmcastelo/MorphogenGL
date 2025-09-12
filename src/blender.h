@@ -33,13 +33,13 @@
 
 
 
-enum class InputType { Normal, Blit, Seed };
+// enum class InputType { Normal, Blit, Seed };
 
 
 
 // Input for image operation, corresponding to edges
 
-struct InputData
+/*struct InputData
 {
     InputType type;
     GLuint** textureID;
@@ -50,7 +50,7 @@ struct InputData
         textureID { ID },
         blendFactor { factor }
     {}
-};
+};*/
 
 
 

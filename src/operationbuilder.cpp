@@ -83,7 +83,7 @@ OperationBuilder::OperationBuilder(ImageOperation *operation, QWidget *parent) :
     shadersTabWidget->addTab(overviewWidget, "Overview");
 
     connect(setupOperationButton, &QPushButton::clicked, this, [=, this](){
-        if (mOperation->setup(vertexEditor->toPlainText(), fragmentEditor->toPlainText()))
+        if (mOperation->setShadersFromSourceCode(vertexEditor->toPlainText(), fragmentEditor->toPlainText()))
         {
             emit operationSetUp();
             mOperation->enableUpdate(true);

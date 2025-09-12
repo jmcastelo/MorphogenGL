@@ -20,101 +20,73 @@
 *  along with MorphogenGL.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#pragma once
+
+
+#ifndef FBO_H
+#define FBO_H
+
+
 
 #include "texformat.h"
 
 #include <QOpenGLExtraFunctions>
-#include <QOpenGLVertexArrayObject>
-#include <QOpenGLBuffer>
-#include <QOpenGLShaderProgram>
 #include <QOpenGLContext>
 #include <QOffscreenSurface>
 #include <QImage>
-#include <QObject>
 
-class MorphoWidget;
 
-class FBO : public QObject, protected QOpenGLExtraFunctions
+
+class FBO : protected QOpenGLExtraFunctions
 {
-    Q_OBJECT
-
 public:
     static GLuint width;
     static GLuint height;
 
     static TextureFormat texFormat;
 
-    QOpenGLShaderProgram* program;
-    
-    //FBO(QString vertexShader, QString fragmentShader, QOpenGLContext* mainContext);
-    FBO(QOpenGLContext* mainContext);
-    virtual ~FBO();
+    FBO(QOpenGLContext* shareContext);
+    ~FBO();
 
-    bool setShadersFromSourceCode(QString vertexShader, QString fragmentShader);
-    void setShadersFromSourceFile(QString vertexShader, QString fragmentShader);
+    GLuint fboId() const;
+    GLuint textureId() const;
 
-    GLuint getFBO() { return fboBlit; }
-    GLuint** getTextureID() { return &texID; }
-    GLuint** getTextureBlit() { return &texBlit; }
-    void setInputTextureID(GLuint* id) { inputTextureID = id; }
+    //GLuint** getTextureID() { return &texID; }
+    //void setInputTextureID(GLuint* id) { inputTextureID = id; }
 
     void generateFramebuffer(GLuint& framebuffer, GLuint& texture);
 
     void setMinMagFilter(GLenum filter);
     void setTextureFormat();
 
-    QString posInAttribName() const { return mPosInAttribName; }
-    void setPosInAttribName(QString name);
+    void resize();
 
-    QString texInAttribName() const { return mTexInAttribName; }
-    void setTexInAttribName(QString name);
-
-    void makeCurrent();
-    void doneCurrent();
-
-    virtual void resize();
-
-    void draw();
-    void blit();
-    void identity();
+    void blit(GLuint fbo);
     void clear();
-
-    void setOrthographicProjection(QString name);
-    void adjustOrtho();
 
     QImage outputImage();
 
-signals:
-    void sizeChanged();
+private:
+    QOpenGLContext* mContext;
+    QOffscreenSurface* mSurface;
 
-protected:
-    QOpenGLContext* context;
-    QOffscreenSurface* surface;
-    GLuint fbo;
-    GLuint *texID;
-    GLuint textureID = 0;
-    GLenum minMagFilter = GL_NEAREST;
-    GLuint* inputTextureID;
-    GLuint samplerID = 0;
-    GLuint fboBlit;
-    GLuint *texBlit;
-    GLuint textureBlit;
-    QOpenGLVertexArrayObject* vao;
-    QOpenGLBuffer* vboPos;
-    QOpenGLBuffer* vboTex;
-    QOpenGLShaderProgram* identityProgram;
+    GLuint mFbo;
+    GLuint mTextureId = 0;
+
+    //GLuint *texID;
+
+    GLenum mMinMagFilter = GL_NEAREST;
+    //GLuint* inputTextureID;
+
+    GLuint mSamplerId = 0;
+
     GLuint widthOld;
     GLuint heightOld;
+
     GLsync fence = 0;
 
-    QString mPosInAttribName;
-    QString mTexInAttribName;
-
-    bool mOrthoEnabled = false;
-    QString mOrthoName;
-
-private:
-    void resizeVertices();
     GLenum getFormat(GLenum format);
 };
+
+
+
+#endif // FBO_H

@@ -26,14 +26,18 @@
 #define IMAGEOPERATION_H
 
 
-#include "fbo.h"
-#include "blender.h"
+
+#include "inputdata.h"
 #include "parameters/uniformparameter.h"
 #include "parameters/uniformmat4parameter.h"
 #include "parameters/optionsparameter.h"
 
-#include <cmath>
 #include <QOpenGLExtraFunctions>
+#include <QOpenGLContext>
+#include <QOffscreenSurface>
+#include <QOpenGLShaderProgram>
+#include <QOpenGLVertexArrayObject>
+#include <QOpenGLBuffer>
 #include <QList>
 #include <QVector2D>
 #include <QVector3D>
@@ -41,8 +45,6 @@
 #include <QString>
 #include <QMap>
 #include <QUuid>
-#include <QOpenGLContext>
-#include <QOffscreenSurface>
 #include <QObject>
 
 
@@ -50,45 +52,46 @@
 class ImageOperation : protected QOpenGLExtraFunctions
 {
 public:
-    ImageOperation(QString theName, QOpenGLContext* mainContext);
-
+    ImageOperation(QString theName, QOpenGLContext* shareContext);
     ImageOperation(const ImageOperation& operation);
-
     ~ImageOperation();
 
-    bool setup(QString theVertexShader, QString theFragmentShader);
+    bool setShadersFromSourceCode(QString vertexShader, QString fragmentShader);
+    void setShadersFromSourceFile(QString vertexShader, QString fragmentShader);
 
-    QOpenGLContext* context(){ return mContext; }
+    QString vertexShader() const;
+    QString fragmentShader() const;
 
-    //ImageOperation* clone() { return new ImageOperation(*this); }
+    QString posInAttribName() const;
+    void setPosInAttribName(QString name);
 
-    bool isEnabled() const { return enabled; }
-    void enable(bool on) { enabled = on; }
+    QString texInAttribName() const;
+    void setTexInAttribName(QString name);
 
-    void enableBlit(bool on) { blitEnabled = on; }
+    void setOrthographicProjection(QString name);
 
-    void enableUpdate(bool on) { mUpdate = on; }
+    template <typename T>
+    void setUniform(QString name, int type, GLsizei count, const T* values);
 
-    QString name() const { return mName; }
-    void setName(QString theName) { mName = theName; }
+    void setMat4Uniform(QString name, UniformMat4Type type, QList<float> values);
 
-    GLuint getFBO() { return fbo->getFBO(); }
+    template <typename T>
+    void setOptionsParameter(OptionsParameter<T>* parameter);
 
-    GLuint** getTextureBlit() { return fbo->getTextureBlit(); }
-    GLuint** getTextureID() { return fbo->getTextureID(); }
+    QOpenGLContext* context() const;
+
+    bool enabled() const;
+    void enable(bool on);
+    void enableBlit(bool on);
+    void enableUpdate(bool on);
+
+    QString name() const;
+    void setName(QString theName);
 
     void setInputData(QList<InputData*> data);
 
-    void resize() { blender->resize(); fbo->resize(); }
-
-    QString vertexShader() const { return mVertexShader; }
-    QString fragmentShader() const { return mFragmentShader; }
-
-    QString posInAttribName() const { return fbo->posInAttribName(); }
-    void setPosInAttribName(QString name) { fbo->setPosInAttribName(name); };
-
-    QString texInAttribName() const { return fbo->texInAttribName(); }
-    void setTexInAttribName(QString name) { fbo->setTexInAttribName(name); };
+    GLuint getBlitTextureId();
+    GLuint getTextureId();
 
     template <typename T>
     QList<UniformParameter<T>*> uniformParameters();
@@ -97,16 +100,6 @@ public:
     QList<OptionsParameter<T>*> optionsParameters();
 
     QList<UniformMat4Parameter*> mat4UniformParameters();
-
-    template <typename T>
-    void setUniform(QString name, int type, GLsizei count, const T* values);
-
-    template <typename T>
-    void setOptionsParameter(OptionsParameter<T>* parameter);
-
-    void setMat4Uniform(QString name, UniformMat4Type type, QList<float> values);
-
-    void setOrthographicProjection(QString name) { fbo->setOrthographicProjection(name); }
 
     template<typename T>
     void addUniformParameter(UniformParameter<T>* parameter);
@@ -130,24 +123,50 @@ public:
     void blit();
     void clear();
 
-    QImage outputImage(){ return fbo->outputImage(); }
-    void setTextureFormat(){ fbo->setTextureFormat(); }
+    //ImageOperation* clone() { return new ImageOperation(*this); }
+
+    //GLuint getFBO() { return fbo->getFBO(); }
+
+    //void resize() { blender->resize(); fbo->resize(); }
+
+    //QImage outputImage(){ return fbo->outputImage(); }
+    //void setTextureFormat(){ fbo->setTextureFormat(); }
 
 private:
     QString mName;
 
+    QOpenGLContext* mContext;
+    QOffscreenSurface* mSurface;
+
+    QOpenGLShaderProgram* mProgram;
+
     QString mVertexShader;
     QString mFragmentShader;
 
-    bool enabled = false;
-    bool blenderEnabled = false;
-    bool blitEnabled = false;
+    QOpenGLVertexArrayObject* mVao;
+
+    QOpenGLBuffer* mVboPos;
+    QOpenGLBuffer* mVboTex;
+
+    QString mPosInAttribName;
+    QString mTexInAttribName;
+
+    bool mOrthoEnabled = false;
+    QString mOrthoName;
+
+    GLenum mMinMagFilter = GL_NEAREST;
+    GLuint mSamplerId = 0;
+
+    bool mEnabled = false;
+    bool mBlendEnabled = false;
+    bool mBlitEnabled = false;
 
     bool mUpdate = false;
 
-    QOpenGLContext* mContext;
-    FBO* fbo;
-    Blender* blender;
+    QList<InputData*> mInputData;
+
+    GLuint mTextureId = 0;
+    GLuint mBlitTexId = 0;
 
     QList<UniformParameter<float>*> floatUniformParameters;
     QList<UniformParameter<int>*> intUniformParameters;
@@ -156,6 +175,10 @@ private:
     QList<OptionsParameter<GLenum>*> glenumOptionsParameters;
 
     QList<UniformMat4Parameter*> mMat4UniformParameters;
+
+    void adjustOrtho();
+    void resizeVertices();
+    void setMinMagFilter(GLenum filter);
 };
 
 

@@ -48,11 +48,11 @@ bool OperationParser::read(ImageOperation* operation, QString filename, bool rea
     if (mStream.readNextStartElement() && mStream.name() == "fosforo")
         success = readOperation(operation, mStream, readIds);
 
-    /*if (mStream.tokenType() == QXmlStreamReader::Invalid)
+    if (mStream.tokenType() == QXmlStreamReader::Invalid)
         mStream.readNext();
 
     if (mStream.hasError())
-        mStream.raiseError();*/
+        mStream.raiseError();
 
     inFile.close();
 
@@ -68,7 +68,7 @@ void OperationParser::writeOperation(ImageOperation *operation, QXmlStreamWriter
     stream.writeStartElement("operation");
 
     stream.writeAttribute("name", operation->name());
-    stream.writeAttribute("enabled", QString::number(operation->isEnabled()));
+    stream.writeAttribute("enabled", QString::number(operation->enabled()));
 
     // Shaders: encoded in base64
 
@@ -133,7 +133,7 @@ bool OperationParser::readOperation(ImageOperation* operation, QXmlStreamReader&
                 vertexShader = QString::fromUtf8(QByteArray::fromBase64(stream.readElementText().toUtf8()));
 
                 if (!vertexShader.isEmpty() && !fragmentShader.isEmpty())
-                    if (!operation->setup(vertexShader, fragmentShader))
+                    if (!operation->setShadersFromSourceCode(vertexShader, fragmentShader))
                     {
                         stream.raiseError("GLSL Shaders error");
                         return false;
@@ -144,7 +144,7 @@ bool OperationParser::readOperation(ImageOperation* operation, QXmlStreamReader&
                 fragmentShader = QString::fromUtf8(QByteArray::fromBase64(stream.readElementText().toUtf8()));
 
                 if (!vertexShader.isEmpty() && !fragmentShader.isEmpty())
-                    if (!operation->setup(vertexShader, fragmentShader))
+                    if (!operation->setShadersFromSourceCode(vertexShader, fragmentShader))
                     {
                         stream.raiseError("GLSL Shaders error");
                         return false;
