@@ -62,7 +62,7 @@ To do...
 
 # Bibliography and links
 
-To do...
+"Gödel, Escher, Bach: an Eternal Golden Braid", Douglas R. Hofstadter.
 
 # License
 
