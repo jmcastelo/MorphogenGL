@@ -23,7 +23,6 @@
 
 
 #include "imageoperation.h"
-#include "fbo.h"
 
 #include <QMessageBox>
 #include <QApplication>
@@ -32,8 +31,11 @@
 
 // Image operation base class
 
-ImageOperation::ImageOperation(QString theName, QOpenGLContext* shareContext) :
-    mName { theName }
+ImageOperation::ImageOperation(QString theName, QOpenGLVertexArrayObject* vao, QOpenGLBuffer* vboPos, QOpenGLBuffer* vboTex, QOpenGLContext* shareContext) :
+    mName { theName },
+    mVao { vao },
+    mVboPos { vboPos },
+    mVboTex { vboTex }
 {
     // Create context
 
@@ -60,38 +62,17 @@ ImageOperation::ImageOperation(QString theName, QOpenGLContext* shareContext) :
 
     mProgram = new QOpenGLShaderProgram();
 
-    // Vertex array object
-
-    mVao = new QOpenGLVertexArrayObject();
-    mVao->create();
-
-    // Vertex buffer object: vertices positions
-
-    mVboPos = new QOpenGLBuffer(QOpenGLBuffer::VertexBuffer);
-    mVboPos->create();
-    mVboPos->setUsagePattern(QOpenGLBuffer::StaticDraw);
-
-    // Vertex buffer object: texture coordinates
-
-    mVboTex = new QOpenGLBuffer(QOpenGLBuffer::VertexBuffer);
-    mVboTex->create();
-    mVboTex->setUsagePattern(QOpenGLBuffer::StaticDraw);
-
     // Sampler
 
     glGenSamplers(1, &mSamplerId);
     glSamplerParameteri(mSamplerId, GL_TEXTURE_MIN_FILTER, mMinMagFilter);
     glSamplerParameteri(mSamplerId, GL_TEXTURE_MAG_FILTER, mMinMagFilter);
 
-    // Texture containing output image
-    // Allocated on immutable storage (glTexStorage2D)
+    // Output texture
 
-    glGenTextures(1, &mOutTexId);
-    glBindTexture(GL_TEXTURE_2D, mOutTexId);
-    glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, FBO::width, FBO::height);
-    glTexParameteri(mOutTexId, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(mOutTexId, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glBindTexture(GL_TEXTURE_2D, 0);
+    genTexture(mOutTexId);
+    genTexture(mBlitTexId);
+    genTexture(mBlendOutTexId);
 
     mContext->doneCurrent();
 }
@@ -144,13 +125,6 @@ ImageOperation::~ImageOperation()
 {
     mContext->makeCurrent(mSurface);
 
-    mVao->destroy();
-    mVboPos->destroy();
-    mVboTex->destroy();
-
-    delete mVao;
-    delete mVboPos;
-    delete mVboTex;
     delete mProgram;
 
     mContext->doneCurrent();
@@ -163,6 +137,13 @@ ImageOperation::~ImageOperation()
     qDeleteAll(uintUniformParameters);
     qDeleteAll(glenumOptionsParameters);
     qDeleteAll(mMat4UniformParameters);
+}
+
+
+
+QOpenGLShaderProgram* ImageOperation::program()
+{
+    return mProgram;
 }
 
 
@@ -235,6 +216,43 @@ void ImageOperation::setTexInAttribName(QString name)
     mTexInAttribName = name;
 }
 
+
+
+void ImageOperation::setInAttributes()
+{
+    mContext->makeCurrent(mSurface);
+
+    mVao->bind();
+
+    mVboPos->bind();
+
+    mProgram->bind();
+    int posLocation = mProgram->attributeLocation(mPosInAttribName);
+    mProgram->setAttributeBuffer(posLocation, GL_FLOAT, 0, 2);
+    mProgram->enableAttributeArray(posLocation);
+    mProgram->release();
+    }
+
+    mVboTex->bind();
+    mVboTex->allocate(texCoords, 8 * sizeof(GLfloat));
+
+    // Map vbo data to shader attribute location
+
+    if (mProgram->isLinked())
+    {
+        mProgram->bind();
+        int texLocation = mProgram->attributeLocation(mTexInAttribName);
+        mProgram->setAttributeBuffer(texLocation, GL_FLOAT, 0, 2);
+        mProgram->enableAttributeArray(texLocation);
+        mProgram->release();
+    }
+
+    mVao->release();
+    mVboPos->release();
+    mVboTex->release();
+
+    mContext->doneCurrent();
+}
 
 
 void ImageOperation::setOrthographicProjection(QString name)
@@ -338,7 +356,7 @@ void ImageOperation::setMat4Uniform(QString name, UniformMat4Type type, QList<fl
         matrix.setToIdentity();
 
         if (type == UniformMat4Type::TRANSLATION)
-            matrix.translate(values.at(0) * FBO::width, values.at(1) * FBO::height);
+            matrix.translate(values.at(0), values.at(1));
         else if (type == UniformMat4Type::ROTATION)
             matrix.rotate(values.at(0), 0.0f, 0.0f, 1.0f);
         else if (type == UniformMat4Type::SCALING)
@@ -401,6 +419,13 @@ void ImageOperation::enableUpdate(bool on)
 
 
 
+bool ImageOperation::blendEnabled() const
+{
+    return mBlendEnabled;
+}
+
+
+
 QString ImageOperation::name() const
 {
     return mName;
@@ -422,7 +447,18 @@ void ImageOperation::setInputData(QList<InputData*> data)
     mInputData = data;
 
     if (mBlendEnabled)
-        mInputTexId = &mBlendTexId;
+    {
+        mInputTexId = &mBlendOutTexId;
+
+        mInputTextures.clear();
+        mInputBlendFactors.clear();
+
+        foreach(InputData* iData, data)
+        {
+            mInputTextures.append(*iData->textureId());
+            mInputBlendFactors.append(iData->blendFactor());
+        }
+    }
     else
         mInputTexId = data[0]->textureId();
 }
@@ -443,10 +479,52 @@ GLuint ImageOperation::outTextureId()
 
 
 
+GLuint ImageOperation::blendOutTextureId()
+{
+    return mBlendOutTexId;
+}
+
+
+
+GLuint ImageOperation::inTextureId()
+{
+    return *mInputTexId;
+}
+
+
+
+GLuint ImageOperation::samplerId()
+{
+    return mSamplerId;
+}
+
+
+
+QList<GLuint*> ImageOperation::textureIds()
+{
+    return QList<GLuint*> { &mOutTexId, &mBlitTexId, &mBlendOutTexId };
+}
+
+
+
+QList<GLuint> ImageOperation::inputTextures()
+{
+    return mInputTextures;
+}
+
+
+
+QList<float> ImageOperation::inputBlendFactors()
+{
+    return mInputBlendFactors;
+}
+
+
+
 void ImageOperation::render()
 {
-    glViewport(0, 0, FBO::width, FBO::height);
-    glClear(GL_COLOR_BUFFER_BIT);
+    // Render input texture via shader program
+    // Needs active OpenGL context
 
     mProgram->bind();
     mVao->bind();
@@ -457,8 +535,9 @@ void ImageOperation::render()
 
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
-    glBindSampler(0, 0);
     glBindTexture(GL_TEXTURE_2D, 0);
+    glBindSampler(0, 0);
+
     mVao->release();
     mProgram->release();
 }
@@ -625,6 +704,21 @@ void ImageOperation::clearParameters()
 {
     fbo->clear();
 }*/
+
+
+
+void ImageOperation::genTexture(GLuint& texId)
+{
+    // Allocated on immutable storage (glTexStorage2D)
+    // To be called within active OpenGL context
+
+    glGenTextures(1, &texId);
+    glBindTexture(GL_TEXTURE_2D, texId);
+    glTexStorage2D(GL_TEXTURE_2D, 1, static_cast<GLenum>(mTexFormat), mTexWidth, mTexHeight);
+    glTexParameteri(mOutTexId, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(mOutTexId, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glBindTexture(GL_TEXTURE_2D, 0);
+}
 
 
 

@@ -77,5 +77,7 @@
         <file>icons/letter-v.png</file>
         <file>icons/run-build.png</file>
         <file>icons/edit-undo.png</file>
+        <file>shaders/blender.frag</file>
+        <file>shaders/blender.vert</file>
     </qresource>
 </RCC>

@@ -29,14 +29,8 @@
 
 
 
-GLuint FBO::width = 2048;
-GLuint FBO::height = 2048;
-
-TextureFormat FBO::texFormat = TextureFormat::RGBA8;
-
-
-
-FBO::FBO(QOpenGLContext* shareContext)
+FBO::FBO(QOpenGLContext* shareContext) :
+    mShareContext { shareContext }
 {
     // Create context
 
@@ -53,15 +47,55 @@ FBO::FBO(QOpenGLContext* shareContext)
 
     initializeOpenGLFunctions();
 
-    // Old size
+    // Framebuffer object
 
-    widthOld = width;
-    heightOld = height;
+    glGenFramebuffers(1, &mOutFbo);
 
+    // Vertex array object
 
-    // Framebuffer objects
+    glGenVertexArrays(1, &mVao);
 
-    glGenFramebuffers(1, &mFbo);
+    // Vertex buffer object: vertices positions
+
+    glGenBuffers(1, &mVboPos);
+
+    // Vertex buffer object: texture coordinates
+
+    glGenBuffers(1, &mVboTex);
+
+    // Setup VAO
+
+    GLfloat texCoords[] = {
+        0.0f, 0.0f,
+        0.0f, 1.0f,
+        1.0f, 0.0f,
+        1.0f, 1.0f
+    };
+
+    glBindVertexArray(mVao);
+
+    glBindBuffer(GL_ARRAY_BUFFER, mVboTex);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(texCoords), texCoords, GL_STATIC_DRAW);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
+
+    resizeVertices();
+
+    glBindVertexArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    // Shader program
+
+    mBlenderProgram = new QOpenGLShaderProgram();
+
+    setShaderPrograms();
+
+    // Get and clamp maximum number of texture units (sampler2D)
+
+    glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &mMaxTexUnits);
+
+    if (mMaxTexUnits > mNumTexUnits)
+        mMaxTexUnits = mNumTexUnits;
 
     mContext->doneCurrent();
 }
@@ -72,7 +106,17 @@ FBO::~FBO()
 {
     mContext->makeCurrent(mSurface);
 
-    glDeleteFramebuffers(1, &mFbo);
+    glDeleteFramebuffers(1, &mOutFbo);
+
+    glBindVertexArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    GLuint vbos[2] = { mVboPos, mVboTex };
+    glDeleteBuffers(2, vbos);
+
+    glDeleteVertexArrays(1, &mVao);
+
+    delete mBlenderProgram;
 
     mContext->doneCurrent();
 
@@ -82,21 +126,51 @@ FBO::~FBO()
 
 
 
+ImageOperation* FBO::createNewOperation()
+{
+    ImageOperation* operation = new ImageOperation("New Operation", mShareContext);
+
+
+}
+
+
 void FBO::render()
 {
     mContext->makeCurrent(mSurface);
-    glBindFramebuffer(GL_FRAMEBUFFER, mFbo);
 
-    foreach (ImageOperation* operation, sortedOperations)
+    glBindFramebuffer(GL_FRAMEBUFFER, mOutFbo);
+
+    glBindVertexArray(mVao);
+
+    foreach (ImageOperation* operation, mSortedOperations)
     {
         if (operation->enabled())
         {
             glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, operation->outTextureId(), 0);
-            operation->render();
+
+            glViewport(0, 0, mTexWidth, mTexHeight);
+            glClear(GL_COLOR_BUFFER_BIT);
+
+            operation->program()->bind();
+
+            glActiveTexture(GL_TEXTURE0);
+
+            glBindTexture(GL_TEXTURE_2D, operation->inTextureId());
+            glBindSampler(0, operation->samplerId());
+
+            glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+            glBindSampler(0, 0);
+            glBindTexture(GL_TEXTURE_2D, 0);
+
+            operation->program()->release();
         }
     }
 
+    glBindVertexArray(0);
+
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
     mContext->doneCurrent();
 }
 
@@ -104,54 +178,69 @@ void FBO::render()
 
 void FBO::blend()
 {
-
-}
-
-
-
-void FBO::generateFramebuffer(GLuint& framebuffer, GLuint& texture)
-{
-    glGenFramebuffers(1, &framebuffer);
-    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
-
-    glGenTextures(1, &texture);
-    glBindTexture(GL_TEXTURE_2D, texture);
-    glTexImage2D(GL_TEXTURE_2D, 0, static_cast<GLenum>(texFormat), width, height, 0, getFormat(static_cast<GLenum>(texFormat)), GL_UNSIGNED_BYTE, nullptr);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glBindTexture(GL_TEXTURE_2D, 0);
-
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture, 0);
-
-    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-        qDebug() << glCheckFramebufferStatus(GL_FRAMEBUFFER);
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-}
-
-
-
-void FBO::setTextureFormat()
-{
     mContext->makeCurrent(mSurface);
 
-    // FBO
+    glBindFramebuffer(GL_FRAMEBUFFER, mOutFbo);
 
-    GLuint fbo;
-    GLuint textureId;
-    generateFramebuffer(fbo, textureId);
+    glBindVertexArray(mVao);
 
-    glBindFramebuffer(GL_READ_FRAMEBUFFER, mFbo);
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
+    foreach (ImageOperation* operation, mSortedOperations)
+    {
+        if (operation->blendEnabled())
+        {
+            QList<GLuint> inputTextures = operation->inputTextures();
 
-    glBlitFramebuffer(0, 0, width, height, 0, 0, width, height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+            int nInputs = inputTextures.size();
+            if (nInputs > mMaxTexUnits)
+                nInputs = mMaxTexUnits;
+
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, operation->blendOutTextureId(), 0);
+
+            glViewport(0, 0, mTexWidth, mTexHeight);
+            glClear(GL_COLOR_BUFFER_BIT);
+
+            mBlenderProgram->bind();
+
+            // Bind input textures
+
+            for (int i = 0; i < nInputs; ++i)
+            {
+                glActiveTexture(GL_TEXTURE0 + i);
+                glBindTexture(GL_TEXTURE_2D, inputTextures[i]);
+            }
+
+            // Set number of input textures
+
+            GLint locCount = mBlenderProgram->uniformLocation("texCount");
+            glUniform1i(locCount, nInputs);
+
+            // Set blend factors
+
+            GLint locWeights = mBlenderProgram->uniformLocation("weights");
+            QList<float> blendFactors = operation->inputBlendFactors();
+
+            QList<float> weights(mNumTexUnits, 0.0f);
+            for (int i = 0; i < nInputs; ++i)
+                weights[i] = blendFactors[i];
+
+            glUniform1fv(locWeights, mNumTexUnits, weights.constData());
+
+            glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+            // Clean up
+
+            for (int i = 0; i < nInputs; i++) {
+                glActiveTexture(GL_TEXTURE0 + i);
+                glBindTexture(GL_TEXTURE_2D, 0);
+            }
+
+            mBlenderProgram->release();
+        }
+    }
+
+    glBindVertexArray(0);
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-    glDeleteFramebuffers(1, &fbo);
-    glDeleteTextures(1, &textureId);
-
-    mTextureId = textureId;
-    mFbo = fbo;
 
     mContext->doneCurrent();
 }
@@ -335,4 +424,186 @@ QImage FBO::outputImage()
     mContext->doneCurrent();
 
     return image;
+}
+
+
+
+void FBO::setShaderPrograms()
+{
+    mBlenderProgram->addShaderFromSourceFile(QOpenGLShader::Vertex, ":/shaders/blender.vert");
+    mBlenderProgram->addShaderFromSourceFile(QOpenGLShader::Fragment, ":/shaders/blender.frag");
+    mBlenderProgram->link();
+
+    // Set blender shader attributes
+
+    if (mBlenderProgram->isLinked())
+    {
+        mBlenderProgram->bind();
+
+        mBlenderProgram->setAttributeBuffer(0, GL_FLOAT, 0, 2);
+        mBlenderProgram->enableAttributeArray(0);
+
+        mBlenderProgram->setAttributeBuffer(1, GL_FLOAT, 0, 2);
+        mBlenderProgram->enableAttributeArray(1);
+
+        GLint locSamplers = mBlenderProgram->uniformLocation("inTextures");
+        if (locSamplers >= 0)
+        {
+            QList<GLint> samplers;
+            for (int i = 0; i < mNumTexUnits; i++)
+                samplers.append(i);
+
+            glUniform1iv(locSamplers, mNumTexUnits, samplers.constData());
+        }
+
+        mBlenderProgram->release();
+    }
+}
+
+
+
+void FBO::adjustOrtho()
+{
+    GLfloat w = static_cast<GLfloat>(mTexWidth);
+    GLfloat h = static_cast<GLfloat>(mTexHeight);
+
+    GLfloat left, right, bottom, top;
+    GLfloat ratio = w / h;
+
+    if (mTexWidth > mTexHeight)
+    {
+        top = 1.0f;
+        bottom = -top;
+        right = top * ratio;
+        left = -right;
+    }
+    else
+    {
+        right = 1.0f;
+        left = -right;
+        top = right / ratio;
+        bottom = -top;
+    }
+
+    // Maintain aspect ratio
+
+    QMatrix4x4 transform;
+    transform.setToIdentity();
+    transform.ortho(left, right, bottom, top, -1.0, 1.0);
+
+    mContext->makeCurrent(mSurface);
+
+    mBlenderProgram->bind();
+    int location = mBlenderProgram->uniformLocation("transform");
+    mBlenderProgram->setUniformValue(location, transform);
+    mBlenderProgram->release();
+
+    mContext->doneCurrent();
+}
+
+
+
+void FBO::resizeVertices()
+{
+    // Recompute vertices coordinates
+    // Keep a square aspect ratio
+
+    GLfloat w = static_cast<GLfloat>(mTexWidth);
+    GLfloat h = static_cast<GLfloat>(mTexHeight);
+
+    GLfloat left, right, bottom, top;
+    GLfloat ratio = w / h;
+
+    if (mTexWidth > mTexHeight)
+    {
+        top = 1.0f;
+        bottom = -top;
+        right = top * ratio;
+        left = -right;
+    }
+    else
+    {
+        right = 1.0f;
+        left = -right;
+        top = right / ratio;
+        bottom = -top;
+    }
+
+    GLfloat vertCoords[] = {
+        left, bottom,
+        left, top,
+        right, bottom,
+        right, top
+    };
+
+    glBindBuffer(GL_ARRAY_BUFFER, mVboPos);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertCoords), vertCoords, GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+}
+
+
+
+void FBO::genTexture(GLuint& texId)
+{
+    // Allocated on immutable storage (glTexStorage2D)
+    // To be called within active OpenGL context
+
+    glGenTextures(1, &texId);
+    glBindTexture(GL_TEXTURE_2D, texId);
+    glTexStorage2D(GL_TEXTURE_2D, 1, static_cast<GLenum>(mTexFormat), mTexWidth, mTexHeight);
+    glTexParameteri(texId, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(texId, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+
+
+void FBO::genTextures(ImageOperation* operation)
+{
+    foreach (GLuint* texId, operation->textureIds())
+        genTexture(*texId);
+}
+
+
+
+void FBO::resizeTextures()
+{
+    QList<GLuint*> oldTexIds;
+
+    foreach (ImageOperation* operation, mOperations)
+        oldTexIds.append(operation->textureIds());
+
+
+    GLuint readFBO = 0, drawFBO = 0;
+    glGenFramebuffers(1, &readFBO);
+    glGenFramebuffers(1, &drawFBO);
+
+    foreach (GLuint* oldTexId, oldTexIds)
+    {
+        GLuint newTexId = 0;
+        genTexture(newTexId);
+
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, readFBO);
+        glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, *oldTexId, 0);
+
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, drawFBO);
+        glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, newTexId, 0);
+
+        glReadBuffer(GL_COLOR_ATTACHMENT0);
+        glDrawBuffer(GL_COLOR_ATTACHMENT0);
+
+        glBlitFramebuffer(0, 0, mOldTexWidth, mOldTexHeight, 0, 0, mTexWidth, mTexHeight, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+
+        glDeleteTextures(1, oldTexId);
+        *oldTexId = newTexId;
+    }
+
+    glDeleteFramebuffers(1, &readFBO);
+    glDeleteFramebuffers(1, &drawFBO);
+
+    glBindTexture(GL_TEXTURE_2D, 0);
 }

@@ -33,6 +33,7 @@
 #include <QOpenGLExtraFunctions>
 #include <QOpenGLContext>
 #include <QOffscreenSurface>
+#include <QOpenGLShaderProgram>
 #include <QImage>
 
 
@@ -40,23 +41,16 @@
 class FBO : protected QOpenGLExtraFunctions
 {
 public:
-    static GLuint width;
-    static GLuint height;
-
-    static TextureFormat texFormat;
-
     FBO(QOpenGLContext* shareContext);
     ~FBO();
 
     //GLuint** getTextureID() { return &texID; }
     //void setInputTextureID(GLuint* id) { inputTextureID = id; }
 
+    ImageOperation* createNewOperation();
+
     void render();
     void blend();
-
-    void generateFramebuffer(GLuint& framebuffer, GLuint& texture);
-
-    void setTextureFormat();
 
     void resize();
 
@@ -66,19 +60,44 @@ public:
     QImage outputImage();
 
 private:
+    QOpenGLContext* mShareContext;
     QOpenGLContext* mContext;
     QOffscreenSurface* mSurface;
 
-    GLuint mFbo;
+    GLuint mOutFbo;
 
-    QList<ImageOperation*> sortedOperations;
+    QList<ImageOperation*> mOperations;
+    QList<ImageOperation*> mSortedOperations;
 
-    GLuint widthOld;
-    GLuint heightOld;
+    GLuint mTexWidth = 2048;
+    GLuint mTexHeight = 2048;
+
+    GLuint mOldTexWidth = 2048;
+    GLuint mOldTexHeight = 2048;
+
+    TextureFormat mTexFormat = TextureFormat::RGBA8;
+
+    GLint mMaxTexUnits;
+    GLint mNumTexUnits = 32;
+
+    QOpenGLShaderProgram* mBlenderProgram;
+    GLuint mVao;
+    GLuint mVboPos;
+    GLuint mVboTex;
 
     GLsync fence = 0;
 
     GLenum getFormat(GLenum format);
+
+    void setShaderPrograms();
+
+    void adjustOrtho();
+
+    void resizeVertices();
+
+    void genTexture(GLuint& texId);
+    void genTextures(ImageOperation* operation);
+    void resizeTextures();
 };
 
 

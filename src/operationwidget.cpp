@@ -35,9 +35,9 @@ OperationWidget::OperationWidget(ImageOperation* operation, bool midiEnabled, bo
 
     // Enable action
 
-    enableAction = headerToolBar->addAction(mOperation->isEnabled() ? QIcon(QPixmap(":/icons/circle-green.png")) : QIcon(QPixmap(":/icons/circle-grey.png")), mOperation->isEnabled() ? "Enabled" : "Disabled", this, &OperationWidget::enableOperation);
+    enableAction = headerToolBar->addAction(mOperation->enabled() ? QIcon(QPixmap(":/icons/circle-green.png")) : QIcon(QPixmap(":/icons/circle-grey.png")), mOperation->enabled() ? "Enabled" : "Disabled", this, &OperationWidget::enableOperation);
     enableAction->setCheckable(true);
-    enableAction->setChecked(mOperation->isEnabled());
+    enableAction->setChecked(mOperation->enabled());
 
     // Output action
 

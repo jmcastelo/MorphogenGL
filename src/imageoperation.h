@@ -52,9 +52,11 @@
 class ImageOperation : protected QOpenGLExtraFunctions
 {
 public:
-    ImageOperation(QString theName, QOpenGLContext* shareContext);
+    ImageOperation(QString theName, QOpenGLVertexArrayObject* vao, QOpenGLBuffer* vboPos, QOpenGLBuffer* vboTex, QOpenGLContext* shareContext);
     ImageOperation(const ImageOperation& operation);
     ~ImageOperation();
+
+    QOpenGLShaderProgram* program();
 
     bool setShadersFromSourceCode(QString vertexShader, QString fragmentShader);
     void setShadersFromSourceFile(QString vertexShader, QString fragmentShader);
@@ -67,6 +69,8 @@ public:
 
     QString texInAttribName() const;
     void setTexInAttribName(QString name);
+
+    void setInAttributes();
 
     void setOrthographicProjection(QString name);
 
@@ -84,6 +88,7 @@ public:
     void enable(bool on);
     void enableBlit(bool on);
     void enableUpdate(bool on);
+    bool blendEnabled() const;
 
     QString name() const;
     void setName(QString theName);
@@ -92,6 +97,13 @@ public:
 
     GLuint blitTextureId();
     GLuint outTextureId();
+    GLuint blendOutTextureId();
+    GLuint inTextureId();
+    GLuint samplerId();
+    QList<GLuint*> textureIds();
+
+    QList<GLuint> inputTextures();
+    QList<float> inputBlendFactors();
 
     void render();
 
@@ -166,10 +178,12 @@ private:
     bool mUpdate = false;
 
     QList<InputData*> mInputData;
+    QList<GLuint> mInputTextures;
+    QList<float> mInputBlendFactors;
 
     GLuint mOutTexId = 0;
     GLuint mBlitTexId = 0;
-    GLuint mBlendTexId = 0;
+    GLuint mBlendOutTexId = 0;
     GLuint* mInputTexId = nullptr;
 
     QList<UniformParameter<float>*> floatUniformParameters;
@@ -179,6 +193,9 @@ private:
     QList<OptionsParameter<GLenum>*> glenumOptionsParameters;
 
     QList<UniformMat4Parameter*> mMat4UniformParameters;
+
+    void genTexture(GLuint& texId);
+    void resizeTextures();
 
     void adjustOrtho();
     void resizeVertices();
