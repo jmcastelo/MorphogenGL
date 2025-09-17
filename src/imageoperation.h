@@ -52,7 +52,7 @@
 class ImageOperation : protected QOpenGLExtraFunctions
 {
 public:
-    ImageOperation(QString theName, QOpenGLVertexArrayObject* vao, QOpenGLBuffer* vboPos, QOpenGLBuffer* vboTex, QOpenGLContext* shareContext);
+    ImageOperation(QString theName, QOpenGLContext* shareContext);
     ImageOperation(const ImageOperation& operation);
     ~ImageOperation();
 
@@ -72,7 +72,9 @@ public:
 
     void setInAttributes();
 
-    void setOrthographicProjection(QString name);
+    void setOrthoName(QString name);
+    void enableOrtho(bool on);
+    void adjustOrtho(GLfloat left, GLfloat right, GLfloat bottom, GLfloat top);
 
     template <typename T>
     void setUniform(QString name, int type, GLsizei count, const T* values);
@@ -89,6 +91,7 @@ public:
     void enableBlit(bool on);
     void enableUpdate(bool on);
     bool blendEnabled() const;
+    bool blitEnabled() const;
 
     QString name() const;
     void setName(QString theName);
@@ -104,8 +107,6 @@ public:
 
     QList<GLuint> inputTextures();
     QList<float> inputBlendFactors();
-
-    void render();
 
     template <typename T>
     QList<UniformParameter<T>*> uniformParameters();
@@ -157,11 +158,6 @@ private:
     QString mVertexShader;
     QString mFragmentShader;
 
-    QOpenGLVertexArrayObject* mVao;
-
-    QOpenGLBuffer* mVboPos;
-    QOpenGLBuffer* mVboTex;
-
     QString mPosInAttribName;
     QString mTexInAttribName;
 
@@ -194,11 +190,6 @@ private:
 
     QList<UniformMat4Parameter*> mMat4UniformParameters;
 
-    void genTexture(GLuint& texId);
-    void resizeTextures();
-
-    void adjustOrtho();
-    void resizeVertices();
     void setMinMagFilter(GLenum filter);
 };
 

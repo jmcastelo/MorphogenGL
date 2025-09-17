@@ -1,6 +1,9 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
+
+
+#include "rendermanager.h"
 #include "nodemanager.h"
 #include "morphowidget.h"
 #include "controlwidget.h"
@@ -15,6 +18,7 @@
 #include <QStackedLayout>
 #include <QGraphicsOpacityEffect>
 #include <QChronoTimer>
+
 
 
 class MainWindow : public QMainWindow
@@ -42,6 +46,7 @@ protected:
     void keyPressEvent(QKeyEvent* event) override;
 
 private:
+    RenderManager* renderManager;
     NodeManager* nodeManager;
     MorphoWidget* morphoWidget;
     ControlWidget* controlWidget;

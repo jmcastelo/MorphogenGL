@@ -7,15 +7,17 @@ MainWindow::MainWindow()
     iterationTimer = new TimerThread(iterationFPS, this);
     updateTimer = new TimerThread(updateFPS, this);
 
+    renderManager = new RenderManager();
+
     nodeManager = new NodeManager();
 
     overlay = new Overlay();
 
-    morphoWidget = new MorphoWidget(FBO::width, FBO::height, overlay);
+    morphoWidget = new MorphoWidget(renderManager->texWidth(), renderManager->texHeight(), overlay);
     morphoWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     morphoWidget->setMinimumSize(0, 0);
 
-    plotsWidget = new PlotsWidget(FBO::width, FBO::height);
+    plotsWidget = new PlotsWidget(renderManager->texWidth(), renderManager->texHeight());
     plotsWidget->setVisible(false);
 
     plotsWidgetOpacityEffect = new QGraphicsOpacityEffect(plotsWidget);
@@ -65,6 +67,7 @@ MainWindow::MainWindow()
     connect(this, &MainWindow::updateTimeMeasured, controlWidget, &ControlWidget::updateUpdateMetricsLabels);
 
     connect(morphoWidget, &MorphoWidget::openGLInitialized, this, [&](){
+        renderManager->init(morphoWidget->context());
         nodeManager->init(morphoWidget->context());
         plotsWidget->init(morphoWidget->context());
 
@@ -106,7 +109,7 @@ MainWindow::MainWindow()
 
     setWindowTitle("Morphogen");
     setWindowIcon(QIcon(":/icons/morphogengl.png"));
-    resize(FBO::width, FBO::height);
+    resize(renderManager->texWidth(), renderManager->texHeight());
 }
 
 

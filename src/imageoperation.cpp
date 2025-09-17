@@ -31,11 +31,8 @@
 
 // Image operation base class
 
-ImageOperation::ImageOperation(QString theName, QOpenGLVertexArrayObject* vao, QOpenGLBuffer* vboPos, QOpenGLBuffer* vboTex, QOpenGLContext* shareContext) :
-    mName { theName },
-    mVao { vao },
-    mVboPos { vboPos },
-    mVboTex { vboTex }
+ImageOperation::ImageOperation(QString theName, QOpenGLContext* shareContext) :
+    mName { theName }
 {
     // Create context
 
@@ -67,12 +64,6 @@ ImageOperation::ImageOperation(QString theName, QOpenGLVertexArrayObject* vao, Q
     glGenSamplers(1, &mSamplerId);
     glSamplerParameteri(mSamplerId, GL_TEXTURE_MIN_FILTER, mMinMagFilter);
     glSamplerParameteri(mSamplerId, GL_TEXTURE_MAG_FILTER, mMinMagFilter);
-
-    // Output texture
-
-    genTexture(mOutTexId);
-    genTexture(mBlitTexId);
-    genTexture(mBlendOutTexId);
 
     mContext->doneCurrent();
 }
@@ -169,8 +160,6 @@ bool ImageOperation::setShadersFromSourceCode(QString vertexShader, QString frag
         return false;
     }
 
-    resizeVertices();
-
     return true;
 }
 
@@ -222,44 +211,54 @@ void ImageOperation::setInAttributes()
 {
     mContext->makeCurrent(mSurface);
 
-    mVao->bind();
-
-    mVboPos->bind();
-
     mProgram->bind();
-    int posLocation = mProgram->attributeLocation(mPosInAttribName);
-    mProgram->setAttributeBuffer(posLocation, GL_FLOAT, 0, 2);
-    mProgram->enableAttributeArray(posLocation);
+
+    // Vertex coordinates
+
+    mProgram->setAttributeBuffer(0, GL_FLOAT, 0, 2);
+    mProgram->enableAttributeArray(0);
+
+    // Texture coordinates
+
+    mProgram->setAttributeBuffer(1, GL_FLOAT, 0, 2);
+    mProgram->enableAttributeArray(1);
+
     mProgram->release();
-    }
-
-    mVboTex->bind();
-    mVboTex->allocate(texCoords, 8 * sizeof(GLfloat));
-
-    // Map vbo data to shader attribute location
-
-    if (mProgram->isLinked())
-    {
-        mProgram->bind();
-        int texLocation = mProgram->attributeLocation(mTexInAttribName);
-        mProgram->setAttributeBuffer(texLocation, GL_FLOAT, 0, 2);
-        mProgram->enableAttributeArray(texLocation);
-        mProgram->release();
-    }
-
-    mVao->release();
-    mVboPos->release();
-    mVboTex->release();
 
     mContext->doneCurrent();
 }
 
 
-void ImageOperation::setOrthographicProjection(QString name)
+void ImageOperation::setOrthoName(QString name)
 {
     mOrthoName = name;
-    mOrthoEnabled = true;
-    adjustOrtho();
+}
+
+
+
+void ImageOperation::enableOrtho(bool on)
+{
+    mOrthoEnabled = on;
+}
+
+
+void ImageOperation::adjustOrtho(GLfloat left, GLfloat right, GLfloat bottom, GLfloat top)
+{
+    if (mOrthoEnabled)
+    {
+        QMatrix4x4 transform;
+        transform.setToIdentity();
+        transform.ortho(left, right, bottom, top, -1.0, 1.0);
+
+        mContext->makeCurrent(mSurface);
+
+        mProgram->bind();
+        int location = mProgram->uniformLocation(mOrthoName);
+        mProgram->setUniformValue(location, transform);
+        mProgram->release();
+
+        mContext->doneCurrent();
+    }
 }
 
 
@@ -361,6 +360,8 @@ void ImageOperation::setMat4Uniform(QString name, UniformMat4Type type, QList<fl
             matrix.rotate(values.at(0), 0.0f, 0.0f, 1.0f);
         else if (type == UniformMat4Type::SCALING)
             matrix.scale(values.at(0), values.at(1));
+        else if (type == UniformMat4Type::ORTHOGRAPHIC)
+            matrix.ortho(values.at(0), values.at(1), values.at(2), values.at(3), -1.0, 1.0);
 
         mContext->makeCurrent(mSurface);
         mProgram->bind();
@@ -422,6 +423,13 @@ void ImageOperation::enableUpdate(bool on)
 bool ImageOperation::blendEnabled() const
 {
     return mBlendEnabled;
+}
+
+
+
+bool ImageOperation::blitEnabled() const
+{
+    return mBlitEnabled;
 }
 
 
@@ -517,29 +525,6 @@ QList<GLuint> ImageOperation::inputTextures()
 QList<float> ImageOperation::inputBlendFactors()
 {
     return mInputBlendFactors;
-}
-
-
-
-void ImageOperation::render()
-{
-    // Render input texture via shader program
-    // Needs active OpenGL context
-
-    mProgram->bind();
-    mVao->bind();
-
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, *mInputTexId);
-    glBindSampler(0, mSamplerId);
-
-    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-
-    glBindTexture(GL_TEXTURE_2D, 0);
-    glBindSampler(0, 0);
-
-    mVao->release();
-    mProgram->release();
 }
 
 
@@ -704,147 +689,6 @@ void ImageOperation::clearParameters()
 {
     fbo->clear();
 }*/
-
-
-
-void ImageOperation::genTexture(GLuint& texId)
-{
-    // Allocated on immutable storage (glTexStorage2D)
-    // To be called within active OpenGL context
-
-    glGenTextures(1, &texId);
-    glBindTexture(GL_TEXTURE_2D, texId);
-    glTexStorage2D(GL_TEXTURE_2D, 1, static_cast<GLenum>(mTexFormat), mTexWidth, mTexHeight);
-    glTexParameteri(mOutTexId, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(mOutTexId, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glBindTexture(GL_TEXTURE_2D, 0);
-}
-
-
-
-void ImageOperation::adjustOrtho()
-{
-    if (mOrthoEnabled)
-    {
-        GLfloat w = static_cast<GLfloat>(FBO::width);
-        GLfloat h = static_cast<GLfloat>(FBO::height);
-
-        GLfloat left, right, bottom, top;
-        GLfloat ratio = w / h;
-
-        if (FBO::width > FBO::height)
-        {
-            top = 1.0f;
-            bottom = -top;
-            right = top * ratio;
-            left = -right;
-        }
-        else
-        {
-            right = 1.0f;
-            left = -right;
-            top = right / ratio;
-            bottom = -top;
-        }
-
-        // Maintain aspect ratio
-
-        QMatrix4x4 transform;
-        transform.setToIdentity();
-        transform.ortho(left, right, bottom, top, -1.0, 1.0);
-
-        mContext->makeCurrent(mSurface);
-
-        mProgram->bind();
-        int location = mProgram->uniformLocation(mOrthoName);
-        mProgram->setUniformValue(location, transform);
-        mProgram->release();
-
-        mContext->doneCurrent();
-    }
-}
-
-
-
-void ImageOperation::resizeVertices()
-{
-    // Recompute vertices and texture coordinates
-    // Keep a square aspect ratio
-
-    GLfloat w = static_cast<GLfloat>(FBO::width);
-    GLfloat h = static_cast<GLfloat>(FBO::height);
-
-    GLfloat left, right, bottom, top;
-    GLfloat ratio = w / h;
-
-    if (FBO::width > FBO::height)
-    {
-        top = 1.0f;
-        bottom = -top;
-        right = top * ratio;
-        left = -right;
-    }
-    else
-    {
-        right = 1.0f;
-        left = -right;
-        top = right / ratio;
-        bottom = -top;
-    }
-
-    GLfloat vertCoords[] = {
-        left, bottom,
-        left, top,
-        right, bottom,
-        right, top
-    };
-
-
-    GLfloat texCoords[] = {
-        0.0f, 0.0f,
-        0.0f, 1.0f,
-        1.0f, 0.0f,
-        1.0f, 1.0f
-    };
-
-    mContext->makeCurrent(mSurface);
-
-    mVao->bind();
-
-    mVboPos->bind();
-    mVboPos->allocate(vertCoords, 8 * sizeof(GLfloat));
-
-    // Map vbo data to shader attribute location
-
-    if (mProgram->isLinked())
-    {
-        mProgram->bind();
-        int posLocation = mProgram->attributeLocation(mPosInAttribName);
-        mProgram->setAttributeBuffer(posLocation, GL_FLOAT, 0, 2);
-        mProgram->enableAttributeArray(posLocation);
-        mProgram->release();
-    }
-
-    mVboTex->bind();
-    mVboTex->allocate(texCoords, 8 * sizeof(GLfloat));
-
-    // Map vbo data to shader attribute location
-
-    if (mProgram->isLinked())
-    {
-        mProgram->bind();
-        int texLocation = mProgram->attributeLocation(mTexInAttribName);
-        mProgram->setAttributeBuffer(texLocation, GL_FLOAT, 0, 2);
-        mProgram->enableAttributeArray(texLocation);
-        mProgram->release();
-    }
-
-    mVao->release();
-    mVboPos->release();
-    mVboTex->release();
-
-    mContext->doneCurrent();
-}
 
 
 

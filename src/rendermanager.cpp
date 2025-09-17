@@ -22,16 +22,21 @@
 
 
 
-#include "fbo.h"
+#include "rendermanager.h"
 
 #include <QApplication>
 #include <QMessageBox>
 
 
 
-FBO::FBO(QOpenGLContext* shareContext) :
-    mShareContext { shareContext }
+RenderManager::RenderManager(){}
+
+
+
+void RenderManager::init(QOpenGLContext* shareContext)
 {
+    mShareContext = shareContext;
+
     // Create context
 
     mContext = new QOpenGLContext();
@@ -47,9 +52,11 @@ FBO::FBO(QOpenGLContext* shareContext) :
 
     initializeOpenGLFunctions();
 
-    // Framebuffer object
+    // Framebuffer objects
 
     glGenFramebuffers(1, &mOutFbo);
+    glGenFramebuffers(1, &mReadFbo);
+    glGenFramebuffers(1, &mDrawFbo);
 
     // Vertex array object
 
@@ -102,11 +109,13 @@ FBO::FBO(QOpenGLContext* shareContext) :
 
 
 
-FBO::~FBO()
+RenderManager::~RenderManager()
 {
     mContext->makeCurrent(mSurface);
 
     glDeleteFramebuffers(1, &mOutFbo);
+    glDeleteFramebuffers(1, &mReadFbo);
+    glDeleteFramebuffers(1, &mDrawFbo);
 
     glBindVertexArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -126,57 +135,47 @@ FBO::~FBO()
 
 
 
-ImageOperation* FBO::createNewOperation()
+ImageOperation* RenderManager::createNewOperation()
 {
     ImageOperation* operation = new ImageOperation("New Operation", mShareContext);
 
+    adjustOrtho(operation);
 
+    return operation;
 }
 
 
-void FBO::render()
+
+void RenderManager::blit()
 {
     mContext->makeCurrent(mSurface);
 
-    glBindFramebuffer(GL_FRAMEBUFFER, mOutFbo);
-
-    glBindVertexArray(mVao);
-
     foreach (ImageOperation* operation, mSortedOperations)
     {
-        if (operation->enabled())
+        if (operation->blitEnabled())
         {
-            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, operation->outTextureId(), 0);
+            glBindFramebuffer(GL_READ_FRAMEBUFFER, mReadFbo);
+            glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, operation->outTextureId(), 0);
 
-            glViewport(0, 0, mTexWidth, mTexHeight);
-            glClear(GL_COLOR_BUFFER_BIT);
+            glBindFramebuffer(GL_DRAW_FRAMEBUFFER, mDrawFbo);
+            glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, operation->blitTextureId(), 0);
 
-            operation->program()->bind();
+            glReadBuffer(GL_COLOR_ATTACHMENT0);
+            glDrawBuffer(GL_COLOR_ATTACHMENT0);
 
-            glActiveTexture(GL_TEXTURE0);
+            glBlitFramebuffer(0, 0, mTexWidth, mTexHeight, 0, 0, mTexWidth, mTexHeight, GL_COLOR_BUFFER_BIT, GL_NEAREST);
 
-            glBindTexture(GL_TEXTURE_2D, operation->inTextureId());
-            glBindSampler(0, operation->samplerId());
-
-            glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-
-            glBindSampler(0, 0);
-            glBindTexture(GL_TEXTURE_2D, 0);
-
-            operation->program()->release();
+            glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
+            glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
         }
     }
-
-    glBindVertexArray(0);
-
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     mContext->doneCurrent();
 }
 
 
 
-void FBO::blend()
+void RenderManager::blend()
 {
     mContext->makeCurrent(mSurface);
 
@@ -247,7 +246,58 @@ void FBO::blend()
 
 
 
-GLenum FBO::getFormat(GLenum format)
+void RenderManager::render()
+{
+    mContext->makeCurrent(mSurface);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, mOutFbo);
+
+    glBindVertexArray(mVao);
+
+    foreach (ImageOperation* operation, mSortedOperations)
+    {
+        if (operation->enabled())
+        {
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, operation->outTextureId(), 0);
+
+            glViewport(0, 0, mTexWidth, mTexHeight);
+            glClear(GL_COLOR_BUFFER_BIT);
+
+            operation->program()->bind();
+
+            glActiveTexture(GL_TEXTURE0);
+
+            glBindTexture(GL_TEXTURE_2D, operation->inTextureId());
+            glBindSampler(0, operation->samplerId());
+
+            glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+            glBindSampler(0, 0);
+            glBindTexture(GL_TEXTURE_2D, 0);
+
+            operation->program()->release();
+        }
+    }
+
+    glBindVertexArray(0);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    mContext->doneCurrent();
+}
+
+
+
+void RenderManager::iterate()
+{
+    blit();
+    blend();
+    render();
+}
+
+
+
+GLenum RenderManager::getFormat(GLenum format)
 {
     GLint redType, greenType, blueType, alphaType;
 
@@ -272,83 +322,16 @@ GLenum FBO::getFormat(GLenum format)
 
 
 
-void FBO::resize()
+void RenderManager::resize(GLuint width, GLuint height)
 {
-    mContext->makeCurrent(mSurface);
+    mOldTexWidth = mTexWidth;
+    mOldTexHeight = mTexHeight;
 
-    // Create FBO with new size texture
-    // Blit old FBO to new FBO
+    mTexWidth = width;
+    mTexHeight = height;
 
-    GLuint fbo;
-    GLuint textureId;
-    generateFramebuffer(fbo, textureId);
-
-    glBindFramebuffer(GL_READ_FRAMEBUFFER, mFbo);
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
-
-    glBlitFramebuffer(0, 0, widthOld, heightOld, 0, 0, width, height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
-
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-    // Delete old FBO, keeping new FBO
-
-    glDeleteFramebuffers(1, &mFbo);
-    glDeleteTextures(1, &mTextureId);
-
-    mTextureId = textureId;
-    mFbo = fbo;
-
-    mContext->doneCurrent();
-
-    // Keep old size
-
-    widthOld = width;
-    heightOld = height;
-}
-
-
-
-/*void FBO::draw()
-{
-    context->makeCurrent(surface);
-
-    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-
-    glViewport(0, 0, width, height);
-    glClear(GL_COLOR_BUFFER_BIT);
-
-    program->bind();
-    vao->bind();
-
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, *inputTextureID);
-    glBindSampler(0, samplerID);
-
-    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-
-    glBindSampler(0, 0);
-    glBindTexture(GL_TEXTURE_2D, 0);
-    vao->release();
-    program->release();
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-    context->doneCurrent();
-}*/
-
-
-
-void FBO::blit(GLuint fbo)
-{
-    mContext->makeCurrent(mSurface);
-
-    glBindFramebuffer(GL_READ_FRAMEBUFFER, mFbo);
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
-
-    glBlitFramebuffer(0, 0, width, height, 0, 0, width, height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
-
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-    mContext->doneCurrent();
+    resizeVertices();
+    resizeTextures();
 }
 
 
@@ -382,7 +365,7 @@ void FBO::blit(GLuint fbo)
 
 
 
-void FBO::clear()
+void RenderManager::clear()
 {
     mContext->makeCurrent(mSurface);
 
@@ -398,7 +381,7 @@ void FBO::clear()
 
 
 
-QImage FBO::outputImage()
+/*QImage RenderManager::outputImage()
 {
     mContext->makeCurrent(mSurface);
 
@@ -424,11 +407,32 @@ QImage FBO::outputImage()
     mContext->doneCurrent();
 
     return image;
+}*/
+
+
+
+TextureFormat RenderManager::texFormat()
+{
+    return mTexFormat;
 }
 
 
 
-void FBO::setShaderPrograms()
+GLuint RenderManager::texWidth()
+{
+    return mTexWidth;
+}
+
+
+
+GLuint RenderManager::texHeight()
+{
+    return mTexHeight;
+}
+
+
+
+void RenderManager::setShaderPrograms()
 {
     mBlenderProgram->addShaderFromSourceFile(QOpenGLShader::Vertex, ":/shaders/blender.vert");
     mBlenderProgram->addShaderFromSourceFile(QOpenGLShader::Fragment, ":/shaders/blender.frag");
@@ -462,12 +466,13 @@ void FBO::setShaderPrograms()
 
 
 
-void FBO::adjustOrtho()
+void RenderManager::verticesCoords(GLfloat& left, GLfloat& right, GLfloat& bottom, GLfloat& top)
 {
+    // Maintain texture aspect ratio
+
     GLfloat w = static_cast<GLfloat>(mTexWidth);
     GLfloat h = static_cast<GLfloat>(mTexHeight);
 
-    GLfloat left, right, bottom, top;
     GLfloat ratio = w / h;
 
     if (mTexWidth > mTexHeight)
@@ -484,8 +489,23 @@ void FBO::adjustOrtho()
         top = right / ratio;
         bottom = -top;
     }
+}
 
-    // Maintain aspect ratio
+
+
+void RenderManager::adjustOrtho(ImageOperation* operation)
+{
+    GLfloat left, right, bottom, top;
+    verticesCoords(left, right, bottom, top);
+
+    operation->adjustOrtho(left, right, bottom, top);
+}
+
+
+void RenderManager::adjustOrtho()
+{
+    GLfloat left, right, bottom, top;
+    verticesCoords(left, right, bottom, top);
 
     QMatrix4x4 transform;
     transform.setToIdentity();
@@ -498,36 +518,20 @@ void FBO::adjustOrtho()
     mBlenderProgram->setUniformValue(location, transform);
     mBlenderProgram->release();
 
+    foreach (ImageOperation* operation, mOperations)
+        operation->adjustOrtho(left, right, bottom, top);
+
     mContext->doneCurrent();
 }
 
 
 
-void FBO::resizeVertices()
+void RenderManager::resizeVertices()
 {
     // Recompute vertices coordinates
-    // Keep a square aspect ratio
-
-    GLfloat w = static_cast<GLfloat>(mTexWidth);
-    GLfloat h = static_cast<GLfloat>(mTexHeight);
 
     GLfloat left, right, bottom, top;
-    GLfloat ratio = w / h;
-
-    if (mTexWidth > mTexHeight)
-    {
-        top = 1.0f;
-        bottom = -top;
-        right = top * ratio;
-        left = -right;
-    }
-    else
-    {
-        right = 1.0f;
-        left = -right;
-        top = right / ratio;
-        bottom = -top;
-    }
+    verticesCoords(left, right, bottom, top);
 
     GLfloat vertCoords[] = {
         left, bottom,
@@ -544,7 +548,7 @@ void FBO::resizeVertices()
 
 
 
-void FBO::genTexture(GLuint& texId)
+void RenderManager::genTexture(GLuint& texId)
 {
     // Allocated on immutable storage (glTexStorage2D)
     // To be called within active OpenGL context
@@ -559,7 +563,7 @@ void FBO::genTexture(GLuint& texId)
 
 
 
-void FBO::genTextures(ImageOperation* operation)
+void RenderManager::genTextures(ImageOperation* operation)
 {
     foreach (GLuint* texId, operation->textureIds())
         genTexture(*texId);
@@ -567,27 +571,22 @@ void FBO::genTextures(ImageOperation* operation)
 
 
 
-void FBO::resizeTextures()
+void RenderManager::resizeTextures()
 {
     QList<GLuint*> oldTexIds;
 
     foreach (ImageOperation* operation, mOperations)
         oldTexIds.append(operation->textureIds());
 
-
-    GLuint readFBO = 0, drawFBO = 0;
-    glGenFramebuffers(1, &readFBO);
-    glGenFramebuffers(1, &drawFBO);
-
     foreach (GLuint* oldTexId, oldTexIds)
     {
         GLuint newTexId = 0;
         genTexture(newTexId);
 
-        glBindFramebuffer(GL_READ_FRAMEBUFFER, readFBO);
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, mReadFbo);
         glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, *oldTexId, 0);
 
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, drawFBO);
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, mDrawFbo);
         glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, newTexId, 0);
 
         glReadBuffer(GL_COLOR_ATTACHMENT0);
@@ -601,9 +600,6 @@ void FBO::resizeTextures()
         glDeleteTextures(1, oldTexId);
         *oldTexId = newTexId;
     }
-
-    glDeleteFramebuffers(1, &readFBO);
-    glDeleteFramebuffers(1, &drawFBO);
 
     glBindTexture(GL_TEXTURE_2D, 0);
 }

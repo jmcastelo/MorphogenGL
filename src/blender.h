@@ -27,7 +27,7 @@
 
 
 
-#include "fbo.h"
+#include "rendermanager.h"
 #include <QUuid>
 #include <QOpenGLContext>
 

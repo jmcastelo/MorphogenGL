@@ -20,13 +20,16 @@
 *  along with MorphogenGL.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#pragma once
+
+
+#ifndef MORPHOWIDGET_H
+#define MORPHOWIDGET_H
+
+
 
 #include "texformat.h"
-#include "fbo.h"
 #include "overlay.h"
 
-#include <cmath>
 #include <QOpenGLWidget>
 #include <QOpenGLExtraFunctions>
 #include <QOpenGLShaderProgram>
@@ -102,3 +105,7 @@ private:
     void updateCursor();
     void getSupportedTexFormats();
 };
+
+
+
+#endif

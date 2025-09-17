@@ -45,7 +45,6 @@ HEADERS += \
     src/cyclesearch.h \
     src/edge.h \
     src/edgewidget.h \
-    src/fbo.h \
     src/graphwidget.h \
     src/gridwidget.h \
     src/histogramwidget.h \
@@ -70,6 +69,7 @@ HEADERS += \
     src/parameters/uniformparameter.h \
     src/plotswidget.h \
     src/recorder.h \
+    src/rendermanager.h \
     src/rgbwidget.h \
     src/seed.h \
     src/seedwidget.h \
@@ -91,7 +91,6 @@ SOURCES += \
     src/cyclesearch.cpp \
     src/edge.cpp \
     src/edgewidget.cpp \
-    src/fbo.cpp \
     src/graphwidget.cpp \
     src/gridwidget.cpp \
     src/histogramwidget.cpp \
@@ -114,6 +113,7 @@ SOURCES += \
     src/parameters/uniformparameter.cpp \
     src/plotswidget.cpp \
     src/recorder.cpp \
+    src/rendermanager.cpp \
     src/rgbwidget.cpp \
     src/seed.cpp \
     src/seedwidget.cpp \

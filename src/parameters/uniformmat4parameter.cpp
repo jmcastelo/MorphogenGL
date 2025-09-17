@@ -42,7 +42,8 @@ UniformMat4Parameter::UniformMat4Parameter(QString theName, QString theUniformNa
     }
     else if (mType == UniformMat4Type::ORTHOGRAPHIC)
     {
-        mOperation->setOrthographicProjection(mUniformName);
+        mOperation->setOrthoName(mUniformName);
+        mOperation->enableOrtho(true);
     }
 }
 
@@ -75,7 +76,8 @@ UniformMat4Parameter::UniformMat4Parameter(QString theName, QString theUniformNa
     }
     else if (mType == UniformMat4Type::ORTHOGRAPHIC)
     {
-        mOperation->setOrthographicProjection(mUniformName);
+        mOperation->setOrthoName(mUniformName);
+        mOperation->enableOrtho(true);
     }
 }
 
@@ -131,8 +133,12 @@ void UniformMat4Parameter::setType(UniformMat4Type type)
     }
     else if (mType == UniformMat4Type::ORTHOGRAPHIC)
     {
-        mOperation->setOrthographicProjection(mUniformName);
+        mOperation->setOrthoName(mUniformName);
+        mOperation->enableOrtho(true);
     }
+
+    if (mType != UniformMat4Type::ORTHOGRAPHIC)
+        mOperation->enableOrtho(false);
 
     mPresets.clear();
 

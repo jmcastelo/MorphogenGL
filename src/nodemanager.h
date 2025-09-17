@@ -33,7 +33,7 @@
 #include "seedwidget.h"
 #include "edgewidget.h"
 
-#include "fbo.h"
+#include "rendermanager.h"
 #include <QObject>
 #include <QVector>
 #include <QString>

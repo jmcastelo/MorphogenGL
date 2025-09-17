@@ -22,8 +22,8 @@
 
 
 
-#ifndef FBO_H
-#define FBO_H
+#ifndef RENDERMANAGER_H
+#define RENDERMANAGER_H
 
 
 
@@ -38,33 +38,41 @@
 
 
 
-class FBO : protected QOpenGLExtraFunctions
+class RenderManager : protected QOpenGLExtraFunctions
 {
 public:
-    FBO(QOpenGLContext* shareContext);
-    ~FBO();
+    RenderManager();
+    ~RenderManager();
 
-    //GLuint** getTextureID() { return &texID; }
-    //void setInputTextureID(GLuint* id) { inputTextureID = id; }
+    void init(QOpenGLContext* shareContext);
 
     ImageOperation* createNewOperation();
 
-    void render();
+    void blit();
     void blend();
+    void render();
 
-    void resize();
+    void iterate();
 
-    void blit(GLuint fbo);
+    void resize(GLuint width, GLuint height);
+
     void clear();
 
     QImage outputImage();
+
+    TextureFormat texFormat();
+
+    GLuint texWidth();
+    GLuint texHeight();
 
 private:
     QOpenGLContext* mShareContext;
     QOpenGLContext* mContext;
     QOffscreenSurface* mSurface;
 
-    GLuint mOutFbo;
+    GLuint mOutFbo = 0;
+    GLuint mReadFbo = 0;
+    GLuint mDrawFbo = 0;
 
     QList<ImageOperation*> mOperations;
     QList<ImageOperation*> mSortedOperations;
@@ -91,6 +99,9 @@ private:
 
     void setShaderPrograms();
 
+    void verticesCoords(GLfloat& left, GLfloat& right, GLfloat& bottom, GLfloat& top);
+
+    void adjustOrtho(ImageOperation* operation);
     void adjustOrtho();
 
     void resizeVertices();
@@ -102,4 +113,4 @@ private:
 
 
 
-#endif // FBO_H
+#endif // RENDERMANAGER_H

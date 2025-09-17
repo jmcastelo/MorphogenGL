@@ -21,7 +21,7 @@
 */
 
 #include "seed.h"
-#include "fbo.h"
+#include "rendermanager.h"
 
 
 
