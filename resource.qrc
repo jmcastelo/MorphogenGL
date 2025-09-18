@@ -79,5 +79,7 @@
         <file>icons/edit-undo.png</file>
         <file>shaders/blender.frag</file>
         <file>shaders/blender.vert</file>
+        <file>shaders/identity.vert</file>
+        <file>shaders/identity.frag</file>
     </qresource>
 </RCC>

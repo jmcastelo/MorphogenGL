@@ -49,7 +49,7 @@ public:
     ImageOperation* createNewOperation();
 
     void blit();
-    void blend();
+    void blend(ImageOperation* operation);
     void render();
 
     void iterate();
@@ -89,6 +89,8 @@ private:
     GLint mNumTexUnits = 32;
 
     QOpenGLShaderProgram* mBlenderProgram;
+    QOpenGLShaderProgram* mIdentityProgram;
+
     GLuint mVao;
     GLuint mVboPos;
     GLuint mVboTex;
@@ -97,13 +99,10 @@ private:
 
     GLenum getFormat(GLenum format);
 
-    void setShaderPrograms();
+    void setBlenderProgram();
+    void setIdentityProgram();
 
     void verticesCoords(GLfloat& left, GLfloat& right, GLfloat& bottom, GLfloat& top);
-
-    void adjustOrtho(ImageOperation* operation);
-    void adjustOrtho();
-
     void resizeVertices();
 
     void genTexture(GLuint& texId);

@@ -73,10 +73,10 @@ void RenderManager::init(QOpenGLContext* shareContext)
     // Setup VAO
 
     GLfloat texCoords[] = {
-        0.0f, 0.0f,
-        0.0f, 1.0f,
-        1.0f, 0.0f,
-        1.0f, 1.0f
+        0.0f, 0.0f,  // Bottom-left
+        1.0f, 0.0f,  // Bottom-right
+        0.0f, 1.0f,  // Top-left
+        1.0f, 1.0f   // Top-right
     };
 
     glBindVertexArray(mVao);
@@ -94,8 +94,10 @@ void RenderManager::init(QOpenGLContext* shareContext)
     // Shader program
 
     mBlenderProgram = new QOpenGLShaderProgram();
+    mIdentityProgram = new QOpenGLShaderProgram();
 
-    setShaderPrograms();
+    setBlenderProgram();
+    setIdentityProgram();
 
     // Get and clamp maximum number of texture units (sampler2D)
 
@@ -139,8 +141,6 @@ ImageOperation* RenderManager::createNewOperation()
 {
     ImageOperation* operation = new ImageOperation("New Operation", mShareContext);
 
-    adjustOrtho(operation);
-
     return operation;
 }
 
@@ -175,73 +175,55 @@ void RenderManager::blit()
 
 
 
-void RenderManager::blend()
+void RenderManager::blend(ImageOperation *operation)
 {
-    mContext->makeCurrent(mSurface);
+    QList<GLuint> inputTextures = operation->inputTextures();
 
-    glBindFramebuffer(GL_FRAMEBUFFER, mOutFbo);
+    int nInputs = inputTextures.size();
+    if (nInputs > mMaxTexUnits)
+        nInputs = mMaxTexUnits;
 
-    glBindVertexArray(mVao);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, operation->blendOutTextureId(), 0);
 
-    foreach (ImageOperation* operation, mSortedOperations)
+    glViewport(0, 0, mTexWidth, mTexHeight);
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    mBlenderProgram->bind();
+
+    // Bind input textures
+
+    for (int i = 0; i < nInputs; ++i)
     {
-        if (operation->blendEnabled())
-        {
-            QList<GLuint> inputTextures = operation->inputTextures();
-
-            int nInputs = inputTextures.size();
-            if (nInputs > mMaxTexUnits)
-                nInputs = mMaxTexUnits;
-
-            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, operation->blendOutTextureId(), 0);
-
-            glViewport(0, 0, mTexWidth, mTexHeight);
-            glClear(GL_COLOR_BUFFER_BIT);
-
-            mBlenderProgram->bind();
-
-            // Bind input textures
-
-            for (int i = 0; i < nInputs; ++i)
-            {
-                glActiveTexture(GL_TEXTURE0 + i);
-                glBindTexture(GL_TEXTURE_2D, inputTextures[i]);
-            }
-
-            // Set number of input textures
-
-            GLint locCount = mBlenderProgram->uniformLocation("texCount");
-            glUniform1i(locCount, nInputs);
-
-            // Set blend factors
-
-            GLint locWeights = mBlenderProgram->uniformLocation("weights");
-            QList<float> blendFactors = operation->inputBlendFactors();
-
-            QList<float> weights(mNumTexUnits, 0.0f);
-            for (int i = 0; i < nInputs; ++i)
-                weights[i] = blendFactors[i];
-
-            glUniform1fv(locWeights, mNumTexUnits, weights.constData());
-
-            glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-
-            // Clean up
-
-            for (int i = 0; i < nInputs; i++) {
-                glActiveTexture(GL_TEXTURE0 + i);
-                glBindTexture(GL_TEXTURE_2D, 0);
-            }
-
-            mBlenderProgram->release();
-        }
+        glActiveTexture(GL_TEXTURE0 + i);
+        glBindTexture(GL_TEXTURE_2D, inputTextures[i]);
     }
 
-    glBindVertexArray(0);
+    // Set number of input textures
 
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    GLint locCount = mBlenderProgram->uniformLocation("texCount");
+    glUniform1i(locCount, nInputs);
 
-    mContext->doneCurrent();
+    // Set blend factors
+
+    GLint locWeights = mBlenderProgram->uniformLocation("weights");
+    QList<float> blendFactors = operation->inputBlendFactors();
+
+    QList<float> weights(mNumTexUnits, 0.0f);
+    for (int i = 0; i < nInputs; ++i)
+        weights[i] = blendFactors[i];
+
+    glUniform1fv(locWeights, mNumTexUnits, weights.constData());
+
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+    // Clean up
+
+    for (int i = 0; i < nInputs; i++) {
+        glActiveTexture(GL_TEXTURE0 + i);
+        glBindTexture(GL_TEXTURE_2D, 0);
+    }
+
+    mBlenderProgram->release();
 }
 
 
@@ -256,6 +238,9 @@ void RenderManager::render()
 
     foreach (ImageOperation* operation, mSortedOperations)
     {
+        if (operation->blendEnabled())
+            blend(operation);
+
         if (operation->enabled())
         {
             glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, operation->outTextureId(), 0);
@@ -291,7 +276,6 @@ void RenderManager::render()
 void RenderManager::iterate()
 {
     blit();
-    blend();
     render();
 }
 
@@ -432,7 +416,7 @@ GLuint RenderManager::texHeight()
 
 
 
-void RenderManager::setShaderPrograms()
+void RenderManager::setBlenderProgram()
 {
     mBlenderProgram->addShaderFromSourceFile(QOpenGLShader::Vertex, ":/shaders/blender.vert");
     mBlenderProgram->addShaderFromSourceFile(QOpenGLShader::Fragment, ":/shaders/blender.frag");
@@ -466,9 +450,43 @@ void RenderManager::setShaderPrograms()
 
 
 
+void RenderManager::setIdentityProgram()
+{
+    mIdentityProgram->addShaderFromSourceFile(QOpenGLShader::Vertex, ":/shaders/identity.vert");
+    mIdentityProgram->addShaderFromSourceFile(QOpenGLShader::Fragment, ":/shaders/identity.frag");
+    mIdentityProgram->link();
+
+    // Set blender shader attributes
+
+    if (mIdentityProgram->isLinked())
+    {
+        mIdentityProgram->bind();
+
+        mIdentityProgram->setAttributeBuffer(0, GL_FLOAT, 0, 2);
+        mIdentityProgram->enableAttributeArray(0);
+
+        mIdentityProgram->setAttributeBuffer(1, GL_FLOAT, 0, 2);
+        mIdentityProgram->enableAttributeArray(1);
+
+        GLint locSampler = mIdentityProgram->uniformLocation("inTexture");
+        if (locSampler >= 0)
+        {
+            QList<GLint> samplers;
+            for (int i = 0; i < mNumTexUnits; i++)
+                samplers.append(i);
+
+            glUniform1iv(locSampler, mNumTexUnits, samplers.constData());
+        }
+
+        mBlenderProgram->release();
+    }
+}
+
+
+
 void RenderManager::verticesCoords(GLfloat& left, GLfloat& right, GLfloat& bottom, GLfloat& top)
 {
-    // Maintain texture aspect ratio
+    // Maintain aspect ratio
 
     GLfloat w = static_cast<GLfloat>(mTexWidth);
     GLfloat h = static_cast<GLfloat>(mTexHeight);
@@ -493,51 +511,18 @@ void RenderManager::verticesCoords(GLfloat& left, GLfloat& right, GLfloat& botto
 
 
 
-void RenderManager::adjustOrtho(ImageOperation* operation)
-{
-    GLfloat left, right, bottom, top;
-    verticesCoords(left, right, bottom, top);
-
-    operation->adjustOrtho(left, right, bottom, top);
-}
-
-
-void RenderManager::adjustOrtho()
-{
-    GLfloat left, right, bottom, top;
-    verticesCoords(left, right, bottom, top);
-
-    QMatrix4x4 transform;
-    transform.setToIdentity();
-    transform.ortho(left, right, bottom, top, -1.0, 1.0);
-
-    mContext->makeCurrent(mSurface);
-
-    mBlenderProgram->bind();
-    int location = mBlenderProgram->uniformLocation("transform");
-    mBlenderProgram->setUniformValue(location, transform);
-    mBlenderProgram->release();
-
-    foreach (ImageOperation* operation, mOperations)
-        operation->adjustOrtho(left, right, bottom, top);
-
-    mContext->doneCurrent();
-}
-
-
-
 void RenderManager::resizeVertices()
 {
     // Recompute vertices coordinates
 
-    GLfloat left, right, bottom, top;
-    verticesCoords(left, right, bottom, top);
+    GLfloat w = static_cast<GLfloat>(mTexWidth);
+    GLfloat h = static_cast<GLfloat>(mTexHeight);
 
     GLfloat vertCoords[] = {
-        left, bottom,
-        left, top,
-        right, bottom,
-        right, top
+        0.0f, 0.0f, // Bottom-left
+        w, 0.0f, // Bottom-right
+        0.0f, h, // Top-left
+        w, h // Top-right
     };
 
     glBindBuffer(GL_ARRAY_BUFFER, mVboPos);
