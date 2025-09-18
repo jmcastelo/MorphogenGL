@@ -187,8 +187,6 @@ bool OperationParser::readOperation(ImageOperation* operation, QXmlStreamReader&
                 stream.skipCurrentElement();
         }
 
-        operation->resize();
-
         return true;
     }
 

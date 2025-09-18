@@ -1,11 +1,11 @@
 #version 330 core
 
+in vec2 texCoords;
+out vec4 fragColor;
+
 uniform sampler2D inTextures[32];
 uniform int texCount;
 uniform float weights[32];
-
-in vec2 texCoords;
-out vec4 fragColor;
 
 void main() {
     vec3 acc = vec3(0.0);

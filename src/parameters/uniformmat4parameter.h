@@ -16,8 +16,7 @@ enum class UniformMat4Type
 {
     TRANSLATION = 0,
     ROTATION = 1,
-    SCALING = 2,
-    ORTHOGRAPHIC = 3
+    SCALING = 2
 };
 
 

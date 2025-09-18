@@ -40,11 +40,6 @@ UniformMat4Parameter::UniformMat4Parameter(QString theName, QString theUniformNa
         mNumberNames.append("Y");
         mNumbers.append(new Number<float>(theValues.at(1), theMin.at(1), theMax.at(1), theInf.at(1), theSup.at(1)));
     }
-    else if (mType == UniformMat4Type::ORTHOGRAPHIC)
-    {
-        mOperation->setOrthoName(mUniformName);
-        mOperation->enableOrtho(true);
-    }
 }
 
 
@@ -73,11 +68,6 @@ UniformMat4Parameter::UniformMat4Parameter(QString theName, QString theUniformNa
 
         mNumberNames.append("Y");
         mNumbers.append(new Number<float>(theIds.at(1), theValues.at(1), theMin.at(1), theMax.at(1), theInf.at(1), theSup.at(1)));
-    }
-    else if (mType == UniformMat4Type::ORTHOGRAPHIC)
-    {
-        mOperation->setOrthoName(mUniformName);
-        mOperation->enableOrtho(true);
     }
 }
 
@@ -131,14 +121,6 @@ void UniformMat4Parameter::setType(UniformMat4Type type)
         mNumberNames.append("Y");
         mNumbers.append(new Number<float>(1.0, 0.0, 2.0, 0.0, 1000.0));
     }
-    else if (mType == UniformMat4Type::ORTHOGRAPHIC)
-    {
-        mOperation->setOrthoName(mUniformName);
-        mOperation->enableOrtho(true);
-    }
-
-    if (mType != UniformMat4Type::ORTHOGRAPHIC)
-        mOperation->enableOrtho(false);
 
     mPresets.clear();
 

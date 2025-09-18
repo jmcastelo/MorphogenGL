@@ -349,7 +349,7 @@ void RenderManager::resize(GLuint width, GLuint height)
 
 
 
-void RenderManager::clear()
+/*void RenderManager::clear()
 {
     mContext->makeCurrent(mSurface);
 
@@ -361,7 +361,7 @@ void RenderManager::clear()
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     mContext->doneCurrent();
-}
+}*/
 
 
 
@@ -428,11 +428,17 @@ void RenderManager::setBlenderProgram()
     {
         mBlenderProgram->bind();
 
+        // Vertices coordinates attribute (lcoation = 0)
+
         mBlenderProgram->setAttributeBuffer(0, GL_FLOAT, 0, 2);
         mBlenderProgram->enableAttributeArray(0);
 
+        // Texture coordinates attribute (lcoation = 1)
+
         mBlenderProgram->setAttributeBuffer(1, GL_FLOAT, 0, 2);
         mBlenderProgram->enableAttributeArray(1);
+
+        // Input texture units (uniform sampler2D inTextures[...])
 
         GLint locSamplers = mBlenderProgram->uniformLocation("inTextures");
         if (locSamplers >= 0)
@@ -462,23 +468,23 @@ void RenderManager::setIdentityProgram()
     {
         mIdentityProgram->bind();
 
+        // Vertices coordinates attribute (lcoation = 0)
+
         mIdentityProgram->setAttributeBuffer(0, GL_FLOAT, 0, 2);
         mIdentityProgram->enableAttributeArray(0);
+
+        // Texture coordinates attribute (lcoation = 1)
 
         mIdentityProgram->setAttributeBuffer(1, GL_FLOAT, 0, 2);
         mIdentityProgram->enableAttributeArray(1);
 
+        // Input texture unit (uniform sampler2D inTexture)
+
         GLint locSampler = mIdentityProgram->uniformLocation("inTexture");
         if (locSampler >= 0)
-        {
-            QList<GLint> samplers;
-            for (int i = 0; i < mNumTexUnits; i++)
-                samplers.append(i);
+            glUniform1i(locSampler, 0);
 
-            glUniform1iv(locSampler, mNumTexUnits, samplers.constData());
-        }
-
-        mBlenderProgram->release();
+        mIdentityProgram->release();
     }
 }
 
