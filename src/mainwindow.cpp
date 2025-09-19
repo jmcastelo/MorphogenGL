@@ -9,7 +9,7 @@ MainWindow::MainWindow()
 
     renderManager = new RenderManager();
 
-    nodeManager = new NodeManager();
+    nodeManager = new NodeManager(renderManager);
 
     overlay = new Overlay();
 
@@ -24,7 +24,7 @@ MainWindow::MainWindow()
     plotsWidgetOpacityEffect->setOpacity(opacity);
     plotsWidget->setGraphicsEffect(plotsWidgetOpacityEffect);
 
-    controlWidget = new ControlWidget(iterationFPS, updateFPS, nodeManager, plotsWidget);
+    controlWidget = new ControlWidget(iterationFPS, updateFPS, nodeManager, renderManager, plotsWidget);
     controlWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     controlWidget->setMinimumSize(0, 0);
 
@@ -81,7 +81,7 @@ MainWindow::MainWindow()
         updateTimer->start();
     });
     connect(morphoWidget, &MorphoWidget::supportedTexFormats, controlWidget, &ControlWidget::populateTexFormatComboBox);
-    connect(morphoWidget, &MorphoWidget::sizeChanged, nodeManager, &NodeManager::resize);
+    connect(morphoWidget, &MorphoWidget::sizeChanged, renderManager, &RenderManager::resize);
     connect(morphoWidget, &MorphoWidget::sizeChanged, controlWidget, &ControlWidget::updateWindowSizeLineEdits);
     connect(morphoWidget, &MorphoWidget::sizeChanged, plotsWidget, &PlotsWidget::setImageSize);
 
@@ -93,6 +93,7 @@ MainWindow::MainWindow()
     connect(controlWidget, &ControlWidget::iterateStateChanged, this, &MainWindow::setIterationState);
     connect(controlWidget, &ControlWidget::updateStateChanged, morphoWidget, &MorphoWidget::setUpdate);
 
+    connect(nodeManager, &NodeManager::outputTextureChanged, renderManager, &RenderManager::setOutputTextureId);
     connect(nodeManager, &NodeManager::outputTextureChanged, morphoWidget, &MorphoWidget::updateOutputTextureID);
     connect(nodeManager, &NodeManager::outputTextureChanged, plotsWidget, &PlotsWidget::setTextureID);
     connect(nodeManager, &NodeManager::outputFBOChanged, plotsWidget, &PlotsWidget::setFBO);
@@ -122,6 +123,7 @@ MainWindow::~MainWindow()
     delete plotsWidget;
     delete controlWidget;
     delete nodeManager;
+    delete renderManager;
     delete morphoWidget;
     delete overlay;
 
@@ -140,7 +142,7 @@ void MainWindow::beat()
         if (recorder->isRecording())
         {
             iterate();
-            recorder->sendVideoFrame(nodeManager->outputImage());
+            recorder->sendVideoFrame(renderManager->outputImage());
         }
     }
     else
@@ -155,7 +157,7 @@ void MainWindow::iterate()
 {
     if (nodeManager->isActive())
     {
-        nodeManager->iterate();
+        renderManager->iterate();
         plotsWidget->updatePlots();
     }
 }

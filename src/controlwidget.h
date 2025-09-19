@@ -26,6 +26,7 @@
 
 
 #include "nodemanager.h"
+#include "rendermanager.h"
 #include "operationwidget.h"
 #include "graphwidget.h"
 #include "plotswidget.h"
@@ -76,9 +77,7 @@ class ControlWidget : public QWidget
     Q_OBJECT
 
 public:
-    NodeManager* mNodeManager;
-
-    ControlWidget(double itFPS, double updFPS, NodeManager* theGenerator, PlotsWidget* thePlotsWidget, QWidget *parent = nullptr);
+    ControlWidget(double itFPS, double updFPS, NodeManager* nodeManager, RenderManager* renderManager, PlotsWidget* thePlotsWidget, QWidget *parent = nullptr);
     ~ControlWidget();
 
 signals:
@@ -112,6 +111,10 @@ protected:
     void closeEvent(QCloseEvent* event) override;
 
 private:
+    NodeManager* mNodeManager;
+
+    RenderManager* mRenderManager;
+
     PlotsWidget* plotsWidget;
 
     ConfigurationParser* parser;

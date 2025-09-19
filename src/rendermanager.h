@@ -31,6 +31,7 @@
 #include "imageoperation.h"
 #include "seed.h"
 
+#include <QObject>
 #include <QOpenGLExtraFunctions>
 #include <QOpenGLContext>
 #include <QOffscreenSurface>
@@ -39,28 +40,42 @@
 
 
 
-class RenderManager : protected QOpenGLExtraFunctions
+class RenderManager : public QObject, protected QOpenGLExtraFunctions
 {
+    Q_OBJECT
+
 public:
     RenderManager();
     ~RenderManager();
 
     void init(QOpenGLContext* shareContext);
 
+    Seed* createNewSeed();
+    void deleteSeed(Seed* seed);
+
     ImageOperation* createNewOperation();
 
     void iterate();
 
-    void resize(GLuint width, GLuint height);
-
-    void clear();
-
     QImage outputImage();
 
     TextureFormat texFormat();
+    void setTextureFormat(TextureFormat format);
 
     GLuint texWidth();
     GLuint texHeight();
+
+    void resetIterationNumer();
+    int iterationNumber();
+
+    void setSortedOperations(QList<ImageOperation*> operations);
+
+signals:
+    void texturesChanged();
+
+public slots:
+    void resize(GLuint width, GLuint height);
+    void setOutputTextureId(GLuint texId);
 
 private:
     QOpenGLContext* mShareContext;
@@ -93,6 +108,10 @@ private:
     GLuint mVboPos;
     GLuint mVboTex;
 
+    GLuint mOutputTexId = 0;
+
+    unsigned int mIterationNumber = 0;
+
     GLsync fence = 0;
 
     GLenum getFormat(GLenum format);
@@ -103,14 +122,12 @@ private:
     void verticesCoords(GLfloat& left, GLfloat& right, GLfloat& bottom, GLfloat& top);
     void resizeVertices();
 
-    void genTexture(GLuint& texId);
-    void genTextures(ImageOperation* operation);
-    void genTextures(Seed* seed);
+    void genTexture(GLuint texId);
     void resizeTextures();
+    void clearTexture(GLuint texId);
 
     void blit();
     void blend(ImageOperation* operation);
-    void renderSeed(Seed* seed);
     void renderOperation(ImageOperation* operation);
     void render();
 };

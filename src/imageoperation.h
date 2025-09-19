@@ -52,8 +52,8 @@
 class ImageOperation : protected QOpenGLExtraFunctions
 {
 public:
-    ImageOperation(QString theName, QOpenGLContext* shareContext);
-    ImageOperation(const ImageOperation& operation);
+    ImageOperation(QString name, GLenum texFormat, GLuint width, GLuint height, QOpenGLContext* shareContext);
+    ImageOperation(GLenum texFormat, GLuint width, GLuint height, const ImageOperation& operation);
     ~ImageOperation();
 
     QOpenGLShaderProgram* program();
@@ -103,7 +103,7 @@ public:
     GLuint blendOutTextureId();
     GLuint inTextureId();
     GLuint samplerId();
-    QList<GLuint*> textureIds();
+    QList<GLuint> textureIds();
 
     QList<GLuint> inputTextures();
     QList<float> inputBlendFactors();
@@ -190,6 +190,7 @@ private:
 
     QList<UniformMat4Parameter*> mMat4UniformParameters;
 
+    void genTextures(GLenum texFormat, GLuint width, GLuint height);
     void setMinMagFilter(GLenum filter);
 };
 

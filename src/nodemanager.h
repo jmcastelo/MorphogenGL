@@ -20,11 +20,14 @@
 *  along with MorphogenGL.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+
+
 #ifndef NODEMANAGER_H
 #define NODEMANAGER_H
 
 
 
+#include "rendermanager.h"
 #include "imageoperation.h"
 #include "seed.h"
 #include "inputdata.h"
@@ -33,9 +36,8 @@
 #include "seedwidget.h"
 #include "edgewidget.h"
 
-#include "rendermanager.h"
 #include <QObject>
-#include <QVector>
+#include <QList>
 #include <QString>
 #include <QImage>
 #include <QOpenGLContext>
@@ -97,7 +99,7 @@ class NodeManager : public QObject
     Q_OBJECT
 
 public:
-    NodeManager();
+    NodeManager(RenderManager* renderManager);
     ~NodeManager();
 
     QList<QString> availableOperations;
@@ -163,10 +165,6 @@ public:
     GLuint getOUtputFBO() { return outputFBO; }
     GLuint outputTextureID() { return mOutputTextureId; }
 
-    QImage outputImage();
-
-    void setTextureFormat(TextureFormat format);
-
     void pasteOperations();
 
     void swapLoadedOperations() { operationNodes = loadedOperationNodes; }
@@ -175,16 +173,9 @@ public:
     void swapTwoOperations(QUuid id1, QUuid id2);
 
     void sortOperations();
-    void iterate();
 
     void clearOperation(QUuid id);
     void clearAllOperations();
-
-    void resetIterationNumer() { iteration = 0; }
-    int getIterationNumber() { return iteration; }
-
-    int getWidth() { return FBO::width; }
-    int getHeight() { return FBO::height; }
 
     QMap<QUuid, ImageOperationNode*> getOperationNodes() { return operationNodes; }
     QMap<QUuid, Seed*> getSeeds() { return seeds; }
@@ -193,9 +184,6 @@ public:
     bool isNode(QUuid id) { return operationNodes.contains(id) || seeds.contains(id); }
 
     QString version = "1.0 alpha";
-
-public slots:
-    void resize(GLuint width, GLuint height);
 
 signals:
     void outputNodeChanged(QWidget* widget);
@@ -206,7 +194,12 @@ signals:
     void nodeRemoved(QUuid id);
     void nodesDisconnected(QUuid srcId, QUuid dstId);
 
+public slots:
+    void onTexturesChanged();
+
 private:
+    RenderManager* mRenderManager;
+
     QMap<QUuid, ImageOperationNode*> operationNodes;
     QMap<QUuid, ImageOperationNode*> copiedOperationNodes[2];
     QMap<QUuid, ImageOperationNode*> loadedOperationNodes;
@@ -214,8 +207,6 @@ private:
     QMap<QUuid, Seed*> seeds;
     QMap<QUuid, Seed*> copiedSeeds[2];
     QMap<QUuid, Seed*> loadedSeeds;
-
-    QList<ImageOperation*> sortedOperations;
 
     QUuid connSrcId;
 

@@ -255,7 +255,8 @@ void ImageOperationNode::setOperation(ImageOperation *newOperation)
 
 // NodeManager
 
-NodeManager::NodeManager()
+NodeManager::NodeManager(RenderManager *renderManager) :
+    mRenderManager { renderManager }
 {
     /*availableOperations = {
         BilateralFilter::name,
@@ -309,7 +310,7 @@ void NodeManager::sortOperations()
 {
     //QList<ImageOperation*> tmpSortedOperations = sortedOperations;
 
-    sortedOperations.clear();
+    QList<ImageOperation*> sortedOperations;
 
     QList<QPair<QUuid, QString>> sortedOperationsData;
     QList<QUuid> unsortedOperationsIds;
@@ -337,8 +338,8 @@ void NodeManager::sortOperations()
         else if ((node->numInputs() == 0 && node->numOutputs() > 0) ||
                  (node->numInputs() > 0 && node->numNonNormalInputs() == node->numInputs()))
         {
-            sortedOperations.push_back(node->operation);
-            sortedOperationsData.push_back(QPair<QUuid, QString>(node->id, node->operation->name()));
+            sortedOperations.append(node->operation);
+            sortedOperationsData.append(QPair<QUuid, QString>(node->id, node->operation->name()));
             pendingNodes.remove(node->id);
             node->setComputed(true);
         }
@@ -348,15 +349,15 @@ void NodeManager::sortOperations()
 
     while (!pendingNodes.empty())
     {
-        QVector<ImageOperationNode*> computedNodes;
+        QList<ImageOperationNode*> computedNodes;
 
         foreach (ImageOperationNode* node, pendingNodes)
         {
             if (node->allInputsComputed())
             {
-                sortedOperations.push_back(node->operation);
+                sortedOperations.append(node->operation);
                 sortedOperationsData.push_back(QPair<QUuid, QString>(node->id, node->operation->name()));
-                computedNodes.push_back(node);
+                computedNodes.append(node);
                 node->setComputed(true);
             }
         }
@@ -372,47 +373,24 @@ void NodeManager::sortOperations()
 
     //if (tmpSortedOperations != sortedOperations)
         emit sortedOperationsChanged(sortedOperationsData, unsortedOperationsIds);
-}
 
-
-
-void NodeManager::iterate()
-{
-    foreach (ImageOperation* operation, sortedOperations)
-    {
-        operation->blit();
-    }
-
-    foreach (ImageOperation* operation, sortedOperations)
-    {
-        operation->applyOperation();
-    }
-
-    iteration++;
-
-    foreach (Seed* seed, seeds)
-    {
-        if (!seed->isFixed() && !seed->isCleared())
-            seed->clear();
-    }
+    mRenderManager->setSortedOperations(sortedOperations);
 }
 
 
 
 void NodeManager::clearOperation(QUuid id)
 {
-    if (operationNodes.contains(id))
-        operationNodes.value(id)->operation->clear();
+    //if (operationNodes.contains(id))
+        //operationNodes.value(id)->operation->clear();
 }
 
 
 
 void NodeManager::clearAllOperations()
 {
-    foreach (ImageOperationNode* node, operationNodes)
-    {
-        node->operation->clear();
-    }
+    //foreach (ImageOperationNode* node, operationNodes)
+        //node->operation->clear();
 }
 
 
@@ -440,7 +418,7 @@ void NodeManager::setOutput(QUuid id)
     else if (seeds.contains(id))
     {
         mOutputId = id;
-        mOutputTextureId = seeds.value(id)->getTextureID();
+        mOutputTextureId = seeds.value(id)->outTextureId();
 
         emit outputTextureChanged(mOutputTextureId);
         // emit outputFBOChanged(seeds.value(id)->getFBO());
@@ -463,7 +441,7 @@ bool NodeManager::connectOperations(QUuid srcId, QUuid dstId, float factor)
         }
         else if (seeds.contains(srcId) && operationNodes.contains(dstId) && !operationNodes.value(dstId)->inputNodes.contains(srcId))
         {
-            operationNodes.value(dstId)->addSeedInput(srcId, new InputData(InputType::Seed, seeds.value(srcId)->getTextureID(), factor));
+            operationNodes.value(dstId)->addSeedInput(srcId, new InputData(InputType::Seed, seeds.value(srcId)->outTextureId(), factor));
 
             sortOperations();
             return true;
@@ -487,7 +465,7 @@ void NodeManager::connectCopiedOperationsA(QUuid srcId0, QUuid dstId0, QUuid src
     else if (seeds.contains(srcId0))
     {
         float factor = operationNodes.value(dstId0)->inputs.value(srcId0)->blendFactor();
-        copiedOperationNodes[0].value(dstId1)->addSeedInput(srcId1, new InputData(InputType::Seed, seeds.value(srcId0)->getTextureID(), factor));
+        copiedOperationNodes[0].value(dstId1)->addSeedInput(srcId1, new InputData(InputType::Seed, seeds.value(srcId0)->outTextureId(), factor));
     }
 }
 
@@ -505,7 +483,7 @@ void NodeManager::connectCopiedOperationsB(QUuid srcId0, QUuid dstId0, QUuid src
     else if (copiedSeeds[1].contains(srcId0))
     {
         float factor = copiedOperationNodes[1].value(dstId0)->inputs.value(srcId0)->blendFactor();
-        copiedOperationNodes[0].value(dstId1)->addSeedInput(srcId1, new InputData(InputType::Seed, copiedSeeds[0].value(srcId1)->getTextureID(), factor));
+        copiedOperationNodes[0].value(dstId1)->addSeedInput(srcId1, new InputData(InputType::Seed, copiedSeeds[0].value(srcId1)->outTextureId(), factor));
     }
 }
 
@@ -713,7 +691,7 @@ void NodeManager::connectLoadedOperations(QMap<QUuid, QMap<QUuid, InputData*>> c
 
                if (inputData->type() == InputType::Normal)
                {
-                   inputData->setTextureId(loadedOperationNodes.value(src.key())->operation->textureId());
+                   inputData->setTextureId(loadedOperationNodes.value(src.key())->operation->outTextureId());
                    loadedOperationNodes.value(src.key())->operation->enableBlit(false);
                }
                else if (inputData->type() == InputType::Blit)
@@ -728,7 +706,7 @@ void NodeManager::connectLoadedOperations(QMap<QUuid, QMap<QUuid, InputData*>> c
            else if (loadedSeeds.contains(src.key()))
            {
                InputData* inputData = src.value();
-               inputData->setTextureId(loadedSeeds.value(src.key())->getTextureID());
+               inputData->setTextureId(loadedSeeds.value(src.key())->outTextureId());
 
                loadedOperationNodes.value(dst.key())->addSeedInput(src.key(), inputData);
            }
@@ -770,7 +748,7 @@ EdgeWidget* NodeManager::addEdgeWidget(QUuid srcId, QUuid dstId, float factor)
 
 QPair<QUuid, OperationWidget*> NodeManager::addNewOperation()
 {
-    ImageOperation* operation = new ImageOperation("New Operation", mShareContext);
+    ImageOperation* operation = mRenderManager->createNewOperation();
 
     QUuid id = QUuid::createUuid();
 
@@ -1038,7 +1016,7 @@ ImageOperation* NodeManager::loadImageOperation(
 
 QPair<QUuid, SeedWidget *> NodeManager::addSeed()
 {
-    Seed* seed = new Seed(mShareContext);
+    Seed* seed = mRenderManager->createNewSeed();
 
     QUuid id = QUuid::createUuid();
     seeds.insert(id, seed);
@@ -1072,10 +1050,10 @@ QPair<QUuid, SeedWidget *> NodeManager::addSeed()
     connect(seedWidget, &SeedWidget::typeChanged, this, [=, this](){
         if (isOutput(id))
         {
-            mOutputTextureId = seeds.value(id)->getTextureID();
+            mOutputTextureId = seeds.value(id)->outTextureId();
 
             emit outputTextureChanged(mOutputTextureId);
-            emit outputFBOChanged(seeds.value(id)->getFBO());
+            //emit outputFBOChanged(seeds.value(id)->getFBO());
         }
 
         resetInputSeedTexId(id);
@@ -1107,7 +1085,7 @@ void NodeManager::removeSeed(QUuid id)
 {
     if (seeds.contains(id))
     {
-        delete seeds.value(id);
+        mRenderManager->deleteSeed(seeds.value(id));
         seeds.remove(id);
 
         foreach (ImageOperationNode* node, operationNodes)
@@ -1119,7 +1097,7 @@ void NodeManager::removeSeed(QUuid id)
 
 void NodeManager::loadSeed(QUuid id, int type, bool fixed)
 {
-    Seed* seed = new Seed(mShareContext);
+    Seed* seed = mRenderManager->createNewSeed();
 
     seed->setType(type);
     seed->setFixed(fixed);
@@ -1153,7 +1131,7 @@ void NodeManager::resetInputSeedTexId(QUuid id)
     if (seeds.contains(id))
     {
         foreach (ImageOperationNode* opNode, operationNodes)
-            opNode->setInputSeedTexId(id, seeds[id]->getTextureID());
+            opNode->setInputSeedTexId(id, seeds[id]->outTextureId());
     }
 }
 
@@ -1161,7 +1139,7 @@ void NodeManager::resetInputSeedTexId(QUuid id)
 
 bool NodeManager::isSeedFixed(QUuid id)
 {
-    return seeds.value(id)->isFixed();
+    return seeds.value(id)->fixed();
 }
 
 
@@ -1175,7 +1153,7 @@ void NodeManager::setSeedFixed(QUuid id, bool fixed)
 
 void NodeManager::drawSeed(QUuid id)
 {
-    seeds.value(id)->draw();
+    seeds.value(id)->setOutTexture(true);
 }
 
 
@@ -1183,30 +1161,18 @@ void NodeManager::drawSeed(QUuid id)
 void NodeManager::drawAllSeeds()
 {
     foreach (Seed* seed, seeds)
-        if (!seed->isFixed())
-            seed->draw();
+        seed->setOutTexture(true);
 }
 
 
 
-QImage NodeManager::outputImage()
+void NodeManager::onTexturesChanged()
 {
-    ImageOperation* operation = getOperation(mOutputId);
-    if (operation)
-    {
-        return operation->outputImage();
-    }
-    else
-    {
-        QImage image(FBO::width, FBO::height, QImage::Format_RGBA8888);
-        image.fill(Qt::black);
-        return image;
-    }
+    setOutput(mOutputId);
 }
 
 
-
-void NodeManager::setTextureFormat(TextureFormat format)
+/*void NodeManager::setTextureFormat(TextureFormat format)
 {
     FBO::texFormat = format;
 
@@ -1216,21 +1182,5 @@ void NodeManager::setTextureFormat(TextureFormat format)
     foreach (ImageOperationNode* node, operationNodes)
         node->operation->setTextureFormat();
 
-    setOutput(outputId);
-}
-
-
-
-void NodeManager::resize(GLuint width, GLuint height)
-{
-    FBO::width = width;
-    FBO::height = height;
-
-    foreach (Seed* seed, seeds)
-        seed->resize();
-
-    foreach (ImageOperationNode* node, operationNodes)
-        node->operation->resize();
-
     setOutput(mOutputId);
-}
+}*/

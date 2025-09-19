@@ -31,8 +31,8 @@
 
 // Image operation base class
 
-ImageOperation::ImageOperation(QString theName, QOpenGLContext* shareContext) :
-    mName { theName }
+ImageOperation::ImageOperation(QString name, GLenum texFormat, GLuint width, GLuint height, QOpenGLContext* shareContext) :
+    mName { name }
 {
     // Create context
 
@@ -55,6 +55,10 @@ ImageOperation::ImageOperation(QString theName, QOpenGLContext* shareContext) :
 
     initializeOpenGLFunctions();
 
+    // Generate textures with format and size given externally
+
+    genTextures(texFormat, width, height);
+
     // Shader program
 
     mProgram = new QOpenGLShaderProgram();
@@ -70,7 +74,7 @@ ImageOperation::ImageOperation(QString theName, QOpenGLContext* shareContext) :
 
 
 
-ImageOperation::ImageOperation(const ImageOperation& operation) :
+ImageOperation::ImageOperation(GLenum texFormat, GLuint width, GLuint height, const ImageOperation& operation) :
     mName { operation.mName },
     mContext { operation.mContext },
     mVertexShader { operation.mVertexShader },
@@ -78,6 +82,12 @@ ImageOperation::ImageOperation(const ImageOperation& operation) :
     mEnabled { operation.mEnabled },
     mInputData { operation.mInputData }
 {
+    // Generate textures with format and size given externally
+
+    genTextures(texFormat, width, height);
+
+    // Copy parameters
+
     for (auto parameter: operation.floatUniformParameters)
     {
         auto newParameter = new UniformParameter<float>(*parameter);
@@ -511,9 +521,9 @@ GLuint ImageOperation::samplerId()
 
 
 
-QList<GLuint*> ImageOperation::textureIds()
+QList<GLuint> ImageOperation::textureIds()
 {
-    return QList<GLuint*> { &mOutTexId, &mBlitTexId, &mBlendOutTexId };
+    return QList<GLuint> { mOutTexId, mBlitTexId, mBlendOutTexId };
 }
 
 
@@ -692,6 +702,24 @@ void ImageOperation::clearParameters()
 {
     fbo->clear();
 }*/
+
+
+
+void ImageOperation::genTextures(GLenum texFormat, GLuint width, GLuint height)
+{
+    // Allocated on immutable storage (glTexStorage2D)
+    // To be called within active OpenGL context
+
+    foreach (GLuint texId, textureIds())
+    {
+        glGenTextures(1, &texId);
+        glBindTexture(GL_TEXTURE_2D, texId);
+        glTexStorage2D(GL_TEXTURE_2D, 1, texFormat, width, height);
+        glTexParameteri(texId, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(texId, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glBindTexture(GL_TEXTURE_2D, 0);
+    }
+}
 
 
 

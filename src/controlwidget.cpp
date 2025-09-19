@@ -34,9 +34,10 @@
 
 
 
-ControlWidget::ControlWidget(double itFPS, double updFPS, NodeManager *nodeManager, PlotsWidget *thePlotsWidget, QWidget *parent) :
+ControlWidget::ControlWidget(double itFPS, double updFPS, NodeManager *nodeManager, RenderManager *renderManager, PlotsWidget *thePlotsWidget, QWidget *parent) :
     QWidget(parent),
     mNodeManager { nodeManager },
+    mRenderManager { renderManager },
     plotsWidget { thePlotsWidget }
 {
     // Scroll area
@@ -277,7 +278,7 @@ void ControlWidget::reset()
 {
     mNodeManager->clearAllOperations();
     mNodeManager->drawAllSeeds();
-    mNodeManager->resetIterationNumer();
+    mRenderManager->resetIterationNumer();
 }
 
 
@@ -458,7 +459,7 @@ void ControlWidget::about()
 
 void ControlWidget::updateIterationNumberLabel()
 {
-    iterationNumberLabel->setText(QString("Frame: %1").arg(mNodeManager->getIterationNumber()));
+    iterationNumberLabel->setText(QString("Frame: %1").arg(mRenderManager->iterationNumber()));
 }
 
 
@@ -765,7 +766,7 @@ void ControlWidget::constructDisplayOptionsWidget(double itsFPS, double updFPS)
     {
         int selectedValue = texFormatComboBox->itemData(index).toInt();
         TextureFormat selectedFormat = static_cast<TextureFormat>(selectedValue);
-        mNodeManager->setTextureFormat(selectedFormat);
+        mRenderManager->setTextureFormat(selectedFormat);
     });
 }
 
@@ -803,7 +804,7 @@ void ControlWidget::populateTexFormatComboBox(QList<TextureFormat> formats)
     foreach (TextureFormat format, formats)
     {
         texFormatComboBox->addItem(textureFormatToString(format), QVariant(static_cast<int>(format)));
-        if (format == FBO::texFormat)
+        if (format == mRenderManager->texFormat())
             texFormatComboBox->setCurrentIndex(index);
         index++;
     }

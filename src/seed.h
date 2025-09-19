@@ -44,26 +44,24 @@
 class Seed : protected QOpenGLExtraFunctions
 {
 public:
-    Seed(QOpenGLContext* shareContext);
-    Seed(const Seed& seed);
+    Seed(GLenum texFormat, GLuint width, GLuint height, GLuint vao, QOpenGLContext* shareContext);
+    Seed(GLenum texFormat, GLuint width, GLuint height, const Seed& seed);
     ~Seed();
 
     GLuint outTextureId();
-    QList<GLuint*> textureIds();
+    QList<GLuint> textureIds();
+
+    void setOutTexture(bool draw);
 
     void loadImage(QString filename);
 
-    void draw();
-
-    int type() const { return mType; }
+    int type() const;
     void setType(int type);
 
-    bool fixed() const { return mFixed; }
-    void setFixed(bool set) { mFixed = set; }
+    bool fixed() const;
+    void setFixed(bool set);
 
-    QString imageFilename() const { return mImageFilename; }
-
-    bool cleared() const { return mCleared; }
+    QString imageFilename() const;
 
 private:
     int mType = 0;
@@ -74,6 +72,9 @@ private:
     QOpenGLContext* mContext;
     QOffscreenSurface* mSurface;
 
+    GLuint mOutFbo = 0;
+    GLuint mVao = 0;
+
     GLuint mOutTexId = 0;
 
     GLuint mRandomTexId = 0;
@@ -81,12 +82,16 @@ private:
 
     QOpenGLTexture* mImageTex;
 
+    GLuint mClearTexId = 0;
+
     std::default_random_engine mGenerator;
+
+    void genTextures(GLenum texFormat, GLuint width, GLuint height);
+    void clearTexture(GLuint texId);
 
     void setRandomProgram();
 
     void drawRandom(bool grayscale);
-    void drawImage();
 };
 
 
