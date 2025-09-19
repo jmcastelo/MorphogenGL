@@ -39,7 +39,7 @@ void ConfigurationParser::write()
 
     stream.writeStartElement("morphogengl");
 
-    stream.writeAttribute("version", generator->version);
+    stream.writeAttribute("version", mNodeManager->version);
 
     // Display
 
@@ -47,15 +47,15 @@ void ConfigurationParser::write()
 
     stream.writeStartElement("image");
     stream.writeStartElement("width");
-    stream.writeCharacters(QString::number(generator->getWidth()));
+    stream.writeCharacters(QString::number(mRenderManager->texWidth()));
     stream.writeEndElement();
     stream.writeStartElement("height");
-    stream.writeCharacters(QString::number(generator->getHeight()));
+    stream.writeCharacters(QString::number(mRenderManager->texHeight()));
     stream.writeEndElement();
     stream.writeEndElement();
 
     stream.writeStartElement("outputnode");
-    stream.writeCharacters(generator->getOutput().toString());
+    stream.writeCharacters(mNodeManager->getOutput().toString());
     stream.writeEndElement();
 
     stream.writeEndElement();
@@ -64,10 +64,10 @@ void ConfigurationParser::write()
 
     stream.writeStartElement("nodes");
 
-    for (auto [id, seed] : generator->getSeeds().asKeyValueRange())
+    for (auto [id, seed] : mNodeManager->getSeeds().asKeyValueRange())
         writeSeedNode(id, seed);
 
-    foreach (ImageOperationNode* node, generator->getOperationNodes())
+    foreach (ImageOperationNode* node, mNodeManager->getOperationNodes())
         writeOperationNode(node);
 
     stream.writeEndElement();
@@ -88,7 +88,7 @@ void ConfigurationParser::writeSeedNode(QUuid id, Seed* seed)
     stream.writeEndElement();
 
     stream.writeStartElement("fixed");
-    stream.writeCharacters(QString::number(seed->isFixed()));
+    stream.writeCharacters(QString::number(seed->fixed()));
     stream.writeEndElement();
 
     /*QPointF position = graphWidget->nodePosition(id);
@@ -117,7 +117,7 @@ void ConfigurationParser::writeOperationNode(ImageOperationNode* node)
     stream.writeStartElement("operation");
 
     stream.writeAttribute("name", node->operation->name());
-    stream.writeAttribute("enabled", QString::number(node->operation->isEnabled()));
+    stream.writeAttribute("enabled", QString::number(node->operation->enabled()));
 
     foreach (auto parameter, node->operation->uniformParameters<float>())
     {
@@ -173,11 +173,11 @@ void ConfigurationParser::writeOperationNode(ImageOperationNode* node)
         stream.writeAttribute("id", i.key().toString());
 
         stream.writeStartElement("type");
-        stream.writeCharacters(QString::number(static_cast<int>(i.value()->type)));
+        stream.writeCharacters(QString::number(static_cast<int>(i.value()->type())));
         stream.writeEndElement();
 
         stream.writeStartElement("blendfactor");
-        stream.writeCharacters(QString::number(i.value()->blendFactor));
+        stream.writeCharacters(QString::number(i.value()->blendFactor()));
         stream.writeEndElement();
 
         stream.writeEndElement();
@@ -213,15 +213,15 @@ void ConfigurationParser::read()
     if (xml.readNextStartElement() && xml.name() == "morphogengl")
     {
         QUuid outputNodeId;
-        int imageWidth = generator->getWidth();
-        int imageHeight = generator->getHeight();
+        int imageWidth = mRenderManager->texWidth();
+        int imageHeight = mRenderManager->texHeight();
 
         while (xml.readNextStartElement())
         {
             if (xml.name() == "nodes")
             {
-                generator->clearLoadedSeeds();
-                generator->clearLoadedOperations();
+                mNodeManager->clearLoadedSeeds();
+                mNodeManager->clearLoadedOperations();
 
                 QMap<QUuid, QPointF> seedNodePositions;
                 QMap<QUuid, QPair<QString, QPointF>> operationNodeData;
@@ -270,7 +270,7 @@ void ConfigurationParser::read()
                             }
                         }
 
-                        generator->loadSeed(id, type, fixed);
+                        mNodeManager->loadSeed(id, type, fixed);
                         seedNodePositions.insert(id, position);
                     }
                     else if (xml.name() == "operationnode")
@@ -338,7 +338,7 @@ void ConfigurationParser::read()
 
                         if (operation)
                         {
-                            generator->loadOperation(id, operation);
+                            mNodeManager->loadOperation(id, operation);
                             connections.insert(id, inputs);
                             operationNodeData.insert(id, QPair<QString, QPointF>(operation->name(), position));
                         }
@@ -349,12 +349,12 @@ void ConfigurationParser::read()
                     }
                 }
 
-                generator->connectLoadedOperations(connections);
+                mNodeManager->connectLoadedOperations(connections);
 
-                generator->swapLoadedSeeds();
-                generator->swapLoadedOperations();
+                mNodeManager->swapLoadedSeeds();
+                mNodeManager->swapLoadedOperations();
 
-                generator->sortOperations();
+                mNodeManager->sortOperations();
 
                 /*graphWidget->clearScene();
 
@@ -409,7 +409,7 @@ void ConfigurationParser::read()
         }
 
         if (!outputNodeId.isNull())
-            generator->setOutput(outputNodeId);
+            mNodeManager->setOutput(outputNodeId);
 
         //emit newImageSizeRead(imageWidth, imageHeight);
     }
@@ -477,7 +477,7 @@ ImageOperation* ConfigurationParser::readImageOperation()
         }
     }
 
-    return generator->loadImageOperation(
+    return mNodeManager->loadImageOperation(
                 operationName,
                 enabled,
                 boolParameters,

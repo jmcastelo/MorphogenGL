@@ -25,6 +25,7 @@
 
 
 #include "nodemanager.h"
+#include "rendermanager.h"
 #include "graphwidget.h"
 
 #include <QObject>
@@ -39,8 +40,9 @@ class ConfigurationParser: public QObject
     Q_OBJECT
 
 public:
-    ConfigurationParser(NodeManager* theGenerator, GraphWidget* graph) :
-        generator { theGenerator },
+    ConfigurationParser(NodeManager* nodeManager, RenderManager* renderManager, GraphWidget* graph) :
+        mNodeManager { nodeManager },
+        mRenderManager { renderManager},
         graphWidget { graph }
     {}
 
@@ -52,7 +54,8 @@ signals:
     void newImageSizeRead(int width, int height);
 
 private:
-    NodeManager* generator;
+    NodeManager* mNodeManager;
+    RenderManager* mRenderManager;
     GraphWidget* graphWidget;
     QString filename;
     QXmlStreamWriter stream;

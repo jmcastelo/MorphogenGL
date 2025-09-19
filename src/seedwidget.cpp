@@ -63,9 +63,9 @@ SeedWidget::SeedWidget(Seed *seed, QWidget *parent) :
 
     // Set fixed action
 
-    fixedAction = headerToolBar->addAction(mSeed->isFixed() ? QIcon(QPixmap(":/icons/document-encrypt.png")) : QIcon(QPixmap(":/icons/document-decrypt.png")), mSeed->isFixed() ? "Fixed" : "Not fixed", this, &SeedWidget::setFixedSeed);
+    fixedAction = headerToolBar->addAction(mSeed->fixed() ? QIcon(QPixmap(":/icons/document-encrypt.png")) : QIcon(QPixmap(":/icons/document-decrypt.png")), mSeed->fixed() ? "Fixed" : "Not fixed", this, &SeedWidget::setFixedSeed);
     fixedAction->setCheckable(true);
-    fixedAction->setChecked(mSeed->isFixed());
+    fixedAction->setChecked(mSeed->fixed());
 
     headerToolBar->addSeparator();
 

@@ -37,7 +37,6 @@ RESOURCES += resource.qrc
 #RC_ICONS = ./icons/morphogengl.ico
 
 HEADERS += \
-    src/blender.h \
     src/colorpath.h \
     src/configparser.h \
     src/controlwidget.h \
@@ -83,7 +82,6 @@ HEADERS += \
     src/widgets/uniformwidget.h
 
 SOURCES += \
-    src/blender.cpp \
     src/colorpath.cpp \
     src/configparser.cpp \
     src/controlwidget.cpp \

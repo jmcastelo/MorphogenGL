@@ -110,7 +110,7 @@ ControlWidget::ControlWidget(double itFPS, double updFPS, NodeManager *nodeManag
 
     // Parser
 
-    parser = new ConfigurationParser(mNodeManager, graphWidget);
+    parser = new ConfigurationParser(mNodeManager, mRenderManager, graphWidget);
 
     // Status bar
 
