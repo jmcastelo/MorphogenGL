@@ -141,134 +141,9 @@ ImageOperation* RenderManager::createNewOperation()
 {
     ImageOperation* operation = new ImageOperation("New Operation", mShareContext);
 
+    genTextures(operation);
+
     return operation;
-}
-
-
-
-void RenderManager::blit()
-{
-    mContext->makeCurrent(mSurface);
-
-    foreach (ImageOperation* operation, mSortedOperations)
-    {
-        if (operation->blitEnabled())
-        {
-            glBindFramebuffer(GL_READ_FRAMEBUFFER, mReadFbo);
-            glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, operation->outTextureId(), 0);
-
-            glBindFramebuffer(GL_DRAW_FRAMEBUFFER, mDrawFbo);
-            glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, operation->blitTextureId(), 0);
-
-            glReadBuffer(GL_COLOR_ATTACHMENT0);
-            glDrawBuffer(GL_COLOR_ATTACHMENT0);
-
-            glBlitFramebuffer(0, 0, mTexWidth, mTexHeight, 0, 0, mTexWidth, mTexHeight, GL_COLOR_BUFFER_BIT, GL_NEAREST);
-
-            glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
-            glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-        }
-    }
-
-    mContext->doneCurrent();
-}
-
-
-
-void RenderManager::blend(ImageOperation *operation)
-{
-    QList<GLuint> inputTextures = operation->inputTextures();
-
-    int nInputs = inputTextures.size();
-    if (nInputs > mMaxTexUnits)
-        nInputs = mMaxTexUnits;
-
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, operation->blendOutTextureId(), 0);
-
-    glViewport(0, 0, mTexWidth, mTexHeight);
-    glClear(GL_COLOR_BUFFER_BIT);
-
-    mBlenderProgram->bind();
-
-    // Bind input textures
-
-    for (int i = 0; i < nInputs; ++i)
-    {
-        glActiveTexture(GL_TEXTURE0 + i);
-        glBindTexture(GL_TEXTURE_2D, inputTextures[i]);
-    }
-
-    // Set number of input textures
-
-    GLint locCount = mBlenderProgram->uniformLocation("texCount");
-    glUniform1i(locCount, nInputs);
-
-    // Set blend factors
-
-    GLint locWeights = mBlenderProgram->uniformLocation("weights");
-    QList<float> blendFactors = operation->inputBlendFactors();
-
-    QList<float> weights(mNumTexUnits, 0.0f);
-    for (int i = 0; i < nInputs; ++i)
-        weights[i] = blendFactors[i];
-
-    glUniform1fv(locWeights, mNumTexUnits, weights.constData());
-
-    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-
-    // Clean up
-
-    for (int i = 0; i < nInputs; i++) {
-        glActiveTexture(GL_TEXTURE0 + i);
-        glBindTexture(GL_TEXTURE_2D, 0);
-    }
-
-    mBlenderProgram->release();
-}
-
-
-
-void RenderManager::render()
-{
-    mContext->makeCurrent(mSurface);
-
-    glBindFramebuffer(GL_FRAMEBUFFER, mOutFbo);
-
-    glBindVertexArray(mVao);
-
-    foreach (ImageOperation* operation, mSortedOperations)
-    {
-        if (operation->blendEnabled())
-            blend(operation);
-
-        if (operation->enabled())
-        {
-            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, operation->outTextureId(), 0);
-
-            glViewport(0, 0, mTexWidth, mTexHeight);
-            glClear(GL_COLOR_BUFFER_BIT);
-
-            operation->program()->bind();
-
-            glActiveTexture(GL_TEXTURE0);
-
-            glBindTexture(GL_TEXTURE_2D, operation->inTextureId());
-            glBindSampler(0, operation->samplerId());
-
-            glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-
-            glBindSampler(0, 0);
-            glBindTexture(GL_TEXTURE_2D, 0);
-
-            operation->program()->release();
-        }
-    }
-
-    glBindVertexArray(0);
-
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-    mContext->doneCurrent();
 }
 
 
@@ -562,6 +437,14 @@ void RenderManager::genTextures(ImageOperation* operation)
 
 
 
+void RenderManager::genTextures(Seed* seed)
+{
+    foreach (GLuint* texId, seed->textureIds())
+        genTexture(*texId);
+}
+
+
+
 void RenderManager::resizeTextures()
 {
     QList<GLuint*> oldTexIds;
@@ -593,4 +476,160 @@ void RenderManager::resizeTextures()
     }
 
     glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+
+
+void RenderManager::blit()
+{
+    mContext->makeCurrent(mSurface);
+
+    foreach (ImageOperation* operation, mSortedOperations)
+    {
+        if (operation->blitEnabled())
+        {
+            glBindFramebuffer(GL_READ_FRAMEBUFFER, mReadFbo);
+            glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, operation->outTextureId(), 0);
+
+            glBindFramebuffer(GL_DRAW_FRAMEBUFFER, mDrawFbo);
+            glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, operation->blitTextureId(), 0);
+
+            glReadBuffer(GL_COLOR_ATTACHMENT0);
+            glDrawBuffer(GL_COLOR_ATTACHMENT0);
+
+            glBlitFramebuffer(0, 0, mTexWidth, mTexHeight, 0, 0, mTexWidth, mTexHeight, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+
+            glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
+            glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+        }
+    }
+
+    mContext->doneCurrent();
+}
+
+
+
+void RenderManager::blend(ImageOperation *operation)
+{
+    QList<GLuint> inputTextures = operation->inputTextures();
+
+    int nInputs = inputTextures.size();
+    if (nInputs > mMaxTexUnits)
+        nInputs = mMaxTexUnits;
+
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, operation->blendOutTextureId(), 0);
+
+    glViewport(0, 0, mTexWidth, mTexHeight);
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    mBlenderProgram->bind();
+
+    // Bind input textures
+
+    for (int i = 0; i < nInputs; ++i)
+    {
+        glActiveTexture(GL_TEXTURE0 + i);
+        glBindTexture(GL_TEXTURE_2D, inputTextures[i]);
+    }
+
+    // Set number of input textures
+
+    GLint locCount = mBlenderProgram->uniformLocation("texCount");
+    glUniform1i(locCount, nInputs);
+
+    // Set blend factors
+
+    GLint locWeights = mBlenderProgram->uniformLocation("weights");
+    QList<float> blendFactors = operation->inputBlendFactors();
+
+    QList<float> weights(mNumTexUnits, 0.0f);
+    for (int i = 0; i < nInputs; ++i)
+        weights[i] = blendFactors[i];
+
+    glUniform1fv(locWeights, mNumTexUnits, weights.constData());
+
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+    // Clean up
+
+    for (int i = 0; i < nInputs; i++) {
+        glActiveTexture(GL_TEXTURE0 + i);
+        glBindTexture(GL_TEXTURE_2D, 0);
+    }
+
+    mBlenderProgram->release();
+}
+
+
+
+void RenderManager::renderSeed(Seed* seed)
+{
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, seed->outTextureId(), 0);
+
+    glViewport(0, 0, mTexWidth, mTexHeight);
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    seed->draw();
+
+    glBindTexture(GL_TEXTURE_2D, operation->inTextureId());
+
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    operation->program()->release();
+}
+
+
+
+void RenderManager::renderOperation(ImageOperation* operation)
+{
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, operation->outTextureId(), 0);
+
+    glViewport(0, 0, mTexWidth, mTexHeight);
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    operation->program()->bind();
+
+    glActiveTexture(GL_TEXTURE0);
+
+    glBindTexture(GL_TEXTURE_2D, operation->inTextureId());
+    glBindSampler(0, operation->samplerId());
+
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+    glBindSampler(0, 0);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    operation->program()->release();
+}
+
+
+
+void RenderManager::render()
+{
+    mContext->makeCurrent(mSurface);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, mOutFbo);
+
+    glBindVertexArray(mVao);
+
+    foreach (Seed* seed, mSeeds) {
+
+    }
+
+    foreach (ImageOperation* operation, mSortedOperations)
+    {
+        if (operation->blendEnabled())
+            blend(operation);
+
+        if (operation->enabled())
+            renderOperation(operation);
+    }
+
+    glBindVertexArray(0);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    mContext->doneCurrent();
 }

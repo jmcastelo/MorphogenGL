@@ -29,6 +29,7 @@
 
 #include "texformat.h"
 #include "imageoperation.h"
+#include "seed.h"
 
 #include <QOpenGLExtraFunctions>
 #include <QOpenGLContext>
@@ -47,10 +48,6 @@ public:
     void init(QOpenGLContext* shareContext);
 
     ImageOperation* createNewOperation();
-
-    void blit();
-    void blend(ImageOperation* operation);
-    void render();
 
     void iterate();
 
@@ -74,6 +71,7 @@ private:
     GLuint mReadFbo = 0;
     GLuint mDrawFbo = 0;
 
+    QList<Seed*> mSeeds;
     QList<ImageOperation*> mOperations;
     QList<ImageOperation*> mSortedOperations;
 
@@ -107,7 +105,14 @@ private:
 
     void genTexture(GLuint& texId);
     void genTextures(ImageOperation* operation);
+    void genTextures(Seed* seed);
     void resizeTextures();
+
+    void blit();
+    void blend(ImageOperation* operation);
+    void renderSeed(Seed* seed);
+    void renderOperation(ImageOperation* operation);
+    void render();
 };
 
 

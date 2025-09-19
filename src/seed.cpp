@@ -20,504 +20,121 @@
 *  along with MorphogenGL.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+
+
 #include "seed.h"
-#include "rendermanager.h"
 
 
 
-Seed::Seed(QOpenGLContext* mainContext) :
-    QOpenGLExtraFunctions()
+Seed::Seed(QOpenGLContext* shareContext)
 {
-    context = new QOpenGLContext();
-    context->setFormat(mainContext->format());
-    context->setShareContext(mainContext);
-    context->create();
+    mContext = new QOpenGLContext();
+    mContext->setFormat(shareContext->format());
+    mContext->setShareContext(shareContext);
+    mContext->create();
 
-    surface = new QOffscreenSurface();
-    surface->setFormat(mainContext->format());
-    surface->create();
+    mSurface = new QOffscreenSurface();
+    mSurface->setFormat(shareContext->format());
+    mSurface->create();
 
-    context->makeCurrent(surface);
+    mContext->makeCurrent(mSurface);
 
     initializeOpenGLFunctions();
 
-    // Frame buffer object
+    // Initialize shader program
 
-    generateFramebuffer(fboRandom, texRandom);
-    generateFramebuffer(fboImage, texImage);
+    mRandomProgram = new QOpenGLShaderProgram();
+    setRandomProgram();
 
-    textureID = &texRandom;
-
-    // Initialize shader programs
-
-    imageProgram = new QOpenGLShaderProgram();
-    if (!imageProgram->addShaderFromSourceFile(QOpenGLShader::Vertex, ":/shaders/screen.vert"))
-        qDebug() << "Vertex shader error:\n" << imageProgram->log();
-    if (!imageProgram->addShaderFromSourceFile(QOpenGLShader::Fragment, ":/shaders/screen.frag"))
-        qDebug() << "Fragment shader error:\n" << imageProgram->log();
-    if (!imageProgram->link())
-        qDebug() << "Shader link error:\n" << imageProgram->log();
-
-    randomProgram = new QOpenGLShaderProgram();
-    if (!randomProgram->addShaderFromSourceFile(QOpenGLShader::Vertex, ":/shaders/position.vert"))
-        qDebug() << "Vertex shader error:\n" << randomProgram->log();
-    if (!randomProgram->addShaderFromSourceFile(QOpenGLShader::Fragment, ":/shaders/random-seed.frag"))
-        qDebug() << "Fragment shader error:\n" << randomProgram->log();
-    if (!randomProgram->link())
-        qDebug() << "Shader link error:\n" << randomProgram->log();
-
-    // In quad data
-
-    GLfloat w = static_cast<GLfloat>(FBO::width);
-    GLfloat h = static_cast<GLfloat>(FBO::height);
-
-    GLfloat left, right, bottom, top;
-    GLfloat ratio = w / h;
-
-    if (FBO::width > FBO::height)
-    {
-        top = 1.0f;
-        bottom = -top;
-        right = top * ratio;
-        left = -right;
-    }
-    else
-    {
-        right = 1.0f;
-        left = -right;
-        top = right / ratio;
-        bottom = -top;
-    }
-
-    GLfloat vertices[] = {
-        left, bottom,
-        left, top,
-        right, bottom,
-        right, top
-    };
-
-    GLfloat texCoords[] = {
-        0.0f, 0.0f,
-        0.0f, 1.0f,
-        1.0f, 0.0f,
-        1.0f, 1.0f
-    };
-
-    // Random
-
-    // Vertex array object
-
-    vaoRandom = new QOpenGLVertexArrayObject();
-    vaoRandom->create();
-    vaoRandom->bind();
-
-    // Vertex buffer object
-
-    vboRandom = new QOpenGLBuffer(QOpenGLBuffer::VertexBuffer);
-    vboRandom->create();
-    vboRandom->setUsagePattern(QOpenGLBuffer::StaticDraw);
-    vboRandom->bind();
-    vboRandom->allocate(vertices, 8 * sizeof(GLfloat));
-
-    // Map vbo data to shader attribute location
-
-    randomProgram->bind();
-
-    int posLocation = randomProgram->attributeLocation("pos");
-    randomProgram->setAttributeBuffer(posLocation, GL_FLOAT, 0, 2);
-    randomProgram->enableAttributeArray(posLocation);
-
-    randomProgram->release();
-
-    // Unbind all
-
-    vaoRandom->release();
-    vboRandom->release();
-
-    // Image
-
-    // Vertex array object
-
-    vaoImage = new QOpenGLVertexArrayObject();
-    vaoImage->create();
-    vaoImage->bind();
-
-    // Vertex buffer object
-
-    vboPosImage = new QOpenGLBuffer(QOpenGLBuffer::VertexBuffer);
-    vboPosImage->create();
-    vboPosImage->setUsagePattern(QOpenGLBuffer::StaticDraw);
-    vboPosImage->bind();
-    vboPosImage->allocate(vertices, 8 * sizeof(GLfloat));
-
-    // Map vbo data to shader attribute location
-
-    imageProgram->bind();
-
-    posLocation = imageProgram->attributeLocation("pos");
-    imageProgram->setAttributeBuffer(posLocation, GL_FLOAT, 0, 2);
-    imageProgram->enableAttributeArray(posLocation);
-
-    imageProgram->release();
-
-    // Vertex buffer object: texture coordinates
-
-    vboTexImage = new QOpenGLBuffer(QOpenGLBuffer::VertexBuffer);
-    vboTexImage->create();
-    vboTexImage->setUsagePattern(QOpenGLBuffer::StaticDraw);
-    vboTexImage->bind();
-    vboTexImage->allocate(texCoords, 8 * sizeof(GLfloat));
-
-    // Map vbo data to shader attribute location
-
-    imageProgram->bind();
-    int texcoordLocation = imageProgram->attributeLocation("tex");
-    imageProgram->setAttributeBuffer(texcoordLocation, GL_FLOAT, 0, 2);
-    imageProgram->enableAttributeArray(texcoordLocation);
-    imageProgram->release();
-
-    // Unbind all
-
-    vaoImage->release();
-    vboPosImage->release();
-    vboTexImage->release();
-
-    context->doneCurrent();
-
-    widthOld = FBO::width;
-    heightOld = FBO::height;
+    mContext->doneCurrent();
 
     // Set image
 
-    image = new QOpenGLTexture(QOpenGLTexture::Target2D);
-
-    // Set ortho projection
-
-    resizeVertices();
-    maintainAspectRatio();
+    mImageTex = new QOpenGLTexture(QOpenGLTexture::Target2D);
 }
 
 
 
 Seed::Seed(const Seed& seed) :
-    QOpenGLExtraFunctions(),
     mType { seed.mType },
-    fixed { seed.fixed },
-    imageFilename { seed.imageFilename }
+    mFixed { seed.mFixed },
+    mImageFilename { seed.mImageFilename }
 {
-    context = new QOpenGLContext();
-    context->setFormat(seed.context->format());
-    context->setShareContext(seed.context);
-    context->create();
+    mContext = new QOpenGLContext();
+    mContext->setFormat(seed.mContext->format());
+    mContext->setShareContext(seed.mContext);
+    mContext->create();
 
-    surface = new QOffscreenSurface();
-    surface->setFormat(seed.context->format());
-    surface->create();
+    mSurface = new QOffscreenSurface();
+    mSurface->setFormat(seed.mContext->format());
+    mSurface->create();
 
-    context->makeCurrent(surface);
+    mContext->makeCurrent(mSurface);
 
     initializeOpenGLFunctions();
 
-    // Frame buffer object
+    // Initialize shader program
 
-    generateFramebuffer(fboRandom, texRandom);
-    generateFramebuffer(fboImage, texImage);
+    mRandomProgram = new QOpenGLShaderProgram();
+    setRandomProgram();
 
-    textureID = &texRandom;
+    mContext->doneCurrent();
 
-    // Initialize shader programs
+    // Set image
 
-    imageProgram = new QOpenGLShaderProgram();
-    if (!imageProgram->addShaderFromSourceFile(QOpenGLShader::Vertex, ":/shaders/screen.vert"))
-        qDebug() << "Vertex shader error:\n" << imageProgram->log();
-    if (!imageProgram->addShaderFromSourceFile(QOpenGLShader::Fragment, ":/shaders/screen.frag"))
-        qDebug() << "Fragment shader error:\n" << imageProgram->log();
-    if (!imageProgram->link())
-        qDebug() << "Shader link error:\n" << imageProgram->log();
+    mImageTex = new QOpenGLTexture(QOpenGLTexture::Target2D);
 
-    randomProgram = new QOpenGLShaderProgram();
-    if (!randomProgram->addShaderFromSourceFile(QOpenGLShader::Vertex, ":/shaders/position.vert"))
-        qDebug() << "Vertex shader error:\n" << randomProgram->log();
-    if (!randomProgram->addShaderFromSourceFile(QOpenGLShader::Fragment, ":/shaders/random-seed.frag"))
-        qDebug() << "Fragment shader error:\n" << randomProgram->log();
-    if (!randomProgram->link())
-        qDebug() << "Shader link error:\n" << randomProgram->log();
-
-    // In quad data
-
-    GLfloat w = static_cast<GLfloat>(FBO::width);
-    GLfloat h = static_cast<GLfloat>(FBO::height);
-
-    GLfloat left, right, bottom, top;
-    GLfloat ratio = w / h;
-
-    if (FBO::width > FBO::height)
-    {
-        top = 1.0f;
-        bottom = -top;
-        right = top * ratio;
-        left = -right;
-    }
-    else
-    {
-        right = 1.0f;
-        left = -right;
-        top = right / ratio;
-        bottom = -top;
-    }
-
-    GLfloat vertices[] = {
-        left, bottom,
-        left, top,
-        right, bottom,
-        right, top
-    };
-
-    GLfloat texCoords[] = {
-        0.0f, 0.0f,
-        0.0f, 1.0f,
-        1.0f, 0.0f,
-        1.0f, 1.0f
-    };
-
-    /*GLfloat vertices[] = {
-        -1.0f, 1.0f,
-        -1.0f, -1.0f,
-        1.0f, -1.0f,
-        -1.0f, 1.0f,
-        1.0f, -1.0f,
-        1.0f, 1.0f
-    };
-
-    GLfloat texcoords[] = {
-        0.0f, 1.0f,
-        0.0f, 0.0f,
-        1.0f, 0.0f,
-        0.0f, 1.0f,
-        1.0f, 0.0f,
-        1.0f, 1.0f
-    };*/
-
-    // Random
-
-    // Vertex array object
-
-    vaoRandom = new QOpenGLVertexArrayObject();
-    vaoRandom->create();
-    vaoRandom->bind();
-
-    // Vertex buffer object
-
-    vboRandom = new QOpenGLBuffer(QOpenGLBuffer::VertexBuffer);
-    vboRandom->create();
-    vboRandom->setUsagePattern(QOpenGLBuffer::StaticDraw);
-    vboRandom->bind();
-    vboRandom->allocate(vertices, 8 * sizeof(GLfloat));
-
-    // Map vbo data to shader attribute location
-
-    randomProgram->bind();
-    int posLocation = randomProgram->attributeLocation("pos");
-    randomProgram->setAttributeBuffer(posLocation, GL_FLOAT, 0, 2);
-    randomProgram->enableAttributeArray(posLocation);
-    randomProgram->release();
-
-    // Unbind all
-
-    vaoRandom->release();
-    vboRandom->release();
-
-    // Image
-
-    // Vertex array object
-
-    vaoImage = new QOpenGLVertexArrayObject();
-    vaoImage->create();
-    vaoImage->bind();
-
-    // Vertex buffer object
-
-    vboPosImage = new QOpenGLBuffer(QOpenGLBuffer::VertexBuffer);
-    vboPosImage->create();
-    vboPosImage->setUsagePattern(QOpenGLBuffer::StaticDraw);
-    vboPosImage->bind();
-    vboPosImage->allocate(vertices, 8 * sizeof(GLfloat));
-
-    // Map vbo data to shader attribute location
-
-    imageProgram->bind();
-    posLocation = imageProgram->attributeLocation("pos");
-    imageProgram->setAttributeBuffer(posLocation, GL_FLOAT, 0, 2);
-    imageProgram->enableAttributeArray(posLocation);
-    imageProgram->release();
-
-    // Vertex buffer object: texture coordinates
-
-    vboTexImage = new QOpenGLBuffer(QOpenGLBuffer::VertexBuffer);
-    vboTexImage->create();
-    vboTexImage->setUsagePattern(QOpenGLBuffer::StaticDraw);
-    vboTexImage->bind();
-    vboTexImage->allocate(texCoords, 8 * sizeof(GLfloat));
-
-    // Map vbo data to shader attribute location
-
-    imageProgram->bind();
-    int texcoordLocation = imageProgram->attributeLocation("tex");
-    imageProgram->setAttributeBuffer(texcoordLocation, GL_FLOAT, 0, 2);
-    imageProgram->enableAttributeArray(texcoordLocation);
-    imageProgram->release();
-
-    // Unbind all
-
-    vaoImage->release();
-    vboPosImage->release();
-    vboTexImage->release();
-
-    context->doneCurrent();
-
-    widthOld = FBO::width;
-    heightOld = FBO::height;
-
-    image = new QOpenGLTexture(QOpenGLTexture::Target2D);
-
-    if (!imageFilename.isEmpty())
-        loadImage(imageFilename);
-
-    resizeVertices();
-    maintainAspectRatio();
+    if (!mImageFilename.isEmpty())
+        loadImage(mImageFilename);
 }
 
 
 
 Seed::~Seed()
 {
-    context->makeCurrent(surface);
+    mContext->makeCurrent(mSurface);
 
-    vaoRandom->destroy();
-    vboRandom->destroy();
+    delete mRandomProgram;
 
-    vaoImage->destroy();
-    vboPosImage->destroy();
-    vboTexImage->destroy();
+    glDeleteTextures(1, &mRandomTexId);
 
-    glDeleteFramebuffers(1, &fboRandom);
-    glDeleteFramebuffers(1, &fboImage);
+    mImageTex->destroy();
+    delete mImageTex;
 
-    delete vaoRandom;
-    delete vboRandom;
-    delete randomProgram;
+    mContext->doneCurrent();
 
-    delete vaoImage;
-    delete vboPosImage;
-    delete vboTexImage;
-    delete imageProgram;
+    delete mContext;
+    delete mSurface;
+}
 
-    glDeleteTextures(1, &texRandom);
-    glDeleteTextures(1, &texImage);
 
-    image->destroy();
-    delete image;
 
-    context->doneCurrent();
+GLuint Seed::outTextureId()
+{
+    return mOutTexId;
+}
 
-    delete context;
-    delete surface;
+
+
+QList<GLuint*> Seed::textureIds()
+{
+    return QList<GLuint*> { &mRandomTexId };
 }
 
 
 
 void Seed::loadImage(QString filename)
 {
-    context->makeCurrent(surface);
+    mContext->makeCurrent(mSurface);
 
-    image->destroy();
-    image->setSize(FBO::width, FBO::height);
+    mImageTex->destroy();
     if (!filename.isEmpty())
-        //image->setData(QImage(filename).mirrored());
-        image->setData(QImage(filename));
+        //mImageTex->setData(QImage(filename).mirrored());
+        mImageTex->setData(QImage(filename));
 
-    context->doneCurrent();
+    mContext->doneCurrent();
 
-    imageFilename = filename;
-}
-
-
-
-GLenum Seed::getFormat(GLenum format)
-{
-    GLint redType, greenType, blueType, alphaType;
-
-    glGetInternalformativ(GL_TEXTURE_2D, format, GL_INTERNALFORMAT_RED_TYPE, 1, &redType);
-    glGetInternalformativ(GL_TEXTURE_2D, format, GL_INTERNALFORMAT_GREEN_TYPE, 1, &greenType);
-    glGetInternalformativ(GL_TEXTURE_2D, format, GL_INTERNALFORMAT_BLUE_TYPE, 1, &blueType);
-    glGetInternalformativ(GL_TEXTURE_2D, format, GL_INTERNALFORMAT_ALPHA_TYPE, 1, &alphaType);
-
-    if (redType == GL_INT || redType == GL_UNSIGNED_INT ||
-        greenType == GL_INT || greenType == GL_UNSIGNED_INT ||
-        blueType == GL_INT || blueType == GL_UNSIGNED_INT ||
-        alphaType == GL_INT || alphaType == GL_UNSIGNED_INT)
-    {
-        return GL_RGBA_INTEGER;
-    }
-    else
-    {
-        return GL_RGBA;
-    }
-}
-
-
-
-void Seed::generateFramebuffer(GLuint& framebuffer, GLuint& texture)
-{
-    glGenFramebuffers(1, &framebuffer);
-    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
-
-    glGenTextures(1, &texture);
-    glBindTexture(GL_TEXTURE_2D, texture);
-    glTexImage2D(GL_TEXTURE_2D, 0, static_cast<GLenum>(FBO::texFormat), FBO::width, FBO::height, 0, getFormat(static_cast<GLenum>(FBO::texFormat)), GL_UNSIGNED_BYTE, nullptr);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glBindTexture(GL_TEXTURE_2D, 0);
-
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture, 0);
-
-    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-        qDebug() << "Framebuffer is not complete.\n";
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-}
-
-
-
-void Seed::setTextureFormat(GLuint &fbo, GLuint &texture)
-{
-    context->makeCurrent(surface);
-
-    GLuint fbo2;
-    GLuint textureID2;
-    generateFramebuffer(fbo2, textureID2);
-
-    glBindFramebuffer(GL_READ_FRAMEBUFFER, fbo);
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo2);
-
-    glBlitFramebuffer(0, 0, FBO::width, FBO::height, 0, 0, FBO::width, FBO::height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
-
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-    glDeleteFramebuffers(1, &fbo);
-    glDeleteTextures(1, &texture);
-
-    context->doneCurrent();
-
-    texture = textureID2;
-    fbo = fbo2;
-}
-
-
-
-void Seed::setTextureFormat()
-{
-    setTextureFormat(fboRandom, texRandom);
-    setTextureFormat(fboImage, texImage);
+    mImageFilename = filename;
 }
 
 
@@ -527,199 +144,11 @@ void Seed::setType(int type)
     mType = type;
 
     if (mType == 0 || mType == 1)
-        textureID = &texRandom;
+        mOutTexId = mRandomTexId;
     else if (mType == 2)
-        textureID = &texImage;
+        mOutTexId = mImageTex->textureId();
 
-    draw();
-}
-
-
-
-void Seed::resizeFBO(GLuint &fbo, GLuint &texture)
-{
-    context->makeCurrent(surface);
-
-    GLuint fbo2;
-    GLuint textureID2;
-    generateFramebuffer(fbo2, textureID2);
-
-    glBindFramebuffer(GL_READ_FRAMEBUFFER, fbo);
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo2);
-
-    glBlitFramebuffer(0, 0, widthOld, heightOld, 0, 0, FBO::width, FBO::height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
-
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-    glDeleteFramebuffers(1, &fbo);
-    glDeleteTextures(1, &texture);
-
-    context->doneCurrent();
-
-    texture = textureID2;
-    fbo = fbo2;
-}
-
-
-
-void Seed::resizeVertices()
-{
-    // Recompute vertices and texture coordinates
-
-    GLfloat w = static_cast<GLfloat>(FBO::width);
-    GLfloat h = static_cast<GLfloat>(FBO::height);
-
-    GLfloat left, right, bottom, top;
-    GLfloat ratio = w / h;
-
-    if (FBO::width > FBO::height)
-    {
-        top = 1.0f;
-        bottom = -top;
-        right = top * ratio;
-        left = -right;
-    }
-    else
-    {
-        right = 1.0f;
-        left = -right;
-        top = right / ratio;
-        bottom = -top;
-    }
-
-    GLfloat vertices[] = {
-        left, bottom,
-        left, top,
-        right, bottom,
-        right, top
-    };
-
-    GLfloat texCoords[] = {
-        0.0f, 0.0f,
-        0.0f, 1.0f,
-        1.0f, 0.0f,
-        1.0f, 1.0f
-    };
-
-    /*GLfloat left, right, bottom, top;
-    GLfloat ratio = static_cast<GLfloat>(FBO::width) / static_cast<GLfloat>(FBO::height);
-
-    if (FBO::width > FBO::height)
-    {
-        top = 1.0f;
-        bottom = -top;
-        right = top * ratio;
-        left = -right;
-    }
-    else
-    {
-        right = 1.0f;
-        left = -right;
-        top = right / ratio;
-        bottom = -top;
-    }
-
-    GLfloat vertices[] = {
-        left, top,
-        left, bottom,
-        right, bottom,
-        left, top,
-        right, bottom,
-        right, top
-    };*/
-
-    /*GLfloat texcoords[] = {
-        0.0f, top,
-        0.0f, 0.0f,
-        right, 0.0f,
-        0.0f, top,
-        right, 0.0f,
-        right, top
-    };*/
-
-    context->makeCurrent(surface);
-
-    vaoRandom->bind();
-    vboRandom->bind();
-    vboRandom->allocate(vertices, 8 * sizeof(GLfloat));
-    vaoRandom->release();
-    vboRandom->release();
-
-    vaoImage->bind();
-    vboPosImage->bind();
-    vboPosImage->allocate(vertices, 8 * sizeof(GLfloat));
-    vboTexImage->bind();
-    vboTexImage->allocate(texCoords, 8 * sizeof(GLfloat));
-    vaoImage->release();
-    vboPosImage->release();
-    vboTexImage->release();
-
-    context->doneCurrent();
-}
-
-
-
-void Seed::maintainAspectRatio()
-{
-    GLfloat w = static_cast<GLfloat>(FBO::width);
-    GLfloat h = static_cast<GLfloat>(FBO::height);
-
-    GLfloat left, right, bottom, top;
-    GLfloat ratio = w / h;
-
-    if (FBO::width > FBO::height)
-    {
-        top = 1.0f;
-        bottom = -top;
-        right = top * ratio;
-        left = -right;
-    }
-    else
-    {
-        right = 1.0f;
-        left = -right;
-        top = right / ratio;
-        bottom = -top;
-    }
-
-    QMatrix4x4 transform;
-    transform.setToIdentity();
-    transform.ortho(left, right, bottom, top, -1.0, 1.0);
-
-    context->makeCurrent(surface);
-
-    // Adjust projection (ortho) to keep aspect ratio
-
-    glBindFramebuffer(GL_FRAMEBUFFER, fboImage);
-    imageProgram->bind();
-    imageProgram->setUniformValue("transform", transform);
-    imageProgram->release();
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-    // Adjust projection (ortho) to keep aspect ratio
-
-    glBindFramebuffer(GL_FRAMEBUFFER, fboRandom);
-    randomProgram->bind();
-    randomProgram->setUniformValue("transform", transform);
-    randomProgram->release();
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-    context->doneCurrent();
-}
-
-
-
-void Seed::resize()
-{
-    resizeVertices();
-    maintainAspectRatio();
-    resizeFBO(fboRandom, texRandom);
-    resizeFBO(fboImage, texImage);
-
-    loadImage(imageFilename);
-
-    widthOld = FBO::width;
-    heightOld = FBO::height;
+    //draw();
 }
 
 
@@ -733,43 +162,62 @@ void Seed::draw()
     else if (mType == 2)
         drawImage();
 
-    cleared = false;
+    mCleared = false;
 }
 
 
 
+void Seed::setRandomProgram()
+{
+    if (!mRandomProgram->addShaderFromSourceFile(QOpenGLShader::Vertex, ":/shaders/position.vert"))
+        qDebug() << "Vertex shader error:\n" << mRandomProgram->log();
+    if (!mRandomProgram->addShaderFromSourceFile(QOpenGLShader::Fragment, ":/shaders/random-seed.frag"))
+        qDebug() << "Fragment shader error:\n" << mRandomProgram->log();
+    if (!mRandomProgram->link())
+        qDebug() << "Shader link error:\n" << mRandomProgram->log();
+
+    // Set in attribute: vertex coordinates
+
+    mRandomProgram->bind();
+
+    mRandomProgram->setAttributeBuffer(0, GL_FLOAT, 0, 2);
+    mRandomProgram->enableAttributeArray(0);
+
+    mRandomProgram->release();
+}
+
+
 void Seed::drawRandom(bool grayscale)
 {
-    context->makeCurrent(surface);
+    /*context->makeCurrent(surface);
 
     glBindFramebuffer(GL_FRAMEBUFFER, fboRandom);
 
     glViewport(0, 0, FBO::width, FBO::height);
-    glClear(GL_COLOR_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT);*/
 
-    randomProgram->bind();
-    vaoRandom->bind();
+    mRandomProgram->bind();
 
     std::uniform_real_distribution<float> distribution(0, 1);
-    float randomNumber = distribution(generator);
+    float randomNumber = distribution(mGenerator);
 
-    randomProgram->setUniformValue("randomNumber", randomNumber);
-    randomProgram->setUniformValue("grayscale", grayscale);
+    mRandomProgram->setUniformValue("randomNumber", randomNumber);
+    mRandomProgram->setUniformValue("grayscale", grayscale);
 
-    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    /*glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
     vaoRandom->release();
     randomProgram->release();
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-    context->doneCurrent();
+    context->doneCurrent();*/
 }
 
 
 
 void Seed::drawImage()
 {
-    context->makeCurrent(surface);
+    /*context->makeCurrent(surface);
 
     glBindFramebuffer(GL_FRAMEBUFFER, fboImage);
 
@@ -777,10 +225,10 @@ void Seed::drawImage()
     glClear(GL_COLOR_BUFFER_BIT);
 
     imageProgram->bind();
-    vaoImage->bind();
+    vaoImage->bind();*/
 
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, image->textureId());
+    glBindTexture(GL_TEXTURE_2D, mImageTex->textureId());
 
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
@@ -790,24 +238,4 @@ void Seed::drawImage()
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     context->doneCurrent();
-}
-
-
-
-void Seed::clear()
-{
-    context->makeCurrent(surface);
-
-    glBindFramebuffer(GL_FRAMEBUFFER, fboRandom);
-
-    glViewport(0, 0, FBO::width, FBO::height);
-    glClear(GL_COLOR_BUFFER_BIT);
-
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-    context->doneCurrent();
-
-    cleared = true;
-
-    textureID = &texRandom;
 }

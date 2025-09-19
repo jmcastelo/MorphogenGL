@@ -118,6 +118,11 @@ ImageOperation::~ImageOperation()
 
     delete mProgram;
 
+    GLuint texIds[] = { mOutTexId, mBlitTexId, mBlendOutTexId };
+    glDeleteTextures(3, texIds);
+
+    glDeleteSamplers(1, &mSamplerId);
+
     mContext->doneCurrent();
 
     delete mContext;
@@ -360,8 +365,6 @@ void ImageOperation::setMat4Uniform(QString name, UniformMat4Type type, QList<fl
             matrix.rotate(values.at(0), 0.0f, 0.0f, 1.0f);
         else if (type == UniformMat4Type::SCALING)
             matrix.scale(values.at(0), values.at(1));
-        else if (type == UniformMat4Type::ORTHOGRAPHIC)
-            matrix.ortho(values.at(0), values.at(1), values.at(2), values.at(3), -1.0, 1.0);
 
         mContext->makeCurrent(mSurface);
         mProgram->bind();

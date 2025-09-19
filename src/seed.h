@@ -44,68 +44,47 @@
 class Seed : protected QOpenGLExtraFunctions
 {
 public:
-    Seed(QOpenGLContext* theContext);
+    Seed(QOpenGLContext* shareContext);
     Seed(const Seed& seed);
     ~Seed();
 
-    GLuint getFBO() { return mType == 2 ? fboImage : fboRandom; }
-    GLuint** getTextureID() { return &textureID; }
+    GLuint outTextureId();
+    QList<GLuint*> textureIds();
 
     void loadImage(QString filename);
 
-    void generateFramebuffer(GLuint& framebuffer, GLuint& texture);
-
-    void setTextureFormat();
-    void setTextureFormat(GLuint &fbo, GLuint &texture);
-
-    void resize();
-
     void draw();
-    void clear();
 
     int type() const { return mType; }
     void setType(int type);
 
-    bool isFixed() const { return fixed; }
-    void setFixed(bool set) { fixed = set; }
+    bool fixed() const { return mFixed; }
+    void setFixed(bool set) { mFixed = set; }
 
-    QString getImageFilename() const { return imageFilename; }
+    QString imageFilename() const { return mImageFilename; }
 
-    bool isCleared() const { return cleared; }
+    bool cleared() const { return mCleared; }
 
 private:
     int mType = 0;
-    bool fixed = false;
-    QString imageFilename;
-    bool cleared = false;
+    bool mFixed = false;
+    QString mImageFilename;
+    bool mCleared = false;
 
-    QOpenGLContext* context;
-    QOffscreenSurface* surface;
+    QOpenGLContext* mContext;
+    QOffscreenSurface* mSurface;
 
-    GLuint widthOld, heightOld;
+    GLuint mOutTexId = 0;
 
-    GLuint* textureID;
+    GLuint mRandomTexId = 0;
+    QOpenGLShaderProgram* mRandomProgram;
 
-    GLuint fboRandom = 0;
-    GLuint texRandom = 0;
-    QOpenGLVertexArrayObject* vaoRandom;
-    QOpenGLBuffer* vboRandom;
-    QOpenGLShaderProgram* randomProgram;
+    QOpenGLTexture* mImageTex;
 
-    GLuint fboImage = 0;
-    GLuint texImage = 0;
-    QOpenGLTexture* image;
-    QOpenGLVertexArrayObject* vaoImage;
-    QOpenGLBuffer* vboPosImage;
-    QOpenGLBuffer* vboTexImage;
-    QOpenGLShaderProgram* imageProgram;
+    std::default_random_engine mGenerator;
 
-    std::default_random_engine generator;
+    void setRandomProgram();
 
-    void maintainAspectRatio();
-    void resizeVertices();
-    void resizeFBO(GLuint &fbo, GLuint &texture);
-    GLenum getFormat(GLenum format);
     void drawRandom(bool grayscale);
     void drawImage();
 };
