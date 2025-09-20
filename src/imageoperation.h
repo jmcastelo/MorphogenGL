@@ -103,7 +103,8 @@ public:
     GLuint blendOutTextureId();
     GLuint inTextureId();
     GLuint samplerId();
-    QList<GLuint> textureIds();
+
+    QList<GLuint*> textureIds();
 
     QList<GLuint> inputTextures();
     QList<float> inputBlendFactors();

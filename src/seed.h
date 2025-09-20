@@ -44,14 +44,16 @@
 class Seed : protected QOpenGLExtraFunctions
 {
 public:
-    Seed(GLenum texFormat, GLuint width, GLuint height, GLuint vao, QOpenGLContext* shareContext);
+    Seed(GLenum texFormat, GLuint width, GLuint height, QOpenGLContext* shareContext);
     Seed(GLenum texFormat, GLuint width, GLuint height, const Seed& seed);
     ~Seed();
 
     GLuint outTextureId();
-    QList<GLuint> textureIds();
+    QList<GLuint*> textureIds();
 
     void setOutTexture(bool draw);
+
+    void setVao(GLuint width, GLuint height);
 
     void loadImage(QString filename);
 
@@ -74,6 +76,7 @@ private:
 
     GLuint mOutFbo = 0;
     GLuint mVao = 0;
+    GLuint mVboPos = 0;
 
     GLuint mOutTexId = 0;
 

@@ -72,24 +72,7 @@ void RenderManager::init(QOpenGLContext* shareContext)
 
     // Setup VAO
 
-    GLfloat texCoords[] = {
-        0.0f, 0.0f,  // Bottom-left
-        1.0f, 0.0f,  // Bottom-right
-        0.0f, 1.0f,  // Top-left
-        1.0f, 1.0f   // Top-right
-    };
-
-    glBindVertexArray(mVao);
-
-    glBindBuffer(GL_ARRAY_BUFFER, mVboTex);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(texCoords), texCoords, GL_STATIC_DRAW);
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
-
-    resizeVertices();
-
-    glBindVertexArray(0);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    setVao();
 
     // Shader program
 
@@ -127,6 +110,9 @@ RenderManager::~RenderManager()
 
     glDeleteVertexArrays(1, &mVao);
 
+    glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
+    glDeleteTextures(1, &mBlendArrayTexId);
+
     delete mBlenderProgram;
     delete mIdentityProgram;
 
@@ -140,7 +126,7 @@ RenderManager::~RenderManager()
 
 Seed* RenderManager::createNewSeed()
 {
-    Seed* seed = new Seed(static_cast<GLenum>(mTexFormat), mTexWidth, mTexHeight, mVao, mShareContext);
+    Seed* seed = new Seed(static_cast<GLenum>(mTexFormat), mTexWidth, mTexHeight, mShareContext);
 
     mSeeds.append(seed);
 
@@ -225,7 +211,7 @@ void RenderManager::resize(GLuint width, GLuint height)
 
     glViewport(0, 0, mTexWidth, mTexHeight);
 
-    resizeVertices();
+    setVao();
     resizeTextures();
     recreateBlendArrayTexture();
 
@@ -309,7 +295,7 @@ void RenderManager::setTextureFormat(TextureFormat format)
 {
     mTexFormat = format;
 
-    QList<GLuint> oldTexIds;
+    QList<GLuint*> oldTexIds;
 
     foreach (Seed* seed, mSeeds)
         oldTexIds.append(seed->textureIds());
@@ -319,13 +305,13 @@ void RenderManager::setTextureFormat(TextureFormat format)
 
     mContext->makeCurrent(mSurface);
 
-    foreach (GLuint oldTexId, oldTexIds)
+    foreach (GLuint* oldTexId, oldTexIds)
     {
         GLuint newTexId = 0;
         genTexture(newTexId);
 
         glBindFramebuffer(GL_READ_FRAMEBUFFER, mReadFbo);
-        glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, oldTexId, 0);
+        glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, *oldTexId, 0);
 
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, mDrawFbo);
         glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, newTexId, 0);
@@ -338,8 +324,8 @@ void RenderManager::setTextureFormat(TextureFormat format)
         glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 
-        glDeleteTextures(1, &oldTexId);
-        oldTexId = newTexId;
+        glDeleteTextures(1, oldTexId);
+        *oldTexId = newTexId;
     }
 
     glBindTexture(GL_TEXTURE_2D, 0);
@@ -397,6 +383,8 @@ void RenderManager::setOutputTextureId(GLuint texId)
 
 void RenderManager::setBlenderProgram()
 {
+    genBlendArrayTexture();
+
     mBlenderProgram->addShaderFromSourceFile(QOpenGLShader::Vertex, ":/shaders/blender.vert");
     mBlenderProgram->addShaderFromSourceFile(QOpenGLShader::Fragment, ":/shaders/blender.frag");
     mBlenderProgram->link();
@@ -491,7 +479,7 @@ void RenderManager::verticesCoords(GLfloat& left, GLfloat& right, GLfloat& botto
 
 
 
-void RenderManager::resizeVertices()
+void RenderManager::setVao()
 {
     // Recompute vertices coordinates
 
@@ -505,10 +493,28 @@ void RenderManager::resizeVertices()
         w, h // Top-right
     };
 
+    GLfloat texCoords[] = {
+        0.0f, 0.0f,  // Bottom-left
+        1.0f, 0.0f,  // Bottom-right
+        0.0f, 1.0f,  // Top-left
+        1.0f, 1.0f   // Top-right
+    };
+
+    glBindVertexArray(mVao);
+
     glBindBuffer(GL_ARRAY_BUFFER, mVboPos);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertCoords), vertCoords, GL_STATIC_DRAW);
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    glBindBuffer(GL_ARRAY_BUFFER, mVboTex);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(texCoords), texCoords, GL_STATIC_DRAW);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    glBindVertexArray(0);
 }
 
 
@@ -541,7 +547,7 @@ void RenderManager::genBlendArrayTexture()
 
 void RenderManager::resizeTextures()
 {
-    QList<GLuint> oldTexIds;
+    QList<GLuint*> oldTexIds;
 
     foreach (Seed* seed, mSeeds)
         oldTexIds.append(seed->textureIds());
@@ -549,13 +555,13 @@ void RenderManager::resizeTextures()
     foreach (ImageOperation* operation, mOperations)
         oldTexIds.append(operation->textureIds());
 
-    foreach (GLuint oldTexId, oldTexIds)
+    foreach (GLuint* oldTexId, oldTexIds)
     {
         GLuint newTexId = 0;
         genTexture(newTexId);
 
         glBindFramebuffer(GL_READ_FRAMEBUFFER, mReadFbo);
-        glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, oldTexId, 0);
+        glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, *oldTexId, 0);
 
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, mDrawFbo);
         glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, newTexId, 0);
@@ -568,8 +574,8 @@ void RenderManager::resizeTextures()
         glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 
-        glDeleteTextures(1, &oldTexId);
-        oldTexId = newTexId;
+        glDeleteTextures(1, oldTexId);
+        *oldTexId = newTexId;
     }
 
     glBindTexture(GL_TEXTURE_2D, 0);

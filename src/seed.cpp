@@ -26,8 +26,7 @@
 
 
 
-Seed::Seed(GLenum texFormat, GLuint width, GLuint height, GLuint vao, QOpenGLContext* shareContext) :
-    mVao { vao }
+Seed::Seed(GLenum texFormat, GLuint width, GLuint height, QOpenGLContext* shareContext)
 {
     mContext = new QOpenGLContext();
     mContext->setFormat(shareContext->format());
@@ -45,6 +44,18 @@ Seed::Seed(GLenum texFormat, GLuint width, GLuint height, GLuint vao, QOpenGLCon
     // Framebuffer object
 
     glGenFramebuffers(1, &mOutFbo);
+
+    // Vertex array object
+
+    glGenVertexArrays(1, &mVao);
+
+    // Vertex buffer object: vertices positions
+
+    glGenBuffers(1, &mVboPos);
+
+    // Setup VAO
+
+    setVao(width, height);
 
     // Generate textures with format and size given externally
 
@@ -144,9 +155,36 @@ GLuint Seed::outTextureId()
 
 
 
-QList<GLuint> Seed::textureIds()
+QList<GLuint*> Seed::textureIds()
 {
-    return QList<GLuint> { mRandomTexId, mClearTexId };
+    return QList<GLuint*> { &mRandomTexId, &mClearTexId };
+}
+
+
+
+void Seed::setVao(GLuint width, GLuint height)
+{
+    // Recompute vertices coordinates
+
+    GLfloat w = static_cast<GLfloat>(width);
+    GLfloat h = static_cast<GLfloat>(height);
+
+    GLfloat vertCoords[] = {
+        0.0f, 0.0f, // Bottom-left
+        w, 0.0f, // Bottom-right
+        0.0f, h, // Top-left
+        w, h // Top-right
+    };
+
+    glBindVertexArray(mVao);
+
+    glBindBuffer(GL_ARRAY_BUFFER, mVboPos);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertCoords), vertCoords, GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    glBindVertexArray(0);
 }
 
 
@@ -176,6 +214,7 @@ int Seed::type() const
 void Seed::setType(int type)
 {
     mType = type;
+    setOutTexture(true);
 }
 
 
@@ -206,7 +245,10 @@ void Seed::setOutTexture(bool draw)
     if (draw)
     {
         if (mType == 0 || mType == 1)
+        {
+            drawRandom(mType == 1);
             mOutTexId = mRandomTexId;
+        }
         else if (mType == 2)
             mOutTexId = mImageTex->textureId();
 
@@ -226,13 +268,13 @@ void Seed::genTextures(GLenum texFormat, GLuint width, GLuint height)
     // Allocated on immutable storage (glTexStorage2D)
     // To be called within active OpenGL context
 
-    foreach (GLuint texId, textureIds())
+    foreach (GLuint* texId, textureIds())
     {
-        glGenTextures(1, &texId);
-        glBindTexture(GL_TEXTURE_2D, texId);
+        glGenTextures(1, texId);
+        glBindTexture(GL_TEXTURE_2D, *texId);
         glTexStorage2D(GL_TEXTURE_2D, 1, texFormat, width, height);
-        glTexParameteri(texId, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(texId, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(*texId, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(*texId, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         glBindTexture(GL_TEXTURE_2D, 0);
     }
 }
@@ -257,9 +299,9 @@ void Seed::clearTexture(GLuint texId)
 
 void Seed::setRandomProgram()
 {
-    if (!mRandomProgram->addShaderFromSourceFile(QOpenGLShader::Vertex, ":/shaders/position.vert"))
+    if (!mRandomProgram->addShaderFromSourceFile(QOpenGLShader::Vertex, ":/shaders/random.vert"))
         qDebug() << "Vertex shader error:\n" << mRandomProgram->log();
-    if (!mRandomProgram->addShaderFromSourceFile(QOpenGLShader::Fragment, ":/shaders/random-seed.frag"))
+    if (!mRandomProgram->addShaderFromSourceFile(QOpenGLShader::Fragment, ":/shaders/random.frag"))
         qDebug() << "Fragment shader error:\n" << mRandomProgram->log();
     if (!mRandomProgram->link())
         qDebug() << "Shader link error:\n" << mRandomProgram->log();

@@ -521,9 +521,9 @@ GLuint ImageOperation::samplerId()
 
 
 
-QList<GLuint> ImageOperation::textureIds()
+QList<GLuint*> ImageOperation::textureIds()
 {
-    return QList<GLuint> { mOutTexId, mBlitTexId, mBlendOutTexId };
+    return QList<GLuint*> { &mOutTexId, &mBlitTexId, &mBlendOutTexId };
 }
 
 
@@ -710,13 +710,13 @@ void ImageOperation::genTextures(GLenum texFormat, GLuint width, GLuint height)
     // Allocated on immutable storage (glTexStorage2D)
     // To be called within active OpenGL context
 
-    foreach (GLuint texId, textureIds())
+    foreach (GLuint* texId, textureIds())
     {
-        glGenTextures(1, &texId);
-        glBindTexture(GL_TEXTURE_2D, texId);
+        glGenTextures(1, texId);
+        glBindTexture(GL_TEXTURE_2D, *texId);
         glTexStorage2D(GL_TEXTURE_2D, 1, texFormat, width, height);
-        glTexParameteri(texId, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(texId, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(*texId, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(*texId, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         glBindTexture(GL_TEXTURE_2D, 0);
     }
 }

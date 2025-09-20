@@ -121,7 +121,7 @@ private:
     void setIdentityProgram();
 
     void verticesCoords(GLfloat& left, GLfloat& right, GLfloat& bottom, GLfloat& top);
-    void resizeVertices();
+    void setVao();
 
     void genTexture(GLuint texId);
     void resizeTextures();
