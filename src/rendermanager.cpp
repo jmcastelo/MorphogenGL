@@ -52,6 +52,8 @@ void RenderManager::init(QOpenGLContext* shareContext)
 
     initializeOpenGLFunctions();
 
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+
     // Framebuffer objects
 
     glGenFramebuffers(1, &mOutFbo);
@@ -120,6 +122,9 @@ RenderManager::~RenderManager()
 
     delete mContext;
     delete mSurface;
+
+    foreach(Seed* seed, mSeeds)
+        delete seed;
 }
 
 
@@ -216,6 +221,12 @@ void RenderManager::resize(GLuint width, GLuint height)
     recreateBlendArrayTexture();
 
     mContext->doneCurrent();
+
+    foreach (Seed* seed, mSeeds)
+    {
+        seed->setVao(width, height);
+        seed->genTextures(static_cast<GLenum>(mTexFormat), width, height);
+    }
 }
 
 
@@ -487,17 +498,17 @@ void RenderManager::setVao()
     GLfloat h = static_cast<GLfloat>(mTexHeight);
 
     GLfloat vertCoords[] = {
-        0.0f, 0.0f, // Bottom-left
-        w, 0.0f, // Bottom-right
-        0.0f, h, // Top-left
-        w, h // Top-right
+        -0.5f * w, -0.5f * h, // Bottom-left
+        0.5f * w, -0.5f * h, // Bottom-right
+        -0.5f * w, 0.5f * h, // Top-left
+        0.5f * w, 0.5f * h // Top-right
     };
 
     GLfloat texCoords[] = {
         0.0f, 0.0f,  // Bottom-left
-        1.0f, 0.0f,  // Bottom-right
-        0.0f, 1.0f,  // Top-left
-        1.0f, 1.0f   // Top-right
+        w, 0.0f,  // Bottom-right
+        0.0f, h,  // Top-left
+        w, h   // Top-right
     };
 
     glBindVertexArray(mVao);
@@ -505,7 +516,7 @@ void RenderManager::setVao()
     glBindBuffer(GL_ARRAY_BUFFER, mVboPos);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertCoords), vertCoords, GL_STATIC_DRAW);
     glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     glBindBuffer(GL_ARRAY_BUFFER, mVboTex);
@@ -611,13 +622,11 @@ void RenderManager::clearTexture(GLuint texId)
     mContext->makeCurrent(mSurface);
 
     glBindFramebuffer(GL_FRAMEBUFFER, mOutFbo);
-    glBindVertexArray(mVao);
 
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texId, 0);
 
     glClear(GL_COLOR_BUFFER_BIT);
 
-    glBindVertexArray(0);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     mContext->doneCurrent();

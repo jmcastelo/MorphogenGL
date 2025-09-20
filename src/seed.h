@@ -55,6 +55,8 @@ public:
 
     void setVao(GLuint width, GLuint height);
 
+    void genTextures(GLenum texFormat, GLuint width, GLuint height);
+
     void loadImage(QString filename);
 
     int type() const;
@@ -89,7 +91,6 @@ private:
 
     std::default_random_engine mGenerator;
 
-    void genTextures(GLenum texFormat, GLuint width, GLuint height);
     void clearTexture(GLuint texId);
 
     void setRandomProgram();

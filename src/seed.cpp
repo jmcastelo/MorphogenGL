@@ -41,6 +41,8 @@ Seed::Seed(GLenum texFormat, GLuint width, GLuint height, QOpenGLContext* shareC
 
     initializeOpenGLFunctions();
 
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+
     // Framebuffer object
 
     glGenFramebuffers(1, &mOutFbo);
@@ -53,9 +55,12 @@ Seed::Seed(GLenum texFormat, GLuint width, GLuint height, QOpenGLContext* shareC
 
     glGenBuffers(1, &mVboPos);
 
-    // Setup VAO
+    // Initialize shader program
 
-    setVao(width, height);
+    mRandomProgram = new QOpenGLShaderProgram();
+    setRandomProgram();
+
+    mContext->doneCurrent();
 
     // Generate textures with format and size given externally
 
@@ -65,12 +70,9 @@ Seed::Seed(GLenum texFormat, GLuint width, GLuint height, QOpenGLContext* shareC
 
     clearTexture(mClearTexId);
 
-    // Initialize shader program
+    // Setup VAO
 
-    mRandomProgram = new QOpenGLShaderProgram();
-    setRandomProgram();
-
-    mContext->doneCurrent();
+    setVao(width, height);
 
     // Texture to store loaded image
 
@@ -82,8 +84,7 @@ Seed::Seed(GLenum texFormat, GLuint width, GLuint height, QOpenGLContext* shareC
 Seed::Seed(GLenum texFormat, GLuint width, GLuint height, const Seed& seed) :
     mType { seed.mType },
     mFixed { seed.mFixed },
-    mImageFilename { seed.mImageFilename },
-    mVao { seed.mVao }
+    mImageFilename { seed.mImageFilename }
 {
     mContext = new QOpenGLContext();
     mContext->setFormat(seed.mContext->format());
@@ -102,6 +103,13 @@ Seed::Seed(GLenum texFormat, GLuint width, GLuint height, const Seed& seed) :
 
     glGenFramebuffers(1, &mOutFbo);
 
+    // Initialize shader program
+
+    mRandomProgram = new QOpenGLShaderProgram();
+    setRandomProgram();
+
+    mContext->doneCurrent();
+
     // Generate textures with format and size given externally
 
     genTextures(texFormat, width, height);
@@ -110,12 +118,9 @@ Seed::Seed(GLenum texFormat, GLuint width, GLuint height, const Seed& seed) :
 
     clearTexture(mClearTexId);
 
-    // Initialize shader program
+    // Setup VAO
 
-    mRandomProgram = new QOpenGLShaderProgram();
-    setRandomProgram();
-
-    mContext->doneCurrent();
+    setVao(width, height);
 
     // Set image
 
@@ -170,21 +175,30 @@ void Seed::setVao(GLuint width, GLuint height)
     GLfloat h = static_cast<GLfloat>(height);
 
     GLfloat vertCoords[] = {
-        0.0f, 0.0f, // Bottom-left
-        w, 0.0f, // Bottom-right
-        0.0f, h, // Top-left
-        w, h // Top-right
+        -0.5f * w, -0.5f * h, // Bottom-left
+        0.5f * w, -0.5f * h, // Bottom-right
+        -0.5f * w, 0.5f * h, // Top-left
+        0.5f * w, 0.5f * h // Top-right
     };
+
+    mContext->makeCurrent(mSurface);
+
+    glViewport(0, 0, width, height);
 
     glBindVertexArray(mVao);
 
     glBindBuffer(GL_ARRAY_BUFFER, mVboPos);
+
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertCoords), vertCoords, GL_STATIC_DRAW);
+
     glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
+
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     glBindVertexArray(0);
+
+    mContext->doneCurrent();
 }
 
 
@@ -266,7 +280,8 @@ void Seed::setOutTexture(bool draw)
 void Seed::genTextures(GLenum texFormat, GLuint width, GLuint height)
 {
     // Allocated on immutable storage (glTexStorage2D)
-    // To be called within active OpenGL context
+
+    mContext->makeCurrent(mSurface);
 
     foreach (GLuint* texId, textureIds())
     {
@@ -277,23 +292,24 @@ void Seed::genTextures(GLenum texFormat, GLuint width, GLuint height)
         glTexParameteri(*texId, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         glBindTexture(GL_TEXTURE_2D, 0);
     }
+
+    mContext->doneCurrent();
 }
 
 
 
 void Seed::clearTexture(GLuint texId)
 {
-    // To be called within active OpenGL context
+    mContext->makeCurrent(mSurface);
 
     glBindFramebuffer(GL_FRAMEBUFFER, mOutFbo);
-    glBindVertexArray(mVao);
-
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texId, 0);
 
     glClear(GL_COLOR_BUFFER_BIT);
 
-    glBindVertexArray(0);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    mContext->doneCurrent();
 }
 
 
@@ -322,10 +338,7 @@ void Seed::drawRandom(bool grayscale)
     mContext->makeCurrent(mSurface);
 
     glBindFramebuffer(GL_FRAMEBUFFER, mOutFbo);
-
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, mRandomTexId, 0);
-
-    glBindVertexArray(mVao);
 
     glClear(GL_COLOR_BUFFER_BIT);
 
@@ -337,11 +350,11 @@ void Seed::drawRandom(bool grayscale)
     mRandomProgram->setUniformValue("randomNumber", randomNumber);
     mRandomProgram->setUniformValue("grayscale", grayscale);
 
+    glBindVertexArray(mVao);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    glBindVertexArray(0);
 
     mRandomProgram->release();
-
-    glBindVertexArray(0);
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 

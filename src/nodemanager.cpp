@@ -297,9 +297,6 @@ void NodeManager::init(QOpenGLContext* shareContext)
 
 NodeManager::~NodeManager()
 {
-    foreach(Seed* seed, seeds)
-        delete seed;
-
     foreach(ImageOperationNode* node, operationNodes)
         delete node;
 }

@@ -13,7 +13,6 @@
 
 OperationBuilder::OperationBuilder(ImageOperation *operation, QWidget *parent) :
     QWidget {parent},
-    QOpenGLExtraFunctions(operation->context()),
     mOperation { operation }
 {
     // OpenGL context
