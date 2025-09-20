@@ -98,8 +98,8 @@ private:
 
     TextureFormat mTexFormat = TextureFormat::RGBA8;
 
-    GLint mMaxTexUnits;
-    GLint mNumTexUnits = 32;
+    GLint mMaxArrayTexLayers;
+    const GLint mNumArrayTexLayers = 32;
 
     QOpenGLShaderProgram* mBlenderProgram;
     QOpenGLShaderProgram* mIdentityProgram;
@@ -109,6 +109,7 @@ private:
     GLuint mVboTex;
 
     GLuint mOutputTexId = 0;
+    GLuint mBlendArrayTexId = 0;
 
     unsigned int mIterationNumber = 0;
 
@@ -124,6 +125,11 @@ private:
 
     void genTexture(GLuint texId);
     void resizeTextures();
+
+    void genBlendArrayTexture();
+    void recreateBlendArrayTexture();
+    void copyTexturesToBlendArrayTexture(QList<GLuint> textures);
+
     void clearTexture(GLuint texId);
 
     void blit();

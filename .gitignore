@@ -55,6 +55,7 @@ compile_commands.json
 .qtc_clangd
 
 morphogen
+fosforo
 
 build
 configs

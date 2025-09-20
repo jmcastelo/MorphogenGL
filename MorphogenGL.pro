@@ -18,7 +18,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with MorphogenGL.  If not, see <https://www.gnu.org/licenses/>.
 
-TARGET = morphogen
+TARGET = fosforo
 
 DESTDIR = ../../
 

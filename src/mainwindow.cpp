@@ -108,7 +108,7 @@ MainWindow::MainWindow()
     connect(controlWidget, &ControlWidget::overlayToggled, overlay, &Overlay::enable);
     connect(controlWidget, &ControlWidget::parameterValueChanged, overlay, &Overlay::addMessage);
 
-    setWindowTitle("Morphogen");
+    setWindowTitle("Fosforo");
     setWindowIcon(QIcon(":/icons/morphogengl.png"));
     resize(renderManager->texWidth(), renderManager->texHeight());
 }

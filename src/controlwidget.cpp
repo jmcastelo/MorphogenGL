@@ -440,7 +440,7 @@ void ControlWidget::about()
     aboutBox->setWindowTitle("About");
 
     QStringList lines;
-    lines.append(QString("<h2>Morphogen %1</h2>").arg(mNodeManager->version));
+    lines.append(QString("<h2>F&oacute;sforo %1</h2>").arg(mNodeManager->version));
     lines.append("<h4>Videofeedback simulation software.</h4>");
     lines.append("<h5>Let the pixels come alive!</h5><br>");
     lines.append("Looking for help? Please visit:<br>");

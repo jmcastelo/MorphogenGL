@@ -99,12 +99,12 @@ void RenderManager::init(QOpenGLContext* shareContext)
     setBlenderProgram();
     setIdentityProgram();
 
-    // Get and clamp maximum number of texture units (sampler2D)
+    // Get and clamp maximum number of array texture layers
 
-    glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &mMaxTexUnits);
+    glGetIntegerv(GL_MAX_ARRAY_TEXTURE_LAYERS , &mMaxArrayTexLayers);
 
-    if (mMaxTexUnits > mNumTexUnits)
-        mMaxTexUnits = mNumTexUnits;
+    if (mMaxArrayTexLayers > mNumArrayTexLayers)
+        mMaxArrayTexLayers = mNumArrayTexLayers;
 
     mContext->doneCurrent();
 }
@@ -227,6 +227,7 @@ void RenderManager::resize(GLuint width, GLuint height)
 
     resizeVertices();
     resizeTextures();
+    recreateBlendArrayTexture();
 
     mContext->doneCurrent();
 }
@@ -332,7 +333,7 @@ void RenderManager::setTextureFormat(TextureFormat format)
         glReadBuffer(GL_COLOR_ATTACHMENT0);
         glDrawBuffer(GL_COLOR_ATTACHMENT0);
 
-        glBlitFramebuffer(0, 0, mOldTexWidth, mOldTexHeight, 0, 0, mTexWidth, mTexHeight, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+        glBlitFramebuffer(0, 0, mTexWidth, mTexHeight, 0, 0, mTexWidth, mTexHeight, GL_COLOR_BUFFER_BIT, GL_NEAREST);
 
         glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
@@ -342,6 +343,8 @@ void RenderManager::setTextureFormat(TextureFormat format)
     }
 
     glBindTexture(GL_TEXTURE_2D, 0);
+
+    recreateBlendArrayTexture();
 
     mContext->doneCurrent();
 
@@ -404,27 +407,22 @@ void RenderManager::setBlenderProgram()
     {
         mBlenderProgram->bind();
 
-        // Vertices coordinates attribute (lcoation = 0)
+        // Vertices coordinates attribute (location = 0)
 
         mBlenderProgram->setAttributeBuffer(0, GL_FLOAT, 0, 2);
         mBlenderProgram->enableAttributeArray(0);
 
-        // Texture coordinates attribute (lcoation = 1)
+        // Texture coordinates attribute (location = 1)
 
         mBlenderProgram->setAttributeBuffer(1, GL_FLOAT, 0, 2);
         mBlenderProgram->enableAttributeArray(1);
 
-        // Input texture units (uniform sampler2D inTextures[...])
+        // Input array texture (uniform sampler2DArray inArrayTex)
+        // Set texture unit 0
 
-        GLint locSamplers = mBlenderProgram->uniformLocation("inTextures");
-        if (locSamplers >= 0)
-        {
-            QList<GLint> samplers;
-            for (int i = 0; i < mNumTexUnits; i++)
-                samplers.append(i);
-
-            glUniform1iv(locSamplers, mNumTexUnits, samplers.constData());
-        }
+        GLint locArrayTex = mBlenderProgram->uniformLocation("inArrayTex");
+        if (locArrayTex >= 0)
+            glUniform1i(locArrayTex, 0);
 
         mBlenderProgram->release();
     }
@@ -530,6 +528,17 @@ void RenderManager::genTexture(GLuint texId)
 
 
 
+void RenderManager::genBlendArrayTexture()
+{
+    glGenTextures(1, &mBlendArrayTexId);
+    glBindTexture(GL_TEXTURE_2D_ARRAY, mBlendArrayTexId);
+    glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, static_cast<GLenum>(mTexFormat), mTexWidth, mTexHeight, mMaxArrayTexLayers);
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
+}
+
+
 void RenderManager::resizeTextures()
 {
     QList<GLuint> oldTexIds;
@@ -566,6 +575,27 @@ void RenderManager::resizeTextures()
     glBindTexture(GL_TEXTURE_2D, 0);
 
     emit texturesChanged();
+}
+
+
+
+void RenderManager::recreateBlendArrayTexture()
+{
+    glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
+    glDeleteTextures(1, &mBlendArrayTexId);
+    genBlendArrayTexture();
+}
+
+
+
+void RenderManager::copyTexturesToBlendArrayTexture(QList<GLuint> textures)
+{
+    int nTextures = textures.size();
+    if (nTextures > mMaxArrayTexLayers)
+        nTextures = mMaxArrayTexLayers;
+
+    for (int i = 0; i < nTextures; i++)
+        glCopyImageSubData(textures[i], GL_TEXTURE_2D, 0, 0, 0, 0, mBlendArrayTexId, GL_TEXTURE_2D_ARRAY, 0, 0, 0, i, mTexWidth, mTexHeight, 1);
 }
 
 
@@ -618,11 +648,12 @@ void RenderManager::blit()
 
 void RenderManager::blend(ImageOperation *operation)
 {
-    QList<GLuint> inputTextures = operation->inputTextures();
+    // Copy input textures to blend 2D array texture and wait for copy to finish before using it
 
-    int nInputs = inputTextures.size();
-    if (nInputs > mMaxTexUnits)
-        nInputs = mMaxTexUnits;
+    copyTexturesToBlendArrayTexture(operation->inputTextures());
+    glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT);
+
+    // Bind blend output texture, where render will occur
 
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, operation->blendOutTextureId(), 0);
 
@@ -630,17 +661,14 @@ void RenderManager::blend(ImageOperation *operation)
 
     mBlenderProgram->bind();
 
-    // Bind input textures
-
-    for (int i = 0; i < nInputs; ++i)
-    {
-        glActiveTexture(GL_TEXTURE0 + i);
-        glBindTexture(GL_TEXTURE_2D, inputTextures[i]);
-    }
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D_ARRAY, mBlendArrayTexId);
 
     // Set number of input textures
 
-    GLint locCount = mBlenderProgram->uniformLocation("texCount");
+    int nInputs = operation->inputTextures().size();
+
+    GLint locCount = mBlenderProgram->uniformLocation("layerCount");
     glUniform1i(locCount, nInputs);
 
     // Set blend factors
@@ -648,20 +676,17 @@ void RenderManager::blend(ImageOperation *operation)
     GLint locWeights = mBlenderProgram->uniformLocation("weights");
     QList<float> blendFactors = operation->inputBlendFactors();
 
-    QList<float> weights(mNumTexUnits, 0.0f);
+    QList<float> weights(mNumArrayTexLayers, 0.0f);
     for (int i = 0; i < nInputs; ++i)
         weights[i] = blendFactors[i];
 
-    glUniform1fv(locWeights, mNumTexUnits, weights.constData());
+    glUniform1fv(locWeights, mNumArrayTexLayers, weights.constData());
 
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
     // Clean up
 
-    for (int i = 0; i < nInputs; i++) {
-        glActiveTexture(GL_TEXTURE0 + i);
-        glBindTexture(GL_TEXTURE_2D, 0);
-    }
+    glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
 
     mBlenderProgram->release();
 }
