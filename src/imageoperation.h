@@ -52,7 +52,7 @@
 class ImageOperation : protected QOpenGLExtraFunctions
 {
 public:
-    ImageOperation(QString name, GLenum texFormat, GLuint width, GLuint height, QOpenGLContext* shareContext);
+    ImageOperation(QString name, GLenum texFormat, GLuint width, GLuint height, QOpenGLContext* context, QOffscreenSurface *surface);
     ImageOperation(GLenum texFormat, GLuint width, GLuint height, const ImageOperation& operation);
     ~ImageOperation();
 

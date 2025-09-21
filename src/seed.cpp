@@ -26,16 +26,19 @@
 
 
 
-Seed::Seed(GLenum texFormat, GLuint width, GLuint height, QOpenGLContext* shareContext)
+Seed::Seed(GLenum texFormat, GLuint width, GLuint height, QOpenGLContext* context, QOffscreenSurface *surface)
 {
-    mContext = new QOpenGLContext();
-    mContext->setFormat(shareContext->format());
-    mContext->setShareContext(shareContext);
+    /*mContext = new QOpenGLContext();
+    mContext->setFormat(context->format());
+    mContext->setShareContext(context);
     mContext->create();
 
     mSurface = new QOffscreenSurface();
-    mSurface->setFormat(shareContext->format());
-    mSurface->create();
+    mSurface->setFormat(context->format());
+    mSurface->create();*/
+
+    mContext = context;
+    mSurface = surface;
 
     mContext->makeCurrent(mSurface);
 
@@ -60,6 +63,10 @@ Seed::Seed(GLenum texFormat, GLuint width, GLuint height, QOpenGLContext* shareC
     mRandomProgram = new QOpenGLShaderProgram();
     setRandomProgram();
 
+    // Setup VAO
+
+    setVao(width, height);
+
     mContext->doneCurrent();
 
     // Generate textures with format and size given externally
@@ -69,10 +76,6 @@ Seed::Seed(GLenum texFormat, GLuint width, GLuint height, QOpenGLContext* shareC
     // Clear texture
 
     clearTexture(mClearTexId);
-
-    // Setup VAO
-
-    setVao(width, height);
 
     // Texture to store loaded image
 
@@ -147,8 +150,8 @@ Seed::~Seed()
 
     mContext->doneCurrent();
 
-    delete mContext;
-    delete mSurface;
+    //delete mContext;
+    //delete mSurface;
 }
 
 
@@ -174,14 +177,47 @@ void Seed::setVao(GLuint width, GLuint height)
     GLfloat w = static_cast<GLfloat>(width);
     GLfloat h = static_cast<GLfloat>(height);
 
+    GLfloat ratio = w / h;
+
+    GLfloat left, right, bottom, top;
+
+    if (width > height)
+    {
+        top = 1.0f;
+        bottom = -top;
+        right = top * ratio;
+        left = -right;
+    }
+    else
+    {
+        right = 1.0f;
+        left = -right;
+        top = right / ratio;
+        bottom = -top;
+    }
+
     GLfloat vertCoords[] = {
+        left, bottom,
+        right, bottom,
+        left, top,
+        right, top
+    };
+
+    /*GLfloat vertCoords[] = {
         -0.5f * w, -0.5f * h, // Bottom-left
         0.5f * w, -0.5f * h, // Bottom-right
         -0.5f * w, 0.5f * h, // Top-left
         0.5f * w, 0.5f * h // Top-right
-    };
+    };*/
 
-    mContext->makeCurrent(mSurface);
+    /*GLfloat vertCoords[] = {
+        -1.0f, -1.0f, // Bottom-left
+        1.0f, -1.0f, // Bottom-right
+        -1.0f, 1.0f, // Top-left
+        1.0f, 1.0f  // Top-right
+    };*/
+
+    //mContext->makeCurrent(mSurface);
 
     glViewport(0, 0, width, height);
 
@@ -198,7 +234,7 @@ void Seed::setVao(GLuint width, GLuint height)
 
     glBindVertexArray(0);
 
-    mContext->doneCurrent();
+    //mContext->doneCurrent();
 }
 
 
@@ -288,8 +324,8 @@ void Seed::genTextures(GLenum texFormat, GLuint width, GLuint height)
         glGenTextures(1, texId);
         glBindTexture(GL_TEXTURE_2D, *texId);
         glTexStorage2D(GL_TEXTURE_2D, 1, texFormat, width, height);
-        glTexParameteri(*texId, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(*texId, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         glBindTexture(GL_TEXTURE_2D, 0);
     }
 

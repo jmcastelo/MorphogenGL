@@ -31,21 +31,24 @@
 
 // Image operation base class
 
-ImageOperation::ImageOperation(QString name, GLenum texFormat, GLuint width, GLuint height, QOpenGLContext* shareContext) :
+ImageOperation::ImageOperation(QString name, GLenum texFormat, GLuint width, GLuint height, QOpenGLContext* context, QOffscreenSurface* surface) :
     mName { name }
 {
     // Create context
 
-    mContext = new QOpenGLContext();
+    /*mContext = new QOpenGLContext();
     mContext->setFormat(shareContext->format());
     mContext->setShareContext(shareContext);
-    mContext->create();
+    mContext->create();*/
 
     // Create surface
 
-    mSurface = new QOffscreenSurface();
+    /*mSurface = new QOffscreenSurface();
     mSurface->setFormat(shareContext->format());
-    mSurface->create();
+    mSurface->create();*/
+
+    mContext = context;
+    mSurface = surface;
 
     // Make context current and initialize context-dependent variables
 
@@ -135,8 +138,8 @@ ImageOperation::~ImageOperation()
 
     mContext->doneCurrent();
 
-    delete mContext;
-    delete mSurface;
+    //delete mContext;
+    //delete mSurface;
 
     qDeleteAll(floatUniformParameters);
     qDeleteAll(intUniformParameters);
@@ -156,26 +159,32 @@ QOpenGLShaderProgram* ImageOperation::program()
 
 bool ImageOperation::setShadersFromSourceCode(QString vertexShader, QString fragmentShader)
 {
+    mContext->makeCurrent(mSurface);
+
     mProgram->removeAllShaders();
+
+    bool ok = true;
 
     if (!mProgram->addShaderFromSourceCode(QOpenGLShader::Vertex, vertexShader))
     {
         QMessageBox::information(qApp->activeWindow(), "Vertex shader error", mProgram->log());
-        return false;
+        ok = false;
     }
     if (!mProgram->addShaderFromSourceCode(QOpenGLShader::Fragment, fragmentShader))
     {
         QMessageBox::information(qApp->activeWindow(), "Fragment shader error", mProgram->log());
-        return false;
+        ok = false;
     }
 
     if (!mProgram->link())
     {
         QMessageBox::information(qApp->activeWindow(), "Shader link error", mProgram->log());
-        return false;
+        ok = false;
     }
 
-    return true;
+    mContext->doneCurrent();
+
+    return ok;
 }
 
 

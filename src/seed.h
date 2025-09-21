@@ -44,7 +44,7 @@
 class Seed : protected QOpenGLExtraFunctions
 {
 public:
-    Seed(GLenum texFormat, GLuint width, GLuint height, QOpenGLContext* shareContext);
+    Seed(GLenum texFormat, GLuint width, GLuint height, QOpenGLContext* context, QOffscreenSurface* surface);
     Seed(GLenum texFormat, GLuint width, GLuint height, const Seed& seed);
     ~Seed();
 

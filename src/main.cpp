@@ -20,17 +20,21 @@
 *  along with MorphogenGL.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+
+
 #include "mainwindow.h"
 
 #include <QApplication>
 #include <QSurfaceFormat>
+
+
 
 int main(int argc, char* argv[])
 {
     QSurfaceFormat format;
     format.setRenderableType(QSurfaceFormat::OpenGL);
     format.setProfile(QSurfaceFormat::CoreProfile);
-    format.setVersion(4, 2);
+    format.setVersion(4, 6);
     format.setSwapInterval(0);
     QSurfaceFormat::setDefaultFormat(format);
 

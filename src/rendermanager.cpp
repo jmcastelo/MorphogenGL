@@ -131,7 +131,8 @@ RenderManager::~RenderManager()
 
 Seed* RenderManager::createNewSeed()
 {
-    Seed* seed = new Seed(static_cast<GLenum>(mTexFormat), mTexWidth, mTexHeight, mShareContext);
+    //Seed* seed = new Seed(static_cast<GLenum>(mTexFormat), mTexWidth, mTexHeight, mShareContext);
+    Seed* seed = new Seed(static_cast<GLenum>(mTexFormat), mTexWidth, mTexHeight, mContext, mSurface);
 
     mSeeds.append(seed);
 
@@ -150,7 +151,8 @@ void RenderManager::deleteSeed(Seed* seed)
 
 ImageOperation* RenderManager::createNewOperation()
 {
-    ImageOperation* operation = new ImageOperation("New Operation", static_cast<GLenum>(mTexFormat), mTexWidth, mTexHeight, mShareContext);
+    //ImageOperation* operation = new ImageOperation("New Operation", static_cast<GLenum>(mTexFormat), mTexWidth, mTexHeight, mShareContext);
+    ImageOperation* operation = new ImageOperation("New Operation", static_cast<GLenum>(mTexFormat), mTexWidth, mTexHeight, mContext, mSurface);
 
     mOperations.append(operation);
 
@@ -217,16 +219,16 @@ void RenderManager::resize(GLuint width, GLuint height)
     glViewport(0, 0, mTexWidth, mTexHeight);
 
     setVao();
+    foreach (Seed* seed, mSeeds)
+    {
+        seed->setVao(width, height);
+        //seed->genTextures(static_cast<GLenum>(mTexFormat), width, height);
+    }
+
     resizeTextures();
     recreateBlendArrayTexture();
 
     mContext->doneCurrent();
-
-    foreach (Seed* seed, mSeeds)
-    {
-        seed->setVao(width, height);
-        seed->genTextures(static_cast<GLenum>(mTexFormat), width, height);
-    }
 }
 
 
@@ -494,10 +496,10 @@ void RenderManager::setVao()
 {
     // Recompute vertices and texture coordinates
 
-    GLfloat w = static_cast<GLfloat>(mTexWidth);
-    GLfloat h = static_cast<GLfloat>(mTexHeight);
+    // GLfloat w = static_cast<GLfloat>(mTexWidth);
+    // GLfloat h = static_cast<GLfloat>(mTexHeight);
 
-    GLfloat vertCoords[] = {
+    /*GLfloat vertCoords[] = {
         -0.5f * w, -0.5f * h, // Bottom-left
         0.5f * w, -0.5f * h, // Bottom-right
         -0.5f * w, 0.5f * h, // Top-left
@@ -509,6 +511,30 @@ void RenderManager::setVao()
         w, 0.0f,  // Bottom-right
         0.0f, h,  // Top-left
         w, h   // Top-right
+    };*/
+
+    GLfloat left, right, bottom, top;
+    verticesCoords(left, right, bottom, top);
+
+    /*GLfloat vertCoords[] = {
+        -1.0f, -1.0f, // Bottom-left
+        1.0f, -1.0f, // Bottom-right
+        -1.0f, 1.0f, // Top-left
+        1.0f, 1.0f  // Top-right
+    };*/
+
+    GLfloat vertCoords[] = {
+        left, bottom,
+        right, bottom,
+        left, top,
+        right, top
+    };
+
+    GLfloat texCoords[] = {
+        0.0f, 0.0f,  // Bottom-left
+        1.0f, 0.0f,  // Bottom-right
+        0.0f, 1.0f,  // Top-left
+        1.0f, 1.0f   // Top-right
     };
 
     glBindVertexArray(mVao);
@@ -590,7 +616,7 @@ void RenderManager::resizeTextures()
         glReadBuffer(GL_COLOR_ATTACHMENT0);
         glDrawBuffer(GL_COLOR_ATTACHMENT0);
 
-        glBlitFramebuffer(0, 0, mOldTexWidth, mOldTexHeight, 0, 0, mTexWidth, mTexHeight, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+        glBlitFramebuffer(0, 0, mOldTexWidth, mOldTexHeight, 0, 0, mTexWidth, mTexHeight, GL_COLOR_BUFFER_BIT, GL_LINEAR);
 
         glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
@@ -598,8 +624,6 @@ void RenderManager::resizeTextures()
         glDeleteTextures(1, oldTexId);
         *oldTexId = newTexId;
     }
-
-    glBindTexture(GL_TEXTURE_2D, 0);
 
     emit texturesChanged();
 }

@@ -86,7 +86,7 @@ OperationBuilder::OperationBuilder(ImageOperation *operation, QWidget *parent) :
         {
             emit operationSetUp();
 
-            mOperation->setInAttributes();
+            //mOperation->setInAttributes();
             mOperation->enableUpdate(true);
         }
         else
