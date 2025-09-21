@@ -85,6 +85,8 @@ OperationBuilder::OperationBuilder(ImageOperation *operation, QWidget *parent) :
         if (mOperation->setShadersFromSourceCode(vertexEditor->toPlainText(), fragmentEditor->toPlainText()))
         {
             emit operationSetUp();
+
+            mOperation->setInAttributes();
             mOperation->enableUpdate(true);
         }
         else

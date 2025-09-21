@@ -93,6 +93,8 @@ MainWindow::MainWindow()
     connect(controlWidget, &ControlWidget::iterateStateChanged, this, &MainWindow::setIterationState);
     connect(controlWidget, &ControlWidget::updateStateChanged, morphoWidget, &MorphoWidget::setUpdate);
 
+    connect(renderManager, &RenderManager::texturesChanged, nodeManager, &NodeManager::onTexturesChanged);
+
     connect(nodeManager, &NodeManager::outputTextureChanged, renderManager, &RenderManager::setOutputTextureId);
     connect(nodeManager, &NodeManager::outputTextureChanged, morphoWidget, &MorphoWidget::updateOutputTextureID);
     connect(nodeManager, &NodeManager::outputTextureChanged, plotsWidget, &PlotsWidget::setTextureID);

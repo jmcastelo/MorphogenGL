@@ -492,7 +492,7 @@ void RenderManager::verticesCoords(GLfloat& left, GLfloat& right, GLfloat& botto
 
 void RenderManager::setVao()
 {
-    // Recompute vertices coordinates
+    // Recompute vertices and texture coordinates
 
     GLfloat w = static_cast<GLfloat>(mTexWidth);
     GLfloat h = static_cast<GLfloat>(mTexHeight);
@@ -530,16 +530,22 @@ void RenderManager::setVao()
 
 
 
-void RenderManager::genTexture(GLuint texId)
+void RenderManager::genTexture(GLuint& texId)
 {
     // Allocated on immutable storage (glTexStorage2D)
     // To be called within active OpenGL context
 
     glGenTextures(1, &texId);
+
     glBindTexture(GL_TEXTURE_2D, texId);
+
     glTexStorage2D(GL_TEXTURE_2D, 1, static_cast<GLenum>(mTexFormat), mTexWidth, mTexHeight);
-    glTexParameteri(texId, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(texId, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
@@ -548,10 +554,14 @@ void RenderManager::genTexture(GLuint texId)
 void RenderManager::genBlendArrayTexture()
 {
     glGenTextures(1, &mBlendArrayTexId);
+
     glBindTexture(GL_TEXTURE_2D_ARRAY, mBlendArrayTexId);
+
     glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, static_cast<GLenum>(mTexFormat), mTexWidth, mTexHeight, mMaxArrayTexLayers);
+
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
     glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
 }
 
@@ -568,7 +578,7 @@ void RenderManager::resizeTextures()
 
     foreach (GLuint* oldTexId, oldTexIds)
     {
-        GLuint newTexId = 0;
+        GLuint newTexId;
         genTexture(newTexId);
 
         glBindFramebuffer(GL_READ_FRAMEBUFFER, mReadFbo);
@@ -717,13 +727,14 @@ void RenderManager::renderOperation(ImageOperation* operation)
     operation->program()->bind();
 
     glActiveTexture(GL_TEXTURE0);
-
     glBindTexture(GL_TEXTURE_2D, operation->inTextureId());
+
     glBindSampler(0, operation->samplerId());
 
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
     glBindSampler(0, 0);
+
     glBindTexture(GL_TEXTURE_2D, 0);
 
     operation->program()->release();

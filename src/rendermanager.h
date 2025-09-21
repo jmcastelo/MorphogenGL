@@ -123,7 +123,7 @@ private:
     void verticesCoords(GLfloat& left, GLfloat& right, GLfloat& bottom, GLfloat& top);
     void setVao();
 
-    void genTexture(GLuint texId);
+    void genTexture(GLuint& texId);
     void resizeTextures();
 
     void genBlendArrayTexture();

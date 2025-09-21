@@ -713,10 +713,16 @@ void ImageOperation::genTextures(GLenum texFormat, GLuint width, GLuint height)
     foreach (GLuint* texId, textureIds())
     {
         glGenTextures(1, texId);
+
         glBindTexture(GL_TEXTURE_2D, *texId);
+
         glTexStorage2D(GL_TEXTURE_2D, 1, texFormat, width, height);
-        glTexParameteri(*texId, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(*texId, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
         glBindTexture(GL_TEXTURE_2D, 0);
     }
 }
