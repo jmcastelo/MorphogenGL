@@ -14,6 +14,7 @@
 #include <QComboBox>
 #include <QPushButton>
 #include <QTabWidget>
+#include <QAction>
 
 
 
@@ -51,12 +52,14 @@ private:
 
     QList<QString> inAttribList;
 
-    QComboBox* attrComboBox;
+    //QComboBox* attrComboBox;
 
     QList<QString> newParamList;
     QList<QString> paramList;
 
-    QPushButton* setupOperationButton;
+    //QPushButton* setupOperationButton;
+
+    QAction* setupOpAction;
 
     QTabWidget* shadersTabWidget;
 
@@ -75,7 +78,7 @@ private:
 
     bool checkInputAttributes();
 
-    void setAttribComboBox();
+    //void setAttribComboBox();
 
 private slots:
     void loadOperation();
@@ -83,6 +86,7 @@ private slots:
     void loadVertexShader();
     void loadFragmentShader();
     void parseShaders();
+    void setupOperation();
 };
 
 

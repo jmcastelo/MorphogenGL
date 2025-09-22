@@ -49,15 +49,31 @@ OperationBuilder::OperationBuilder(ImageOperation *operation, QWidget *parent) :
 
     toolBar->addAction(QIcon(QPixmap(":/icons/run-build.png")), "Parse shaders", this, &OperationBuilder::parseShaders);
 
+    toolBar->addSeparator();
+
+    setupOpAction = new QAction(QIcon(QPixmap(":/icons/dialog-ok.png")), "Setup operation", this);
+    setupOpAction->setEnabled(false);
+    connect(setupOpAction, &QAction::triggered, this, &OperationBuilder::setupOperation);
+
+    toolBar->addAction(setupOpAction);
+
     // Tabs
 
     vertexEditor = new QPlainTextEdit;
     vertexEditor->setLineWrapMode(QPlainTextEdit::NoWrap);
 
+    connect(vertexEditor, &QPlainTextEdit::textChanged, this, [=, this](){
+        setupOpAction->setEnabled(false);
+    });
+
     fragmentEditor = new QPlainTextEdit;
     fragmentEditor->setLineWrapMode(QPlainTextEdit::NoWrap);
 
-    attrComboBox = new QComboBox;
+    connect(fragmentEditor, &QPlainTextEdit::textChanged, this, [=, this](){
+        setupOpAction->setEnabled(false);
+    });
+
+    /*attrComboBox = new QComboBox;
     attrComboBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
     attrComboBox->setEditable(false);
 
@@ -66,22 +82,22 @@ OperationBuilder::OperationBuilder(ImageOperation *operation, QWidget *parent) :
 
     setupOperationButton = new QPushButton("Setup operation");
     setupOperationButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
-    setupOperationButton->setEnabled(false);
+    setupOperationButton->setEnabled(false);*/
 
-    QVBoxLayout* overviewLayout = new QVBoxLayout;
+    /*QVBoxLayout* overviewLayout = new QVBoxLayout;
     overviewLayout->addLayout(attrFormLayout);
     overviewLayout->addWidget(setupOperationButton);
 
     QWidget* overviewWidget = new QWidget;
-    overviewWidget->setLayout(overviewLayout);
+    overviewWidget->setLayout(overviewLayout);*/
 
     shadersTabWidget = new QTabWidget;
     shadersTabWidget->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
     shadersTabWidget->addTab(vertexEditor, "Vertex shader");
     shadersTabWidget->addTab(fragmentEditor, "Fragment shader");
-    shadersTabWidget->addTab(overviewWidget, "Overview");
+    //shadersTabWidget->addTab(overviewWidget, "Overview");
 
-    connect(setupOperationButton, &QPushButton::clicked, this, [=, this](){
+    /*connect(setupOperationButton, &QPushButton::clicked, this, [=, this](){
         if (mOperation->setShadersFromSourceCode(vertexEditor->toPlainText(), fragmentEditor->toPlainText()))
         {
             emit operationSetUp();
@@ -93,7 +109,7 @@ OperationBuilder::OperationBuilder(ImageOperation *operation, QWidget *parent) :
         {
              QMessageBox::information(this, "GLSL Shaders error", "Could not set up operation due to GLSL shaders error.");
         }
-    });
+    });*/
 
     // Layouts
 
@@ -172,11 +188,11 @@ void OperationBuilder::loadOperation()
         mat4ParamMap.clear();
         paramList.clear();
 
-        inAttribList.clear();
+        //inAttribList.clear();
 
-        attrComboBox->clear();
+        //attrComboBox->clear();
 
-        setupOperationButton->setEnabled(false);
+        setupOpAction->setEnabled(false);
 
         // Parse operation
 
@@ -225,12 +241,12 @@ void OperationBuilder::loadOperation()
 
         // Input attributes
 
-        inAttribList.append(mOperation->posInAttribName());
-        inAttribList.append(mOperation->texInAttribName());
+        // inAttribList.append(mOperation->posInAttribName());
+        // inAttribList.append(mOperation->texInAttribName());
 
-        setAttribComboBox();
+        // setAttribComboBox();
 
-        setupOperationButton->setEnabled(true);
+        setupOpAction->setEnabled(true);
 
         emit operationSetUp();
     }
@@ -370,19 +386,20 @@ void OperationBuilder::parseInputAttributes()
 
         if (checkInputAttributes())
         {
-            setAttribComboBox();
-            setupOperationButton->setEnabled(true);
-            shadersTabWidget->setCurrentIndex(2);
+            //setAttribComboBox();
+            setupOpAction->setEnabled(true);
+            //shadersTabWidget->setCurrentIndex(2);
         }
         else
         {
             inAttribList.clear();
-            setupOperationButton->setEnabled(false);
+            setupOpAction->setEnabled(false);
         }
     }
     else
     {
-        shadersTabWidget->setCurrentIndex(2);
+        //shadersTabWidget->setCurrentIndex(2);
+        setupOpAction->setEnabled(true);
     }
 }
 
@@ -515,7 +532,7 @@ bool OperationBuilder::checkInputAttributes()
 {
     if (inAttribList.size() != 2)
     {
-        QString message = "Exactly two active vec2 input attributes must be specified in the vertex shader, corresponding to the 2D vertex position and texture coordinates.";
+        QString message = "Exactly two active vec2 input attributes must be specified in the vertex shader, corresponding to the 2D vertex position (location 0) and texture coordinates (location 1).";
         QMessageBox::information(this, "Input attributes error", message);
         return false;
     }
@@ -525,7 +542,7 @@ bool OperationBuilder::checkInputAttributes()
 
 
 
-void OperationBuilder::setAttribComboBox()
+/*void OperationBuilder::setAttribComboBox()
 {
     attrComboBox->disconnect();
     attrComboBox->clear();
@@ -544,5 +561,21 @@ void OperationBuilder::setAttribComboBox()
             mOperation->setTexInAttribName(inAttribList.at((index + 1) % 2));
         }
     });
-}
+}*/
 
+
+
+void OperationBuilder::setupOperation()
+{
+    if (mOperation->setShadersFromSourceCode(vertexEditor->toPlainText(), fragmentEditor->toPlainText()))
+    {
+        emit operationSetUp();
+
+        //mOperation->setInAttributes();
+        mOperation->enableUpdate(true);
+    }
+    else
+    {
+        QMessageBox::information(this, "GLSL Shaders error", "Could not set up operation due to GLSL shaders error.");
+    }
+}

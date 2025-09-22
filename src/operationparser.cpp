@@ -82,7 +82,7 @@ void OperationParser::writeOperation(ImageOperation *operation, QXmlStreamWriter
 
     // In attributes
 
-    stream.writeStartElement("input_attributes");
+    /*stream.writeStartElement("input_attributes");
 
     stream.writeStartElement("position");
     stream.writeCharacters(operation->posInAttribName());
@@ -92,7 +92,7 @@ void OperationParser::writeOperation(ImageOperation *operation, QXmlStreamWriter
     stream.writeCharacters(operation->texInAttribName());
     stream.writeEndElement();
 
-    stream.writeEndElement();
+    stream.writeEndElement();*/
 
     // Parameters
 
@@ -150,7 +150,7 @@ bool OperationParser::readOperation(ImageOperation* operation, QXmlStreamReader&
                         return false;
                     }
             }
-            else if (stream.name() == "input_attributes")
+            /*else if (stream.name() == "input_attributes")
             {
                 while (stream.readNextStartElement())
                 {
@@ -167,7 +167,7 @@ bool OperationParser::readOperation(ImageOperation* operation, QXmlStreamReader&
                     else
                         stream.skipCurrentElement();
                 }
-            }
+            }*/
             else if (stream.name() == "parameter")
             {
                 QString paramType = stream.attributes().value("type").toString();
@@ -187,7 +187,7 @@ bool OperationParser::readOperation(ImageOperation* operation, QXmlStreamReader&
                 stream.skipCurrentElement();
         }
 
-        operation->setInAttributes();
+        //operation->setInAttributes();
 
         return true;
     }

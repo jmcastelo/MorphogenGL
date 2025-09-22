@@ -82,5 +82,6 @@
         <file>shaders/identity.frag</file>
         <file>shaders/random.vert</file>
         <file>shaders/random.frag</file>
+        <file>icons/dialog-ok.png</file>
     </qresource>
 </RCC>

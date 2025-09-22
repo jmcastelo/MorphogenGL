@@ -188,6 +188,9 @@ bool ImageOperation::setShadersFromSourceCode(QString vertexShader, QString frag
 
     mContext->doneCurrent();
 
+    mVertexShader = vertexShader;
+    mFragmentShader = fragmentShader;
+
     return ok;
 }
 
@@ -207,7 +210,7 @@ QString ImageOperation::fragmentShader() const
 
 
 
-QString ImageOperation::posInAttribName() const
+/*QString ImageOperation::posInAttribName() const
 {
     return mPosInAttribName;
 }
@@ -257,6 +260,7 @@ void ImageOperation::setInAttributes()
 }
 
 
+
 void ImageOperation::setOrthoName(QString name)
 {
     mOrthoName = name;
@@ -267,7 +271,7 @@ void ImageOperation::setOrthoName(QString name)
 void ImageOperation::enableOrtho(bool on)
 {
     mOrthoEnabled = on;
-}
+}*/
 
 
 void ImageOperation::adjustOrtho(GLfloat left, GLfloat right, GLfloat bottom, GLfloat top)

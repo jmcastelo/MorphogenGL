@@ -64,16 +64,16 @@ public:
     QString vertexShader() const;
     QString fragmentShader() const;
 
-    QString posInAttribName() const;
-    void setPosInAttribName(QString name);
+    // QString posInAttribName() const;
+    // void setPosInAttribName(QString name);
 
-    QString texInAttribName() const;
-    void setTexInAttribName(QString name);
+    // QString texInAttribName() const;
+    // void setTexInAttribName(QString name);
 
-    void setInAttributes();
+    // void setInAttributes();
 
-    void setOrthoName(QString name);
-    void enableOrtho(bool on);
+    // void setOrthoName(QString name);
+    // void enableOrtho(bool on);
     void adjustOrtho(GLfloat left, GLfloat right, GLfloat bottom, GLfloat top);
 
     template <typename T>
