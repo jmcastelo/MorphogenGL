@@ -137,6 +137,19 @@ void BaseUniformParameter<T>::setValueFromIndex(int i, int index)
 
 
 template <typename T>
+void BaseUniformParameter<T>::setValues(QList<T> values)
+{
+    if (values.size() == mNumbers.size())
+    {
+        for (int i = 0; i < mNumbers.size(); i++)
+            mNumbers[i]->setValue(values[i]);
+
+        setUniform();
+    }
+}
+
+
+template <typename T>
 void BaseUniformParameter<T>::setMin(T theMin)
 {
     foreach (Number<T>* number, mNumbers)
@@ -176,7 +189,7 @@ template <typename T>
 QList<T> BaseUniformParameter<T>::values()
 {
     QList<T> theValues;
-    for (Number<T>* number : mNumbers)
+    foreach (Number<T>* number, mNumbers)
         theValues.append(number->value());
     return theValues;
 }

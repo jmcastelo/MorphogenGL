@@ -48,7 +48,7 @@ public:
     Seed(GLenum texFormat, GLuint width, GLuint height, const Seed& seed);
     ~Seed();
 
-    GLuint outTextureId();
+    GLuint* outTextureId();
     QList<GLuint*> textureIds();
 
     void setOutTexture(bool draw);
@@ -70,8 +70,9 @@ public:
 private:
     int mType = 0;
     bool mFixed = false;
-    QString mImageFilename;
     bool mCleared = false;
+
+    QString mImageFilename;
 
     QOpenGLContext* mContext;
     QOffscreenSurface* mSurface;
@@ -80,14 +81,15 @@ private:
     GLuint mVao = 0;
     GLuint mVboPos = 0;
 
-    GLuint mOutTexId = 0;
-
     GLuint mRandomTexId = 0;
-    QOpenGLShaderProgram* mRandomProgram;
-
-    QOpenGLTexture* mImageTex;
-
+    GLuint mImageTexId = 0;
     GLuint mClearTexId = 0;
+    GLuint* mOutTexId = nullptr;
+
+    GLuint mTexWidth;
+    GLuint mTexHeight;
+
+    QOpenGLShaderProgram* mRandomProgram;
 
     std::default_random_engine mGenerator;
 

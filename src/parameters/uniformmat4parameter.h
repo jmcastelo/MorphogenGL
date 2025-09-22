@@ -16,7 +16,8 @@ enum class UniformMat4Type
 {
     TRANSLATION = 0,
     ROTATION = 1,
-    SCALING = 2
+    SCALING = 2,
+    ORTHOGRAPHIC = 3
 };
 
 
@@ -33,6 +34,7 @@ public:
     UniformMat4Parameter(const UniformParameter<float>& parameter, UniformMat4Type theMat4Type);
 
     void setType(UniformMat4Type type);
+    UniformMat4Type type() const;
     int typeIndex() const;
 
     void setUniform() override;

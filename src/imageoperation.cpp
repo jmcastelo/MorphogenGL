@@ -32,7 +32,9 @@
 // Image operation base class
 
 ImageOperation::ImageOperation(QString name, GLenum texFormat, GLuint width, GLuint height, QOpenGLContext* context, QOffscreenSurface* surface) :
-    mName { name }
+    mName { name },
+    mTexWidth { width },
+    mTexHeight { height }
 {
     // Create context
 
@@ -83,7 +85,9 @@ ImageOperation::ImageOperation(GLenum texFormat, GLuint width, GLuint height, co
     mVertexShader { operation.mVertexShader },
     mFragmentShader { operation.mFragmentShader },
     mEnabled { operation.mEnabled },
-    mInputData { operation.mInputData }
+    mInputData { operation.mInputData },
+    mTexWidth { width },
+    mTexHeight { height}
 {
     // Generate textures with format and size given externally
 
@@ -268,21 +272,27 @@ void ImageOperation::enableOrtho(bool on)
 
 void ImageOperation::adjustOrtho(GLfloat left, GLfloat right, GLfloat bottom, GLfloat top)
 {
-    if (mOrthoEnabled)
+    foreach (UniformMat4Parameter* parameter, mMat4UniformParameters)
+    {
+        if (parameter->type() == UniformMat4Type::ORTHOGRAPHIC)
+            parameter->setValues(QList<float> { left, right, bottom, top });
+    }
+
+    /*if (mOrthoEnabled)
     {
         QMatrix4x4 transform;
         transform.setToIdentity();
         transform.ortho(left, right, bottom, top, -1.0, 1.0);
 
-        mContext->makeCurrent(mSurface);
+        // mContext->makeCurrent(mSurface);
 
         mProgram->bind();
         int location = mProgram->uniformLocation(mOrthoName);
         mProgram->setUniformValue(location, transform);
         mProgram->release();
 
-        mContext->doneCurrent();
-    }
+        // mContext->doneCurrent();
+    }*/
 }
 
 
@@ -384,6 +394,8 @@ void ImageOperation::setMat4Uniform(QString name, UniformMat4Type type, QList<fl
             matrix.rotate(values.at(0), 0.0f, 0.0f, 1.0f);
         else if (type == UniformMat4Type::SCALING)
             matrix.scale(values.at(0), values.at(1));
+        else if (type == UniformMat4Type::ORTHOGRAPHIC)
+            matrix.ortho(values.at(0), values.at(1), values.at(2), values.at(3), -1.0, 1.0);
 
         mContext->makeCurrent(mSurface);
         mProgram->bind();
@@ -485,7 +497,7 @@ void ImageOperation::setInputData(QList<InputData*> data)
 
         foreach(InputData* iData, data)
         {
-            mInputTextures.append(*iData->textureId());
+            mInputTextures.append(iData->textureId());
             mInputBlendFactors.append(iData->blendFactor());
         }
     }
@@ -495,16 +507,16 @@ void ImageOperation::setInputData(QList<InputData*> data)
 
 
 
-GLuint ImageOperation::blitTextureId()
+GLuint* ImageOperation::blitTextureId()
 {
-    return mBlitTexId;
+    return &mBlitTexId;
 }
 
 
 
-GLuint ImageOperation::outTextureId()
+GLuint* ImageOperation::outTextureId()
 {
-    return mOutTexId;
+    return &mOutTexId;
 }
 
 
@@ -537,7 +549,15 @@ QList<GLuint*> ImageOperation::textureIds()
 
 
 
-QList<GLuint> ImageOperation::inputTextures()
+void ImageOperation::setTexSize(GLuint width, GLuint height)
+{
+    mTexWidth = width;
+    mTexHeight = height;
+}
+
+
+
+QList<GLuint*> ImageOperation::inputTextures()
 {
     return mInputTextures;
 }

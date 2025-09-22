@@ -98,15 +98,17 @@ public:
 
     void setInputData(QList<InputData*> data);
 
-    GLuint blitTextureId();
-    GLuint outTextureId();
+    GLuint* blitTextureId();
+    GLuint* outTextureId();
     GLuint blendOutTextureId();
     GLuint inTextureId();
     GLuint samplerId();
 
     QList<GLuint*> textureIds();
 
-    QList<GLuint> inputTextures();
+    void setTexSize(GLuint width, GLuint height);
+
+    QList<GLuint*> inputTextures();
     QList<float> inputBlendFactors();
 
     template <typename T>
@@ -175,13 +177,16 @@ private:
     bool mUpdate = false;
 
     QList<InputData*> mInputData;
-    QList<GLuint> mInputTextures;
+    QList<GLuint*> mInputTextures;
     QList<float> mInputBlendFactors;
 
     GLuint mOutTexId = 0;
     GLuint mBlitTexId = 0;
     GLuint mBlendOutTexId = 0;
     GLuint* mInputTexId = nullptr;
+
+    GLuint mTexWidth;
+    GLuint mTexHeight;
 
     QList<UniformParameter<float>*> floatUniformParameters;
     QList<UniformParameter<int>*> intUniformParameters;

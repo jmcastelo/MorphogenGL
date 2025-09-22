@@ -122,13 +122,14 @@ private:
 
     void verticesCoords(GLfloat& left, GLfloat& right, GLfloat& bottom, GLfloat& top);
     void setVao();
+    void adjustOrtho();
 
     void genTexture(GLuint& texId);
     void resizeTextures();
 
     void genBlendArrayTexture();
     void recreateBlendArrayTexture();
-    void copyTexturesToBlendArrayTexture(QList<GLuint> textures);
+    void copyTexturesToBlendArrayTexture(QList<GLuint *> textures);
 
     void clearTexture(GLuint texId);
 

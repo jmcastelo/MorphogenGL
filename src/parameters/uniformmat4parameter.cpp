@@ -40,6 +40,20 @@ UniformMat4Parameter::UniformMat4Parameter(QString theName, QString theUniformNa
         mNumberNames.append("Y");
         mNumbers.append(new Number<float>(theValues.at(1), theMin.at(1), theMax.at(1), theInf.at(1), theSup.at(1)));
     }
+    else if (mType == UniformMat4Type::ORTHOGRAPHIC)
+    {
+        mNumberNames.append("Left");
+        mNumbers.append(new Number<float>(theValues.at(0), theMin.at(0), theMax.at(0), theInf.at(0), theSup.at(0)));
+
+        mNumberNames.append("Right");
+        mNumbers.append(new Number<float>(theValues.at(1), theMin.at(1), theMax.at(1), theInf.at(1), theSup.at(1)));
+
+        mNumberNames.append("Bottom");
+        mNumbers.append(new Number<float>(theValues.at(2), theMin.at(2), theMax.at(2), theInf.at(2), theSup.at(2)));
+
+        mNumberNames.append("Top");
+        mNumbers.append(new Number<float>(theValues.at(3), theMin.at(3), theMax.at(3), theInf.at(3), theSup.at(3)));
+    }
 }
 
 
@@ -68,6 +82,20 @@ UniformMat4Parameter::UniformMat4Parameter(QString theName, QString theUniformNa
 
         mNumberNames.append("Y");
         mNumbers.append(new Number<float>(theIds.at(1), theValues.at(1), theMin.at(1), theMax.at(1), theInf.at(1), theSup.at(1)));
+    }
+    else if (mType == UniformMat4Type::ORTHOGRAPHIC)
+    {
+        mNumberNames.append("Left");
+        mNumbers.append(new Number<float>(theIds.at(0), theValues.at(0), theMin.at(0), theMax.at(0), theInf.at(0), theSup.at(0)));
+
+        mNumberNames.append("Right");
+        mNumbers.append(new Number<float>(theIds.at(1), theValues.at(1), theMin.at(1), theMax.at(1), theInf.at(1), theSup.at(1)));
+
+        mNumberNames.append("Bottom");
+        mNumbers.append(new Number<float>(theIds.at(2), theValues.at(2), theMin.at(2), theMax.at(2), theInf.at(2), theSup.at(2)));
+
+        mNumberNames.append("Top");
+        mNumbers.append(new Number<float>(theIds.at(3), theValues.at(3), theMin.at(3), theMax.at(3), theInf.at(3), theSup.at(3)));
     }
 }
 
@@ -103,23 +131,37 @@ void UniformMat4Parameter::setType(UniformMat4Type type)
     if (mType == UniformMat4Type::TRANSLATION)
     {
         mNumberNames.append("X");
-        mNumbers.append(new Number<float>(0.0, -1.0, 1.0, -1.0, 1.0));
+        mNumbers.append(new Number<float>(0.0f, -1.0f, 1.0f, -1.0f, 1.0f));
 
         mNumberNames.append("Y");
-        mNumbers.append(new Number<float>(0.0, -1.0, 1.0, -1.0, 1.0));
+        mNumbers.append(new Number<float>(0.0f, -1.0f, 1.0f, -1.0f, 1.0f));
     }
     else if (mType == UniformMat4Type::ROTATION)
     {
         mNumberNames.append("Angle");
-        mNumbers.append(new Number<float>(0.0, -180.0, 180.0, -360.0, 360.0));
+        mNumbers.append(new Number<float>(0.0f, -180.0f, 180.0f, -360.0f, 360.0f));
     }
     else if (mType == UniformMat4Type::SCALING)
     {
         mNumberNames.append("X");
-        mNumbers.append(new Number<float>(1.0, 0.0, 2.0, 0.0, 1000.0));
+        mNumbers.append(new Number<float>(1.0f, 0.0f, 2.0f, 0.0f, 1000.0f));
 
         mNumberNames.append("Y");
-        mNumbers.append(new Number<float>(1.0, 0.0, 2.0, 0.0, 1000.0));
+        mNumbers.append(new Number<float>(1.0f, 0.0f, 2.0f, 0.0f, 1000.0f));
+    }
+    else if (mType == UniformMat4Type::ORTHOGRAPHIC)
+    {
+        mNumberNames.append("Left");
+        mNumbers.append(new Number<float>(-1.0f, -2.0f, 0.0f, -10.0f, 0.0f));
+
+        mNumberNames.append("Right");
+        mNumbers.append(new Number<float>(1.0f, 0.0f, 2.0f, 0.0f, 10.0f));
+
+        mNumberNames.append("Bottom");
+        mNumbers.append(new Number<float>(-1.0f, -2.0f, 0.0f, -10.0f, 0.0f));
+
+        mNumberNames.append("Top");
+        mNumbers.append(new Number<float>(1.0f, 0.0f, 2.0f, 0.0f, 10.0f));
     }
 
     mPresets.clear();
@@ -148,4 +190,11 @@ QList<QString> UniformMat4Parameter::numberNames()
 int UniformMat4Parameter::typeIndex() const
 {
     return static_cast<int>(mType);
+}
+
+
+
+UniformMat4Type UniformMat4Parameter::type() const
+{
+    return mType;
 }

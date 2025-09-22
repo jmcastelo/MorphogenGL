@@ -133,7 +133,6 @@ RenderManager::~RenderManager()
 
 Seed* RenderManager::createNewSeed()
 {
-    //Seed* seed = new Seed(static_cast<GLenum>(mTexFormat), mTexWidth, mTexHeight, mShareContext);
     Seed* seed = new Seed(static_cast<GLenum>(mTexFormat), mTexWidth, mTexHeight, mContext, mSurface);
 
     mSeeds.append(seed);
@@ -153,7 +152,6 @@ void RenderManager::deleteSeed(Seed* seed)
 
 ImageOperation* RenderManager::createNewOperation()
 {
-    //ImageOperation* operation = new ImageOperation("New Operation", static_cast<GLenum>(mTexFormat), mTexWidth, mTexHeight, mShareContext);
     ImageOperation* operation = new ImageOperation("New Operation", static_cast<GLenum>(mTexFormat), mTexWidth, mTexHeight, mContext, mSurface);
 
     mOperations.append(operation);
@@ -216,6 +214,7 @@ void RenderManager::resize(GLuint width, GLuint height)
     mTexWidth = width;
     mTexHeight = height;
 
+
     mContext->makeCurrent(mSurface);
 
     setVao();
@@ -228,6 +227,8 @@ void RenderManager::resize(GLuint width, GLuint height)
     recreateBlendArrayTexture();
 
     mContext->doneCurrent();
+
+    adjustOrtho();
 }
 
 
@@ -491,34 +492,10 @@ void RenderManager::verticesCoords(GLfloat& left, GLfloat& right, GLfloat& botto
 
 void RenderManager::setVao()
 {
-    // Recompute vertices and texture coordinates
-
-    // GLfloat w = static_cast<GLfloat>(mTexWidth);
-    // GLfloat h = static_cast<GLfloat>(mTexHeight);
-
-    /*GLfloat vertCoords[] = {
-        -0.5f * w, -0.5f * h, // Bottom-left
-        0.5f * w, -0.5f * h, // Bottom-right
-        -0.5f * w, 0.5f * h, // Top-left
-        0.5f * w, 0.5f * h // Top-right
-    };
-
-    GLfloat texCoords[] = {
-        0.0f, 0.0f,  // Bottom-left
-        w, 0.0f,  // Bottom-right
-        0.0f, h,  // Top-left
-        w, h   // Top-right
-    };*/
+    // Recompute vertices coordinates
 
     GLfloat left, right, bottom, top;
     verticesCoords(left, right, bottom, top);
-
-    /*GLfloat vertCoords[] = {
-        -1.0f, -1.0f, // Bottom-left
-        1.0f, -1.0f, // Bottom-right
-        -1.0f, 1.0f, // Top-left
-        1.0f, 1.0f  // Top-right
-    };*/
 
     GLfloat vertCoords[] = {
         left, bottom,
@@ -549,6 +526,17 @@ void RenderManager::setVao()
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     glBindVertexArray(0);
+}
+
+
+
+void RenderManager::adjustOrtho()
+{
+    GLfloat left, right, bottom, top;
+    verticesCoords(left, right, bottom, top);
+
+    foreach (ImageOperation* operation, mOperations)
+        operation->adjustOrtho(left, right, bottom, top);
 }
 
 
@@ -610,13 +598,8 @@ void RenderManager::resizeTextures()
         glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, *oldTexId, 0);
 
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, mDrawFbo);
-        // glClear(GL_COLOR_BUFFER_BIT);
+
         glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, newTexId, 0);
-
-        //glReadBuffer(GL_COLOR_ATTACHMENT0);
-        //glDrawBuffer(GL_COLOR_ATTACHMENT0);
-
-        // glViewport(0, 0, mTexWidth, mTexHeight);
 
         glBlitFramebuffer(0, 0, mOldTexWidth, mOldTexHeight, 0, 0, mTexWidth, mTexHeight, GL_COLOR_BUFFER_BIT, GL_LINEAR);
 
@@ -641,14 +624,14 @@ void RenderManager::recreateBlendArrayTexture()
 
 
 
-void RenderManager::copyTexturesToBlendArrayTexture(QList<GLuint> textures)
+void RenderManager::copyTexturesToBlendArrayTexture(QList<GLuint*> textures)
 {
     int nTextures = textures.size();
     if (nTextures > mMaxArrayTexLayers)
         nTextures = mMaxArrayTexLayers;
 
     for (int i = 0; i < nTextures; i++)
-        glCopyImageSubData(textures[i], GL_TEXTURE_2D, 0, 0, 0, 0, mBlendArrayTexId, GL_TEXTURE_2D_ARRAY, 0, 0, 0, i, mTexWidth, mTexHeight, 1);
+        glCopyImageSubData(*textures[i], GL_TEXTURE_2D, 0, 0, 0, 0, mBlendArrayTexId, GL_TEXTURE_2D_ARRAY, 0, 0, 0, i, mTexWidth, mTexHeight, 1);
 }
 
 
@@ -678,10 +661,10 @@ void RenderManager::blit()
         if (operation->blitEnabled())
         {
             glBindFramebuffer(GL_READ_FRAMEBUFFER, mReadFbo);
-            glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, operation->outTextureId(), 0);
+            glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, *operation->outTextureId(), 0);
 
             glBindFramebuffer(GL_DRAW_FRAMEBUFFER, mDrawFbo);
-            glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, operation->blitTextureId(), 0);
+            glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, *operation->blitTextureId(), 0);
 
             glReadBuffer(GL_COLOR_ATTACHMENT0);
             glDrawBuffer(GL_COLOR_ATTACHMENT0);
@@ -745,7 +728,7 @@ void RenderManager::blend(ImageOperation *operation)
 
 void RenderManager::renderOperation(ImageOperation* operation)
 {
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, operation->outTextureId(), 0);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, *operation->outTextureId(), 0);
 
     glClear(GL_COLOR_BUFFER_BIT);
 

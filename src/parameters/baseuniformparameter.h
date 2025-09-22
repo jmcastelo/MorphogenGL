@@ -28,6 +28,7 @@ public:
     T value(int i);
     void setValue(int i, T theValue);
     void setValueFromIndex(int i, int index);
+    void setValues(QList<T> values);
 
     virtual void setUniform() = 0;
 

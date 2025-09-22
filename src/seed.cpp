@@ -67,19 +67,15 @@ Seed::Seed(GLenum texFormat, GLuint width, GLuint height, QOpenGLContext* contex
 
     setVao(width, height);
 
-    mContext->doneCurrent();
-
     // Generate textures with format and size given externally
 
     genTextures(texFormat, width, height);
 
+    mContext->doneCurrent();
+
     // Clear texture
 
     clearTexture(mClearTexId);
-
-    // Texture to store loaded image
-
-    mImageTex = new QOpenGLTexture(QOpenGLTexture::Target2D);
 }
 
 
@@ -125,10 +121,6 @@ Seed::Seed(GLenum texFormat, GLuint width, GLuint height, const Seed& seed) :
 
     setVao(width, height);
 
-    // Set image
-
-    mImageTex = new QOpenGLTexture(QOpenGLTexture::Target2D);
-
     if (!mImageFilename.isEmpty())
         loadImage(mImageFilename);
 }
@@ -141,22 +133,17 @@ Seed::~Seed()
 
     glDeleteFramebuffers(1, &mOutFbo);
 
+    GLuint texIds[] = { mRandomTexId, mImageTexId, mClearTexId };
+    glDeleteTextures(3, texIds);
+
     delete mRandomProgram;
 
-    glDeleteTextures(1, &mRandomTexId);
-
-    mImageTex->destroy();
-    delete mImageTex;
-
     mContext->doneCurrent();
-
-    //delete mContext;
-    //delete mSurface;
 }
 
 
 
-GLuint Seed::outTextureId()
+GLuint* Seed::outTextureId()
 {
     return mOutTexId;
 }
@@ -165,7 +152,7 @@ GLuint Seed::outTextureId()
 
 QList<GLuint*> Seed::textureIds()
 {
-    return QList<GLuint*> { &mRandomTexId, &mClearTexId };
+    return QList<GLuint*> { &mRandomTexId, &mImageTexId, &mClearTexId };
 }
 
 
@@ -203,24 +190,6 @@ void Seed::setVao(GLuint width, GLuint height)
         right, top
     };
 
-    /*GLfloat vertCoords[] = {
-        -0.5f * w, -0.5f * h, // Bottom-left
-        0.5f * w, -0.5f * h, // Bottom-right
-        -0.5f * w, 0.5f * h, // Top-left
-        0.5f * w, 0.5f * h // Top-right
-    };*/
-
-    /*GLfloat vertCoords[] = {
-        -1.0f, -1.0f, // Bottom-left
-        1.0f, -1.0f, // Bottom-right
-        -1.0f, 1.0f, // Top-left
-        1.0f, 1.0f  // Top-right
-    };*/
-
-    //mContext->makeCurrent(mSurface);
-
-    //glViewport(0, 0, width, height);
-
     glBindVertexArray(mVao);
 
     glBindBuffer(GL_ARRAY_BUFFER, mVboPos);
@@ -234,19 +203,25 @@ void Seed::setVao(GLuint width, GLuint height)
 
     glBindVertexArray(0);
 
-    //mContext->doneCurrent();
+    mTexWidth = width;
+    mTexHeight = height;
 }
 
 
 
 void Seed::loadImage(QString filename)
 {
+    QImage image = QImage(filename).convertToFormat(QImage::Format_RGBA8888).scaled(mTexWidth, mTexHeight, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+
     mContext->makeCurrent(mSurface);
 
-    mImageTex->destroy();
-    if (!filename.isEmpty())
-        //mImageTex->setData(QImage(filename).mirrored());
-        mImageTex->setData(QImage(filename));
+    glBindTexture(GL_TEXTURE_2D, mImageTexId);
+
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, mTexWidth, mTexHeight, GL_RGBA, GL_UNSIGNED_BYTE, image.constBits());
+
+    glBindTexture(GL_TEXTURE_2D, 0);
 
     mContext->doneCurrent();
 
@@ -297,16 +272,16 @@ void Seed::setOutTexture(bool draw)
         if (mType == 0 || mType == 1)
         {
             drawRandom(mType == 1);
-            mOutTexId = mRandomTexId;
+            mOutTexId = &mRandomTexId;
         }
         else if (mType == 2)
-            mOutTexId = mImageTex->textureId();
+            mOutTexId = &mImageTexId;
 
         mCleared = false;
     }
     else if (!mCleared && !mFixed)
     {
-        mOutTexId = mClearTexId;
+        mOutTexId = &mClearTexId;
         mCleared = true;
     }
 }
@@ -316,8 +291,6 @@ void Seed::setOutTexture(bool draw)
 void Seed::genTextures(GLenum texFormat, GLuint width, GLuint height)
 {
     // Allocated on immutable storage (glTexStorage2D)
-
-    mContext->makeCurrent(mSurface);
 
     foreach (GLuint* texId, textureIds())
     {
@@ -330,8 +303,6 @@ void Seed::genTextures(GLenum texFormat, GLuint width, GLuint height)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         glBindTexture(GL_TEXTURE_2D, 0);
     }
-
-    mContext->doneCurrent();
 }
 
 

@@ -31,7 +31,6 @@
 #include "imageoperation.h"
 #include "seed.h"
 #include "inputdata.h"
-#include "texformat.h"
 #include "operationwidget.h"
 #include "seedwidget.h"
 #include "edgewidget.h"
@@ -69,7 +68,7 @@ struct ImageOperationNode
     void removeInput(ImageOperationNode* node);
     void setInputType(QUuid id, InputType type);
 
-    void setInputSeedTexId(QUuid id, GLuint texId);
+    void setInputSeedTexId(QUuid id, GLuint *texId);
 
     int numInputs();
     int numNonNormalInputs();

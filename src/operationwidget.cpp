@@ -500,10 +500,10 @@ void OperationWidget::connectUniformFloatParamWidgets()
                 if (widget->isMat4Equivalent())
                 {
                     mat4TypeComboBox->setVisible(true);
-                    mat4TypeComboBox->setCurrentIndex(3);
+                    mat4TypeComboBox->setCurrentIndex(4);
 
                     connect(mat4TypeComboBox, &QComboBox::currentIndexChanged, this, [=, this](int index){
-                        if (index >= 0 && index < 3)
+                        if (index >= 0 && index < 4)
                         {
                             UniformParameter<float>* parameter = widget->parameter();
 
@@ -513,7 +513,8 @@ void OperationWidget::connectUniformFloatParamWidgets()
 
                             lastFocusedParameter = newParam;
 
-                            addInterpolation();
+                            if (index < 3)
+                                addInterpolation();
 
                             recreate();
                         }
@@ -559,18 +560,21 @@ void OperationWidget::connectUniformMat4ParamWidgets()
                 mat4TypeComboBox->setCurrentIndex(widget->typeIndex());
 
                 connect(mat4TypeComboBox, &QComboBox::currentIndexChanged, this, [=, this](int index){
-                    if (index >= 0 && index < 3)
+                    if (index >= 0 && index < 4)
                     {
                         UniformMat4Parameter* parameter = widget->parameter();
                         parameter->setType(static_cast<UniformMat4Type>(index));
 
                         lastFocusedParameter = parameter;
 
-                        addInterpolation();
+                        if (index < 3)
+                            addInterpolation();
+                        else if (index == 3)
+                            removeInterpolation();
 
                         recreate();
                     }
-                    else if (index == 3)
+                    else if (index == 4)
                     {
                         UniformMat4Parameter* parameter = widget->parameter();
 

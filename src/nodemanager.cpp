@@ -157,7 +157,7 @@ void ImageOperationNode::setInputType(QUuid id, InputType type)
 
 
 
-void ImageOperationNode::setInputSeedTexId(QUuid id, GLuint texId)
+void ImageOperationNode::setInputSeedTexId(QUuid id, GLuint* texId)
 {
     if (inputs.contains(id))
     {
@@ -407,7 +407,7 @@ void NodeManager::setOutput(QUuid id)
         // This kind of double buffering allows for smoother, flickerless rendering
 
         operationNodes.value(id)->operation->enableBlit(true);
-        mOutputTextureId = operationNodes.value(id)->operation->blitTextureId();
+        mOutputTextureId = *operationNodes.value(id)->operation->blitTextureId();
 
         emit outputTextureChanged(mOutputTextureId);
         //emit outputFBOChanged(operationNodes.value(id)->operation->getFBO());
@@ -415,7 +415,7 @@ void NodeManager::setOutput(QUuid id)
     else if (seeds.contains(id))
     {
         mOutputId = id;
-        mOutputTextureId = seeds.value(id)->outTextureId();
+        mOutputTextureId = *seeds.value(id)->outTextureId();
 
         emit outputTextureChanged(mOutputTextureId);
         // emit outputFBOChanged(seeds.value(id)->getFBO());
@@ -1047,7 +1047,7 @@ QPair<QUuid, SeedWidget *> NodeManager::addSeed()
     connect(seedWidget, &SeedWidget::typeChanged, this, [=, this](){
         if (isOutput(id))
         {
-            mOutputTextureId = seeds.value(id)->outTextureId();
+            mOutputTextureId = *seeds.value(id)->outTextureId();
 
             emit outputTextureChanged(mOutputTextureId);
             //emit outputFBOChanged(seeds.value(id)->getFBO());
