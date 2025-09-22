@@ -76,6 +76,15 @@ void RenderManager::init(QOpenGLContext* shareContext)
 
     setVao();
 
+    // Get and clamp maximum number of array texture layers
+
+    glGetIntegerv(GL_MAX_ARRAY_TEXTURE_LAYERS , &mMaxArrayTexLayers);
+
+    if (mMaxArrayTexLayers > mNumArrayTexLayers)
+        mMaxArrayTexLayers = mNumArrayTexLayers;
+
+    genBlendArrayTexture();
+
     // Shader program
 
     mBlenderProgram = new QOpenGLShaderProgram();
@@ -83,13 +92,6 @@ void RenderManager::init(QOpenGLContext* shareContext)
 
     setBlenderProgram();
     setIdentityProgram();
-
-    // Get and clamp maximum number of array texture layers
-
-    glGetIntegerv(GL_MAX_ARRAY_TEXTURE_LAYERS , &mMaxArrayTexLayers);
-
-    if (mMaxArrayTexLayers > mNumArrayTexLayers)
-        mMaxArrayTexLayers = mNumArrayTexLayers;
 
     mContext->doneCurrent();
 }
@@ -216,14 +218,11 @@ void RenderManager::resize(GLuint width, GLuint height)
 
     mContext->makeCurrent(mSurface);
 
-    glViewport(0, 0, mTexWidth, mTexHeight);
-
     setVao();
     foreach (Seed* seed, mSeeds)
-    {
         seed->setVao(width, height);
-        //seed->genTextures(static_cast<GLenum>(mTexFormat), width, height);
-    }
+
+    glViewport(0, 0, mTexWidth, mTexHeight);
 
     resizeTextures();
     recreateBlendArrayTexture();
@@ -396,8 +395,6 @@ void RenderManager::setOutputTextureId(GLuint texId)
 
 void RenderManager::setBlenderProgram()
 {
-    genBlendArrayTexture();
-
     mBlenderProgram->addShaderFromSourceFile(QOpenGLShader::Vertex, ":/shaders/blender.vert");
     mBlenderProgram->addShaderFromSourceFile(QOpenGLShader::Fragment, ":/shaders/blender.frag");
     mBlenderProgram->link();
@@ -587,6 +584,8 @@ void RenderManager::genBlendArrayTexture()
 
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
     glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
 }
@@ -611,10 +610,13 @@ void RenderManager::resizeTextures()
         glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, *oldTexId, 0);
 
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, mDrawFbo);
+        // glClear(GL_COLOR_BUFFER_BIT);
         glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, newTexId, 0);
 
-        glReadBuffer(GL_COLOR_ATTACHMENT0);
-        glDrawBuffer(GL_COLOR_ATTACHMENT0);
+        //glReadBuffer(GL_COLOR_ATTACHMENT0);
+        //glDrawBuffer(GL_COLOR_ATTACHMENT0);
+
+        // glViewport(0, 0, mTexWidth, mTexHeight);
 
         glBlitFramebuffer(0, 0, mOldTexWidth, mOldTexHeight, 0, 0, mTexWidth, mTexHeight, GL_COLOR_BUFFER_BIT, GL_LINEAR);
 
@@ -656,7 +658,6 @@ void RenderManager::clearTexture(GLuint texId)
     mContext->makeCurrent(mSurface);
 
     glBindFramebuffer(GL_FRAMEBUFFER, mOutFbo);
-
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texId, 0);
 
     glClear(GL_COLOR_BUFFER_BIT);

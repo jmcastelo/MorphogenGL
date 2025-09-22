@@ -343,6 +343,8 @@ void MorphoWidget::initializeGL()
 
     glClearColor(0.0, 0.0, 0.0, 1.0);
 
+    glDisable(GL_DEPTH_TEST);
+
     glGenFramebuffers(1, &fbo);
 
     program = new QOpenGLShaderProgram();
