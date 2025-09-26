@@ -8,8 +8,6 @@
 #include "layoutformat.h"
 #include "focuswidgets.h"
 
-#include <cmath>
-
 #include <QGridLayout>
 #include <QStackedLayout>
 #include <QGroupBox>

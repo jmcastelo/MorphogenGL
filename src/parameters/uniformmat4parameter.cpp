@@ -19,6 +19,11 @@ UniformMat4Parameter::UniformMat4Parameter(QString theName, QString theUniformNa
     BaseUniformParameter<float>(theName, theUniformName, GL_FLOAT_MAT4, isEditable, theOperation),
     mType { theMat4Type }
 {
+    mNumberNames.clear();
+
+    qDeleteAll(mNumbers);
+    mNumbers.clear();
+
     if (mType == UniformMat4Type::TRANSLATION)
     {
         mNumberNames.append("X");
@@ -54,6 +59,11 @@ UniformMat4Parameter::UniformMat4Parameter(QString theName, QString theUniformNa
         mNumberNames.append("Top");
         mNumbers.append(new Number<float>(theValues.at(3), theMin.at(3), theMax.at(3), theInf.at(3), theSup.at(3)));
     }
+
+    mEmpty = mNumbers.empty();
+
+    // for (int i = 0; i < mNumbers.size(); i++)
+        // connect(mNumbers[i], &NumberSignals::valueChanged, this, [=, this](QVariant value){ emit valueChanged(i, value); });
 }
 
 
@@ -62,6 +72,11 @@ UniformMat4Parameter::UniformMat4Parameter(QString theName, QString theUniformNa
     BaseUniformParameter<float>(theName, theUniformName, GL_FLOAT_MAT4, isEditable, theOperation),
     mType { theMat4Type }
 {
+    mNumberNames.clear();
+
+    qDeleteAll(mNumbers);
+    mNumbers.clear();
+
     if (mType == UniformMat4Type::TRANSLATION)
     {
         mNumberNames.append("X");
@@ -97,6 +112,11 @@ UniformMat4Parameter::UniformMat4Parameter(QString theName, QString theUniformNa
         mNumberNames.append("Top");
         mNumbers.append(new Number<float>(theIds.at(3), theValues.at(3), theMin.at(3), theMax.at(3), theInf.at(3), theSup.at(3)));
     }
+
+    mEmpty = mNumbers.empty();
+
+    // for (int i = 0; i < mNumbers.size(); i++)
+        // connect(mNumbers[i], &NumberSignals::valueChanged, this, [=, this](QVariant value){ emit valueChanged(i, value); });
 }
 
 

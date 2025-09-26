@@ -254,7 +254,8 @@ void OperationParser::writeParameters(ImageOperation* operation, QXmlStreamWrite
 
             for (auto [name, values]: presets.asKeyValueRange())
             {
-                stream.writeStartElement(name);
+                stream.writeStartElement("preset");
+                stream.writeAttribute("name", name);
 
                 foreach (auto value, values)
                 {
@@ -344,25 +345,28 @@ void OperationParser::readParameters(ImageOperation* operation, QXmlStreamReader
         {
             while (stream.readNextStartElement())
             {
-                QString presetName = stream.name().toString();
-                QList<T> presetValues;
-
-                while (stream.readNextStartElement())
+                if (stream.name() == "preset")
                 {
-                    if (stream.name() == "value")
-                    {
-                        if (std::is_same<T, float>::value)
-                            presetValues.append(stream.readElementText().toFloat());
-                        else if (std::is_same<T, int>::value)
-                            presetValues.append(stream.readElementText().toInt());
-                        else if (std::is_same<T, unsigned int>::value)
-                            presetValues.append(stream.readElementText().toUInt());
-                    }
-                    else
-                        stream.skipCurrentElement();
-                }
+                    QString presetName = stream.attributes().value("name").toString();
+                    QList<T> presetValues;
 
-                presets[presetName] = presetValues;
+                    while (stream.readNextStartElement())
+                    {
+                        if (stream.name() == "value")
+                        {
+                            if (std::is_same<T, float>::value)
+                                presetValues.append(stream.readElementText().toFloat());
+                            else if (std::is_same<T, int>::value)
+                                presetValues.append(stream.readElementText().toInt());
+                            else if (std::is_same<T, unsigned int>::value)
+                                presetValues.append(stream.readElementText().toUInt());
+                        }
+                        else
+                            stream.skipCurrentElement();
+                    }
+
+                    presets[presetName] = presetValues;
+                }
             }
         }
         else
@@ -440,7 +444,8 @@ void OperationParser::writeMat4Parameters(ImageOperation* operation, QXmlStreamW
 
             for (auto [name, values]: presets.asKeyValueRange())
             {
-                stream.writeStartElement(name);
+                stream.writeStartElement("preset");
+                stream.writeAttribute("name", name);
 
                 foreach (auto value, values)
                 {
@@ -508,18 +513,21 @@ void OperationParser::readMat4Parameters(ImageOperation* operation, QXmlStreamRe
         {
             while (stream.readNextStartElement())
             {
-                QString presetName = stream.name().toString();
-                QList<float> presetValues;
-
-                while (stream.readNextStartElement())
+                if (stream.name() == "preset")
                 {
-                    if (stream.name() == "value")
-                        presetValues.append(stream.readElementText().toFloat());
-                    else
-                        stream.skipCurrentElement();
-                }
+                    QString presetName = stream.attributes().value("name").toString();
+                    QList<float> presetValues;
 
-                presets[presetName] = presetValues;
+                    while (stream.readNextStartElement())
+                    {
+                        if (stream.name() == "value")
+                            presetValues.append(stream.readElementText().toFloat());
+                        else
+                            stream.skipCurrentElement();
+                    }
+
+                    presets[presetName] = presetValues;
+                }
             }
         }
         else
