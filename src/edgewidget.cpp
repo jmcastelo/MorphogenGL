@@ -38,13 +38,13 @@ EdgeWidget::EdgeWidget(float factor, bool srcIsOp, QWidget *parent) :
 
     // Set edge type
 
-    QAction* typeAction = headerToolBar->addAction(QIcon(QPixmap(":/icons/edit-undo.png")), "Set as predge", this, &EdgeWidget::edgeTypeChanged);
-    typeAction->setCheckable(true);
-    typeAction->setVisible(srcIsOp);
+    mTypeAction = headerToolBar->addAction(QIcon(QPixmap(":/icons/edit-undo.png")), "Set as predge");
+    mTypeAction->setCheckable(true);
+    mTypeAction->setVisible(srcIsOp);
 
     // Delete
 
-    headerToolBar->addAction(QIcon(QPixmap(":/icons/dialog-close.png")), "Delete", this, &EdgeWidget::remove);
+    mRemoveAction = headerToolBar->addAction(QIcon(QPixmap(":/icons/dialog-close.png")), "Delete");
 
     QSlider* slider = new QSlider(Qt::Horizontal);
     slider->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Maximum);
@@ -71,6 +71,10 @@ EdgeWidget::EdgeWidget(float factor, bool srcIsOp, QWidget *parent) :
             emit linkBreak(blendFactor);
         }
     });
+
+    connect(mTypeAction, &QAction::triggered, this, &EdgeWidget::typeActionToggled);
+
+    connect(mRemoveAction, &QAction::triggered, this, &EdgeWidget::remove);
 
     connect(blendFactor, &Number<float>::linked, this, [=, this](bool set){
         if (set)
@@ -125,7 +129,11 @@ const QString EdgeWidget::name()
 }
 
 
-void EdgeWidget::setName(QString name) { mName = name; }
+
+void EdgeWidget::setName(QString name)
+{
+    mName = name;
+}
 
 
 
@@ -139,4 +147,12 @@ void EdgeWidget::setBlendFactor(float factor)
 void EdgeWidget::toggleMidiAction(bool show)
 {
     midiLinkAction->setVisible(show);
+}
+
+
+
+void EdgeWidget::toggleTypeAction(bool predge)
+{
+    mTypeAction->setChecked(predge);
+    emit edgeTypeChanged(predge);
 }

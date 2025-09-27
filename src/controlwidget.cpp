@@ -976,25 +976,25 @@ void ControlWidget::setVideoCaptureElapsedTimeLabel(int frameNumber)
 
 void ControlWidget::constructSortedOperationWidget()
 {
-     sortedOperationsTable = new QTableWidget;
-     sortedOperationsTable->setColumnCount(1);
-     sortedOperationsTable->setHorizontalHeaderLabels(QStringList("Operation"));
-     sortedOperationsTable->horizontalHeader()->setStretchLastSection(true);
-     sortedOperationsTable->resizeColumnsToContents();
-     sortedOperationsTable->setSelectionMode(QAbstractItemView::MultiSelection);
+    sortedOperationsTable = new QTableWidget();
+    sortedOperationsTable->setColumnCount(1);
+    sortedOperationsTable->setHorizontalHeaderLabels(QStringList("Operation"));
+    sortedOperationsTable->horizontalHeader()->setStretchLastSection(true);
+    sortedOperationsTable->resizeColumnsToContents();
+    sortedOperationsTable->setSelectionMode(QAbstractItemView::MultiSelection);
 
-     QVBoxLayout *layout = new QVBoxLayout;
-     layout->setAlignment(Qt::AlignCenter);
-     layout->addWidget(sortedOperationsTable);
+    QVBoxLayout *layout = new QVBoxLayout;
+    layout->setAlignment(Qt::AlignCenter);
+    layout->addWidget(sortedOperationsTable);
 
-     sortedOperationWidget = new QWidget;
-     sortedOperationWidget->setLayout(layout);
-     sortedOperationWidget->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
-     sortedOperationWidget->setVisible(false);
+    sortedOperationWidget = new QWidget;
+    sortedOperationWidget->setLayout(layout);
+    sortedOperationWidget->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+    sortedOperationWidget->setVisible(false);
 
-     connect(mNodeManager, &NodeManager::sortedOperationsChanged, this, &ControlWidget::populateSortedOperationsTable);
-     //connect(generator, &NodeManager::sortedOperationsChanged, this, &ControlWidget::populateScrollLayout);
-     //connect(sortedOperationsTable, &QTableWidget::itemSelectionChanged, this, &ControlWidget::selectNodesToMark);
+    //connect(mNodeManager, &NodeManager::sortedOperationsChanged, this, &ControlWidget::populateSortedOperationsTable);
+    //connect(generator, &NodeManager::sortedOperationsChanged, this, &ControlWidget::populateScrollLayout);
+    //connect(sortedOperationsTable, &QTableWidget::itemSelectionChanged, this, &ControlWidget::selectNodesToMark);
 }
 
 

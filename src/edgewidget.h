@@ -29,11 +29,13 @@ public:
     void setBlendFactor(float factor);
 
     void toggleMidiAction(bool show);
+    void toggleTypeAction(bool predge);
 
 signals:
     void blendFactorChanged(float factor);
 
     void edgeTypeChanged(bool predge);
+    void typeActionToggled(bool checked);
 
     void linkWait(Number<float>* number);
     void linkBreak(Number<float>* number);
@@ -44,6 +46,8 @@ private:
     QString mName;
     Number<float>* blendFactor;
     QAction* midiLinkAction;
+    QAction* mTypeAction;
+    QAction* mRemoveAction;
 };
 
 

@@ -95,7 +95,7 @@ Edge::Edge(Node* sourceNode, Node* destNode, EdgeWidget *widget, QGraphicsItem* 
 
     // Connections
 
-    connect(mWidget, &EdgeWidget::edgeTypeChanged, this, &Edge::setPredge);
+    connect(mWidget, &EdgeWidget::typeActionToggled, this, &Edge::setPredge);
 }
 
 
@@ -140,6 +140,14 @@ void Edge::setWidgetVisible(bool visible)
 
 
 void Edge::setPredge(bool predge)
+{
+    mPredge = predge;
+    mWidget->toggleTypeAction(predge);
+    update();
+}
+
+
+void Edge::togglePredge(bool predge)
 {
     mPredge = predge;
     update();

@@ -141,17 +141,20 @@ void ImageOperationNode::removeOutput(ImageOperationNode *node)
 
 void ImageOperationNode::setInputType(QUuid id, InputType type)
 {
-    inputs[id]->setType(type);
+    if (inputs.contains(id))
+    {
+        inputs[id]->setType(type);
 
-    if (type == InputType::Normal)
-    {
-        inputs[id]->setTextureId(inputNodes.value(id)->operation->outTextureId());
-        inputNodes.value(id)->operation->enableBlit(false);
-    }
-    else if (type == InputType::Blit)
-    {
-        inputs[id]->setTextureId(inputNodes.value(id)->operation->blitTextureId());
-        inputNodes.value(id)->operation->enableBlit(true);
+        if (type == InputType::Normal)
+        {
+            inputs[id]->setTextureId(inputNodes.value(id)->operation->outTextureId());
+            inputNodes.value(id)->operation->enableBlit(false);
+        }
+        else if (type == InputType::Blit)
+        {
+            inputs[id]->setTextureId(inputNodes.value(id)->operation->blitTextureId());
+            inputNodes.value(id)->operation->enableBlit(true);
+        }
     }
 }
 
@@ -309,8 +312,8 @@ void NodeManager::sortOperations()
 
     QList<ImageOperation*> sortedOperations;
 
-    QList<QPair<QUuid, QString>> sortedOperationsData;
-    QList<QUuid> unsortedOperationsIds;
+    //QList<QPair<QUuid, QString>> sortedOperationsData;
+    //QList<QUuid> unsortedOperationsIds;
 
     QMap<QUuid, ImageOperationNode*> pendingNodes = operationNodes;
 
@@ -330,13 +333,12 @@ void NodeManager::sortOperations()
         if (node->numInputs() == 0 && node->numOutputs() == 0)
         {
             pendingNodes.remove(node->id);
-            unsortedOperationsIds.push_back(node->id);
+            //unsortedOperationsIds.append(node->id);
         }
-        else if ((node->numInputs() == 0 && node->numOutputs() > 0) ||
-                 (node->numInputs() > 0 && node->numNonNormalInputs() == node->numInputs()))
+        else if ((node->numInputs() == 0 && node->numOutputs() > 0) || (node->numInputs() > 0 && node->numNonNormalInputs() == node->numInputs()))
         {
             sortedOperations.append(node->operation);
-            sortedOperationsData.append(QPair<QUuid, QString>(node->id, node->operation->name()));
+            //sortedOperationsData.append(QPair<QUuid, QString>(node->id, node->operation->name()));
             pendingNodes.remove(node->id);
             node->setComputed(true);
         }
@@ -353,7 +355,7 @@ void NodeManager::sortOperations()
             if (node->allInputsComputed())
             {
                 sortedOperations.append(node->operation);
-                sortedOperationsData.push_back(QPair<QUuid, QString>(node->id, node->operation->name()));
+                //sortedOperationsData.push_back(QPair<QUuid, QString>(node->id, node->operation->name()));
                 computedNodes.append(node);
                 node->setComputed(true);
             }
@@ -369,7 +371,7 @@ void NodeManager::sortOperations()
     }
 
     //if (tmpSortedOperations != sortedOperations)
-        emit sortedOperationsChanged(sortedOperationsData, unsortedOperationsIds);
+        //emit sortedOperationsChanged(sortedOperationsData, unsortedOperationsIds);
 
     mRenderManager->setSortedOperations(sortedOperations);
 }
@@ -434,6 +436,7 @@ bool NodeManager::connectOperations(QUuid srcId, QUuid dstId, float factor)
             operationNodes.value(srcId)->addOutput(operationNodes.value(dstId));
 
             sortOperations();
+
             return true;
         }
         else if (seeds.contains(srcId) && operationNodes.contains(dstId) && !operationNodes.value(dstId)->inputNodes.contains(srcId))
@@ -441,6 +444,7 @@ bool NodeManager::connectOperations(QUuid srcId, QUuid dstId, float factor)
             operationNodes.value(dstId)->addSeedInput(srcId, new InputData(InputType::Seed, seeds.value(srcId)->outTextureId(), factor));
 
             sortOperations();
+
             return true;
         }
     }
@@ -1087,6 +1091,8 @@ void NodeManager::removeSeed(QUuid id)
 
         foreach (ImageOperationNode* node, operationNodes)
             node->removeSeedInput(id);
+
+        sortOperations();
     }
 }
 

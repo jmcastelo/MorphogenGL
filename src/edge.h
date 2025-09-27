@@ -91,6 +91,7 @@ public:
 public slots:
     //void remove();
     void setPredge(bool predge);
+    void togglePredge(bool predge);
 
 protected:
     QPainterPath shape() const override;

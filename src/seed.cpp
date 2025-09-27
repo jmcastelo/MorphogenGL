@@ -254,6 +254,11 @@ bool Seed::fixed() const
 void Seed::setFixed(bool set)
 {
     mFixed = set;
+
+    if (mType == 0 || mType == 1)
+        mOutTexId = &mRandomTexId;
+    else if (mType == 2)
+        mOutTexId = &mImageTexId;
 }
 
 
