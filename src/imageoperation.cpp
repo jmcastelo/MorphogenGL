@@ -77,6 +77,7 @@ ImageOperation::ImageOperation(QString name, GLenum texFormat, GLuint width, GLu
     mContext->doneCurrent();
 
     pOutTexId = new GLuint(0);
+    setpOutTextureId();
 }
 
 
@@ -797,6 +798,20 @@ void ImageOperation::genTextures(GLenum texFormat, GLuint width, GLuint height)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
+        glBindTexture(GL_TEXTURE_2D, 0);
+    }
+
+    // Define texture contents, as opaque black
+
+    QList<GLubyte> zeros;
+    zeros.fill(0, width * height * 4);
+    for (unsigned int i = 0; i < width * height; ++i)
+        zeros[i * 4 + 3] = 255;
+
+    foreach (GLuint* texId, textureIds())
+    {
+        glBindTexture(GL_TEXTURE_2D, *texId);
+        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, zeros.constData());
         glBindTexture(GL_TEXTURE_2D, 0);
     }
 }

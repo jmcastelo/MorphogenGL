@@ -400,6 +400,8 @@ void NodeManager::clearAllOperations()
 
 void NodeManager::setOutput(QUuid id)
 {
+    mOutputId = id;
+
     if (operationNodes.contains(id))
     {
         // Avoid disabling blit for output node if it is blit connected (predge)
@@ -407,7 +409,7 @@ void NodeManager::setOutput(QUuid id)
         if (!mOutputId.isNull() && operationNodes.contains(mOutputId) && !operationNodes.value(mOutputId)->isBlitConnected())
             operationNodes.value(mOutputId)->operation->enableBlit(false);
 
-        mOutputId = id;
+        // mOutputId = id;
 
         // We enable blit for output node so that QOpenGLWidget renders the previous texture
         // This kind of double buffering allows for smoother, flickerless rendering
@@ -416,17 +418,23 @@ void NodeManager::setOutput(QUuid id)
         // mOutputTextureId = *operationNodes.value(id)->operation->blitTextureId();
         mOutputTextureId = operationNodes.value(id)->operation->pOutTextureId();
 
-        emit outputTextureChanged(mOutputTextureId);
+
         //emit outputFBOChanged(operationNodes.value(id)->operation->getFBO());
     }
     else if (seeds.contains(id))
     {
-        mOutputId = id;
+        // mOutputId = id;
         mOutputTextureId = seeds.value(id)->pOutTextureId();
 
         emit outputTextureChanged(mOutputTextureId);
         // emit outputFBOChanged(seeds.value(id)->getFBO());
     }
+    else
+    {
+        mOutputTextureId = nullptr;
+    }
+
+    emit outputTextureChanged(mOutputTextureId);
 }
 
 
@@ -650,7 +658,10 @@ void NodeManager::removeOperation(QUuid id)
     operationNodes.remove(id);
 
     if (id == mOutputId)
-        mOutputTextureId = 0;
+    {
+        mOutputId = QUuid();
+        mOutputTextureId = nullptr;
+    }
 
     sortOperations();
 }
@@ -772,7 +783,10 @@ QPair<QUuid, OperationWidget*> NodeManager::addNewOperation()
             emit outputNodeChanged(opWidget);
         }
         else
+        {
+            setOutput(QUuid());
             emit outputNodeChanged(nullptr);
+        }
     });
 
     connect(this, &NodeManager::outputNodeChanged, opWidget, &OperationWidget::toggleOutputAction);
@@ -1037,7 +1051,10 @@ QPair<QUuid, SeedWidget *> NodeManager::addSeed()
             emit outputNodeChanged(seedWidget);
         }
         else
+        {
+            setOutput(QUuid());
             emit outputNodeChanged(nullptr);
+        }
     });
 
     connect(this, &NodeManager::outputNodeChanged, seedWidget, &SeedWidget::toggleOutputAction);
@@ -1094,6 +1111,12 @@ void NodeManager::removeSeed(QUuid id)
     {
         mRenderManager->deleteSeed(seeds.value(id));
         seeds.remove(id);
+
+        if (mOutputId == id)
+        {
+            mOutputId = QUuid();
+            mOutputTextureId = nullptr;
+        }
 
         foreach (ImageOperationNode* node, operationNodes)
             node->removeSeedInput(id);

@@ -246,7 +246,7 @@ void MorphoWidget::resetZoom(int newWidth, int newHeight)
 
 
 
-void MorphoWidget::updateOutputTextureID(GLuint *pTexId)
+void MorphoWidget::updateOutputTextureID(GLuint* pTexId)
 {
     mOutTexId = pTexId;
 }

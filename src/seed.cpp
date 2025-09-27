@@ -247,6 +247,7 @@ void Seed::setType(int type)
     mType = type;
     draw();
     setOutTexture();
+    setClearTexture();
 }
 
 
@@ -266,7 +267,7 @@ void Seed::setFixed(bool set)
         setOutTexture();
     else
     {
-        // mCleared = false;
+        mCleared = false;
         setClearTexture();
     }
 }
@@ -285,18 +286,17 @@ void Seed::draw()
     if (mType == 0 || mType == 1)
         drawRandom(mType == 1);
 
-    // mCleared = false;
+    mCleared = false;
 }
 
 
 
 void Seed::setClearTexture()
 {
-    // if (!mCleared && !mFixed)
-    if (!mFixed)
+    if (!mCleared && !mFixed)
     {
         *pOutTexId = mClearTexId;
-        // mCleared = true;
+        mCleared = true;
     }
 }
 
