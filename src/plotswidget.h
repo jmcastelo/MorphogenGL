@@ -56,7 +56,7 @@ signals:
 
 public slots:
     void setFBO(GLuint theFBO) { fbo = theFBO; };
-    void setTextureID(GLuint id);
+    void setTextureID(GLuint *id);
     void setImageSize(int width, int height);
     void setSelectedPoint(QPoint point);
     void transformSources(QTransform transform);
@@ -68,7 +68,7 @@ private:
     QOffscreenSurface* surface;
 
     GLuint fbo = 0;
-    GLuint textureID = 0;
+    GLuint* textureID = nullptr;
 
     GLuint imageWidth, imageHeight;
 

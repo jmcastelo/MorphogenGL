@@ -54,7 +54,7 @@ public:
     void resizeGL(int w, int h) override;
 
     void setupBuffer(int w, int h);
-    void setTextureID(GLuint id);
+    void setTextureID(GLuint *id);
     void setLines(QList<GLfloat> vertices);
     void setNumVertices(QList<GLuint> nv){ numVertices = nv; }
 
@@ -76,7 +76,7 @@ private:
     QOpenGLVertexArrayObject* vao3D = nullptr;
     QOpenGLBuffer* vbo3D = nullptr;
 
-    GLuint textureID;
+    GLuint* textureID = nullptr;
     int texWidth, texHeight;
     int numPoints;
 

@@ -69,13 +69,15 @@ Seed::Seed(GLenum texFormat, GLuint width, GLuint height, QOpenGLContext* contex
 
     // Generate textures with format and size given externally
 
-    genTextures(texFormat, width, height);
+    pOutTexId = new GLuint(0);
 
-    mContext->doneCurrent();
+    genTextures(texFormat, width, height);
 
     // Clear texture
 
     clearTexture(mClearTexId);
+
+    mContext->doneCurrent();
 }
 
 
@@ -107,9 +109,13 @@ Seed::Seed(GLenum texFormat, GLuint width, GLuint height, const Seed& seed) :
     mRandomProgram = new QOpenGLShaderProgram();
     setRandomProgram();
 
-    mContext->doneCurrent();
+    // Setup VAO
+
+    setVao(width, height);
 
     // Generate textures with format and size given externally
+
+    pOutTexId = new GLuint(0);
 
     genTextures(texFormat, width, height);
 
@@ -117,9 +123,7 @@ Seed::Seed(GLenum texFormat, GLuint width, GLuint height, const Seed& seed) :
 
     clearTexture(mClearTexId);
 
-    // Setup VAO
-
-    setVao(width, height);
+    mContext->doneCurrent();
 
     if (!mImageFilename.isEmpty())
         loadImage(mImageFilename);
@@ -136,6 +140,8 @@ Seed::~Seed()
     GLuint texIds[] = { mRandomTexId, mImageTexId, mClearTexId };
     glDeleteTextures(3, texIds);
 
+    delete pOutTexId;
+
     delete mRandomProgram;
 
     mContext->doneCurrent();
@@ -143,9 +149,9 @@ Seed::~Seed()
 
 
 
-GLuint* Seed::outTextureId()
+GLuint* Seed::pOutTextureId()
 {
-    return mOutTexId;
+    return pOutTexId;
 }
 
 
@@ -239,7 +245,8 @@ int Seed::type() const
 void Seed::setType(int type)
 {
     mType = type;
-    setOutTexture(true);
+    draw();
+    setOutTexture();
 }
 
 
@@ -255,10 +262,13 @@ void Seed::setFixed(bool set)
 {
     mFixed = set;
 
-    if (mType == 0 || mType == 1)
-        mOutTexId = &mRandomTexId;
-    else if (mType == 2)
-        mOutTexId = &mImageTexId;
+    if (set)
+        setOutTexture();
+    else
+    {
+        // mCleared = false;
+        setClearTexture();
+    }
 }
 
 
@@ -270,25 +280,34 @@ QString Seed::imageFilename() const
 
 
 
-void Seed::setOutTexture(bool draw)
+void Seed::draw()
 {
-    if (draw)
-    {
-        if (mType == 0 || mType == 1)
-        {
-            drawRandom(mType == 1);
-            mOutTexId = &mRandomTexId;
-        }
-        else if (mType == 2)
-            mOutTexId = &mImageTexId;
+    if (mType == 0 || mType == 1)
+        drawRandom(mType == 1);
 
-        mCleared = false;
-    }
-    else if (!mCleared && !mFixed)
+    // mCleared = false;
+}
+
+
+
+void Seed::setClearTexture()
+{
+    // if (!mCleared && !mFixed)
+    if (!mFixed)
     {
-        mOutTexId = &mClearTexId;
-        mCleared = true;
+        *pOutTexId = mClearTexId;
+        // mCleared = true;
     }
+}
+
+
+
+void Seed::setOutTexture()
+{
+    if (mType == 0 || mType == 1)
+        *pOutTexId = mRandomTexId;
+    else if (mType == 2)
+        *pOutTexId = mImageTexId;
 }
 
 
@@ -314,17 +333,14 @@ void Seed::genTextures(GLenum texFormat, GLuint width, GLuint height)
 
 void Seed::clearTexture(GLuint texId)
 {
-    mContext->makeCurrent(mSurface);
-
     glBindFramebuffer(GL_FRAMEBUFFER, mOutFbo);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texId, 0);
 
     glClear(GL_COLOR_BUFFER_BIT);
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-    mContext->doneCurrent();
 }
+
 
 
 void Seed::setRandomProgram()

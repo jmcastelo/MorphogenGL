@@ -119,7 +119,10 @@ void RGBWidget::paintGL()
 
     program->bind();
 
-    glBindTexture(GL_TEXTURE_2D, textureID);
+    if (textureID)
+        glBindTexture(GL_TEXTURE_2D, *textureID);
+    else
+        glBindTexture(GL_TEXTURE_2D, 0);
 
     vao->bind();
     glDrawArrays(GL_POINTS, 0, numPoints);
@@ -155,7 +158,7 @@ void RGBWidget::resizeGL(int w, int h)
 
 
 
-void RGBWidget::setTextureID(GLuint id)
+void RGBWidget::setTextureID(GLuint* id)
 {
     textureID = id;
 }

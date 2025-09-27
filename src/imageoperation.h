@@ -87,9 +87,9 @@ public:
     QOpenGLContext* context() const;
 
     bool enabled() const;
-    void enable(bool on);
-    void enableBlit(bool on);
-    void enableUpdate(bool on);
+    void enable(bool set);
+    void enableBlit(bool set);
+    void enableUpdate(bool set);
     bool blendEnabled() const;
     bool blitEnabled() const;
 
@@ -98,13 +98,15 @@ public:
 
     void setInputData(QList<InputData*> data);
 
-    GLuint* blitTextureId();
-    GLuint* outTextureId();
+    GLuint blitTextureId();
+    GLuint outTextureId();
     GLuint blendOutTextureId();
     GLuint inTextureId();
-    GLuint samplerId();
+    GLuint* pOutTextureId();
 
     QList<GLuint*> textureIds();
+
+    GLuint samplerId();
 
     void setTexSize(GLuint width, GLuint height);
 
@@ -184,6 +186,7 @@ private:
     GLuint mBlitTexId = 0;
     GLuint mBlendOutTexId = 0;
     GLuint* mInputTexId = nullptr;
+    GLuint* pOutTexId = nullptr;
 
     GLuint mTexWidth;
     GLuint mTexHeight;
@@ -198,6 +201,7 @@ private:
 
     void genTextures(GLenum texFormat, GLuint width, GLuint height);
     void setMinMagFilter(GLenum filter);
+    void setpOutTextureId();
 };
 
 

@@ -162,7 +162,7 @@ public:
     void setOutput(QUuid id);
     QUuid getOutput() { return mOutputId; }
     GLuint getOUtputFBO() { return outputFBO; }
-    GLuint outputTextureID() { return mOutputTextureId; }
+    // GLuint outputTextureID() { return *mOutputTextureId; }
 
     void pasteOperations();
 
@@ -187,7 +187,7 @@ public:
 signals:
     void outputNodeChanged(QWidget* widget);
     void outputFBOChanged(GLuint fbo);
-    void outputTextureChanged(GLuint id);
+    void outputTextureChanged(GLuint* pTexId);
     void sortedOperationsChanged(QList<QPair<QUuid, QString>> sortedData, QList<QUuid> unsortedData);
     void nodesConnected(QUuid srcId, QUuid dstId, EdgeWidget* widget);
     void nodeRemoved(QUuid id);
@@ -212,7 +212,7 @@ private:
     QOpenGLContext* mShareContext;
     GLuint outputFBO;
     QUuid mOutputId;
-    GLuint mOutputTextureId = 0;
+    GLuint* mOutputTextureId = nullptr;
     unsigned int iteration = 0;
 
     bool active = false;

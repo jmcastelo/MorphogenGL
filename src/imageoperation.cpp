@@ -75,6 +75,8 @@ ImageOperation::ImageOperation(QString name, GLenum texFormat, GLuint width, GLu
     glSamplerParameteri(mSamplerId, GL_TEXTURE_MAG_FILTER, mMinMagFilter);
 
     mContext->doneCurrent();
+
+    pOutTexId = new GLuint(0);
 }
 
 
@@ -144,6 +146,8 @@ ImageOperation::~ImageOperation()
 
     //delete mContext;
     //delete mSurface;
+
+    delete pOutTexId;
 
     qDeleteAll(floatUniformParameters);
     qDeleteAll(intUniformParameters);
@@ -437,23 +441,40 @@ bool ImageOperation::enabled() const
 
 
 
-void ImageOperation::enable(bool on)
+void ImageOperation::enable(bool set)
 {
-    mEnabled = on;
+    mEnabled = set;
+    setpOutTextureId();
 }
 
 
 
-void ImageOperation::enableBlit(bool on)
+void ImageOperation::setpOutTextureId()
 {
-    mBlitEnabled = on;
+    if (mEnabled)
+        *pOutTexId = mOutTexId;
+    else if (mBlendEnabled)
+        *pOutTexId = mBlendOutTexId;
+    else if (mBlitEnabled)
+        *pOutTexId = mBlitTexId;
+    else if (mInputTexId)
+        *pOutTexId = *mInputTexId;
+    else
+        *pOutTexId = 0;
+}
+
+
+void ImageOperation::enableBlit(bool set)
+{
+    mBlitEnabled = set;
+    setpOutTextureId();
 }
 
 
 
-void ImageOperation::enableUpdate(bool on)
+void ImageOperation::enableUpdate(bool set)
 {
-    mUpdate = on;
+    mUpdate = set;
 }
 
 
@@ -499,14 +520,14 @@ void ImageOperation::setInputData(QList<InputData*> data)
 
         foreach(InputData* iData, data)
         {
-            mInputTextures.append(iData->textureId());
+            mInputTextures.append(iData->pTextureId());
             mInputBlendFactors.append(iData->blendFactor());
         }
     }
     else if (data.size() == 1)
     {
         mBlendEnabled = false;
-        mInputTexId = data[0]->textureId();
+        mInputTexId = data[0]->pTextureId();
     }
     else
     {
@@ -514,21 +535,23 @@ void ImageOperation::setInputData(QList<InputData*> data)
         mInputTexId = nullptr;
     }
 
+    setpOutTextureId();
+
     mInputData = data;
 }
 
 
 
-GLuint* ImageOperation::blitTextureId()
+GLuint ImageOperation::blitTextureId()
 {
-    return &mBlitTexId;
+    return mBlitTexId;
 }
 
 
 
-GLuint* ImageOperation::outTextureId()
+GLuint ImageOperation::outTextureId()
 {
-    return &mOutTexId;
+    return mOutTexId;
 }
 
 
@@ -546,6 +569,13 @@ GLuint ImageOperation::inTextureId()
         return *mInputTexId;
     else
         return 0;
+}
+
+
+
+GLuint *ImageOperation::pOutTextureId()
+{
+    return pOutTexId;
 }
 
 

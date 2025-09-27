@@ -174,7 +174,7 @@ void RenderManager::iterate()
     }
 
     foreach (Seed* seed, mSeeds)
-        seed->setOutTexture(false);
+        seed->setClearTexture();
 
     mIterationNumber++;
 }
@@ -266,7 +266,7 @@ QImage RenderManager::outputImage()
 {
     QImage image(mTexWidth, mTexHeight, QImage::Format_RGBA8888);
 
-    if (mOutputTexId > 0)
+    if (mOutputTexId && *mOutputTexId > 0)
     {
         mContext->makeCurrent(mSurface);
 
@@ -387,9 +387,9 @@ void RenderManager::setSortedOperations(QList<ImageOperation*> operations)
 
 
 
-void RenderManager::setOutputTextureId(GLuint texId)
+void RenderManager::setOutputTextureId(GLuint* pTexId)
 {
-    mOutputTexId = texId;
+    mOutputTexId = pTexId;
 }
 
 
@@ -661,10 +661,10 @@ void RenderManager::blit()
         if (operation->blitEnabled())
         {
             glBindFramebuffer(GL_READ_FRAMEBUFFER, mReadFbo);
-            glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, *operation->outTextureId(), 0);
+            glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, operation->outTextureId(), 0);
 
             glBindFramebuffer(GL_DRAW_FRAMEBUFFER, mDrawFbo);
-            glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, *operation->blitTextureId(), 0);
+            glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, operation->blitTextureId(), 0);
 
             glReadBuffer(GL_COLOR_ATTACHMENT0);
             glDrawBuffer(GL_COLOR_ATTACHMENT0);
@@ -728,7 +728,7 @@ void RenderManager::blend(ImageOperation *operation)
 
 void RenderManager::renderOperation(ImageOperation* operation)
 {
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, *operation->outTextureId(), 0);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, operation->outTextureId(), 0);
 
     glClear(GL_COLOR_BUFFER_BIT);
 

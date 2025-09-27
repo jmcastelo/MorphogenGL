@@ -75,7 +75,7 @@ signals:
 
 public slots:
     void resize(GLuint width, GLuint height);
-    void setOutputTextureId(GLuint texId);
+    void setOutputTextureId(GLuint *pTexId);
 
 private:
     QOpenGLContext* mShareContext;
@@ -108,7 +108,7 @@ private:
     GLuint mVboPos;
     GLuint mVboTex;
 
-    GLuint mOutputTexId = 0;
+    GLuint* mOutputTexId = nullptr;
     GLuint mBlendArrayTexId = 0;
 
     unsigned int mIterationNumber = 0;

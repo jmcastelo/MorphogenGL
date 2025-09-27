@@ -246,9 +246,9 @@ void MorphoWidget::resetZoom(int newWidth, int newHeight)
 
 
 
-void MorphoWidget::updateOutputTextureID(GLuint id)
+void MorphoWidget::updateOutputTextureID(GLuint *pTexId)
 {
-    outputTextureID = id;
+    mOutTexId = pTexId;
 }
 
 
@@ -384,7 +384,10 @@ void MorphoWidget::paintGL()
     // Bind fbo as read frame buffer
 
     glBindFramebuffer(GL_READ_FRAMEBUFFER, fbo);
-    glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, outputTextureID, 0);
+    if (mOutTexId)
+        glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, *mOutTexId, 0);
+    else
+        glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, 0, 0);
 
     // Render to default frame buffer (screen) from fbo
 

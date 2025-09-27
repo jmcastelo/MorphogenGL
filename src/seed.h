@@ -48,10 +48,12 @@ public:
     Seed(GLenum texFormat, GLuint width, GLuint height, const Seed& seed);
     ~Seed();
 
-    GLuint* outTextureId();
+    GLuint* pOutTextureId();
     QList<GLuint*> textureIds();
 
-    void setOutTexture(bool draw);
+    void draw();
+    void setClearTexture();
+    void setOutTexture();
 
     void setVao(GLuint width, GLuint height);
 
@@ -84,7 +86,7 @@ private:
     GLuint mRandomTexId = 0;
     GLuint mImageTexId = 0;
     GLuint mClearTexId = 0;
-    GLuint* mOutTexId = nullptr;
+    GLuint* pOutTexId = nullptr;
 
     GLuint mTexWidth;
     GLuint mTexHeight;

@@ -18,24 +18,24 @@ enum class InputType { Normal, Blit, Seed };
 class InputData
 {
 public:
-    InputData(InputType inputType, GLuint* texId, float blendFactor) :
+    InputData(InputType inputType, GLuint* pTexId, float blendFactor) :
         mType { inputType },
-        mTextureId { texId },
+        mpTextureId { pTexId },
         mBlendFactor { blendFactor }
     {}
 
     InputType type() const { return mType; }
     void setType(InputType type){ mType = type; }
 
-    GLuint* textureId() { return mTextureId; }
-    void setTextureId(GLuint* texId) { mTextureId = texId; }
+    GLuint* pTextureId() { return mpTextureId; }
+    void setpTextureId(GLuint* pTexId) { mpTextureId = pTexId; }
 
     float blendFactor() const { return mBlendFactor; }
     void setBlendFactor(float blendFactor) { mBlendFactor = blendFactor; }
 
 private:
     InputType mType;
-    GLuint* mTextureId;
+    GLuint* mpTextureId;
     float mBlendFactor;
 };
 
