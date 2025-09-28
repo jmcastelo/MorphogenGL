@@ -28,7 +28,6 @@
 #include "edgewidget.h"
 #include "cycle.h"
 #include "cyclesearch.h"
-#include "nodemanager.h"
 
 #include <cmath>
 #include <QKeyEvent>
@@ -38,10 +37,13 @@
 
 
 
-GraphWidget::GraphWidget(NodeManager* nodeManager, QWidget *parent) :
+GraphWidget::GraphWidget(Factory *factory, NodeManager* nodeManager, QWidget *parent) :
     QGraphicsView(parent),
-    mNodeManager{ nodeManager}
+    mFactory { factory },
+    mNodeManager { nodeManager }
 {
+    connect(mFactory, &Factory::newWidgetCreated, this, &GraphWidget::addNewNode);
+
     connect(mNodeManager, &NodeManager::nodesConnected, this, &GraphWidget::connectNodes);
     connect(mNodeManager, &NodeManager::nodeRemoved, this, &GraphWidget::removeNode);
     connect(mNodeManager, &NodeManager::nodesDisconnected, this, &GraphWidget::removeEdge);
@@ -178,15 +180,35 @@ void GraphWidget::closeEvent(QCloseEvent* event)
 
 
 
-
-void GraphWidget::addNewOperationNode()
+void GraphWidget::requestNewOperation()
 {
-    QAction* action = qobject_cast<QAction*>(sender());
-    QVariant data = action->data();
+    // Store click point
 
-    Node* node = new Node(mNodeManager->addNewOperation());
+    QAction* action = qobject_cast<QAction*>(sender());
+    mClickPoint = action->data().toPoint();
+
+    mFactory->createNewOperation();
+}
+
+
+
+void GraphWidget::requestNewSeed()
+{
+    // Store click point
+
+    QAction* action = qobject_cast<QAction*>(sender());
+    mClickPoint = action->data().toPoint();
+
+    mFactory->createNewSeed();
+}
+
+
+
+void GraphWidget::addNewNode(QUuid id, QWidget *widget)
+{
+    Node* node = new Node(id, widget);
     scene()->addItem(node);
-    node->setPos(mapToScene(mapFromGlobal(data.toPoint())));
+    node->setPos(mapToScene(mapFromGlobal(mClickPoint)));
 
     //QGraphicsProxyWidget *proxyWidget = scene()->addWidget(mNodeManager->addNewOperation());
     //proxyWidget->setPos(mapToScene(mapFromGlobal(data.toPoint())));
@@ -198,7 +220,7 @@ void GraphWidget::addNewOperationNode()
 
 
 
-void GraphWidget::addSeedNode()
+/*void GraphWidget::addSeedNode()
 {
     QAction* action = qobject_cast<QAction*>(sender());
     QVariant data = action->data();
@@ -206,7 +228,7 @@ void GraphWidget::addSeedNode()
     Node *node = new Node(mNodeManager->addSeed());
     scene()->addItem(node);
     node->setPos(mapToScene(mapFromGlobal(data.toPoint())));
-}
+}*/
 
 
 
@@ -949,12 +971,12 @@ void GraphWidget::contextMenuEvent(QContextMenuEvent *event)
 
         // Add seed
 
-        QAction* addSeedAction = menu.addAction("Add seed", this, &GraphWidget::addSeedNode);
+        QAction* addSeedAction = menu.addAction("Add seed", this, &GraphWidget::requestNewSeed);
         addSeedAction->setData(QVariant(QCursor::pos()));
 
         // Build new operation
 
-        QAction* buildNewOpAction = menu.addAction("Build new operation", this, &GraphWidget::addNewOperationNode);
+        QAction* buildNewOpAction = menu.addAction("Build new operation", this, &GraphWidget::requestNewOperation);
         buildNewOpAction->setData(QVariant(QCursor::pos()));
 
         menu.exec(event->globalPos());

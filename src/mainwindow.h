@@ -3,6 +3,7 @@
 
 
 
+#include "factory.h"
 #include "rendermanager.h"
 #include "nodemanager.h"
 #include "morphowidget.h"
@@ -46,6 +47,7 @@ protected:
     void keyPressEvent(QKeyEvent* event) override;
 
 private:
+    Factory* factory;
     RenderManager* renderManager;
     NodeManager* nodeManager;
     MorphoWidget* morphoWidget;

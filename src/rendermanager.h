@@ -30,6 +30,7 @@
 #include "texformat.h"
 #include "imageoperation.h"
 #include "seed.h"
+#include "factory.h"
 
 #include <QObject>
 #include <QOpenGLExtraFunctions>
@@ -45,15 +46,15 @@ class RenderManager : public QObject, protected QOpenGLExtraFunctions
     Q_OBJECT
 
 public:
-    RenderManager();
+    RenderManager(Factory* factory);
     ~RenderManager();
 
     void init(QOpenGLContext* shareContext);
 
-    Seed* createNewSeed();
-    void deleteSeed(Seed* seed);
+    // Seed* createNewSeed();
+    // void deleteSeed(Seed* seed);
 
-    ImageOperation* createNewOperation();
+    // ImageOperation* createNewOperation();
 
     void iterate();
 
@@ -68,16 +69,19 @@ public:
     void resetIterationNumer();
     int iterationNumber();
 
-    void setSortedOperations(QList<ImageOperation*> operations);
-
 signals:
     void texturesChanged();
 
 public slots:
     void resize(GLuint width, GLuint height);
-    void setOutputTextureId(GLuint *pTexId);
+    void setOutputTextureId(GLuint* pTexId);
+    void initOperation(QUuid id, ImageOperation* operation);
+    void initSeed(QUuid id, Seed* seed);
+    void setSortedOperations(QList<ImageOperation*> sortedOperations);
 
 private:
+    Factory* mFactory;
+
     QOpenGLContext* mShareContext;
     QOpenGLContext* mContext;
     QOffscreenSurface* mSurface;
@@ -86,8 +90,8 @@ private:
     GLuint mReadFbo = 0;
     GLuint mDrawFbo = 0;
 
-    QList<Seed*> mSeeds;
-    QList<ImageOperation*> mOperations;
+    // QList<Seed*> mSeeds;
+    // QList<ImageOperation*> mOperations;
     QList<ImageOperation*> mSortedOperations;
 
     GLuint mTexWidth = 2048;

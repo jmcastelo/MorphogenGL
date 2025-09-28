@@ -26,6 +26,10 @@
 
 
 
+Seed::Seed(){}
+
+
+
 Seed::Seed(GLenum texFormat, GLuint width, GLuint height, QOpenGLContext* context, QOffscreenSurface *surface)
 {
     /*mContext = new QOpenGLContext();
@@ -143,6 +147,53 @@ Seed::~Seed()
     delete pOutTexId;
 
     delete mRandomProgram;
+
+    mContext->doneCurrent();
+}
+
+
+
+void Seed::init(GLenum texFormat, GLuint width, GLuint height, QOpenGLContext* context, QOffscreenSurface* surface)
+{
+    mContext = context;
+    mSurface = surface;
+
+    mContext->makeCurrent(mSurface);
+
+    initializeOpenGLFunctions();
+
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+
+    // Framebuffer object
+
+    glGenFramebuffers(1, &mOutFbo);
+
+    // Vertex array object
+
+    glGenVertexArrays(1, &mVao);
+
+    // Vertex buffer object: vertices positions
+
+    glGenBuffers(1, &mVboPos);
+
+    // Initialize shader program
+
+    mRandomProgram = new QOpenGLShaderProgram();
+    setRandomProgram();
+
+    // Setup VAO
+
+    setVao(width, height);
+
+    // Generate textures with format and size given externally
+
+    pOutTexId = new GLuint(0);
+
+    genTextures(texFormat, width, height);
+
+    // Clear texture
+
+    clearTexture(mClearTexId);
 
     mContext->doneCurrent();
 }

@@ -34,7 +34,7 @@
 
 
 
-ControlWidget::ControlWidget(double itFPS, double updFPS, NodeManager *nodeManager, RenderManager *renderManager, PlotsWidget *thePlotsWidget, QWidget *parent) :
+ControlWidget::ControlWidget(double itFPS, double updFPS, Factory* factory, NodeManager* nodeManager, RenderManager* renderManager, PlotsWidget* thePlotsWidget, QWidget* parent) :
     QWidget(parent),
     mNodeManager { nodeManager },
     mRenderManager { renderManager },
@@ -72,7 +72,7 @@ ControlWidget::ControlWidget(double itFPS, double updFPS, NodeManager *nodeManag
 
     // Graph widget
 
-    graphWidget = new GraphWidget(mNodeManager);
+    graphWidget = new GraphWidget(factory, mNodeManager);
     graphWidget->setMinimumSize(0, 0);
     graphWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 

@@ -44,9 +44,12 @@
 class Seed : protected QOpenGLExtraFunctions
 {
 public:
+    Seed();
     Seed(GLenum texFormat, GLuint width, GLuint height, QOpenGLContext* context, QOffscreenSurface* surface);
     Seed(GLenum texFormat, GLuint width, GLuint height, const Seed& seed);
     ~Seed();
+
+    void init(GLenum texFormat, GLuint width, GLuint height, QOpenGLContext* context, QOffscreenSurface* surface);
 
     GLuint* pOutTextureId();
     QList<GLuint*> textureIds();

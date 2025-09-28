@@ -27,7 +27,8 @@
 
 
 
-#include "rendermanager.h"
+// #include "rendermanager.h"
+#include "factory.h"
 #include "imageoperation.h"
 #include "seed.h"
 #include "inputdata.h"
@@ -98,7 +99,8 @@ class NodeManager : public QObject
     Q_OBJECT
 
 public:
-    NodeManager(RenderManager* renderManager);
+    // NodeManager(RenderManager* renderManager);
+    NodeManager(Factory* factory);
     ~NodeManager();
 
     QList<QString> availableOperations;
@@ -122,7 +124,7 @@ public:
     void equalizeBlendFactors(QUuid id);
 
     ImageOperation* getOperation(QUuid id);
-    QPair<QUuid, OperationWidget*> addNewOperation();
+    // QPair<QUuid, OperationWidget*> addNewOperation();
     //QUuid addOperation(QString operationName);
     QUuid copyOperation(QUuid srcId);
     //void setOperation(QUuid id, QString operationName);
@@ -143,7 +145,7 @@ public:
         std::vector<float> kernelElements,
         std::vector<float> matrixElements);
 
-    QPair<QUuid, SeedWidget*> addSeed();
+    // QPair<QUuid, SeedWidget*> addSeed();
     QUuid copySeed(QUuid srcId);
     void removeSeed(QUuid id);
     void loadSeedImage(QUuid id, QString filename);
@@ -188,16 +190,22 @@ signals:
     void outputNodeChanged(QWidget* widget);
     void outputFBOChanged(GLuint fbo);
     void outputTextureChanged(GLuint* pTexId);
-    void sortedOperationsChanged(QList<QPair<QUuid, QString>> sortedData, QList<QUuid> unsortedData);
+    // void sortedOperationsChanged(QList<QPair<QUuid, QString>> sortedData, QList<QUuid> unsortedData);
+    void sortedOperationsChanged(QList<ImageOperation*> operations);
     void nodesConnected(QUuid srcId, QUuid dstId, EdgeWidget* widget);
     void nodeRemoved(QUuid id);
     void nodesDisconnected(QUuid srcId, QUuid dstId);
 
 public slots:
+    void addOperationNode(QUuid id, ImageOperation* operation);
+    void connectOperationWidget(QUuid id, OperationWidget* widget);
+    void addSeedNode(QUuid id, Seed* seed);
+    void connectSeedWidget(QUuid id, SeedWidget* widget);
     void onTexturesChanged();
 
 private:
-    RenderManager* mRenderManager;
+    // RenderManager* mRenderManager;
+    Factory* mFactory;
 
     QMap<QUuid, ImageOperationNode*> operationNodes;
     QMap<QUuid, ImageOperationNode*> copiedOperationNodes[2];

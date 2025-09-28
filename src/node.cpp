@@ -40,10 +40,10 @@
 
 
 
-Node::Node(QPair<QUuid, QWidget*> idWidgetPair, QGraphicsItem* parent) :
+Node::Node(QUuid id, QWidget *widget, QGraphicsItem* parent) :
     QGraphicsWidget(parent),
-    mId { idWidgetPair.first},
-    mWidget { idWidgetPair.second }
+    mId { id },
+    mWidget { widget }
 {
     setFlags(ItemIsMovable | ItemIsSelectable | ItemSendsGeometryChanges);
     setCacheMode(DeviceCoordinateCache);

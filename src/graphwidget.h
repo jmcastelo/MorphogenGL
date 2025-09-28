@@ -26,6 +26,8 @@
 
 
 //#include "blendfactorwidget.h"
+#include "factory.h"
+#include "nodemanager.h"
 
 #include <QGraphicsView>
 #include <QUuid>
@@ -36,7 +38,7 @@
 class Node;
 class Edge;
 class EdgeWidget;
-class NodeManager;
+// class NodeManager;
 //struct InputData;
 
 
@@ -45,7 +47,7 @@ class GraphWidget : public QGraphicsView
     Q_OBJECT
 
 public:
-    GraphWidget(NodeManager* nodeManager, QWidget *parent = nullptr);
+    GraphWidget(Factory* factory, NodeManager* nodeManager, QWidget *parent = nullptr);
     ~GraphWidget();
 
     //Node* getNode(QUuid id);
@@ -123,6 +125,7 @@ protected:
     void closeEvent(QCloseEvent* event) override;
 
 private:
+    Factory* mFactory;
     NodeManager* mNodeManager;
     //Node *selectedNode = nullptr;
 
@@ -136,6 +139,8 @@ private:
     QPointF center;
     qreal scaleFactor = 1.0;
 
+    QPoint mClickPoint;
+
     //void copyNodes(bool connectionA);
     bool pointIntersectsItem(QPointF point);
     void reconnectNodes(Node* node);
@@ -148,9 +153,12 @@ private:
 private slots:
     //void newSelectedNodes();
     //void addOperationNodeUnderCursor(QAction* action);
-    void addSeedNode();
+    void requestNewOperation();
+    void requestNewSeed();
+    // void addSeedNode();
     //void pasteCopiedNodes();
-    void addNewOperationNode();
+    void addNewNode(QUuid id, QWidget* widget);
+    // void addNewOperationNode(OperationWidget* widget);
     void connectNodes(QUuid srcId, QUuid dstId, EdgeWidget* widget);
     void removeNode(QUuid id);
     void removeEdge(QUuid srcId, QUuid dstId);

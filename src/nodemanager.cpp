@@ -262,8 +262,8 @@ void ImageOperationNode::setOperation(ImageOperation *newOperation)
 
 // NodeManager
 
-NodeManager::NodeManager(RenderManager *renderManager) :
-    mRenderManager { renderManager }
+NodeManager::NodeManager(Factory* factory) :
+    mFactory { factory }
 {
     /*availableOperations = {
         BilateralFilter::name,
@@ -377,7 +377,8 @@ void NodeManager::sortOperations()
     //if (tmpSortedOperations != sortedOperations)
         //emit sortedOperationsChanged(sortedOperationsData, unsortedOperationsIds);
 
-    mRenderManager->setSortedOperations(sortedOperations);
+    // mRenderManager->setSortedOperations(sortedOperations);
+    emit sortedOperationsChanged(sortedOperations);
 }
 
 
@@ -654,6 +655,12 @@ QUuid NodeManager::copyOperation(QUuid srcId)
 
 void NodeManager::removeOperation(QUuid id)
 {
+    // Delete operation
+
+    mFactory->deleteOperation(operationNodes.value(id)->operation);
+
+    // Delete node
+
     delete operationNodes.value(id);
     operationNodes.remove(id);
 
@@ -763,8 +770,53 @@ EdgeWidget* NodeManager::addEdgeWidget(QUuid srcId, QUuid dstId, float factor)
 
 
 
+void NodeManager::addOperationNode(QUuid id, ImageOperation* operation)
+{
+    ImageOperationNode *node = new ImageOperationNode(id);
+    node->operation = operation;
+    operationNodes.insert(id, node);
+}
 
-QPair<QUuid, OperationWidget*> NodeManager::addNewOperation()
+
+
+void NodeManager::connectOperationWidget(QUuid id, OperationWidget* widget)
+{
+    connect(widget, &OperationWidget::outputChanged, this, [=, this](bool checked){
+        if (checked)
+        {
+            setOutput(id);
+            emit outputNodeChanged(widget);
+        }
+        else
+        {
+            setOutput(QUuid());
+            emit outputNodeChanged(nullptr);
+        }
+    });
+
+    connect(this, &NodeManager::outputNodeChanged, widget, &OperationWidget::toggleOutputAction);
+
+    connect(widget, &OperationWidget::connectTo, this, [=, this](){
+        if (connSrcId.isNull())
+            connSrcId = id;
+        else if (connectOperations(connSrcId, id, 1.0))
+        {
+            emit nodesConnected(connSrcId, id, addEdgeWidget(connSrcId, id, 1.0));
+            connSrcId = QUuid();
+        }
+        else
+            connSrcId = QUuid();
+    });
+
+    connect(widget, &OperationWidget::remove, this, [=, this](){
+        emit nodeRemoved(id);
+        removeOperation(id);
+    });
+}
+
+
+
+/*QPair<QUuid, OperationWidget*> NodeManager::addNewOperation()
 {
     ImageOperation* operation = mRenderManager->createNewOperation();
 
@@ -808,7 +860,7 @@ QPair<QUuid, OperationWidget*> NodeManager::addNewOperation()
         removeOperation(id);
     });
 
-    return QPair<QUuid, OperationWidget*>(id, opWidget);
+    return QPair<QUuid, OperationWidget*>(id, opWidget);*/
 
 /*
     if (operationName == BilateralFilter::name)
@@ -913,8 +965,8 @@ QPair<QUuid, OperationWidget*> NodeManager::addNewOperation()
     if (operation)
         operation->setParameters();
 
-    return operation;*/
-}
+    return operation;
+}*/
 
 
 
@@ -1035,7 +1087,63 @@ ImageOperation* NodeManager::loadImageOperation(
 
 
 
-QPair<QUuid, SeedWidget *> NodeManager::addSeed()
+void NodeManager::addSeedNode(QUuid id, Seed* seed)
+{
+    seeds.insert(id, seed);
+}
+
+
+
+void NodeManager::connectSeedWidget(QUuid id, SeedWidget* widget)
+{
+    connect(widget, &SeedWidget::outputChanged, this, [=, this](bool checked){
+        if (checked)
+        {
+            setOutput(id);
+            emit outputNodeChanged(widget);
+        }
+        else
+        {
+            setOutput(QUuid());
+            emit outputNodeChanged(nullptr);
+        }
+    });
+
+    connect(this, &NodeManager::outputNodeChanged, widget, &SeedWidget::toggleOutputAction);
+
+    connect(widget, &SeedWidget::connectTo, this, [=, this](){
+        if (connSrcId.isNull())
+            connSrcId = id;
+        else if (connectOperations(connSrcId, id, 1.0))
+        {
+            emit nodesConnected(connSrcId, id, addEdgeWidget(connSrcId, id, 1.0));
+            connSrcId = QUuid();
+        }
+        else
+            connSrcId = QUuid();
+    });
+
+    connect(widget, &SeedWidget::typeChanged, this, [=, this](){
+        if (isOutput(id))
+        {
+            mOutputTextureId = seeds.value(id)->pOutTextureId();
+
+            emit outputTextureChanged(mOutputTextureId);
+            //emit outputFBOChanged(seeds.value(id)->getFBO());
+        }
+
+        resetInputSeedTexId(id);
+    });
+
+    connect(widget, &SeedWidget::remove, this, [=, this](){
+        emit nodeRemoved(id);
+        removeSeed(id);
+    });
+}
+
+
+
+/*QPair<QUuid, SeedWidget *> NodeManager::addSeed()
 {
     Seed* seed = mRenderManager->createNewSeed();
 
@@ -1089,7 +1197,7 @@ QPair<QUuid, SeedWidget *> NodeManager::addSeed()
     });
 
     return QPair<QUuid, SeedWidget*>(id, seedWidget);
-}
+}*/
 
 
 
@@ -1109,7 +1217,7 @@ void NodeManager::removeSeed(QUuid id)
 {
     if (seeds.contains(id))
     {
-        mRenderManager->deleteSeed(seeds.value(id));
+        mFactory->deleteSeed(seeds.value(id));
         seeds.remove(id);
 
         if (mOutputId == id)
@@ -1129,13 +1237,15 @@ void NodeManager::removeSeed(QUuid id)
 
 void NodeManager::loadSeed(QUuid id, int type, bool fixed)
 {
-    Seed* seed = mRenderManager->createNewSeed();
+    /*Seed* seed = mRenderManager->createNewSeed();
 
     seed->setType(type);
     seed->setFixed(fixed);
 
-    loadedSeeds.insert(id, seed);
+    loadedSeeds.insert(id, seed);*/
 }
+
+
 
 void NodeManager::loadSeedImage(QUuid id, QString filename)
 {

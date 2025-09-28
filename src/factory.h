@@ -4,10 +4,11 @@
 
 
 #include "imageoperation.h"
+#include "seed.h"
 
 #include <QObject>
-#include <QOpenGLContext>
-#include <QOffscreenSurface>
+#include <QUuid>
+
 
 
 class Factory : public QObject
@@ -17,28 +18,23 @@ class Factory : public QObject
 public:
     explicit Factory(QObject *parent = nullptr);
 
-    /*void init();
-    void setContext(QOpenGLContext* context);
-    void setSurface(QOffscreenSurface* surface);
-
-    void setTextureFormat(GLenum format);
-
-signals:
-    void newOperationCreated(ImageOperation* operation);
-
-public slots:
-    void resize(GLuint width, GLuint height);
+    QList<ImageOperation*> operations();
+    QList<Seed*> seeds();
 
     void createNewOperation();
+    void createNewSeed();
+
+    void deleteOperation(ImageOperation* operation);
+    void deleteSeed(Seed* seed);
+
+signals:
+    void newOperationCreated(QUuid id, ImageOperation* operation);
+    void newSeedCreated(QUuid id, Seed* seed);
+    void newWidgetCreated(QUuid id, QWidget* widget);
 
 private:
-    QOpenGLContext* mContext;
-    QOffscreenSurface* mSurface;
-
-    GLuint mTexWidth;
-    GLuint mTexHeight;
-
-    TextureFormat mTexFormat;*/
+    QList<ImageOperation*> mOperations;
+    QList<Seed*> mSeeds;
 };
 
 

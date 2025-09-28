@@ -29,7 +29,12 @@
 
 
 
-RenderManager::RenderManager(){}
+RenderManager::RenderManager(Factory *factory)
+    : mFactory { factory }
+{
+    connect(mFactory, &Factory::newOperationCreated, this, &RenderManager::initOperation);
+    connect(mFactory, &Factory::newSeedCreated, this, &RenderManager::initSeed);
+}
 
 
 
@@ -125,32 +130,32 @@ RenderManager::~RenderManager()
     delete mContext;
     delete mSurface;
 
-    foreach(Seed* seed, mSeeds)
-        delete seed;
+    // foreach(Seed* seed, mSeeds)
+        // delete seed;
 }
 
 
 
-Seed* RenderManager::createNewSeed()
+/*Seed* RenderManager::createNewSeed()
 {
     Seed* seed = new Seed(static_cast<GLenum>(mTexFormat), mTexWidth, mTexHeight, mContext, mSurface);
 
     mSeeds.append(seed);
 
     return seed;
-}
+}*/
 
 
 
-void RenderManager::deleteSeed(Seed* seed)
+/*void RenderManager::deleteSeed(Seed* seed)
 {
     if (mSeeds.removeOne(seed))
         delete seed;
-}
+}*/
 
 
 
-ImageOperation* RenderManager::createNewOperation()
+/*ImageOperation* RenderManager::createNewOperation()
 {
     ImageOperation* operation = new ImageOperation("New Operation", static_cast<GLenum>(mTexFormat), mTexWidth, mTexHeight, mContext, mSurface);
 
@@ -159,7 +164,7 @@ ImageOperation* RenderManager::createNewOperation()
     mOperations.append(operation);
 
     return operation;
-}
+}*/
 
 
 
@@ -175,7 +180,7 @@ void RenderManager::iterate()
         mContext->doneCurrent();
     }
 
-    foreach (Seed* seed, mSeeds)
+    foreach (Seed* seed, mFactory->seeds())
         seed->setClearTexture();
 
     mIterationNumber++;
@@ -204,63 +209,6 @@ GLenum RenderManager::getFormat(GLenum format)
         return GL_RGBA;
     }
 }
-
-
-
-
-void RenderManager::resize(GLuint width, GLuint height)
-{
-    mOldTexWidth = mTexWidth;
-    mOldTexHeight = mTexHeight;
-
-    mTexWidth = width;
-    mTexHeight = height;
-
-
-    mContext->makeCurrent(mSurface);
-
-    setVao();
-    foreach (Seed* seed, mSeeds)
-        seed->setVao(width, height);
-
-    glViewport(0, 0, mTexWidth, mTexHeight);
-
-    resizeTextures();
-    recreateBlendArrayTexture();
-
-    mContext->doneCurrent();
-
-    adjustOrtho();
-}
-
-
-
-/*void FBO::identity()
-{
-    context->makeCurrent(surface);
-
-    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-
-    glViewport(0, 0, width, height);
-    glClear(GL_COLOR_BUFFER_BIT);
-
-    identityProgram->bind();
-    vao->bind();
-
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, *inputTextureID);
-    glBindSampler(0, samplerID);
-
-    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-
-    glBindSampler(0, 0);
-    glBindTexture(GL_TEXTURE_2D, 0);
-    vao->release();
-    identityProgram->release();
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-    context->doneCurrent();
-}*/
 
 
 
@@ -312,10 +260,10 @@ void RenderManager::setTextureFormat(TextureFormat format)
 
     QList<GLuint*> oldTexIds;
 
-    foreach (Seed* seed, mSeeds)
+    foreach (Seed* seed, mFactory->seeds())
         oldTexIds.append(seed->textureIds());
 
-    foreach (ImageOperation* operation, mOperations)
+    foreach (ImageOperation* operation, mFactory->operations())
         oldTexIds.append(operation->textureIds());
 
     mContext->makeCurrent(mSurface);
@@ -382,9 +330,28 @@ int RenderManager::iterationNumber()
 
 
 
-void RenderManager::setSortedOperations(QList<ImageOperation*> operations)
+void RenderManager::resize(GLuint width, GLuint height)
 {
-    mSortedOperations = operations;
+    mOldTexWidth = mTexWidth;
+    mOldTexHeight = mTexHeight;
+
+    mTexWidth = width;
+    mTexHeight = height;
+
+    mContext->makeCurrent(mSurface);
+
+    setVao();
+    foreach (Seed* seed, mFactory->seeds())
+        seed->setVao(width, height);
+
+    glViewport(0, 0, mTexWidth, mTexHeight);
+
+    resizeTextures();
+    recreateBlendArrayTexture();
+
+    mContext->doneCurrent();
+
+    adjustOrtho();
 }
 
 
@@ -392,6 +359,28 @@ void RenderManager::setSortedOperations(QList<ImageOperation*> operations)
 void RenderManager::setOutputTextureId(GLuint* pTexId)
 {
     mOutputTexId = pTexId;
+}
+
+
+
+void RenderManager::initOperation(QUuid id, ImageOperation* operation)
+{
+    operation->init(mContext, mSurface);
+    genOpTextures(operation);
+}
+
+
+
+void RenderManager::initSeed(QUuid id, Seed* seed)
+{
+    seed->init(static_cast<GLenum>(mTexFormat), mTexWidth, mTexHeight, mContext, mSurface);
+}
+
+
+
+void RenderManager::setSortedOperations(QList<ImageOperation*> sortedOperations)
+{
+    mSortedOperations = sortedOperations;
 }
 
 
@@ -537,7 +526,7 @@ void RenderManager::adjustOrtho()
     GLfloat left, right, bottom, top;
     verticesCoords(left, right, bottom, top);
 
-    foreach (ImageOperation* operation, mOperations)
+    foreach (ImageOperation* operation, mFactory->operations())
         operation->adjustOrtho(left, right, bottom, top);
 }
 
@@ -600,10 +589,10 @@ void RenderManager::resizeTextures()
 {
     QList<GLuint*> oldTexIds;
 
-    foreach (Seed* seed, mSeeds)
+    foreach (Seed* seed, mFactory->seeds())
         oldTexIds.append(seed->textureIds());
 
-    foreach (ImageOperation* operation, mOperations)
+    foreach (ImageOperation* operation, mFactory->operations())
         oldTexIds.append(operation->textureIds());
 
     foreach (GLuint* oldTexId, oldTexIds)

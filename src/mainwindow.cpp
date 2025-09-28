@@ -7,9 +7,11 @@ MainWindow::MainWindow()
     iterationTimer = new TimerThread(iterationFPS, this);
     updateTimer = new TimerThread(updateFPS, this);
 
-    renderManager = new RenderManager();
+    factory = new Factory();
 
-    nodeManager = new NodeManager(renderManager);
+    renderManager = new RenderManager(factory);
+
+    nodeManager = new NodeManager(factory);
 
     overlay = new Overlay();
 
@@ -24,7 +26,7 @@ MainWindow::MainWindow()
     plotsWidgetOpacityEffect->setOpacity(opacity);
     plotsWidget->setGraphicsEffect(plotsWidgetOpacityEffect);
 
-    controlWidget = new ControlWidget(iterationFPS, updateFPS, nodeManager, renderManager, plotsWidget);
+    controlWidget = new ControlWidget(iterationFPS, updateFPS, factory, nodeManager, renderManager, plotsWidget);
     controlWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     controlWidget->setMinimumSize(0, 0);
 
@@ -99,6 +101,7 @@ MainWindow::MainWindow()
     connect(nodeManager, &NodeManager::outputTextureChanged, morphoWidget, &MorphoWidget::updateOutputTextureID);
     connect(nodeManager, &NodeManager::outputTextureChanged, plotsWidget, &PlotsWidget::setTextureID);
     connect(nodeManager, &NodeManager::outputFBOChanged, plotsWidget, &PlotsWidget::setFBO);
+    connect(nodeManager, &NodeManager::sortedOperationsChanged, renderManager, &RenderManager::setSortedOperations);
 
     connect(controlWidget, &ControlWidget::iterationFPSChanged, this, &MainWindow::setIterationTimerInterval);
     connect(controlWidget, &ControlWidget::updateFPSChanged, this, &MainWindow::setUpdateTimerInterval);

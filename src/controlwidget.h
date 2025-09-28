@@ -25,6 +25,7 @@
 
 
 
+#include "factory.h"
 #include "nodemanager.h"
 #include "rendermanager.h"
 #include "operationwidget.h"
@@ -77,7 +78,7 @@ class ControlWidget : public QWidget
     Q_OBJECT
 
 public:
-    ControlWidget(double itFPS, double updFPS, NodeManager* nodeManager, RenderManager* renderManager, PlotsWidget* thePlotsWidget, QWidget *parent = nullptr);
+    ControlWidget(double itFPS, double updFPS, Factory* factory, NodeManager* nodeManager, RenderManager* renderManager, PlotsWidget* thePlotsWidget, QWidget *parent = nullptr);
     ~ControlWidget();
 
 signals:
@@ -112,13 +113,9 @@ protected:
 
 private:
     NodeManager* mNodeManager;
-
     RenderManager* mRenderManager;
-
     PlotsWidget* plotsWidget;
-
     ConfigurationParser* parser;
-
     GraphWidget* graphWidget;
 
     //OperationNode* selectedOperationNode = nullptr;

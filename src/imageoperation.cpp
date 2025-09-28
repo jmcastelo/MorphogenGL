@@ -183,10 +183,6 @@ void ImageOperation::init(QOpenGLContext* context, QOffscreenSurface *surface)
 
     initializeOpenGLFunctions();
 
-    // Generate textures with format and size given externally
-
-    // genTextures(texFormat, width, height);
-
     // Shader program
 
     mProgram = new QOpenGLShaderProgram();
