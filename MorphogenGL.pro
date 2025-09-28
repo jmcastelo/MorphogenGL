@@ -44,6 +44,7 @@ HEADERS += \
     src/cyclesearch.h \
     src/edge.h \
     src/edgewidget.h \
+    src/factory.h \
     src/graphwidget.h \
     src/gridwidget.h \
     src/histogramwidget.h \
@@ -89,6 +90,7 @@ SOURCES += \
     src/cyclesearch.cpp \
     src/edge.cpp \
     src/edgewidget.cpp \
+    src/factory.cpp \
     src/graphwidget.cpp \
     src/gridwidget.cpp \
     src/histogramwidget.cpp \

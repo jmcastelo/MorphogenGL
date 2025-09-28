@@ -154,6 +154,8 @@ ImageOperation* RenderManager::createNewOperation()
 {
     ImageOperation* operation = new ImageOperation("New Operation", static_cast<GLenum>(mTexFormat), mTexWidth, mTexHeight, mContext, mSurface);
 
+    genOpTextures(operation);
+
     mOperations.append(operation);
 
     return operation;
@@ -321,7 +323,7 @@ void RenderManager::setTextureFormat(TextureFormat format)
     foreach (GLuint* oldTexId, oldTexIds)
     {
         GLuint newTexId = 0;
-        genTexture(newTexId);
+        genTexture(&newTexId);
 
         glBindFramebuffer(GL_READ_FRAMEBUFFER, mReadFbo);
         glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, *oldTexId, 0);
@@ -541,14 +543,14 @@ void RenderManager::adjustOrtho()
 
 
 
-void RenderManager::genTexture(GLuint& texId)
+void RenderManager::genTexture(GLuint *texId)
 {
     // Allocated on immutable storage (glTexStorage2D)
     // To be called within active OpenGL context
 
-    glGenTextures(1, &texId);
+    glGenTextures(1, texId);
 
-    glBindTexture(GL_TEXTURE_2D, texId);
+    glBindTexture(GL_TEXTURE_2D, *texId);
 
     glTexStorage2D(GL_TEXTURE_2D, 1, static_cast<GLenum>(mTexFormat), mTexWidth, mTexHeight);
 
@@ -558,6 +560,21 @@ void RenderManager::genTexture(GLuint& texId)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
     glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+
+
+void RenderManager::genOpTextures(ImageOperation* operation)
+{
+    mContext->makeCurrent(mSurface);
+
+    foreach (GLuint* texId, operation->textureIds())
+    {
+        genTexture(texId);
+        clearTexture(*texId);
+    }
+
+    mContext->doneCurrent();
 }
 
 
@@ -592,7 +609,7 @@ void RenderManager::resizeTextures()
     foreach (GLuint* oldTexId, oldTexIds)
     {
         GLuint newTexId;
-        genTexture(newTexId);
+        genTexture(&newTexId);
 
         glBindFramebuffer(GL_READ_FRAMEBUFFER, mReadFbo);
         glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, *oldTexId, 0);
@@ -638,16 +655,12 @@ void RenderManager::copyTexturesToBlendArrayTexture(QList<GLuint*> textures)
 
 void RenderManager::clearTexture(GLuint texId)
 {
-    mContext->makeCurrent(mSurface);
-
     glBindFramebuffer(GL_FRAMEBUFFER, mOutFbo);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texId, 0);
 
     glClear(GL_COLOR_BUFFER_BIT);
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-    mContext->doneCurrent();
 }
 
 

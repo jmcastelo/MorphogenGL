@@ -124,7 +124,8 @@ private:
     void setVao();
     void adjustOrtho();
 
-    void genTexture(GLuint& texId);
+    void genTexture(GLuint* texId);
+    void genOpTextures(ImageOperation* operation);
     void resizeTextures();
 
     void genBlendArrayTexture();

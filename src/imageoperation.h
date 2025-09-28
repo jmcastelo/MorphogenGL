@@ -52,9 +52,12 @@
 class ImageOperation : protected QOpenGLExtraFunctions
 {
 public:
+    ImageOperation();
     ImageOperation(QString name, GLenum texFormat, GLuint width, GLuint height, QOpenGLContext* context, QOffscreenSurface *surface);
     ImageOperation(GLenum texFormat, GLuint width, GLuint height, const ImageOperation& operation);
     ~ImageOperation();
+
+    void init(QOpenGLContext* context, QOffscreenSurface *surface);
 
     QOpenGLShaderProgram* program();
 
@@ -155,8 +158,8 @@ public:
 private:
     QString mName;
 
-    QOpenGLContext* mContext;
-    QOffscreenSurface* mSurface;
+    QOpenGLContext* mContext = nullptr;
+    QOffscreenSurface* mSurface = nullptr;
 
     QOpenGLShaderProgram* mProgram;
 

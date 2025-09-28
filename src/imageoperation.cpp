@@ -29,10 +29,19 @@
 
 
 
-// Image operation base class
+ImageOperation::ImageOperation()
+{
+    mName = "New Operation";
+
+    pOutTexId = new GLuint(0);
+    setpOutTextureId();
+}
+
 
 ImageOperation::ImageOperation(QString name, GLenum texFormat, GLuint width, GLuint height, QOpenGLContext* context, QOffscreenSurface* surface) :
     mName { name },
+    mContext { context },
+    mSurface { surface },
     mTexWidth { width },
     mTexHeight { height }
 {
@@ -49,9 +58,6 @@ ImageOperation::ImageOperation(QString name, GLenum texFormat, GLuint width, GLu
     mSurface->setFormat(shareContext->format());
     mSurface->create();*/
 
-    mContext = context;
-    mSurface = surface;
-
     // Make context current and initialize context-dependent variables
 
     mContext->makeCurrent(mSurface);
@@ -62,7 +68,7 @@ ImageOperation::ImageOperation(QString name, GLenum texFormat, GLuint width, GLu
 
     // Generate textures with format and size given externally
 
-    genTextures(texFormat, width, height);
+    // genTextures(texFormat, width, height);
 
     // Shader program
 
@@ -94,7 +100,7 @@ ImageOperation::ImageOperation(GLenum texFormat, GLuint width, GLuint height, co
 {
     // Generate textures with format and size given externally
 
-    genTextures(texFormat, width, height);
+    // genTextures(texFormat, width, height);
 
     // Copy parameters
 
@@ -134,16 +140,19 @@ ImageOperation::ImageOperation(GLenum texFormat, GLuint width, GLuint height, co
 
 ImageOperation::~ImageOperation()
 {
-    mContext->makeCurrent(mSurface);
+    if (mContext)
+    {
+        mContext->makeCurrent(mSurface);
 
-    delete mProgram;
+        delete mProgram;
 
-    GLuint texIds[] = { mOutTexId, mBlitTexId, mBlendOutTexId };
-    glDeleteTextures(3, texIds);
+        GLuint texIds[] = { mOutTexId, mBlitTexId, mBlendOutTexId };
+        glDeleteTextures(3, texIds);
 
-    glDeleteSamplers(1, &mSamplerId);
+        glDeleteSamplers(1, &mSamplerId);
 
-    mContext->doneCurrent();
+        mContext->doneCurrent();
+    }
 
     //delete mContext;
     //delete mSurface;
@@ -157,6 +166,39 @@ ImageOperation::~ImageOperation()
     qDeleteAll(mMat4UniformParameters);
 }
 
+
+
+void ImageOperation::init(QOpenGLContext* context, QOffscreenSurface *surface)
+{
+    // Set external context and offscreen surface
+
+    mContext = context;
+    mSurface = surface;
+
+    // Make context current and initialize context-dependent variables
+
+    mContext->makeCurrent(mSurface);
+
+    // To be able to call OpenGL functions
+
+    initializeOpenGLFunctions();
+
+    // Generate textures with format and size given externally
+
+    // genTextures(texFormat, width, height);
+
+    // Shader program
+
+    mProgram = new QOpenGLShaderProgram();
+
+    // Sampler
+
+    glGenSamplers(1, &mSamplerId);
+    glSamplerParameteri(mSamplerId, GL_TEXTURE_MIN_FILTER, mMinMagFilter);
+    glSamplerParameteri(mSamplerId, GL_TEXTURE_MAG_FILTER, mMinMagFilter);
+
+    mContext->doneCurrent();
+}
 
 
 QOpenGLShaderProgram* ImageOperation::program()
@@ -398,7 +440,7 @@ void ImageOperation::setMat4Uniform(QString name, UniformMat4Type type, QList<fl
         matrix.setToIdentity();
 
         if (type == UniformMat4Type::TRANSLATION)
-            matrix.translate(values.at(0), values.at(1));
+            matrix.translate(values.at(0), -values.at(1));
         else if (type == UniformMat4Type::ROTATION)
             matrix.rotate(values.at(0), 0.0f, 0.0f, 1.0f);
         else if (type == UniformMat4Type::SCALING)
