@@ -152,6 +152,19 @@ private:
     Parameter* lastFocusedParameter = nullptr;
     QWidget* lastFocusedWidget = nullptr;
 
+    QMetaObject::Connection layoutComboBoxConn;
+    QMetaObject::Connection mat4TypeComboBoxConn;
+    QMetaObject::Connection paramNameLineEditConn;
+    QList<QMetaObject::Connection> selParamSliderConns;
+    QList<QMetaObject::Connection> selParamInfLineEditConns;
+    QList<QMetaObject::Connection> selParamMinLineEditConns;
+    QList<QMetaObject::Connection> selParamMaxLineEditConns;
+    QList<QMetaObject::Connection> selParamSupLineEditConns;
+    QMetaObject::Connection removePresetButtonConn;
+    QMetaObject::Connection addPresetButtonConn;
+    QList<QMetaObject::Connection> midiLinkButtonConns;
+
+
     template <typename T>
     void setFocusedWidget(ParameterWidget<T>* widget);
 

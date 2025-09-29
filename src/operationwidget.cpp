@@ -7,7 +7,7 @@
 
 
 OperationWidget::OperationWidget(ImageOperation* operation, bool midiEnabled, bool editMode, QWidget* parent) :
-    QFrame(parent),
+    QFrame { parent },
     mOperation { operation },
     mMidiEnabled { midiEnabled }
 {
@@ -275,7 +275,7 @@ void OperationWidget::setup()
         floatParamWidgets.append(widget);
         uniformFloatParamWidgets.append(widget);
 
-        setFocusedWidget(widget);
+        setFocusedWidget<float>(widget);
     }
 
     foreach (auto parameter, mOperation->uniformParameters<int>())
@@ -291,7 +291,7 @@ void OperationWidget::setup()
         intParamWidgets.append(widget);
         uniformIntParamWidgets.append(widget);
 
-        setFocusedWidget(widget);
+        setFocusedWidget<int>(widget);
     }
 
     foreach (auto parameter, mOperation->uniformParameters<unsigned int>())
@@ -307,7 +307,7 @@ void OperationWidget::setup()
         uintParamWidgets.append(widget);
         uniformUintParamWidgets.append(widget);
 
-        setFocusedWidget(widget);
+        setFocusedWidget<unsigned int>(widget);
     }
 
     foreach (auto parameter, mOperation->mat4UniformParameters())
@@ -323,7 +323,7 @@ void OperationWidget::setup()
         mat4ParamWidgets.append(widget);
         uniformMat4ParamWidgets.append(widget);
 
-        setFocusedWidget(widget);
+        setFocusedWidget<float>(widget);
     }
 
     foreach (auto parameter, mOperation->optionsParameters<GLenum>())
@@ -461,7 +461,9 @@ void OperationWidget::connectUniformParamWidgets(QList<UniformParameterWidget<T>
             {
                 // Set up layout controller combo box
 
-                layoutComboBox->disconnect();
+                if (layoutComboBoxConn)
+                    disconnect(layoutComboBoxConn);
+
                 layoutComboBox->clear();
 
                 if (widget->availableLayoutFormats().size() == 0)
@@ -473,7 +475,7 @@ void OperationWidget::connectUniformParamWidgets(QList<UniformParameterWidget<T>
                     layoutComboBox->addItems(widget->availableLayoutFormats());
                     layoutComboBox->setCurrentIndex(widget->layoutFormatIndex());
 
-                    connect(layoutComboBox, &QComboBox::currentIndexChanged, this, [=, this](int index){
+                    layoutComboBoxConn = connect(layoutComboBox, &QComboBox::currentIndexChanged, this, [=, this](int index){
                         widget->setLayoutFormatIndex(index);
                         gridWidget->optimizeLayout();
                         adjustSize();
@@ -495,14 +497,15 @@ void OperationWidget::connectUniformFloatParamWidgets()
             {
                 // Set up Mat4 parameter switcher combo box
 
-                mat4TypeComboBox->disconnect();
+                if (mat4TypeComboBoxConn)
+                    disconnect(mat4TypeComboBoxConn);
 
                 if (widget->isMat4Equivalent())
                 {
                     mat4TypeComboBox->setVisible(true);
                     mat4TypeComboBox->setCurrentIndex(4);
 
-                    connect(mat4TypeComboBox, &QComboBox::currentIndexChanged, this, [=, this](int index){
+                    mat4TypeComboBoxConn = connect(mat4TypeComboBox, &QComboBox::currentIndexChanged, this, [=, this](int index){
                         if (index >= 0 && index < 4)
                         {
                             UniformParameter<float>* parameter = widget->parameter();
@@ -544,7 +547,9 @@ void OperationWidget::connectUniformMat4ParamWidgets()
                 updateMidiButton<float>(widget);
             }
             else
+            {
                 toggleSelParamWidgets(false);
+            }
 
             setSelParamNameWidgets<float>(widget);
         });
@@ -554,12 +559,13 @@ void OperationWidget::connectUniformMat4ParamWidgets()
             {
                 // Set up Mat4 parameter switcher combo box
 
-                mat4TypeComboBox->disconnect();
+                if (mat4TypeComboBoxConn)
+                    disconnect(mat4TypeComboBoxConn);
 
                 mat4TypeComboBox->setVisible(true);
                 mat4TypeComboBox->setCurrentIndex(widget->typeIndex());
 
-                connect(mat4TypeComboBox, &QComboBox::currentIndexChanged, this, [=, this](int index){
+                mat4TypeComboBoxConn = connect(mat4TypeComboBox, &QComboBox::currentIndexChanged, this, [=, this](int index){
                     if (index >= 0 && index < 4)
                     {
                         UniformMat4Parameter* parameter = widget->parameter();
@@ -701,9 +707,10 @@ void OperationWidget::setSelParamNameWidgets(ParameterWidget<T>* widget)
     paramNameLineEdit->setText(widget->name());
     paramNameLineEdit->setFixedWidth(20 + paramNameLineEdit->fontMetrics().horizontalAdvance(widget->name()));
 
-    paramNameLineEdit->disconnect();
+    if (paramNameLineEditConn)
+        disconnect(paramNameLineEditConn);
 
-    connect(paramNameLineEdit, &QLineEdit::textEdited, this, [=, this](QString name){
+    paramNameLineEditConn = connect(paramNameLineEdit, &QLineEdit::textEdited, this, [=, this](QString name){
         widget->setName(name);
 
         paramNameLabel->setText(name);
@@ -725,28 +732,39 @@ void OperationWidget::updateSelParamControls(ParameterWidget<T>* widget)
 
     selParamSlider->setVisible(true);
 
-    selParamSlider->disconnect();
+    foreach (auto conn, selParamSliderConns) {
+        disconnect(conn);
+    }
+
     selParamSlider->setRange(0, number->indexMax());
     selParamSlider->setValue(number->index());
 
-    connect(selParamSlider, &QAbstractSlider::sliderMoved, widget, &ParameterWidget<T>::setValueFromIndex);
-    connect(number, &Number<T>::indexChanged, selParamSlider, &QAbstractSlider::setValue);
+    selParamSliderConns.clear();
+    selParamSliderConns.resize(2);
+
+    selParamSliderConns[0] = connect(selParamSlider, &QAbstractSlider::sliderMoved, widget, &ParameterWidget<T>::setValueFromIndex);
+    selParamSliderConns[1] = connect(number, &Number<T>::indexChanged, selParamSlider, &QAbstractSlider::setValue);
 
     // Minimum
 
     selParamMinLineEdit->setVisible(true);
 
-    selParamMinLineEdit->disconnect();
+    foreach (auto conn, selParamMinLineEditConns) {
+        disconnect(conn);
+    }
 
     setValidator<T>(minValidator, selParamMinLineEdit, number->inf(), number->max());
 
     selParamMinLineEdit->setText(QString::number(number->min()));
 
-    connect(number, &Number<T>::minChanged, this, [=, this](){
+    selParamMinLineEditConns.clear();
+    selParamMinLineEditConns.resize(4);
+
+    selParamMinLineEditConns[0] = connect(number, &Number<T>::minChanged, this, [=, this](){
         selParamMinLineEdit->setText(QString::number(number->min()));
     });
 
-    connect(selParamMinLineEdit, &FocusLineEdit::editingFinished, this, [=, this](){
+    selParamMinLineEditConns[1] = connect(selParamMinLineEdit, &FocusLineEdit::editingFinished, this, [=, this](){
         if (std::is_same<T, float>::value)
             number->setMin(selParamMinLineEdit->text().toFloat());
         else if (std::is_same<T, int>::value)
@@ -755,25 +773,34 @@ void OperationWidget::updateSelParamControls(ParameterWidget<T>* widget)
             number->setMin(selParamMinLineEdit->text().toUInt());
     });
 
-    connect(selParamMinLineEdit, &FocusLineEdit::focusOut, this, [=, this](){
+    selParamMinLineEditConns[2] = connect(selParamMinLineEdit, &FocusLineEdit::focusOut, this, [=, this](){
         selParamMinLineEdit->setText(QString::number(number->min()));
+    });
+
+    selParamMinLineEditConns[3] = connect(selParamMinLineEdit, &FocusLineEdit::focusIn, this, [=, this](){
+        lastFocusedWidget = selParamMinLineEdit;
     });
 
     // Maximum
 
     selParamMaxLineEdit->setVisible(true);
 
-    selParamMaxLineEdit->disconnect();
+    foreach (auto conn, selParamMaxLineEditConns) {
+        disconnect(conn);
+    }
 
     setValidator<T>(maxValidator, selParamMaxLineEdit, number->min(), number->sup());
 
     selParamMaxLineEdit->setText(QString::number(number->max()));
 
-    connect(number, &Number<T>::maxChanged, this, [=, this](){
+    selParamMaxLineEditConns.clear();
+    selParamMaxLineEditConns.resize(4);
+
+    selParamMaxLineEditConns[0] = connect(number, &Number<T>::maxChanged, this, [=, this](){
         selParamMaxLineEdit->setText(QString::number(number->max()));
     });
 
-    connect(selParamMaxLineEdit, &FocusLineEdit::editingFinished, this, [=, this](){
+    selParamMaxLineEditConns[1] = connect(selParamMaxLineEdit, &FocusLineEdit::editingFinished, this, [=, this](){
         if (std::is_same<T, float>::value)
             number->setMax(selParamMaxLineEdit->text().toFloat());
         else if (std::is_same<T, int>::value)
@@ -782,17 +809,11 @@ void OperationWidget::updateSelParamControls(ParameterWidget<T>* widget)
             number->setMax(selParamMaxLineEdit->text().toUInt());
     });
 
-    connect(selParamMaxLineEdit, &FocusLineEdit::focusOut, this, [=, this](){
+    selParamMaxLineEditConns[2] = connect(selParamMaxLineEdit, &FocusLineEdit::focusOut, this, [=, this](){
         selParamMaxLineEdit->setText(QString::number(number->max()));
     });
 
-    // Focus-in connections
-
-    connect(selParamMinLineEdit, &FocusLineEdit::focusIn, this, [=, this](){
-        lastFocusedWidget = selParamMinLineEdit;
-    });
-
-    connect(selParamMaxLineEdit, &FocusLineEdit::focusIn, this, [=, this](){
+    selParamMaxLineEditConns[3] = connect(selParamMaxLineEdit, &FocusLineEdit::focusIn, this, [=, this](){
         lastFocusedWidget = selParamMaxLineEdit;
     });
 }
@@ -808,24 +829,35 @@ void OperationWidget::updateSelParamEditControls(ParameterWidget<T>* widget)
 
     selParamSlider->setVisible(true);
 
-    selParamSlider->disconnect();
+    foreach (auto conn, selParamSliderConns) {
+        disconnect(conn);
+    }
+
     selParamSlider->setRange(0, number->indexMax());
     selParamSlider->setValue(number->index());
 
-    connect(selParamSlider, &QAbstractSlider::sliderMoved, widget, &ParameterWidget<T>::setValueFromIndex);
-    connect(number, &Number<T>::indexChanged, selParamSlider, &QAbstractSlider::setValue);
+    selParamSliderConns.clear();
+    selParamSliderConns.resize(2);
+
+    selParamSliderConns[0] = connect(selParamSlider, &QAbstractSlider::sliderMoved, widget, &ParameterWidget<T>::setValueFromIndex);
+    selParamSliderConns[1] = connect(number, &Number<T>::indexChanged, selParamSlider, &QAbstractSlider::setValue);
 
     // Inf (lowest)
 
     selParamInfLineEdit->setVisible(true);
 
-    selParamInfLineEdit->disconnect();
+    foreach (auto conn, selParamInfLineEditConns) {
+        disconnect(conn);
+    }
 
     setValidator<T>(infValidator, selParamInfLineEdit, std::numeric_limits<T>::lowest(), number->sup());
 
     selParamInfLineEdit->setText(QString::number(number->inf()));
 
-    connect(selParamInfLineEdit, &FocusLineEdit::editingFinished, this, [=, this](){
+    selParamInfLineEditConns.clear();
+    selParamInfLineEditConns.resize(3);
+
+    selParamInfLineEditConns[0] = connect(selParamInfLineEdit, &FocusLineEdit::editingFinished, this, [=, this](){
         T inf = number->inf();
 
         if (std::is_same<T, float>::value)
@@ -841,26 +873,35 @@ void OperationWidget::updateSelParamEditControls(ParameterWidget<T>* widget)
         setValidator<T>(supValidator, selParamSupLineEdit, inf, std::numeric_limits<T>::max());
     });
 
-    connect(selParamInfLineEdit, &FocusLineEdit::focusOut, this, [=, this](){
+    selParamInfLineEditConns[1] = connect(selParamInfLineEdit, &FocusLineEdit::focusOut, this, [=, this](){
         selParamInfLineEdit->setText(QString::number(number->inf()));
+    });
+
+    selParamInfLineEditConns[2] = connect(selParamInfLineEdit, &FocusLineEdit::focusIn, this, [=, this](){
+        lastFocusedWidget = selParamInfLineEdit;
     });
 
     // Minimum
 
     selParamMinLineEdit->setVisible(true);
 
-    selParamMinLineEdit->disconnect();
+    foreach (auto conn, selParamMinLineEditConns) {
+        disconnect(conn);
+    }
 
     setValidator<T>(minValidator, selParamMinLineEdit, number->inf(), number->max());
 
     selParamMinLineEdit->setText(QString::number(number->min()));
 
-    connect(number, &Number<T>::minChanged, this, [=, this](){
+    selParamMinLineEditConns.clear();
+    selParamMinLineEditConns.resize(4);
+
+    selParamMinLineEditConns[0] = connect(number, &Number<T>::minChanged, this, [=, this](){
         selParamMinLineEdit->setText(QString::number(number->min()));
         number->setMin(number->min());
     });
 
-    connect(selParamMinLineEdit, &FocusLineEdit::editingFinished, this, [=, this](){
+    selParamMinLineEditConns[1] = connect(selParamMinLineEdit, &FocusLineEdit::editingFinished, this, [=, this](){
         if (std::is_same<T, float>::value)
             number->setMin(selParamMinLineEdit->text().toFloat());
         else if (std::is_same<T, int>::value)
@@ -869,21 +910,30 @@ void OperationWidget::updateSelParamEditControls(ParameterWidget<T>* widget)
             number->setMin(selParamMinLineEdit->text().toUInt());
     });
 
-    connect(selParamMinLineEdit, &FocusLineEdit::focusOut, this, [=, this](){
+    selParamMinLineEditConns[2] = connect(selParamMinLineEdit, &FocusLineEdit::focusOut, this, [=, this](){
         selParamMinLineEdit->setText(QString::number(number->min()));
+    });
+
+    selParamMinLineEditConns[3] = connect(selParamMinLineEdit, &FocusLineEdit::focusIn, this, [=, this](){
+        lastFocusedWidget = selParamMinLineEdit;
     });
 
     // Sup (highest)
 
     selParamSupLineEdit->setVisible(true);
 
-    selParamSupLineEdit->disconnect();
+    foreach (auto conn, selParamSupLineEditConns) {
+        disconnect(conn);
+    }
 
     setValidator<T>(supValidator, selParamSupLineEdit, number->inf(), std::numeric_limits<T>::max());
 
     selParamSupLineEdit->setText(QString::number(number->sup()));
 
-    connect(selParamSupLineEdit, &FocusLineEdit::editingFinished, this, [=, this](){
+    selParamSupLineEditConns.clear();
+    selParamSupLineEditConns.resize(3);
+
+    selParamSupLineEditConns[0] = connect(selParamSupLineEdit, &FocusLineEdit::editingFinished, this, [=, this](){
         T sup = number->sup();
 
         if (std::is_same<T, float>::value)
@@ -898,26 +948,35 @@ void OperationWidget::updateSelParamEditControls(ParameterWidget<T>* widget)
         setValidator<T>(infValidator, selParamInfLineEdit, std::numeric_limits<T>::lowest(), sup);
     });
 
-    connect(selParamSupLineEdit, &FocusLineEdit::focusOut, this, [=, this](){
+    selParamSupLineEditConns[1] = connect(selParamSupLineEdit, &FocusLineEdit::focusOut, this, [=, this](){
         selParamSupLineEdit->setText(QString::number(number->sup()));
+    });
+
+    selParamSupLineEditConns[2] = connect(selParamSupLineEdit, &FocusLineEdit::focusIn, this, [=, this](){
+        lastFocusedWidget = selParamSupLineEdit;
     });
 
     // Maximum
 
     selParamMaxLineEdit->setVisible(true);
 
-    selParamMaxLineEdit->disconnect();
+    foreach (auto conn, selParamMaxLineEditConns) {
+        disconnect(conn);
+    }
 
     setValidator<T>(maxValidator, selParamMaxLineEdit, number->min(), number->sup());
 
     selParamMaxLineEdit->setText(QString::number(number->max()));
 
-    connect(number, &Number<T>::maxChanged, this, [=, this](){
+    selParamMaxLineEditConns.clear();
+    selParamMaxLineEditConns.resize(4);
+
+    selParamMaxLineEditConns[0] = connect(number, &Number<T>::maxChanged, this, [=, this](){
         selParamMaxLineEdit->setText(QString::number(number->max()));
         number->setMax(number->max());
     });
 
-    connect(selParamMaxLineEdit, &FocusLineEdit::editingFinished, this, [=, this](){
+    selParamMaxLineEditConns[1] = connect(selParamMaxLineEdit, &FocusLineEdit::editingFinished, this, [=, this](){
         if (std::is_same<T, float>::value)
             number->setMax(selParamMaxLineEdit->text().toFloat());
         else if (std::is_same<T, int>::value)
@@ -926,8 +985,12 @@ void OperationWidget::updateSelParamEditControls(ParameterWidget<T>* widget)
             number->setMax(selParamMaxLineEdit->text().toUInt());
     });
 
-    connect(selParamMaxLineEdit, &FocusLineEdit::focusOut, this, [=, this](){
+    selParamMaxLineEditConns[2] = connect(selParamMaxLineEdit, &FocusLineEdit::focusOut, this, [=, this](){
         selParamMaxLineEdit->setText(QString::number(number->max()));
+    });
+
+    selParamMaxLineEditConns[3] = connect(selParamMaxLineEdit, &FocusLineEdit::focusIn, this, [=, this](){
+        lastFocusedWidget = selParamMaxLineEdit;
     });
 
     // Presets
@@ -936,39 +999,23 @@ void OperationWidget::updateSelParamEditControls(ParameterWidget<T>* widget)
     addPresetButton->setVisible(true);
     presetNameLineEdit->setVisible(true);
 
-    removePresetButton->disconnect();
+    if (removePresetButtonConn)
+        disconnect(removePresetButtonConn);
 
-    connect(removePresetButton, &QPushButton::clicked, this, [=, this](){
+    removePresetButtonConn = connect(removePresetButton, &QPushButton::clicked, this, [=, this](){
         widget->removeCurrentPreset();
 
         gridWidget->optimizeLayout();
     });
 
-    addPresetButton->disconnect();
+    if (addPresetButtonConn)
+        disconnect(addPresetButtonConn);
 
-    connect(addPresetButton, &QPushButton::clicked, this, [=, this](){
+    addPresetButtonConn = connect(addPresetButton, &QPushButton::clicked, this, [=, this](){
         QString name = presetNameLineEdit->text();
         widget->addPreset(name);
 
         gridWidget->optimizeLayout();
-    });
-
-    // Focus-in connections
-
-    connect(selParamInfLineEdit, &FocusLineEdit::focusIn, this, [=, this](){
-        lastFocusedWidget = selParamInfLineEdit;
-    });
-
-    connect(selParamMinLineEdit, &FocusLineEdit::focusIn, this, [=, this](){
-        lastFocusedWidget = selParamMinLineEdit;
-    });
-
-    connect(selParamMaxLineEdit, &FocusLineEdit::focusIn, this, [=, this](){
-        lastFocusedWidget = selParamMaxLineEdit;
-    });
-
-    connect(selParamSupLineEdit, &FocusLineEdit::focusIn, this, [=, this](){
-        lastFocusedWidget = selParamSupLineEdit;
     });
 }
 
@@ -1001,7 +1048,9 @@ void OperationWidget::updateMidiButton(ParameterWidget<T>* widget)
 
     // MIDI Link button
 
-    midiLinkButton->disconnect();
+    foreach (auto conn, midiLinkButtonConns) {
+        disconnect(conn);
+    }
 
     midiLinkButton->setChecked(number->midiLinked());
 
@@ -1010,7 +1059,10 @@ void OperationWidget::updateMidiButton(ParameterWidget<T>* widget)
     else
         midiLinkButton->setStyleSheet("QPushButton { image: url(:/icons/circle-grey.png); background-color: transparent; border: 0; }");
 
-    connect(midiLinkButton, &QPushButton::clicked, this, [=, this](bool checked){
+    midiLinkButtonConns.clear();
+    midiLinkButtonConns.resize(2);
+
+    midiLinkButtonConns[0] = connect(midiLinkButton, &QPushButton::clicked, this, [=, this](bool checked){
         if (checked)
         {
             midiLinkButton->setStyleSheet("QPushButton { image: url(:/icons/circle-orange.png); background-color: transparent; border: 0; }");
@@ -1023,7 +1075,7 @@ void OperationWidget::updateMidiButton(ParameterWidget<T>* widget)
         }
     });
 
-    connect(number, &Number<T>::linked, this, [=, this](bool set){
+    midiLinkButtonConns[1] = connect(number, &Number<T>::linked, this, [=, this](bool set){
         if (set)
             midiLinkButton->setStyleSheet("QPushButton { image: url(:/icons/circle-green.png); background-color: transparent; border: 0; }");
         else

@@ -12,7 +12,7 @@
 
 
 OperationBuilder::OperationBuilder(ImageOperation *operation, QWidget *parent) :
-    QWidget {parent},
+    QWidget { parent },
     mOperation { operation }
 {
     // OpenGL context
@@ -61,6 +61,7 @@ OperationBuilder::OperationBuilder(ImageOperation *operation, QWidget *parent) :
 
     vertexEditor = new QPlainTextEdit;
     vertexEditor->setLineWrapMode(QPlainTextEdit::NoWrap);
+    vertexEditor->setPlainText(mOperation->vertexShader());
 
     connect(vertexEditor, &QPlainTextEdit::textChanged, this, [=, this](){
         setupOpAction->setEnabled(false);
@@ -68,6 +69,7 @@ OperationBuilder::OperationBuilder(ImageOperation *operation, QWidget *parent) :
 
     fragmentEditor = new QPlainTextEdit;
     fragmentEditor->setLineWrapMode(QPlainTextEdit::NoWrap);
+    fragmentEditor->setPlainText(mOperation->fragmentShader());
 
     connect(fragmentEditor, &QPlainTextEdit::textChanged, this, [=, this](){
         setupOpAction->setEnabled(false);

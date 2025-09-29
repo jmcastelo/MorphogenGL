@@ -94,10 +94,13 @@ public:
 
     bool enabled() const;
     void enable(bool set);
-    void enableBlit(bool set);
-    void enableUpdate(bool set);
-    bool blendEnabled() const;
+
     bool blitEnabled() const;
+    void enableBlit(bool set);
+
+    void enableUpdate(bool set);
+
+    bool blendEnabled() const;
 
     QString name() const;
     void setName(QString theName);

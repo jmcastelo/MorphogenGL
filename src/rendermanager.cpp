@@ -365,14 +365,21 @@ void RenderManager::setOutputTextureId(GLuint* pTexId)
 
 void RenderManager::initOperation(QUuid id, ImageOperation* operation)
 {
+    Q_UNUSED(id)
+
     operation->init(mContext, mSurface);
+    operation->linkShaders();
+    operation->setAllParameters();
     genOpTextures(operation);
+
 }
 
 
 
 void RenderManager::initSeed(QUuid id, Seed* seed)
 {
+    Q_UNUSED(id)
+
     seed->init(static_cast<GLenum>(mTexFormat), mTexWidth, mTexHeight, mContext, mSurface);
 }
 
