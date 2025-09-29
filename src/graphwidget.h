@@ -32,6 +32,7 @@
 #include <QGraphicsView>
 #include <QUuid>
 #include <QMap>
+#include <QPointF>
 
 
 
@@ -139,7 +140,16 @@ private:
     QPointF center;
     qreal scaleFactor = 1.0;
 
-    QPoint mClickPoint;
+    QPointF mClickPoint;
+
+    QMenu* mMainMenu;
+    QMenu* mAvailOpsMenu;
+
+    QAction* mAddSeedAction;
+    QAction* mBuildNewOpAction;
+    QList<QAction*> mAvailOpsActions;
+
+    void populateAvailOpsMenu();
 
     //void copyNodes(bool connectionA);
     bool pointIntersectsItem(QPointF point);
@@ -151,10 +161,9 @@ private:
     Edge* getEdge(QUuid srcId, QUuid dstId);
 
 private slots:
+    void onActionTriggered(QAction* action);
     //void newSelectedNodes();
     //void addOperationNodeUnderCursor(QAction* action);
-    void requestNewOperation();
-    void requestNewSeed();
     // void addSeedNode();
     //void pasteCopiedNodes();
     void addNewNode(QUuid id, QWidget* widget);

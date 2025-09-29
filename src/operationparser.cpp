@@ -123,32 +123,31 @@ bool OperationParser::readOperation(ImageOperation* operation, QXmlStreamReader&
         operation->setName(name);
         operation->enable(enabled);
 
-        QString vertexShader;
-        QString fragmentShader;
-
         while (stream.readNextStartElement())
         {
             if (stream.name() == "vertex_shader")
             {
-                vertexShader = QString::fromUtf8(QByteArray::fromBase64(stream.readElementText().toUtf8()));
+                QString vertexShader = QString::fromUtf8(QByteArray::fromBase64(stream.readElementText().toUtf8()));
+                operation->setVertexShader(vertexShader);
 
-                if (!vertexShader.isEmpty() && !fragmentShader.isEmpty())
+                /*if (!vertexShader.isEmpty() && !fragmentShader.isEmpty())
                     if (!operation->setShadersFromSourceCode(vertexShader, fragmentShader))
                     {
                         stream.raiseError("GLSL Shaders error");
                         return false;
-                    }
+                    }*/
             }
             else if (stream.name() == "fragment_shader")
             {
-                fragmentShader = QString::fromUtf8(QByteArray::fromBase64(stream.readElementText().toUtf8()));
+                QString fragmentShader = QString::fromUtf8(QByteArray::fromBase64(stream.readElementText().toUtf8()));
+                operation->setFragmentShader(fragmentShader);
 
-                if (!vertexShader.isEmpty() && !fragmentShader.isEmpty())
+                /*if (!vertexShader.isEmpty() && !fragmentShader.isEmpty())
                     if (!operation->setShadersFromSourceCode(vertexShader, fragmentShader))
                     {
                         stream.raiseError("GLSL Shaders error");
                         return false;
-                    }
+                    }*/
             }
             /*else if (stream.name() == "input_attributes")
             {
@@ -387,7 +386,7 @@ void OperationParser::readParameters(ImageOperation* operation, QXmlStreamReader
 
     operation->addUniformParameter<T>(parameter);
 
-    parameter->setUniform();
+    //parameter->setUniform();
 }
 
 
@@ -548,7 +547,7 @@ void OperationParser::readMat4Parameters(ImageOperation* operation, QXmlStreamRe
 
     operation->addMat4UniformParameter(parameter);
 
-    parameter->setUniform();
+    //parameter->setUniform();
 }
 
 
@@ -611,5 +610,5 @@ void OperationParser::readOptionsParameters(ImageOperation* operation, QXmlStrea
 
     operation->addOptionsParameter<GLenum>(parameter);
 
-    parameter->setValue();
+    //parameter->setValue();
 }

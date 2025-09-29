@@ -33,6 +33,7 @@
 #include <QKeyEvent>
 #include <QRandomGenerator>
 #include <QMenu>
+#include <QAction>
 #include <QPainterPath>
 
 
@@ -42,12 +43,7 @@ GraphWidget::GraphWidget(Factory *factory, NodeManager* nodeManager, QWidget *pa
     mFactory { factory },
     mNodeManager { nodeManager }
 {
-    connect(mFactory, &Factory::newOperationWidgetCreated, this, &GraphWidget::addNewNode);
-    connect(mFactory, &Factory::newSeedWidgetCreated, this, &GraphWidget::addNewNode);
-
-    connect(mNodeManager, &NodeManager::nodesConnected, this, &GraphWidget::connectNodes);
-    connect(mNodeManager, &NodeManager::nodeRemoved, this, &GraphWidget::removeNode);
-    connect(mNodeManager, &NodeManager::nodesDisconnected, this, &GraphWidget::removeEdge);
+    // Graphics scene
 
     QGraphicsScene *scene = new QGraphicsScene(this);
     scene->setItemIndexMethod(QGraphicsScene::NoIndex);
@@ -75,6 +71,34 @@ GraphWidget::GraphWidget(Factory *factory, NodeManager* nodeManager, QWidget *pa
     scale(qreal(1.0), qreal(1.0));
     center = sceneRect().center();
     centerOn(sceneRect().center());
+
+    // Menu
+
+    mMainMenu = new QMenu(this);
+
+    mAddSeedAction = new QAction("Add seed");
+    mMainMenu->addActions({mAddSeedAction});
+
+    mAvailOpsMenu = new QMenu("Add operation");
+    populateAvailOpsMenu();
+    mMainMenu->addMenu(mAvailOpsMenu);
+
+    mMainMenu->addSeparator();
+
+    mBuildNewOpAction = new QAction("Build new operation");
+    mMainMenu->addActions({mBuildNewOpAction});
+
+
+    // Connections
+
+    connect(mFactory, &Factory::newOperationWidgetCreated, this, &GraphWidget::addNewNode);
+    connect(mFactory, &Factory::newSeedWidgetCreated, this, &GraphWidget::addNewNode);
+
+    connect(mNodeManager, &NodeManager::nodesConnected, this, &GraphWidget::connectNodes);
+    connect(mNodeManager, &NodeManager::nodeRemoved, this, &GraphWidget::removeNode);
+    connect(mNodeManager, &NodeManager::nodesDisconnected, this, &GraphWidget::removeEdge);
+
+    connect(mMainMenu, &QMenu::triggered, this, &GraphWidget::onActionTriggered);
 }
 
 
@@ -82,6 +106,28 @@ GraphWidget::GraphWidget(Factory *factory, NodeManager* nodeManager, QWidget *pa
 GraphWidget::~GraphWidget()
 {
     //disconnect(scene(), &QGraphicsScene::selectionChanged, this, &GraphWidget::newSelectedNodes);
+
+    delete mAddSeedAction;
+    delete mBuildNewOpAction;
+    qDeleteAll(mAvailOpsActions);
+    delete mAvailOpsMenu;
+    delete mMainMenu;
+}
+
+
+
+void GraphWidget::populateAvailOpsMenu()
+{
+    mAvailOpsMenu->clear();
+
+    qDeleteAll(mAvailOpsActions);
+    mAvailOpsActions.clear();
+
+    foreach (QString opName, mFactory->availableOperationNames()){
+        mAvailOpsActions.append(new QAction(opName));
+    }
+
+    mAvailOpsMenu->addActions(mAvailOpsActions);
 }
 
 
@@ -91,9 +137,13 @@ Node* GraphWidget::getNode(QUuid id)
     const QList<QGraphicsItem*> items = scene()->items();
 
     foreach (QGraphicsItem* item, items)
+    {
         if (Node* node = qgraphicsitem_cast<Node*>(item))
+        {
             if (node->id() == id)
                 return node;
+        }
+    }
 
     return nullptr;
 }
@@ -105,13 +155,31 @@ Edge* GraphWidget::getEdge(QUuid srcId, QUuid dstId)
     const QList<QGraphicsItem*> items = scene()->items();
 
     foreach (QGraphicsItem* item, items)
+    {
         if (Edge* edge = qgraphicsitem_cast<Edge*>(item))
+        {
             if (edge->sourceNode()->id() == srcId && edge->destNode()->id() == dstId)
                 return edge;
+        }
+    }
 
     return nullptr;
 }
 
+
+
+void GraphWidget::onActionTriggered(QAction* action)
+{
+    if (action == mAddSeedAction)
+        mFactory->createNewSeed();
+    else if (action == mBuildNewOpAction)
+        mFactory->createNewOperation();
+    else if (mAvailOpsActions.contains(action))
+    {
+        int index = mAvailOpsActions.indexOf(action);
+        mFactory->addAvailableOperation(index);
+    }
+}
 
 
 void GraphWidget::closeEvent(QCloseEvent* event)
@@ -181,35 +249,11 @@ void GraphWidget::closeEvent(QCloseEvent* event)
 
 
 
-void GraphWidget::requestNewOperation()
-{
-    // Store click point
-
-    QAction* action = qobject_cast<QAction*>(sender());
-    mClickPoint = action->data().toPoint();
-
-    mFactory->createNewOperation();
-}
-
-
-
-void GraphWidget::requestNewSeed()
-{
-    // Store click point
-
-    QAction* action = qobject_cast<QAction*>(sender());
-    mClickPoint = action->data().toPoint();
-
-    mFactory->createNewSeed();
-}
-
-
-
 void GraphWidget::addNewNode(QUuid id, QWidget *widget)
 {
     Node* node = new Node(id, widget);
     scene()->addItem(node);
-    node->setPos(mapToScene(mapFromGlobal(mClickPoint)));
+    node->setPos(mClickPoint);
 
     //QGraphicsProxyWidget *proxyWidget = scene()->addWidget(mNodeManager->addNewOperation());
     //proxyWidget->setPos(mapToScene(mapFromGlobal(data.toPoint())));
@@ -968,19 +1012,32 @@ void GraphWidget::contextMenuEvent(QContextMenuEvent *event)
 {
     if (!pointIntersectsItem(mapToScene(mapFromGlobal(event->globalPos()))))
     {
-        QMenu menu(this);
+        //QMenu menu(this);
 
         // Add seed
 
-        QAction* addSeedAction = menu.addAction("Add seed", this, &GraphWidget::requestNewSeed);
-        addSeedAction->setData(QVariant(QCursor::pos()));
+        //QAction* addSeedAction = menu.addAction("Add seed", this, &GraphWidget::requestNewSeed);
+        //addSeedAction->setData(QVariant(QCursor::pos()));
 
         // Build new operation
 
-        QAction* buildNewOpAction = menu.addAction("Build new operation", this, &GraphWidget::requestNewOperation);
-        buildNewOpAction->setData(QVariant(QCursor::pos()));
+        //QAction* buildNewOpAction = menu.addAction("Build new operation", this, &GraphWidget::requestNewOperation);
+        //buildNewOpAction->setData(QVariant(QCursor::pos()));
 
-        menu.exec(event->globalPos());
+        // Available operations
+
+        /*QMenu availOpsMenu;
+
+        foreach (QString opName, mFactory->availableOperationNames())
+        {
+            QAction
+        }
+
+        menu.addMenu(&availOpsMenu);*/
+
+        //menu.exec(event->globalPos());
+        mClickPoint = mapToScene(mapFromGlobal(event->globalPos()));
+        mMainMenu->exec(event->globalPos());
     }
     else
         QGraphicsView::contextMenuEvent(event);

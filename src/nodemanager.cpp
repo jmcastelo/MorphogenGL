@@ -433,10 +433,7 @@ void NodeManager::removeOperation(QUuid id)
     operationNodes.remove(id);
 
     if (id == mOutputId)
-    {
-        mOutputId = QUuid();
-        mOutputTextureId = nullptr;
-    }
+        setOutput(QUuid());
 
     sortOperations();
 }
@@ -986,10 +983,7 @@ void NodeManager::removeSeed(QUuid id)
         seeds.remove(id);
 
         if (mOutputId == id)
-        {
-            mOutputId = QUuid();
-            mOutputTextureId = nullptr;
-        }
+            setOutput(QUuid());
 
         foreach (ImageOperationNode* node, operationNodes)
             node->removeSeedInput(id);

@@ -196,14 +196,16 @@ void OperationBuilder::loadOperation()
 
         // Parse operation
 
-        mOperation->enableUpdate(true);
-
         OperationParser opParser;
         if (!opParser.read(mOperation, path, false))
         {
             emit operationSetUp();
             return;
         }
+
+        mOperation->linkShaders();
+        mOperation->enableUpdate(true);
+        mOperation->setAllParameters();
 
         // Shaders
 
@@ -567,7 +569,10 @@ bool OperationBuilder::checkInputAttributes()
 
 void OperationBuilder::setupOperation()
 {
-    if (mOperation->setShadersFromSourceCode(vertexEditor->toPlainText(), fragmentEditor->toPlainText()))
+    mOperation->setVertexShader(vertexEditor->toPlainText());
+    mOperation->setFragmentShader(fragmentEditor->toPlainText());
+
+    if (mOperation->linkShaders())
     {
         emit operationSetUp();
 

@@ -53,19 +53,20 @@ class ImageOperation : protected QOpenGLExtraFunctions
 {
 public:
     ImageOperation();
-    ImageOperation(QString name, GLenum texFormat, GLuint width, GLuint height, QOpenGLContext* context, QOffscreenSurface *surface);
-    ImageOperation(GLenum texFormat, GLuint width, GLuint height, const ImageOperation& operation);
+    ImageOperation(const ImageOperation& operation);
     ~ImageOperation();
 
     void init(QOpenGLContext* context, QOffscreenSurface *surface);
 
     QOpenGLShaderProgram* program();
 
-    bool setShadersFromSourceCode(QString vertexShader, QString fragmentShader);
-    void setShadersFromSourceFile(QString vertexShader, QString fragmentShader);
-
     QString vertexShader() const;
     QString fragmentShader() const;
+
+    void setVertexShader(QString shader);
+    void setFragmentShader(QString shader);
+
+    bool linkShaders();
 
     // QString posInAttribName() const;
     // void setPosInAttribName(QString name);
@@ -86,6 +87,8 @@ public:
 
     template <typename T>
     void setOptionsParameter(OptionsParameter<T>* parameter);
+
+    void setAllParameters();
 
     QOpenGLContext* context() const;
 
@@ -111,7 +114,7 @@ public:
 
     GLuint samplerId();
 
-    void setTexSize(GLuint width, GLuint height);
+    // void setTexSize(GLuint width, GLuint height);
 
     QList<GLuint*> inputTextures();
     QList<float> inputBlendFactors();
@@ -156,21 +159,21 @@ public:
     //void setTextureFormat(){ fbo->setTextureFormat(); }
 
 private:
-    QString mName;
+    QString mName = "New Operation";
 
     QOpenGLContext* mContext = nullptr;
     QOffscreenSurface* mSurface = nullptr;
 
-    QOpenGLShaderProgram* mProgram;
+    QOpenGLShaderProgram* mProgram = nullptr;
 
     QString mVertexShader;
     QString mFragmentShader;
 
-    QString mPosInAttribName;
-    QString mTexInAttribName;
+    // QString mPosInAttribName;
+    // QString mTexInAttribName;
 
-    bool mOrthoEnabled = false;
-    QString mOrthoName;
+    // bool mOrthoEnabled = false;
+    // QString mOrthoName;
 
     GLenum mMinMagFilter = GL_NEAREST;
     GLuint mSamplerId = 0;
@@ -191,18 +194,18 @@ private:
     GLuint* mInputTexId = nullptr;
     GLuint* pOutTexId = nullptr;
 
-    GLuint mTexWidth;
-    GLuint mTexHeight;
+    // GLuint mTexWidth;
+    // GLuint mTexHeight;
 
     QList<UniformParameter<float>*> floatUniformParameters;
     QList<UniformParameter<int>*> intUniformParameters;
     QList<UniformParameter<unsigned int>*> uintUniformParameters;
 
-    QList<OptionsParameter<GLenum>*> glenumOptionsParameters;
-
     QList<UniformMat4Parameter*> mMat4UniformParameters;
 
-    void genTextures(GLenum texFormat, GLuint width, GLuint height);
+    QList<OptionsParameter<GLenum>*> glenumOptionsParameters;
+
+    // void genTextures(GLenum texFormat, GLuint width, GLuint height);
     void setMinMagFilter(GLenum filter);
     void setpOutTextureId();
 };

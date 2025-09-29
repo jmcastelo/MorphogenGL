@@ -31,76 +31,26 @@
 
 ImageOperation::ImageOperation()
 {
-    mName = "New Operation";
-
-    pOutTexId = new GLuint(0);
-    setpOutTextureId();
-}
-
-
-ImageOperation::ImageOperation(QString name, GLenum texFormat, GLuint width, GLuint height, QOpenGLContext* context, QOffscreenSurface* surface) :
-    mName { name },
-    mContext { context },
-    mSurface { surface },
-    mTexWidth { width },
-    mTexHeight { height }
-{
-    // Create context
-
-    /*mContext = new QOpenGLContext();
-    mContext->setFormat(shareContext->format());
-    mContext->setShareContext(shareContext);
-    mContext->create();*/
-
-    // Create surface
-
-    /*mSurface = new QOffscreenSurface();
-    mSurface->setFormat(shareContext->format());
-    mSurface->create();*/
-
-    // Make context current and initialize context-dependent variables
-
-    mContext->makeCurrent(mSurface);
-
-    // To be able to call OpenGL functions
-
-    initializeOpenGLFunctions();
-
-    // Generate textures with format and size given externally
-
-    // genTextures(texFormat, width, height);
-
-    // Shader program
-
-    mProgram = new QOpenGLShaderProgram();
-
-    // Sampler
-
-    glGenSamplers(1, &mSamplerId);
-    glSamplerParameteri(mSamplerId, GL_TEXTURE_MIN_FILTER, mMinMagFilter);
-    glSamplerParameteri(mSamplerId, GL_TEXTURE_MAG_FILTER, mMinMagFilter);
-
-    mContext->doneCurrent();
-
     pOutTexId = new GLuint(0);
     setpOutTextureId();
 }
 
 
 
-ImageOperation::ImageOperation(GLenum texFormat, GLuint width, GLuint height, const ImageOperation& operation) :
+ImageOperation::ImageOperation(const ImageOperation& operation) :
     mName { operation.mName },
-    mContext { operation.mContext },
     mVertexShader { operation.mVertexShader },
     mFragmentShader { operation.mFragmentShader },
+    mMinMagFilter { operation.mMinMagFilter },
     mEnabled { operation.mEnabled },
-    mInputData { operation.mInputData },
-    mTexWidth { width },
-    mTexHeight { height}
+    mInputData { operation.mInputData }
 {
     // Generate textures with format and size given externally
 
     // genTextures(texFormat, width, height);
+
+    pOutTexId = new GLuint(0);
+    setpOutTextureId();
 
     // Copy parameters
 
@@ -170,71 +120,39 @@ ImageOperation::~ImageOperation()
 
 void ImageOperation::init(QOpenGLContext* context, QOffscreenSurface *surface)
 {
-    // Set external context and offscreen surface
+    if (!mContext)
+    {
+        // Set external context and offscreen surface
 
-    mContext = context;
-    mSurface = surface;
+        mContext = context;
+        mSurface = surface;
 
-    // Make context current and initialize context-dependent variables
+        // Make context current and initialize context-dependent variables
 
-    mContext->makeCurrent(mSurface);
+        mContext->makeCurrent(mSurface);
 
-    // To be able to call OpenGL functions
+        // To be able to call OpenGL functions
 
-    initializeOpenGLFunctions();
+        initializeOpenGLFunctions();
 
-    // Shader program
+        // Shader program
 
-    mProgram = new QOpenGLShaderProgram();
+        mProgram = new QOpenGLShaderProgram();
 
-    // Sampler
+        // Sampler
 
-    glGenSamplers(1, &mSamplerId);
-    glSamplerParameteri(mSamplerId, GL_TEXTURE_MIN_FILTER, mMinMagFilter);
-    glSamplerParameteri(mSamplerId, GL_TEXTURE_MAG_FILTER, mMinMagFilter);
+        glGenSamplers(1, &mSamplerId);
+        glSamplerParameteri(mSamplerId, GL_TEXTURE_MIN_FILTER, mMinMagFilter);
+        glSamplerParameteri(mSamplerId, GL_TEXTURE_MAG_FILTER, mMinMagFilter);
 
-    mContext->doneCurrent();
+        mContext->doneCurrent();
+    }
 }
 
 
 QOpenGLShaderProgram* ImageOperation::program()
 {
     return mProgram;
-}
-
-
-
-bool ImageOperation::setShadersFromSourceCode(QString vertexShader, QString fragmentShader)
-{
-    mContext->makeCurrent(mSurface);
-
-    mProgram->removeAllShaders();
-
-    bool ok = true;
-
-    if (!mProgram->addShaderFromSourceCode(QOpenGLShader::Vertex, vertexShader))
-    {
-        QMessageBox::information(qApp->activeWindow(), "Vertex shader error", mProgram->log());
-        ok = false;
-    }
-    if (!mProgram->addShaderFromSourceCode(QOpenGLShader::Fragment, fragmentShader))
-    {
-        QMessageBox::information(qApp->activeWindow(), "Fragment shader error", mProgram->log());
-        ok = false;
-    }
-
-    if (!mProgram->link())
-    {
-        QMessageBox::information(qApp->activeWindow(), "Shader link error", mProgram->log());
-        ok = false;
-    }
-
-    mContext->doneCurrent();
-
-    mVertexShader = vertexShader;
-    mFragmentShader = fragmentShader;
-
-    return ok;
 }
 
 
@@ -249,6 +167,52 @@ QString ImageOperation::vertexShader() const
 QString ImageOperation::fragmentShader() const
 {
     return mFragmentShader;
+}
+
+
+
+void ImageOperation::setVertexShader(QString shader)
+{
+    mVertexShader = shader;
+}
+
+
+
+void ImageOperation::setFragmentShader(QString shader)
+{
+    mFragmentShader = shader;
+}
+
+
+
+bool ImageOperation::linkShaders()
+{
+    mContext->makeCurrent(mSurface);
+
+    mProgram->removeAllShaders();
+
+    bool ok = true;
+
+    if (!mProgram->addShaderFromSourceCode(QOpenGLShader::Vertex, mVertexShader))
+    {
+        QMessageBox::information(qApp->activeWindow(), "Vertex shader error", mProgram->log());
+        ok = false;
+    }
+    if (!mProgram->addShaderFromSourceCode(QOpenGLShader::Fragment, mFragmentShader))
+    {
+        QMessageBox::information(qApp->activeWindow(), "Fragment shader error", mProgram->log());
+        ok = false;
+    }
+
+    if (!mProgram->link())
+    {
+        QMessageBox::information(qApp->activeWindow(), "Shader link error", mProgram->log());
+        ok = false;
+    }
+
+    mContext->doneCurrent();
+
+    return ok;
 }
 
 
@@ -466,6 +430,27 @@ void ImageOperation::setOptionsParameter<GLenum>(OptionsParameter<GLenum>* param
 
 
 
+void ImageOperation::setAllParameters()
+{
+    foreach (auto parameter, floatUniformParameters) {
+        parameter->setUniform();
+    }
+    foreach (auto parameter, intUniformParameters) {
+        parameter->setUniform();
+    }
+    foreach (auto parameter, uintUniformParameters) {
+        parameter->setUniform();
+    }
+    foreach (auto parameter, mMat4UniformParameters) {
+        parameter->setUniform();
+    }
+    foreach (auto parameter, glenumOptionsParameters) {
+        parameter->setValue();
+    }
+}
+
+
+
 QOpenGLContext* ImageOperation::context() const
 {
     return mContext;
@@ -633,11 +618,11 @@ QList<GLuint*> ImageOperation::textureIds()
 
 
 
-void ImageOperation::setTexSize(GLuint width, GLuint height)
+/*void ImageOperation::setTexSize(GLuint width, GLuint height)
 {
     mTexWidth = width;
     mTexHeight = height;
-}
+}*/
 
 
 
@@ -818,7 +803,7 @@ void ImageOperation::clearParameters()
 
 
 
-void ImageOperation::genTextures(GLenum texFormat, GLuint width, GLuint height)
+/*void ImageOperation::genTextures(GLenum texFormat, GLuint width, GLuint height)
 {
     // Allocated on immutable storage (glTexStorage2D)
     // To be called within active OpenGL context
@@ -852,7 +837,7 @@ void ImageOperation::genTextures(GLenum texFormat, GLuint width, GLuint height)
         glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, zeros.constData());
         glBindTexture(GL_TEXTURE_2D, 0);
     }
-}
+}*/
 
 
 

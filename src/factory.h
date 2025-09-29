@@ -10,6 +10,8 @@
 
 #include <QObject>
 #include <QUuid>
+#include <QList>
+#include <QString>
 
 
 
@@ -25,9 +27,13 @@ public:
 
     void createNewOperation();
     void createNewSeed();
+    void addAvailableOperation(int index);
 
     void deleteOperation(ImageOperation* operation);
     void deleteSeed(Seed* seed);
+
+    QList<QString> availableOperationNames();
+    ImageOperation* availableOperation(int index);
 
 signals:
     void newOperationCreated(QUuid id, ImageOperation* operation);
@@ -37,8 +43,11 @@ signals:
     void newSeedWidgetCreated(QUuid id, SeedWidget* widget);
 
 private:
+    QList<ImageOperation*> mAvailOps;
     QList<ImageOperation*> mOperations;
     QList<Seed*> mSeeds;
+
+    void scan();
 };
 
 
