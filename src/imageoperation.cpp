@@ -187,30 +187,33 @@ void ImageOperation::setFragmentShader(QString shader)
 
 bool ImageOperation::linkShaders()
 {
-    mContext->makeCurrent(mSurface);
-
-    mProgram->removeAllShaders();
-
     bool ok = true;
 
-    if (!mProgram->addShaderFromSourceCode(QOpenGLShader::Vertex, mVertexShader))
+    if (!mVertexShader.isEmpty() && !mFragmentShader.isEmpty())
     {
-        QMessageBox::information(qApp->activeWindow(), "Vertex shader error", mProgram->log());
-        ok = false;
-    }
-    if (!mProgram->addShaderFromSourceCode(QOpenGLShader::Fragment, mFragmentShader))
-    {
-        QMessageBox::information(qApp->activeWindow(), "Fragment shader error", mProgram->log());
-        ok = false;
-    }
+        mContext->makeCurrent(mSurface);
 
-    if (!mProgram->link())
-    {
-        QMessageBox::information(qApp->activeWindow(), "Shader link error", mProgram->log());
-        ok = false;
-    }
+        mProgram->removeAllShaders();
 
-    mContext->doneCurrent();
+        if (!mProgram->addShaderFromSourceCode(QOpenGLShader::Vertex, mVertexShader))
+        {
+            QMessageBox::information(qApp->activeWindow(), "Vertex shader error", mProgram->log());
+            ok = false;
+        }
+        if (!mProgram->addShaderFromSourceCode(QOpenGLShader::Fragment, mFragmentShader))
+        {
+            QMessageBox::information(qApp->activeWindow(), "Fragment shader error", mProgram->log());
+            ok = false;
+        }
+
+        if (!mProgram->link())
+        {
+            QMessageBox::information(qApp->activeWindow(), "Shader link error", mProgram->log());
+            ok = false;
+        }
+
+        mContext->doneCurrent();
+    }
 
     return ok;
 }
