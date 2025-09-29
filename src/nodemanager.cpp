@@ -196,7 +196,7 @@ void NodeManager::setOutput(QUuid id)
         // mOutputId = id;
         mOutputTextureId = seeds.value(id)->pOutTextureId();
 
-        emit outputTextureChanged(mOutputTextureId);
+        // emit outputTextureChanged(mOutputTextureId);
         // emit outputFBOChanged(seeds.value(id)->getFBO());
     }
     else

@@ -432,6 +432,8 @@ void ImageOperation::setOptionsParameter<GLenum>(OptionsParameter<GLenum>* param
 
 void ImageOperation::setAllParameters()
 {
+    mUpdate = true;
+
     foreach (auto parameter, floatUniformParameters) {
         parameter->setUniform();
     }
@@ -597,7 +599,7 @@ GLuint ImageOperation::inTextureId()
 
 
 
-GLuint *ImageOperation::pOutTextureId()
+GLuint* ImageOperation::pOutTextureId()
 {
     return pOutTexId;
 }
