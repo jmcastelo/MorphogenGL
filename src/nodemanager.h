@@ -80,8 +80,8 @@ public:
     QUuid copyOperation(QUuid srcId);
     //void setOperation(QUuid id, QString operationName);
     void removeOperation(QUuid id);
-    void enableOperation(QUuid id, bool enabled);
-    bool isOperationEnabled(QUuid id);
+    // void enableOperation(QUuid id, bool enabled);
+    // bool isOperationEnabled(QUuid id);
 
     void clearLoadedOperations() { loadedOperationNodes.clear(); }
     void loadOperation(QUuid id, ImageOperation* operation);

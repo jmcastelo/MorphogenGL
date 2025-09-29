@@ -105,14 +105,14 @@ void NodeManager::sortOperations()
     {
         if (node->numInputs() == 0 && node->numOutputs() == 0)
         {
-            pendingNodes.remove(node->id);
+            pendingNodes.remove(node->id());
             //unsortedOperationsIds.append(node->id);
         }
         else if ((node->numInputs() == 0 && node->numOutputs() > 0) || (node->numInputs() > 0 && node->numNonNormalInputs() == node->numInputs()))
         {
-            sortedOperations.append(node->operation);
+            sortedOperations.append(node->operation());
             //sortedOperationsData.append(QPair<QUuid, QString>(node->id, node->operation->name()));
-            pendingNodes.remove(node->id);
+            pendingNodes.remove(node->id());
             node->setComputed(true);
         }
     }
@@ -127,7 +127,7 @@ void NodeManager::sortOperations()
         {
             if (node->allInputsComputed())
             {
-                sortedOperations.append(node->operation);
+                sortedOperations.append(node->operation());
                 //sortedOperationsData.push_back(QPair<QUuid, QString>(node->id, node->operation->name()));
                 computedNodes.append(node);
                 node->setComputed(true);
@@ -136,7 +136,7 @@ void NodeManager::sortOperations()
 
         foreach (ImageOperationNode* node, computedNodes)
         {
-            pendingNodes.remove(node->id);
+            pendingNodes.remove(node->id());
         }
 
         if (computedNodes.empty())
@@ -177,7 +177,7 @@ void NodeManager::setOutput(QUuid id)
         // Avoid disabling blit for output node if it is blit connected (predge)
 
         if (!mOutputId.isNull() && operationNodes.contains(mOutputId) && !operationNodes.value(mOutputId)->isBlitConnected())
-            operationNodes.value(mOutputId)->operation->enableBlit(false);
+            operationNodes.value(mOutputId)->enableBlit(false);
 
         // mOutputId = id;
 
@@ -186,7 +186,7 @@ void NodeManager::setOutput(QUuid id)
 
         // operationNodes.value(id)->operation->enableBlit(true);
         // mOutputTextureId = *operationNodes.value(id)->operation->blitTextureId();
-        mOutputTextureId = operationNodes.value(id)->operation->pOutTextureId();
+        mOutputTextureId = operationNodes.value(id)->opOutTextureId();
 
 
         //emit outputFBOChanged(operationNodes.value(id)->operation->getFBO());
@@ -213,16 +213,16 @@ bool NodeManager::connectOperations(QUuid srcId, QUuid dstId, float factor)
 {
     if (srcId != dstId)
     {
-        if (operationNodes.contains(srcId) && operationNodes.contains(dstId) && !operationNodes.value(dstId)->inputNodes.contains(srcId))
+        if (operationNodes.contains(srcId) && operationNodes.contains(dstId) && !operationNodes.value(dstId)->isInput(srcId))
         {
-            operationNodes.value(dstId)->addInput(operationNodes.value(srcId), new InputData(InputType::Normal, operationNodes.value(srcId)->operation->pOutTextureId(), factor));
+            operationNodes.value(dstId)->addInput(operationNodes.value(srcId), new InputData(InputType::Normal, operationNodes.value(srcId)->opOutTextureId(), factor));
             operationNodes.value(srcId)->addOutput(operationNodes.value(dstId));
 
             sortOperations();
 
             return true;
         }
-        else if (seeds.contains(srcId) && operationNodes.contains(dstId) && !operationNodes.value(dstId)->inputNodes.contains(srcId))
+        else if (seeds.contains(srcId) && operationNodes.contains(dstId) && !operationNodes.value(dstId)->isInput(srcId))
         {
             operationNodes.value(dstId)->addSeedInput(srcId, new InputData(InputType::Seed, seeds.value(srcId)->pOutTextureId(), factor));
 
@@ -241,14 +241,14 @@ void NodeManager::connectCopiedOperationsA(QUuid srcId0, QUuid dstId0, QUuid src
 {
     if (operationNodes.contains(srcId0))
     {
-        float factor = operationNodes.value(dstId0)->inputs.value(srcId0)->blendFactor();
+        float factor = operationNodes.value(dstId0)->blendFactor(srcId0);
 
-        copiedOperationNodes[0].value(dstId1)->addInput(copiedOperationNodes[0].value(srcId1), new InputData(InputType::Normal, copiedOperationNodes[0].value(srcId1)->operation->pOutTextureId(), factor));
+        copiedOperationNodes[0].value(dstId1)->addInput(copiedOperationNodes[0].value(srcId1), new InputData(InputType::Normal, copiedOperationNodes[0].value(srcId1)->opOutTextureId(), factor));
         copiedOperationNodes[0].value(srcId1)->addOutput(copiedOperationNodes[0].value(dstId1));
     }
     else if (seeds.contains(srcId0))
     {
-        float factor = operationNodes.value(dstId0)->inputs.value(srcId0)->blendFactor();
+        float factor = operationNodes.value(dstId0)->blendFactor(srcId0);
         copiedOperationNodes[0].value(dstId1)->addSeedInput(srcId1, new InputData(InputType::Seed, seeds.value(srcId0)->pOutTextureId(), factor));
     }
 }
@@ -259,14 +259,14 @@ void NodeManager::connectCopiedOperationsB(QUuid srcId0, QUuid dstId0, QUuid src
 {
     if (copiedOperationNodes[1].contains(srcId0))
     {
-        float factor = copiedOperationNodes[1].value(dstId0)->inputs.value(srcId0)->blendFactor();
+        float factor = copiedOperationNodes[1].value(dstId0)->blendFactor(srcId0);
 
-        copiedOperationNodes[0].value(dstId1)->addInput(copiedOperationNodes[0].value(srcId1), new InputData(InputType::Normal, copiedOperationNodes[0].value(srcId1)->operation->pOutTextureId(), factor));
+        copiedOperationNodes[0].value(dstId1)->addInput(copiedOperationNodes[0].value(srcId1), new InputData(InputType::Normal, copiedOperationNodes[0].value(srcId1)->opOutTextureId(), factor));
         copiedOperationNodes[0].value(srcId1)->addOutput(copiedOperationNodes[0].value(dstId1));
     }
     else if (copiedSeeds[1].contains(srcId0))
     {
-        float factor = copiedOperationNodes[1].value(dstId0)->inputs.value(srcId0)->blendFactor();
+        float factor = copiedOperationNodes[1].value(dstId0)->blendFactor(srcId0);
         copiedOperationNodes[0].value(dstId1)->addSeedInput(srcId1, new InputData(InputType::Seed, copiedSeeds[0].value(srcId1)->pOutTextureId(), factor));
     }
 }
@@ -329,8 +329,8 @@ void NodeManager::swapTwoOperations(QUuid id1, QUuid id2)
     //ImageOperation* operation2 = operationNodes.value(id2)->operation->clone();
     //operation2->setParameters();
 
-    ImageOperation* operation1 = new ImageOperation(*operationNodes.value(id1)->operation);
-    ImageOperation* operation2 = new ImageOperation(*operationNodes.value(id2)->operation);
+    ImageOperation* operation1 = new ImageOperation(*operationNodes.value(id1)->operation());
+    ImageOperation* operation2 = new ImageOperation(*operationNodes.value(id2)->operation());
 
     operationNodes.value(id1)->setOperation(operation2);
     operationNodes.value(id2)->setOperation(operation1);
@@ -368,7 +368,7 @@ void NodeManager::equalizeBlendFactors(QUuid id)
 
 ImageOperation* NodeManager::getOperation(QUuid id)
 {
-    return operationNodes.contains(id) ? operationNodes.value(id)->operation : nullptr;
+    return operationNodes.contains(id) ? operationNodes.value(id)->operation() : nullptr;
 }
 
 
@@ -393,12 +393,11 @@ QUuid NodeManager::copyOperation(QUuid srcId)
     //ImageOperation* operation = operationNodes.value(srcId)->operation->clone();
     //operation->setParameters();
 
-    ImageOperation* operation = new ImageOperation(*operationNodes.value(srcId)->operation);
+    ImageOperation* operation = new ImageOperation(*operationNodes.value(srcId)->operation());
 
     QUuid id = QUuid::createUuid();
 
-    ImageOperationNode *node = new ImageOperationNode(id);
-    node->operation = operation;
+    ImageOperationNode *node = new ImageOperationNode(id, operation);
     copiedOperationNodes[0].insert(id, node);
 
     return id;
@@ -426,7 +425,7 @@ void NodeManager::removeOperation(QUuid id)
 {
     // Delete operation
 
-    mFactory->deleteOperation(operationNodes.value(id)->operation);
+    mFactory->deleteOperation(operationNodes.value(id)->operation());
 
     // Delete node
 
@@ -444,7 +443,7 @@ void NodeManager::removeOperation(QUuid id)
 
 
 
-void NodeManager::enableOperation(QUuid id, bool enabled)
+/*void NodeManager::enableOperation(QUuid id, bool enabled)
 {
     operationNodes.value(id)->operation->enable(enabled);
 }
@@ -454,15 +453,13 @@ void NodeManager::enableOperation(QUuid id, bool enabled)
 bool NodeManager::isOperationEnabled(QUuid id)
 {
     return operationNodes.value(id)->operation->enabled();
-}
+}*/
 
 
 
 void NodeManager::loadOperation(QUuid id, ImageOperation* operation)
 {
-    ImageOperationNode *node = new ImageOperationNode(id);
-    node->operation = operation;
-
+    ImageOperationNode *node = new ImageOperationNode(id, operation);
     loadedOperationNodes.insert(id, node);
 }
 
@@ -484,14 +481,14 @@ void NodeManager::connectLoadedOperations(QMap<QUuid, QMap<QUuid, InputData*>> c
 
                if (inputData->type() == InputType::Normal)
                {
-                    loadedOperationNodes.value(src.key())->operation->enableBlit(false);
-                    inputData->setpTextureId(loadedOperationNodes.value(src.key())->operation->pOutTextureId());
+                    loadedOperationNodes.value(src.key())->enableBlit(false);
+                    inputData->setpTextureId(loadedOperationNodes.value(src.key())->opOutTextureId());
                }
                else if (inputData->type() == InputType::Blit)
                {
                    //inputData->setTextureId(loadedOperationNodes.value(src.key())->operation->blitTextureId());
-                    loadedOperationNodes.value(src.key())->operation->enableBlit(true);
-                    inputData->setpTextureId(loadedOperationNodes.value(src.key())->operation->pOutTextureId());
+                    loadedOperationNodes.value(src.key())->enableBlit(true);
+                    inputData->setpTextureId(loadedOperationNodes.value(src.key())->opOutTextureId());
                }
 
                loadedOperationNodes.value(dst.key())->addInput(loadedOperationNodes.value(src.key()), inputData);
@@ -541,8 +538,7 @@ EdgeWidget* NodeManager::addEdgeWidget(QUuid srcId, QUuid dstId, float factor)
 
 void NodeManager::addOperationNode(QUuid id, ImageOperation* operation)
 {
-    ImageOperationNode *node = new ImageOperationNode(id);
-    node->operation = operation;
+    ImageOperationNode *node = new ImageOperationNode(id, operation);
     operationNodes.insert(id, node);
 }
 

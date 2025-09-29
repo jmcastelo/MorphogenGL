@@ -15,19 +15,15 @@
 class ImageOperationNode
 {
 public:
-    QUuid id;
-
-    ImageOperation* operation;
-
-    QMap<QUuid, ImageOperationNode*> inputNodes;
-    QMap<QUuid, ImageOperationNode*> outputNodes;
-
-    QMap<QUuid, InputData*> inputs;
-
-    bool computed = false;
-
-    ImageOperationNode(QUuid uuid) : id { uuid } { outputNodes.clear(); };
+    ImageOperationNode(QUuid id);
+    ImageOperationNode(QUuid id, ImageOperation* operation);
     ~ImageOperationNode();
+
+    QUuid id() const;
+
+    ImageOperation* operation() const;
+
+    QMap<QUuid, InputData*> inputs() const;
 
     void addSeedInput(QUuid id, InputData* data);
     void removeSeedInput(QUuid id);
@@ -35,6 +31,7 @@ public:
     void addInput(ImageOperationNode* node, InputData* data);
     void removeInput(ImageOperationNode* node);
     void setInputType(QUuid id, InputType type);
+    bool isInput(QUuid id);
 
     void setInputSeedTexId(QUuid id, GLuint *texId);
 
@@ -42,11 +39,15 @@ public:
     int numNonNormalInputs();
     int numOutputs();
 
+    QList<InputData*> inputsList();
+
     bool isBlitConnected();
+    void enableBlit(bool set);
 
     void addOutput(ImageOperationNode* node);
     void removeOutput(ImageOperationNode* node);
 
+    bool computed() const;
     void setComputed(bool done);
     bool allInputsComputed();
 
@@ -55,8 +56,19 @@ public:
     void equalizeBlendFactors();
 
     void setOperation(ImageOperation* newOperation);
+    GLuint* opOutTextureId() const;
 
-    QList<InputData *> inputsList();
+private:
+    QUuid mId;
+
+    ImageOperation* mOperation;
+
+    QMap<QUuid, ImageOperationNode*> mInputNodes;
+    QMap<QUuid, ImageOperationNode*> mOutputNodes;
+
+    QMap<QUuid, InputData*> mInputs;
+
+    bool mComputed = false;
 };
 
 #endif // IMAGEOPERATIONNODE_H

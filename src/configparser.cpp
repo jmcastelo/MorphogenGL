@@ -112,14 +112,14 @@ void ConfigurationParser::writeOperationNode(ImageOperationNode* node)
 {
     stream.writeStartElement("operationnode");
 
-    stream.writeAttribute("id", node->id.toString());
+    stream.writeAttribute("id", node->id().toString());
 
     stream.writeStartElement("operation");
 
-    stream.writeAttribute("name", node->operation->name());
-    stream.writeAttribute("enabled", QString::number(node->operation->enabled()));
+    stream.writeAttribute("name", node->operation()->name());
+    stream.writeAttribute("enabled", QString::number(node->operation()->enabled()));
 
-    foreach (auto parameter, node->operation->uniformParameters<float>())
+    foreach (auto parameter, node->operation()->uniformParameters<float>())
     {
         stream.writeStartElement("parameter");
         stream.writeAttribute("name", parameter->name());
@@ -133,7 +133,7 @@ void ConfigurationParser::writeOperationNode(ImageOperationNode* node)
         stream.writeEndElement();
     }
 
-    foreach (auto parameter, node->operation->uniformParameters<int>())
+    foreach (auto parameter, node->operation()->uniformParameters<int>())
     {
         stream.writeStartElement("parameter");
         stream.writeAttribute("name", parameter->name());
@@ -147,7 +147,7 @@ void ConfigurationParser::writeOperationNode(ImageOperationNode* node)
         stream.writeEndElement();
     }
 
-    foreach (auto parameter, node->operation->uniformParameters<unsigned int>())
+    foreach (auto parameter, node->operation()->uniformParameters<unsigned int>())
     {
         stream.writeStartElement("parameter");
         stream.writeAttribute("name", parameter->name());
@@ -165,8 +165,8 @@ void ConfigurationParser::writeOperationNode(ImageOperationNode* node)
 
     stream.writeStartElement("inputs");
 
-    QMap<QUuid, InputData*>::const_iterator i = node->inputs.constBegin();
-    while (i != node->inputs.constEnd())
+    QMap<QUuid, InputData*>::const_iterator i = node->inputs().constBegin();
+    while (i != node->inputs().constEnd())
     {
         stream.writeStartElement("input");
 
