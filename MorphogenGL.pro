@@ -49,6 +49,7 @@ HEADERS += \
     src/gridwidget.h \
     src/histogramwidget.h \
     src/imageoperation.h \
+    src/imageoperationnode.h \
     src/inputdata.h \
     src/mainwindow.h \
     src/message.h \
@@ -95,6 +96,7 @@ SOURCES += \
     src/gridwidget.cpp \
     src/histogramwidget.cpp \
     src/imageoperation.cpp \
+    src/imageoperationnode.cpp \
     src/main.cpp \
     src/mainwindow.cpp \
     src/message.cpp \

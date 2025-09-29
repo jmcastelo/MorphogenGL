@@ -36,7 +36,7 @@ void Factory::createNewOperation()
     emit newOperationCreated(id, operation);
 
     OperationWidget* widget = new OperationWidget(operation, false, true);
-    emit newWidgetCreated(id, widget);
+    emit newOperationWidgetCreated(id, widget);
 }
 
 
@@ -50,7 +50,7 @@ void Factory::createNewSeed()
     emit newSeedCreated(id, seed);
 
     SeedWidget* widget = new SeedWidget(seed);
-    emit newWidgetCreated(id, widget);
+    emit newSeedWidgetCreated(id, widget);
 }
 
 

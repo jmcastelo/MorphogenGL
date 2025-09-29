@@ -5,6 +5,8 @@
 
 #include "imageoperation.h"
 #include "seed.h"
+#include "operationwidget.h"
+#include "seedwidget.h"
 
 #include <QObject>
 #include <QUuid>
@@ -30,7 +32,9 @@ public:
 signals:
     void newOperationCreated(QUuid id, ImageOperation* operation);
     void newSeedCreated(QUuid id, Seed* seed);
-    void newWidgetCreated(QUuid id, QWidget* widget);
+
+    void newOperationWidgetCreated(QUuid id, OperationWidget* widget);
+    void newSeedWidgetCreated(QUuid id, SeedWidget* widget);
 
 private:
     QList<ImageOperation*> mOperations;

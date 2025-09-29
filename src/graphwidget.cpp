@@ -42,7 +42,8 @@ GraphWidget::GraphWidget(Factory *factory, NodeManager* nodeManager, QWidget *pa
     mFactory { factory },
     mNodeManager { nodeManager }
 {
-    connect(mFactory, &Factory::newWidgetCreated, this, &GraphWidget::addNewNode);
+    connect(mFactory, &Factory::newOperationWidgetCreated, this, &GraphWidget::addNewNode);
+    connect(mFactory, &Factory::newSeedWidgetCreated, this, &GraphWidget::addNewNode);
 
     connect(mNodeManager, &NodeManager::nodesConnected, this, &GraphWidget::connectNodes);
     connect(mNodeManager, &NodeManager::nodeRemoved, this, &GraphWidget::removeNode);
