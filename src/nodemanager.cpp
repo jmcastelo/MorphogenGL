@@ -152,19 +152,19 @@ void NodeManager::sortOperations()
 
 
 
-void NodeManager::clearOperation(QUuid id)
+/*void NodeManager::clearOperation(QUuid id)
 {
     //if (operationNodes.contains(id))
         //operationNodes.value(id)->operation->clear();
-}
+}*/
 
 
 
-void NodeManager::clearAllOperations()
+/*void NodeManager::clearAllOperations()
 {
-    //foreach (ImageOperationNode* node, operationNodes)
-        //node->operation->clear();
-}
+    foreach (ImageOperationNode* node, operationNodes)
+        node->operation()->clear();
+}*/
 
 
 
@@ -176,17 +176,17 @@ void NodeManager::setOutput(QUuid id)
     {
         // Avoid disabling blit for output node if it is blit connected (predge)
 
-        if (!mOutputId.isNull() && operationNodes.contains(mOutputId) && !operationNodes.value(mOutputId)->isBlitConnected())
-            operationNodes.value(mOutputId)->enableBlit(false);
+        // if (!mOutputId.isNull() && operationNodes.contains(mOutputId) && !operationNodes.value(mOutputId)->isBlitConnected())
+            // operationNodes.value(mOutputId)->enableBlit(false);
 
         // mOutputId = id;
 
         // We enable blit for output node so that QOpenGLWidget renders the previous texture
         // This kind of double buffering allows for smoother, flickerless rendering
 
-        // operationNodes.value(id)->operation->enableBlit(true);
+        // operationNodes.value(id)->enableBlit(true);
         // mOutputTextureId = *operationNodes.value(id)->operation->blitTextureId();
-        mOutputTextureId = operationNodes.value(id)->opOutTextureId();
+        pOutputTextureId = operationNodes.value(id)->pOutTextureId();
 
 
         //emit outputFBOChanged(operationNodes.value(id)->operation->getFBO());
@@ -194,17 +194,17 @@ void NodeManager::setOutput(QUuid id)
     else if (seeds.contains(id))
     {
         // mOutputId = id;
-        mOutputTextureId = seeds.value(id)->pOutTextureId();
+        pOutputTextureId = seeds.value(id)->pOutTextureId();
 
         // emit outputTextureChanged(mOutputTextureId);
         // emit outputFBOChanged(seeds.value(id)->getFBO());
     }
     else
     {
-        mOutputTextureId = nullptr;
+        pOutputTextureId = nullptr;
     }
 
-    emit outputTextureChanged(mOutputTextureId);
+    emit outputTextureChanged(pOutputTextureId);
 }
 
 
@@ -215,7 +215,7 @@ bool NodeManager::connectOperations(QUuid srcId, QUuid dstId, float factor)
     {
         if (operationNodes.contains(srcId) && operationNodes.contains(dstId) && !operationNodes.value(dstId)->isInput(srcId))
         {
-            operationNodes.value(dstId)->addInput(operationNodes.value(srcId), new InputData(InputType::Normal, operationNodes.value(srcId)->opOutTextureId(), factor));
+            operationNodes.value(dstId)->addInput(operationNodes.value(srcId), new InputData(InputType::Normal, operationNodes.value(srcId)->pOutTextureId(), factor));
             operationNodes.value(srcId)->addOutput(operationNodes.value(dstId));
 
             sortOperations();
@@ -243,7 +243,7 @@ void NodeManager::connectCopiedOperationsA(QUuid srcId0, QUuid dstId0, QUuid src
     {
         float factor = operationNodes.value(dstId0)->blendFactor(srcId0);
 
-        copiedOperationNodes[0].value(dstId1)->addInput(copiedOperationNodes[0].value(srcId1), new InputData(InputType::Normal, copiedOperationNodes[0].value(srcId1)->opOutTextureId(), factor));
+        copiedOperationNodes[0].value(dstId1)->addInput(copiedOperationNodes[0].value(srcId1), new InputData(InputType::Normal, copiedOperationNodes[0].value(srcId1)->pOutTextureId(), factor));
         copiedOperationNodes[0].value(srcId1)->addOutput(copiedOperationNodes[0].value(dstId1));
     }
     else if (seeds.contains(srcId0))
@@ -261,7 +261,7 @@ void NodeManager::connectCopiedOperationsB(QUuid srcId0, QUuid dstId0, QUuid src
     {
         float factor = copiedOperationNodes[1].value(dstId0)->blendFactor(srcId0);
 
-        copiedOperationNodes[0].value(dstId1)->addInput(copiedOperationNodes[0].value(srcId1), new InputData(InputType::Normal, copiedOperationNodes[0].value(srcId1)->opOutTextureId(), factor));
+        copiedOperationNodes[0].value(dstId1)->addInput(copiedOperationNodes[0].value(srcId1), new InputData(InputType::Normal, copiedOperationNodes[0].value(srcId1)->pOutTextureId(), factor));
         copiedOperationNodes[0].value(srcId1)->addOutput(copiedOperationNodes[0].value(dstId1));
     }
     else if (copiedSeeds[1].contains(srcId0))
@@ -479,13 +479,13 @@ void NodeManager::connectLoadedOperations(QMap<QUuid, QMap<QUuid, InputData*>> c
                if (inputData->type() == InputType::Normal)
                {
                     loadedOperationNodes.value(src.key())->enableBlit(false);
-                    inputData->setpTextureId(loadedOperationNodes.value(src.key())->opOutTextureId());
+                    inputData->setpTextureId(loadedOperationNodes.value(src.key())->pOutTextureId());
                }
                else if (inputData->type() == InputType::Blit)
                {
                    //inputData->setTextureId(loadedOperationNodes.value(src.key())->operation->blitTextureId());
                     loadedOperationNodes.value(src.key())->enableBlit(true);
-                    inputData->setpTextureId(loadedOperationNodes.value(src.key())->opOutTextureId());
+                    inputData->setpTextureId(loadedOperationNodes.value(src.key())->pOutTextureId());
                }
 
                loadedOperationNodes.value(dst.key())->addInput(loadedOperationNodes.value(src.key()), inputData);
@@ -888,9 +888,9 @@ void NodeManager::connectSeedWidget(QUuid id, SeedWidget* widget)
     connect(widget, &SeedWidget::typeChanged, this, [=, this](){
         if (isOutput(id))
         {
-            mOutputTextureId = seeds.value(id)->pOutTextureId();
+            pOutputTextureId = seeds.value(id)->pOutTextureId();
 
-            emit outputTextureChanged(mOutputTextureId);
+            emit outputTextureChanged(pOutputTextureId);
             //emit outputFBOChanged(seeds.value(id)->getFBO());
         }
 

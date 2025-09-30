@@ -108,13 +108,13 @@ void ImageOperationNode::setInputType(QUuid id, InputType type)
         {
             // inputs[id]->setpTextureId(inputNodes.value(id)->operation->pOutTextureId());
             mInputNodes.value(id)->enableBlit(false);
-            mInputs[id]->setpTextureId(mInputNodes.value(id)->opOutTextureId());
+            mInputs[id]->setpTextureId(mInputNodes.value(id)->pOutTextureId());
         }
         else if (type == InputType::Blit)
         {
             // inputs[id]->setpTextureId(inputNodes.value(id)->operation->blitTextureId());
             mInputNodes.value(id)->enableBlit(true);
-            mInputs[id]->setpTextureId(mInputNodes.value(id)->opOutTextureId());
+            mInputs[id]->setpTextureId(mInputNodes.value(id)->pOutTextureId());
         }
     }
 }
@@ -241,6 +241,7 @@ float ImageOperationNode::blendFactor(QUuid id)
 void ImageOperationNode::setBlendFactor(QUuid id, float factor)
 {
     mInputs[id]->setBlendFactor(factor);
+    //mOperation->setInputData(inputsList());
 }
 
 
@@ -251,6 +252,8 @@ void ImageOperationNode::equalizeBlendFactors()
 
     foreach (InputData* data, mInputs)
         data->setBlendFactor(1.0 / numInputs);
+
+    //mOperation->setInputData(inputsList());
 }
 
 
@@ -293,14 +296,13 @@ void ImageOperationNode::setOperation(ImageOperation *newOperation)
             mOperation->enableBlit(true);
             node->mInputs[mId]->setpTextureId(mOperation->pOutTextureId());
             node->mOperation->setInputData(node->inputsList());
-
         }
     }
 }
 
 
 
-GLuint* ImageOperationNode::opOutTextureId() const
+GLuint* ImageOperationNode::pOutTextureId() const
 {
     return mOperation->pOutTextureId();
 }

@@ -59,7 +59,8 @@ Cycle::Cycle(QList<Node*> nodes, QGraphicsItem *parent) :
         edges.back()->setPredge(true);
 
     setAcceptedMouseButtons(Qt::NoButton);
-    setZValue(-2);
+    setCacheMode(DeviceCoordinateCache);
+    setZValue(-3);
 }
 
 

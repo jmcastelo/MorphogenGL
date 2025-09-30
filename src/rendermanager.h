@@ -66,6 +66,8 @@ public:
     GLuint texWidth();
     GLuint texHeight();
 
+    void clearAllOpsTextures();
+
     void resetIterationNumer();
     int iterationNumber();
 
@@ -136,7 +138,7 @@ private:
     void recreateBlendArrayTexture();
     void copyTexturesToBlendArrayTexture(QList<GLuint *> textures);
 
-    void clearTexture(GLuint texId);
+    void clearTexture(GLuint* texId);
 
     void blit();
     void blend(ImageOperation* operation);

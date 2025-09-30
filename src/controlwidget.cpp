@@ -185,7 +185,7 @@ ControlWidget::~ControlWidget()
 void ControlWidget::closeEvent(QCloseEvent* event)
 {
     displayOptionsWidget->close();
-    graphWidget->close();
+    //graphWidget->close();
 
     event->accept();
 }
@@ -276,8 +276,9 @@ void ControlWidget::iterate()
 
 void ControlWidget::reset()
 {
-    mNodeManager->clearAllOperations();
-    mNodeManager->drawAllSeeds();
+    //mNodeManager->clearAllOperations();
+    //mNodeManager->drawAllSeeds();
+    mRenderManager->clearAllOpsTextures();
     mRenderManager->resetIterationNumer();
 }
 

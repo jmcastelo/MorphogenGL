@@ -150,10 +150,13 @@ void PlotsWidget::updatePlots()
 
 
 
-void PlotsWidget::setTextureID(GLuint* id)
+void PlotsWidget::setTextureID(GLuint* texId)
 {
-    textureID = id;
-    rgbWidget->setTextureID(id);
+    if (texId)
+    {
+        textureID = texId;
+        rgbWidget->setTextureID(texId);
+    }
 }
 
 

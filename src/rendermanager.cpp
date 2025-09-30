@@ -216,7 +216,7 @@ QImage RenderManager::outputImage()
 {
     QImage image(mTexWidth, mTexHeight, QImage::Format_RGBA8888);
 
-    if (mOutputTexId && *mOutputTexId > 0)
+    if (mOutputTexId)
     {
         mContext->makeCurrent(mSurface);
 
@@ -296,6 +296,15 @@ void RenderManager::setTextureFormat(TextureFormat format)
     recreateBlendArrayTexture();
 
     mContext->doneCurrent();
+
+    foreach (Seed* seed, mFactory->seeds())
+        seed->setOutTextureId();
+
+    foreach (ImageOperation* operation, mFactory->operations())
+    {
+        operation->setBlitInTextureId();
+        operation->setOutTextureId();
+    }
 
     emit texturesChanged();
 }
@@ -539,7 +548,7 @@ void RenderManager::adjustOrtho()
 
 
 
-void RenderManager::genTexture(GLuint *texId)
+void RenderManager::genTexture(GLuint* texId)
 {
     // Allocated on immutable storage (glTexStorage2D)
     // To be called within active OpenGL context
@@ -567,7 +576,7 @@ void RenderManager::genOpTextures(ImageOperation* operation)
     foreach (GLuint* texId, operation->textureIds())
     {
         genTexture(texId);
-        clearTexture(*texId);
+        clearTexture(texId);
     }
 
     mContext->doneCurrent();
@@ -604,7 +613,7 @@ void RenderManager::resizeTextures()
 
     foreach (GLuint* oldTexId, oldTexIds)
     {
-        GLuint newTexId;
+        GLuint newTexId = 0;
         genTexture(&newTexId);
 
         glBindFramebuffer(GL_READ_FRAMEBUFFER, mReadFbo);
@@ -622,6 +631,12 @@ void RenderManager::resizeTextures()
         glDeleteTextures(1, oldTexId);
         *oldTexId = newTexId;
     }
+
+    foreach (Seed* seed, mFactory->seeds())
+        seed->setOutTextureId();
+
+    foreach (ImageOperation* operation, mFactory->operations())
+        operation->setOutTextureId();
 
     emit texturesChanged();
 }
@@ -649,14 +664,29 @@ void RenderManager::copyTexturesToBlendArrayTexture(QList<GLuint*> textures)
 
 
 
-void RenderManager::clearTexture(GLuint texId)
+void RenderManager::clearTexture(GLuint* texId)
 {
     glBindFramebuffer(GL_FRAMEBUFFER, mOutFbo);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texId, 0);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, *texId, 0);
 
     glClear(GL_COLOR_BUFFER_BIT);
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+
+
+void RenderManager::clearAllOpsTextures()
+{
+    QList<GLuint*> texIds;
+
+    foreach (ImageOperation* operation, mFactory->operations()) {
+        texIds.append(operation->textureIds());
+    }
+
+    foreach (GLuint* texId, texIds) {
+        clearTexture(texId);
+    }
 }
 
 
@@ -670,10 +700,10 @@ void RenderManager::blit()
         if (operation->blitEnabled())
         {
             glBindFramebuffer(GL_READ_FRAMEBUFFER, mReadFbo);
-            glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, operation->outTextureId(), 0);
+            glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, operation->blitInTextureId(), 0);
 
             glBindFramebuffer(GL_DRAW_FRAMEBUFFER, mDrawFbo);
-            glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, operation->blitTextureId(), 0);
+            glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, operation->blitOutTextureId(), 0);
 
             glReadBuffer(GL_COLOR_ATTACHMENT0);
             glDrawBuffer(GL_COLOR_ATTACHMENT0);
@@ -693,7 +723,7 @@ void RenderManager::blend(ImageOperation *operation)
     // Copy input textures to blend 2D array texture and wait for copy to finish before using it
 
     copyTexturesToBlendArrayTexture(operation->inputTextures());
-    glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT);
+    // glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT);
 
     // Bind blend output texture, where render will occur
 

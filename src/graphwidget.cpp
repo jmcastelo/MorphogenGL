@@ -123,6 +123,8 @@ void GraphWidget::populateAvailOpsMenu()
     qDeleteAll(mAvailOpsActions);
     mAvailOpsActions.clear();
 
+    mFactory->scan();
+
     foreach (QString opName, mFactory->availableOperationNames()){
         mAvailOpsActions.append(new QAction(opName));
     }
@@ -187,8 +189,12 @@ void GraphWidget::closeEvent(QCloseEvent* event)
     const QList<QGraphicsItem*> items = scene()->items();
 
     foreach (QGraphicsItem* item, items)
+    {
         if (Node* node = qgraphicsitem_cast<Node*>(item))
             node->close();
+        else if (Edge* edge = qgraphicsitem_cast<Edge*>(item))
+            edge->close();
+    }
 
     event->accept();
 }
@@ -1037,6 +1043,7 @@ void GraphWidget::contextMenuEvent(QContextMenuEvent *event)
 
         //menu.exec(event->globalPos());
         mClickPoint = mapToScene(mapFromGlobal(event->globalPos()));
+        populateAvailOpsMenu();
         mMainMenu->exec(event->globalPos());
     }
     else

@@ -56,7 +56,7 @@ public:
 
     void draw();
     void setClearTexture();
-    void setOutTexture();
+    void setOutTextureId();
 
     void setVao(GLuint width, GLuint height);
 
@@ -75,7 +75,7 @@ public:
 private:
     int mType = 0;
     bool mFixed = false;
-    bool mCleared = false;
+    bool mCleared = true;
 
     QString mImageFilename;
 

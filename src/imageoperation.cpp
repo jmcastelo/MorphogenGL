@@ -31,8 +31,9 @@
 
 ImageOperation::ImageOperation()
 {
+    pBlitInTexId = new GLuint(0);
     pOutTexId = new GLuint(0);
-    setpOutTextureId();
+    setOutTextureId();
 }
 
 
@@ -49,8 +50,9 @@ ImageOperation::ImageOperation(const ImageOperation& operation) :
 
     // genTextures(texFormat, width, height);
 
+    pBlitInTexId = new GLuint(0);
     pOutTexId = new GLuint(0);
-    setpOutTextureId();
+    setOutTextureId();
 
     // Copy parameters
 
@@ -96,7 +98,7 @@ ImageOperation::~ImageOperation()
 
         delete mProgram;
 
-        GLuint texIds[] = { mOutTexId, mBlitTexId, mBlendOutTexId };
+        GLuint texIds[] = { mOutTexId, mBlitOutTexId, mBlendOutTexId };
         glDeleteTextures(3, texIds);
 
         glDeleteSamplers(1, &mSamplerId);
@@ -107,6 +109,7 @@ ImageOperation::~ImageOperation()
     //delete mContext;
     //delete mSurface;
 
+    delete pBlitInTexId;
     delete pOutTexId;
 
     qDeleteAll(floatUniformParameters);
@@ -473,30 +476,65 @@ bool ImageOperation::enabled() const
 void ImageOperation::enable(bool set)
 {
     mEnabled = set;
-    setpOutTextureId();
+    setOutTextureId();
+    setBlitInTextureId();
 }
 
 
 
-void ImageOperation::setpOutTextureId()
+void ImageOperation::setOutTextureId()
 {
     if (mEnabled)
+    {
         *pOutTexId = mOutTexId;
-    else if (mBlendEnabled)
-        *pOutTexId = mBlendOutTexId;
+    }
     else if (mBlitEnabled)
-        *pOutTexId = mBlitTexId;
-    else if (mInputTexId)
-        *pOutTexId = *mInputTexId;
+    {
+        *pOutTexId = mBlitOutTexId;
+    }
+    else if (mBlendEnabled)
+    {
+        *pOutTexId = mBlendOutTexId;
+    }
+    else if (pInputTexId)
+    {
+        *pOutTexId = *pInputTexId;
+    }
     else
+    {
         *pOutTexId = 0;
+    }
 }
+
+
+
+void ImageOperation::setBlitInTextureId()
+{
+    if (mEnabled)
+    {
+        *pBlitInTexId = mOutTexId;
+    }
+    else if (mBlendEnabled)
+    {
+        *pBlitInTexId = mBlendOutTexId;
+    }
+    else if (pInputTexId)
+    {
+        *pBlitInTexId = *pInputTexId;
+    }
+    else
+    {
+        *pBlitInTexId = 0;
+    }
+}
+
 
 
 void ImageOperation::enableBlit(bool set)
 {
     mBlitEnabled = set;
-    setpOutTextureId();
+    setBlitInTextureId();
+    setOutTextureId();
 }
 
 
@@ -541,39 +579,39 @@ void ImageOperation::setInputData(QList<InputData*> data)
     if (data.size() > 1)
     {
         mBlendEnabled = true;
+        pInputTexId = &mBlendOutTexId;
 
-        mInputTexId = &mBlendOutTexId;
-
-        mInputTextures.clear();
-        mInputBlendFactors.clear();
-
-        foreach(InputData* iData, data)
-        {
-            mInputTextures.append(iData->pTextureId());
-            mInputBlendFactors.append(iData->blendFactor());
-        }
     }
     else if (data.size() == 1)
     {
         mBlendEnabled = false;
-        mInputTexId = data[0]->pTextureId();
+        pInputTexId = data[0]->pTextureId();
     }
     else
     {
         mBlendEnabled = false;
-        mInputTexId = nullptr;
+        pInputTexId = nullptr;
+        // ppInputTexId = nullptr;
     }
 
-    setpOutTextureId();
+    setOutTextureId();
+    setBlitInTextureId();
 
     mInputData = data;
 }
 
 
 
-GLuint ImageOperation::blitTextureId()
+GLuint ImageOperation::blitInTextureId()
 {
-    return mBlitTexId;
+    return *pBlitInTexId;
+}
+
+
+
+GLuint ImageOperation::blitOutTextureId()
+{
+    return mBlitOutTexId;
 }
 
 
@@ -594,8 +632,8 @@ GLuint ImageOperation::blendOutTextureId()
 
 GLuint ImageOperation::inTextureId()
 {
-    if (mInputTexId)
-        return *mInputTexId;
+    if (pInputTexId)
+        return *pInputTexId;
     else
         return 0;
 }
@@ -609,6 +647,13 @@ GLuint* ImageOperation::pOutTextureId()
 
 
 
+/*GLuint** ImageOperation::ppOutTextureId()
+{
+    return ppOutTexId;
+}*/
+
+
+
 GLuint ImageOperation::samplerId()
 {
     return mSamplerId;
@@ -618,7 +663,7 @@ GLuint ImageOperation::samplerId()
 
 QList<GLuint*> ImageOperation::textureIds()
 {
-    return QList<GLuint*> { &mOutTexId, &mBlitTexId, &mBlendOutTexId };
+    return QList<GLuint*> { &mOutTexId, &mBlitOutTexId, &mBlendOutTexId };
 }
 
 
@@ -633,6 +678,12 @@ QList<GLuint*> ImageOperation::textureIds()
 
 QList<GLuint*> ImageOperation::inputTextures()
 {
+    mInputTextures.clear();
+
+    foreach(InputData* iData, mInputData) {
+        mInputTextures.append(iData->pTextureId());
+    }
+
     return mInputTextures;
 }
 
@@ -640,6 +691,12 @@ QList<GLuint*> ImageOperation::inputTextures()
 
 QList<float> ImageOperation::inputBlendFactors()
 {
+    mInputBlendFactors.clear();
+
+    foreach(InputData* iData, mInputData) {
+        mInputBlendFactors.append(iData->blendFactor());
+    }
+
     return mInputBlendFactors;
 }
 

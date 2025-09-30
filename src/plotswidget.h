@@ -56,7 +56,7 @@ signals:
 
 public slots:
     void setFBO(GLuint theFBO) { fbo = theFBO; };
-    void setTextureID(GLuint *id);
+    void setTextureID(GLuint* texId);
     void setImageSize(int width, int height);
     void setSelectedPoint(QPoint point);
     void transformSources(QTransform transform);

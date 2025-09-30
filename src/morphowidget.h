@@ -67,7 +67,7 @@ signals:
     void scaleTransformChanged(QTransform transform);
 
 public slots:
-    void updateOutputTextureID(GLuint* pTexId);
+    void setOutputTextureId(GLuint* pTexId);
     void resetZoom(int width, int height);
     void setUpdate(bool state);
     void setDrawingCursor(bool on){ drawingCursor = on; }
@@ -79,7 +79,7 @@ protected:
     void mousePressEvent(QMouseEvent* event) override;
 
 private:
-    GLuint* mOutTexId = nullptr;
+    GLuint* pOutTexId = nullptr;
 
     GLuint fbo = 0;
 

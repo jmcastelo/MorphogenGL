@@ -98,7 +98,7 @@ MainWindow::MainWindow()
     connect(renderManager, &RenderManager::texturesChanged, nodeManager, &NodeManager::onTexturesChanged);
 
     connect(nodeManager, &NodeManager::outputTextureChanged, renderManager, &RenderManager::setOutputTextureId);
-    connect(nodeManager, &NodeManager::outputTextureChanged, morphoWidget, &MorphoWidget::updateOutputTextureID);
+    connect(nodeManager, &NodeManager::outputTextureChanged, morphoWidget, &MorphoWidget::setOutputTextureId);
     connect(nodeManager, &NodeManager::outputTextureChanged, plotsWidget, &PlotsWidget::setTextureID);
     connect(nodeManager, &NodeManager::outputFBOChanged, plotsWidget, &PlotsWidget::setFBO);
     connect(nodeManager, &NodeManager::sortedOperationsChanged, renderManager, &RenderManager::setSortedOperations);

@@ -35,6 +35,8 @@ public:
     QList<QString> availableOperationNames();
     ImageOperation* availableOperation(int index);
 
+    void scan();
+
 signals:
     void newOperationCreated(QUuid id, ImageOperation* operation);
     void newSeedCreated(QUuid id, Seed* seed);
@@ -46,8 +48,6 @@ private:
     QList<ImageOperation*> mAvailOps;
     QList<ImageOperation*> mOperations;
     QList<Seed*> mSeeds;
-
-    void scan();
 };
 
 

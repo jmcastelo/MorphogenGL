@@ -56,7 +56,8 @@ public:
     void equalizeBlendFactors();
 
     void setOperation(ImageOperation* newOperation);
-    GLuint* opOutTextureId() const;
+
+    GLuint* pOutTextureId() const;
 
 private:
     QUuid mId;

@@ -26,7 +26,10 @@
 
 
 
-Seed::Seed(){}
+Seed::Seed()
+{
+    pOutTexId = new GLuint(0);
+}
 
 
 
@@ -73,7 +76,7 @@ Seed::Seed(GLenum texFormat, GLuint width, GLuint height, QOpenGLContext* contex
 
     // Generate textures with format and size given externally
 
-    pOutTexId = new GLuint(0);
+    // pOutTexId = new GLuint(0);
 
     genTextures(texFormat, width, height);
 
@@ -119,7 +122,7 @@ Seed::Seed(GLenum texFormat, GLuint width, GLuint height, const Seed& seed) :
 
     // Generate textures with format and size given externally
 
-    pOutTexId = new GLuint(0);
+    // pOutTexId = new GLuint(0);
 
     genTextures(texFormat, width, height);
 
@@ -187,7 +190,7 @@ void Seed::init(GLenum texFormat, GLuint width, GLuint height, QOpenGLContext* c
 
     // Generate textures with format and size given externally
 
-    pOutTexId = new GLuint(0);
+    // pOutTexId = new GLuint(0);
 
     genTextures(texFormat, width, height);
 
@@ -296,9 +299,23 @@ int Seed::type() const
 void Seed::setType(int type)
 {
     mType = type;
+
+    // if (mType == 0 || mType == 1)
+        // draw();
+
+    /*if (mFixed)
+    {
+        if (mType == 0 || mType == 1)
+            *pOutTexId = mRandomTexId;
+        else if (mType == 2)
+            *pOutTexId = mImageTexId;
+    }*/
+
     draw();
-    setOutTexture();
-    setClearTexture();
+
+
+    setOutTextureId();
+    // setClearTexture();
 }
 
 
@@ -314,13 +331,22 @@ void Seed::setFixed(bool set)
 {
     mFixed = set;
 
-    if (set)
-        setOutTexture();
-    else
+    setOutTextureId();
+
+    /*if (set)
     {
-        mCleared = false;
-        setClearTexture();
-    }
+        // setOutTextureId();
+        if (mType == 0 || mType == 1)
+            *pOutTexId = mRandomTexId;
+        else if (mType == 2)
+            *pOutTexId = mImageTexId;
+    }*/
+    /*else
+    {
+        // mCleared = false;
+        // setClearTexture();
+        *pOutTexId = mClearTexId;
+    }*/
 }
 
 
@@ -353,12 +379,19 @@ void Seed::setClearTexture()
 
 
 
-void Seed::setOutTexture()
+void Seed::setOutTextureId()
 {
-    if (mType == 0 || mType == 1)
-        *pOutTexId = mRandomTexId;
-    else if (mType == 2)
-        *pOutTexId = mImageTexId;
+    if (mFixed || !mCleared)
+    {
+        if (mType == 0 || mType == 1)
+            *pOutTexId = mRandomTexId;
+        else if (mType == 2)
+            *pOutTexId = mImageTexId;
+    }
+    else
+    {
+        *pOutTexId = mClearTexId;
+    }
 }
 
 

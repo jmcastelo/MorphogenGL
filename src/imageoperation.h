@@ -107,13 +107,18 @@ public:
 
     void setInputData(QList<InputData*> data);
 
-    GLuint blitTextureId();
+    GLuint blitInTextureId();
+    GLuint blitOutTextureId();
     GLuint outTextureId();
     GLuint blendOutTextureId();
     GLuint inTextureId();
     GLuint* pOutTextureId();
+    // GLuint** ppOutTextureId();
 
     QList<GLuint*> textureIds();
+
+    void setOutTextureId();
+    void setBlitInTextureId();
 
     GLuint samplerId();
 
@@ -192,10 +197,12 @@ private:
     QList<float> mInputBlendFactors;
 
     GLuint mOutTexId = 0;
-    GLuint mBlitTexId = 0;
+    GLuint mBlitOutTexId = 0;
     GLuint mBlendOutTexId = 0;
-    GLuint* mInputTexId = nullptr;
+    GLuint* pInputTexId = nullptr;
+    GLuint* pBlitInTexId = nullptr;
     GLuint* pOutTexId = nullptr;
+    // GLuint** ppOutTexId = nullptr;
 
     // GLuint mTexWidth;
     // GLuint mTexHeight;
@@ -210,7 +217,6 @@ private:
 
     // void genTextures(GLenum texFormat, GLuint width, GLuint height);
     void setMinMagFilter(GLenum filter);
-    void setpOutTextureId();
 };
 
 

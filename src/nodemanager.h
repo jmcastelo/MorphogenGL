@@ -126,8 +126,8 @@ public:
 
     void sortOperations();
 
-    void clearOperation(QUuid id);
-    void clearAllOperations();
+    // void clearOperation(QUuid id);
+    // void clearAllOperations();
 
     QMap<QUuid, ImageOperationNode*> getOperationNodes() { return operationNodes; }
     QMap<QUuid, Seed*> getSeeds() { return seeds; }
@@ -171,7 +171,7 @@ private:
     QOpenGLContext* mShareContext;
     GLuint outputFBO;
     QUuid mOutputId;
-    GLuint* mOutputTextureId = nullptr;
+    GLuint* pOutputTextureId = nullptr;
     unsigned int iteration = 0;
 
     bool active = false;
