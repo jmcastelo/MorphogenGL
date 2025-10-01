@@ -31,7 +31,6 @@
 
 ImageOperation::ImageOperation()
 {
-    pBlitInTexId = new GLuint(0);
     pOutTexId = new GLuint(0);
     setOutTextureId();
 }
@@ -50,7 +49,6 @@ ImageOperation::ImageOperation(const ImageOperation& operation) :
 
     // genTextures(texFormat, width, height);
 
-    pBlitInTexId = new GLuint(0);
     pOutTexId = new GLuint(0);
     setOutTextureId();
 
@@ -106,10 +104,6 @@ ImageOperation::~ImageOperation()
         mContext->doneCurrent();
     }
 
-    //delete mContext;
-    //delete mSurface;
-
-    delete pBlitInTexId;
     delete pOutTexId;
 
     qDeleteAll(floatUniformParameters);
@@ -216,6 +210,10 @@ bool ImageOperation::linkShaders()
         }
 
         mContext->doneCurrent();
+    }
+    else
+    {
+        ok = false;
     }
 
     return ok;
@@ -512,19 +510,19 @@ void ImageOperation::setBlitInTextureId()
 {
     if (mEnabled)
     {
-        *pBlitInTexId = mOutTexId;
+        pBlitInTexId = &mOutTexId;
     }
     else if (mBlendEnabled)
     {
-        *pBlitInTexId = mBlendOutTexId;
+        pBlitInTexId = &mBlendOutTexId;
     }
     else if (pInputTexId)
     {
-        *pBlitInTexId = *pInputTexId;
+        pBlitInTexId = pInputTexId;
     }
     else
     {
-        *pBlitInTexId = 0;
+        pBlitInTexId = nullptr;
     }
 }
 
@@ -604,7 +602,10 @@ void ImageOperation::setInputData(QList<InputData*> data)
 
 GLuint ImageOperation::blitInTextureId()
 {
-    return *pBlitInTexId;
+    if (pBlitInTexId)
+        return *pBlitInTexId;
+    else
+        return 0;
 }
 
 
@@ -644,13 +645,6 @@ GLuint* ImageOperation::pOutTextureId()
 {
     return pOutTexId;
 }
-
-
-
-/*GLuint** ImageOperation::ppOutTextureId()
-{
-    return ppOutTexId;
-}*/
 
 
 
