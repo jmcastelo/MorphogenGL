@@ -66,6 +66,7 @@ BaseUniformParameter<T>::BaseUniformParameter(const BaseUniformParameter<T>& par
 
     mUniformName = parameter.mUniformName;
     mUniformType = parameter.mUniformType;
+    mPresets = parameter.mPresets;
 }
 
 

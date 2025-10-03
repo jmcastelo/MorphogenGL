@@ -366,6 +366,8 @@ void OperationParser::readParameters(ImageOperation* operation, QXmlStreamReader
 
                     presets[presetName] = presetValues;
                 }
+                else
+                    stream.skipCurrentElement();
             }
         }
         else
@@ -527,6 +529,8 @@ void OperationParser::readMat4Parameters(ImageOperation* operation, QXmlStreamRe
 
                     presets[presetName] = presetValues;
                 }
+                else
+                    stream.skipCurrentElement();
             }
         }
         else

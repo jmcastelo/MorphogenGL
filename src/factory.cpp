@@ -12,7 +12,7 @@
 Factory::Factory(QObject *parent)
     : QObject{parent}
 {
-    scan();
+    //scan();
 }
 
 

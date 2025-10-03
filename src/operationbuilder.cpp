@@ -4,7 +4,7 @@
 
 #include <QToolBar>
 #include <QFileDialog>
-#include <QFormLayout>
+#include <QFont>
 #include <QHBoxLayout>
 #include <QMessageBox>
 #include <QVBoxLayout>
@@ -59,8 +59,13 @@ OperationBuilder::OperationBuilder(ImageOperation *operation, QWidget *parent) :
 
     // Tabs
 
+    QFont fixed = QFontDatabase::systemFont(QFontDatabase::FixedFont);
+    fixed.setStyleHint(QFont::Monospace);
+    fixed.setPointSize(9);
+
     vertexEditor = new QPlainTextEdit;
     vertexEditor->setLineWrapMode(QPlainTextEdit::NoWrap);
+    vertexEditor->setFont(fixed);
     vertexEditor->setPlainText(mOperation->vertexShader());
 
     connect(vertexEditor, &QPlainTextEdit::textChanged, this, [=, this](){
@@ -69,6 +74,7 @@ OperationBuilder::OperationBuilder(ImageOperation *operation, QWidget *parent) :
 
     fragmentEditor = new QPlainTextEdit;
     fragmentEditor->setLineWrapMode(QPlainTextEdit::NoWrap);
+    fragmentEditor->setFont(fixed);
     fragmentEditor->setPlainText(mOperation->fragmentShader());
 
     connect(fragmentEditor, &QPlainTextEdit::textChanged, this, [=, this](){
