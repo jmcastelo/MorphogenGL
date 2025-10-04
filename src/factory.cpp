@@ -72,6 +72,29 @@ void Factory::addAvailableOperation(int index)
 }
 
 
+
+void Factory::addOperation(QUuid id, ImageOperation* operation)
+{
+    mOperations.append(operation);
+    emit newOperationCreated(id, operation);
+
+    OperationWidget* widget = new OperationWidget(operation, false, false);
+    emit newOperationWidgetCreated(id, widget);
+}
+
+
+
+void Factory::addSeed(QUuid id, Seed* seed)
+{
+    mSeeds.append(seed);
+    emit newSeedCreated(id, seed);
+
+    SeedWidget* widget = new SeedWidget(seed);
+    emit newSeedWidgetCreated(id, widget);
+}
+
+
+
 void Factory::deleteOperation(ImageOperation* operation)
 {
     mOperations.removeOne(operation);
@@ -138,4 +161,17 @@ void Factory::scan()
             }
         }
     }
+}
+
+
+
+void Factory::clear()
+{
+    qDeleteAll(mOperations);
+    mOperations.clear();
+
+    qDeleteAll(mSeeds);
+    mSeeds.clear();
+
+    emit cleared();
 }

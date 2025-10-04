@@ -40,8 +40,6 @@ RenderManager::RenderManager(Factory *factory)
 
 void RenderManager::init(QOpenGLContext* shareContext)
 {
-    mShareContext = shareContext;
-
     // Create context
 
     mContext = new QOpenGLContext();
@@ -58,6 +56,7 @@ void RenderManager::init(QOpenGLContext* shareContext)
     initializeOpenGLFunctions();
 
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glViewport(0, 0, mTexWidth, mTexHeight);
 
     // Framebuffer objects
 
@@ -341,26 +340,30 @@ int RenderManager::iterationNumber()
 
 void RenderManager::resize(GLuint width, GLuint height)
 {
-    mOldTexWidth = mTexWidth;
-    mOldTexHeight = mTexHeight;
+    if (mContext)
+    {
+        mOldTexWidth = mTexWidth;
+        mOldTexHeight = mTexHeight;
 
-    mTexWidth = width;
-    mTexHeight = height;
+        mTexWidth = width;
+        mTexHeight = height;
 
-    mContext->makeCurrent(mSurface);
+        mContext->makeCurrent(mSurface);
 
-    setVao();
-    foreach (Seed* seed, mFactory->seeds())
-        seed->setVao(width, height);
+        setVao();
+        foreach (Seed* seed, mFactory->seeds()) {
+            seed->setVao(width, height);
+        }
 
-    glViewport(0, 0, mTexWidth, mTexHeight);
+        glViewport(0, 0, mTexWidth, mTexHeight);
 
-    resizeTextures();
-    recreateBlendArrayTexture();
+        resizeTextures();
+        recreateBlendArrayTexture();
 
-    mContext->doneCurrent();
+        mContext->doneCurrent();
 
-    adjustOrtho();
+        adjustOrtho();
+    }
 }
 
 
@@ -632,11 +635,13 @@ void RenderManager::resizeTextures()
         *oldTexId = newTexId;
     }
 
-    foreach (Seed* seed, mFactory->seeds())
+    foreach (Seed* seed, mFactory->seeds()) {
         seed->setOutTextureId();
+    }
 
-    foreach (ImageOperation* operation, mFactory->operations())
+    foreach (ImageOperation* operation, mFactory->operations()) {
         operation->setOutTextureId();
+    }
 
     emit texturesChanged();
 }
@@ -686,6 +691,15 @@ void RenderManager::clearAllOpsTextures()
 
     foreach (GLuint* texId, texIds) {
         clearTexture(texId);
+    }
+}
+
+
+
+void RenderManager::drawAllSeeds()
+{
+    foreach (Seed* seed, mFactory->seeds()) {
+        seed->draw();
     }
 }
 

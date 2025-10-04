@@ -68,6 +68,8 @@ public:
 
     void clearAllOpsTextures();
 
+    void drawAllSeeds();
+
     void resetIterationNumer();
     int iterationNumber();
 
@@ -84,9 +86,8 @@ public slots:
 private:
     Factory* mFactory;
 
-    QOpenGLContext* mShareContext;
-    QOpenGLContext* mContext;
-    QOffscreenSurface* mSurface;
+    QOpenGLContext* mContext = nullptr;
+    QOffscreenSurface* mSurface = nullptr;
 
     GLuint mOutFbo = 0;
     GLuint mReadFbo = 0;

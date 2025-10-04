@@ -45,6 +45,7 @@ class Seed : protected QOpenGLExtraFunctions
 {
 public:
     Seed();
+    Seed(int type, bool fixed, QString imageFilename);
     Seed(GLenum texFormat, GLuint width, GLuint height, QOpenGLContext* context, QOffscreenSurface* surface);
     Seed(GLenum texFormat, GLuint width, GLuint height, const Seed& seed);
     ~Seed();

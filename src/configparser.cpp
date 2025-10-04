@@ -20,66 +20,76 @@
 *  along with MorphogenGL.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+
+
 #include "configparser.h"
+#include "operationparser.h"
 #include "parameters/uniformparameter.h"
 #include "parameters/number.h"
 
 #include <vector>
 #include <QFile>
 
+
+
 void ConfigurationParser::write()
 {
     QFile outFile(filename);
     outFile.open(QIODevice::WriteOnly);
 
-    stream.setDevice(&outFile);
-    stream.setAutoFormatting(true);
+    QXmlStreamWriter mStream;
+    mStream.setDevice(&outFile);
+    mStream.setAutoFormatting(true);
 
-    stream.writeStartDocument();
+    mStream.writeStartDocument();
 
-    stream.writeStartElement("morphogengl");
+    mStream.writeStartElement("fosforo");
 
-    stream.writeAttribute("version", mNodeManager->version);
+    mStream.writeAttribute("version", mNodeManager->version);
 
     // Display
 
-    stream.writeStartElement("display");
+    mStream.writeStartElement("display");
 
-    stream.writeStartElement("image");
-    stream.writeStartElement("width");
-    stream.writeCharacters(QString::number(mRenderManager->texWidth()));
-    stream.writeEndElement();
-    stream.writeStartElement("height");
-    stream.writeCharacters(QString::number(mRenderManager->texHeight()));
-    stream.writeEndElement();
-    stream.writeEndElement();
+    mStream.writeStartElement("image");
+    mStream.writeStartElement("width");
+    mStream.writeCharacters(QString::number(mRenderManager->texWidth()));
+    mStream.writeEndElement();
+    mStream.writeStartElement("height");
+    mStream.writeCharacters(QString::number(mRenderManager->texHeight()));
+    mStream.writeEndElement();
+    mStream.writeEndElement();
 
-    stream.writeStartElement("outputnode");
-    stream.writeCharacters(mNodeManager->getOutput().toString());
-    stream.writeEndElement();
+    mStream.writeStartElement("output_node");
+    mStream.writeCharacters(mNodeManager->outputId().toString());
+    mStream.writeEndElement();
 
-    stream.writeEndElement();
+    mStream.writeEndElement();
 
     // Nodes: seeds and operation nodes
 
-    stream.writeStartElement("nodes");
+    mStream.writeStartElement("nodes");
 
-    for (auto [id, seed] : mNodeManager->getSeeds().asKeyValueRange())
-        writeSeedNode(id, seed);
+    for (auto [id, seed] : mNodeManager->seedsMap().asKeyValueRange()) {
+        writeSeedNode(id, seed, mStream);
+    }
 
-    foreach (ImageOperationNode* node, mNodeManager->getOperationNodes())
-        writeOperationNode(node);
+    foreach (ImageOperationNode* node, mNodeManager->operationNodesMap()) {
+        writeOperationNode(node, mStream);
+    }
 
-    stream.writeEndElement();
+    mStream.writeEndElement();
 
-    stream.writeEndElement();
+    mStream.writeEndElement();
 
-    stream.writeEndDocument();
+    mStream.writeEndDocument();
 }
 
-void ConfigurationParser::writeSeedNode(QUuid id, Seed* seed)
+
+
+void ConfigurationParser::writeSeedNode(QUuid id, Seed* seed, QXmlStreamWriter &stream)
 {
-    stream.writeStartElement("seednode");
+    stream.writeStartElement("seed_node");
 
     stream.writeAttribute("id", id.toString());
 
@@ -91,7 +101,11 @@ void ConfigurationParser::writeSeedNode(QUuid id, Seed* seed)
     stream.writeCharacters(QString::number(seed->fixed()));
     stream.writeEndElement();
 
-    /*QPointF position = graphWidget->nodePosition(id);
+    stream.writeStartElement("image_filename");
+    stream.writeCharacters(seed->imageFilename());
+    stream.writeEndElement();
+
+    QPointF position = mGraphWidget->nodePosition(id);
 
     stream.writeStartElement("position");
 
@@ -103,18 +117,24 @@ void ConfigurationParser::writeSeedNode(QUuid id, Seed* seed)
     stream.writeCharacters(QString::number(position.y()));
     stream.writeEndElement();
 
-    stream.writeEndElement();*/
+    stream.writeEndElement();
 
     stream.writeEndElement();
 }
 
-void ConfigurationParser::writeOperationNode(ImageOperationNode* node)
+
+
+void ConfigurationParser::writeOperationNode(ImageOperationNode* node, QXmlStreamWriter &stream)
 {
-    stream.writeStartElement("operationnode");
+    stream.writeStartElement("operation_node");
 
     stream.writeAttribute("id", node->id().toString());
 
-    stream.writeStartElement("operation");
+    OperationParser opParser;
+
+    opParser.writeOperation(node->operation(), stream, true);
+
+    /*stream.writeStartElement("operation");
 
     stream.writeAttribute("name", node->operation()->name());
     stream.writeAttribute("enabled", QString::number(node->operation()->enabled()));
@@ -161,32 +181,30 @@ void ConfigurationParser::writeOperationNode(ImageOperationNode* node)
         stream.writeEndElement();
     }
 
-    stream.writeEndElement();
+    stream.writeEndElement();*/
 
     stream.writeStartElement("inputs");
 
-    QMap<QUuid, InputData*>::const_iterator i = node->inputs().constBegin();
-    while (i != node->inputs().constEnd())
+    for (auto [id, inData]: node->inputs().asKeyValueRange())
     {
         stream.writeStartElement("input");
 
-        stream.writeAttribute("id", i.key().toString());
+        stream.writeAttribute("id", id.toString());
 
         stream.writeStartElement("type");
-        stream.writeCharacters(QString::number(static_cast<int>(i.value()->type())));
+        stream.writeCharacters(QString::number(static_cast<int>(inData->type())));
         stream.writeEndElement();
 
         stream.writeStartElement("blendfactor");
-        stream.writeCharacters(QString::number(i.value()->blendFactor()));
+        stream.writeCharacters(QString::number(inData->blendFactor()));
         stream.writeEndElement();
 
         stream.writeEndElement();
-        i++;
     }
 
     stream.writeEndElement();
 
-    /*QPointF position = graphWidget->nodePosition(node->id);
+    QPointF position = mGraphWidget->nodePosition(node->id());
 
     stream.writeStartElement("position");
 
@@ -198,161 +216,184 @@ void ConfigurationParser::writeOperationNode(ImageOperationNode* node)
     stream.writeCharacters(QString::number(position.y()));
     stream.writeEndElement();
 
-    stream.writeEndElement();*/
+    stream.writeEndElement();
 
     stream.writeEndElement();
 }
+
+
 
 void ConfigurationParser::read()
 {
     QFile inFile(filename);
     inFile.open(QIODevice::ReadOnly);
 
-    xml.setDevice(&inFile);
+    QXmlStreamReader mStream;
+    mStream.setDevice(&inFile);
 
-    if (xml.readNextStartElement() && xml.name() == "morphogengl")
+    OperationParser opParser;
+
+    if (mStream.readNextStartElement() && mStream.name() == "fosforo")
     {
+        mFactory->clear();
+
         QUuid outputNodeId;
         int imageWidth = mRenderManager->texWidth();
         int imageHeight = mRenderManager->texHeight();
 
-        while (xml.readNextStartElement())
+        while (mStream.readNextStartElement())
         {
-            if (xml.name() == "nodes")
+            if (mStream.name() == "nodes")
             {
-                mNodeManager->clearLoadedSeeds();
-                mNodeManager->clearLoadedOperations();
+                // mNodeManager->clearLoadedSeeds();
+                // mNodeManager->clearLoadedOperations();
 
-                QMap<QUuid, QPointF> seedNodePositions;
-                QMap<QUuid, QPair<QString, QPointF>> operationNodeData;
+                // QMap<QUuid, QPointF> seedNodePositions;
+                // QMap<QUuid, QPair<QString, QPointF>> operationNodeData;
                 QMap<QUuid, QMap<QUuid, InputData*>> connections;
 
-                while (xml.readNextStartElement())
+                while (mStream.readNextStartElement())
                 {
-                    if (xml.name() == "seednode")
+                    if (mStream.name() == "seed_node")
                     {
-                        QUuid id = QUuid(xml.attributes().value("id").toString());
+                        QUuid id = QUuid(mStream.attributes().value("id").toString());
                         int type = 0;
                         bool fixed = false;
+                        QString imageFilename;
                         QPointF position(0.0, 0.0);
 
-                        while (xml.readNextStartElement())
+                        while (mStream.readNextStartElement())
                         {
-                            if (xml.name() == "type")
+                            if (mStream.name() == "type")
                             {
-                                type = xml.readElementText().toInt();
+                                type = mStream.readElementText().toInt();
                             }
-                            else if (xml.name() == "fixed")
+                            else if (mStream.name() == "fixed")
                             {
-                                fixed = xml.readElementText().toInt();
+                                fixed = mStream.readElementText().toInt();
                             }
-                            else if (xml.name() == "position")
+                            else if (mStream.name() == "image_filename")
                             {
-                                while (xml.readNextStartElement())
+                                imageFilename = mStream.readElementText();
+                            }
+                            else if (mStream.name() == "position")
+                            {
+                                while (mStream.readNextStartElement())
                                 {
-                                    if (xml.name() == "x")
+                                    if (mStream.name() == "x")
                                     {
-                                        position.setX(xml.readElementText().toFloat());
+                                        position.setX(mStream.readElementText().toFloat());
                                     }
-                                    else if (xml.name() == "y")
+                                    else if (mStream.name() == "y")
                                     {
-                                        position.setY(xml.readElementText().toFloat());
+                                        position.setY(mStream.readElementText().toFloat());
                                     }
                                     else
                                     {
-                                        xml.skipCurrentElement();
+                                        mStream.skipCurrentElement();
                                     }
                                 }
                             }
                             else
                             {
-                                xml.skipCurrentElement();
+                                mStream.skipCurrentElement();
                             }
                         }
 
-                        mNodeManager->loadSeed(id, type, fixed);
-                        seedNodePositions.insert(id, position);
+                        Seed* seed = new Seed(type, fixed, imageFilename);
+                        //mNodeManager->loadSeed(id, type, fixed);
+                        mFactory->addSeed(id, seed);
+                        mGraphWidget->setNodePosition(id, position);
+                        // seedNodePositions.insert(id, position);
                     }
-                    else if (xml.name() == "operationnode")
+                    else if (mStream.name() == "operation_node")
                     {
-                        QUuid id = QUuid(xml.attributes().value("id").toString());
-                        ImageOperation* operation = nullptr;
+                        QUuid id = QUuid(mStream.attributes().value("id").toString());
+                        ImageOperation* operation = new ImageOperation();
                         QMap<QUuid, InputData*> inputs;
                         QPointF position(0.0, 0.0);
 
-                        while (xml.readNextStartElement())
+                        while (mStream.readNextStartElement())
                         {
-                            if (xml.name() == "operation")
+                            if (mStream.name() == "operation")
                             {
-                                operation = readImageOperation();
+                                opParser.readOperation(operation, mStream, true);
                             }
-                            else if (xml.name() == "inputs")
+                            else if (mStream.name() == "inputs")
                             {
-                                while (xml.readNextStartElement())
+                                while (mStream.readNextStartElement())
                                 {
-                                    if (xml.name() == "input")
+                                    if (mStream.name() == "input")
                                     {
-                                        QUuid srcId = QUuid(xml.attributes().value("id").toString());
+                                        QUuid srcId = QUuid(mStream.attributes().value("id").toString());
                                         InputType type = InputType::Normal;
                                         float blendFactor = 1.0;
 
-                                        while (xml.readNextStartElement())
+                                        while (mStream.readNextStartElement())
                                         {
-                                            if (xml.name() == "type")
+                                            if (mStream.name() == "type")
                                             {
-                                                type = static_cast<InputType>(xml.readElementText().toInt());
+                                                type = static_cast<InputType>(mStream.readElementText().toInt());
                                             }
-                                            else if (xml.name() == "blendfactor")
+                                            else if (mStream.name() == "blendfactor")
                                             {
-                                                blendFactor = xml.readElementText().toFloat();
+                                                blendFactor = mStream.readElementText().toFloat();
                                             }
                                             else
                                             {
-                                                xml.skipCurrentElement();
+                                                mStream.skipCurrentElement();
                                             }
                                         }
 
                                         inputs.insert(srcId, new InputData(type, 0, blendFactor));
                                     }
                                 }
+
+                                connections.insert(id, inputs);
                             }
-                            else if (xml.name() == "position")
+                            else if (mStream.name() == "position")
                             {
-                                while (xml.readNextStartElement())
+                                while (mStream.readNextStartElement())
                                 {
-                                    if (xml.name() == "x")
+                                    if (mStream.name() == "x")
                                     {
-                                        position.setX(xml.readElementText().toFloat());
+                                        position.setX(mStream.readElementText().toFloat());
                                     }
-                                    else if (xml.name() == "y")
+                                    else if (mStream.name() == "y")
                                     {
-                                        position.setY(xml.readElementText().toFloat());
+                                        position.setY(mStream.readElementText().toFloat());
                                     }
                                     else
                                     {
-                                        xml.skipCurrentElement();
+                                        mStream.skipCurrentElement();
                                     }
                                 }
+
+                                // operationNodeData.insert(id, QPair<QString, QPointF>(operation->name(), position));
                             }
                         }
 
-                        if (operation)
+                        mFactory->addOperation(id, operation);
+                        mGraphWidget->setNodePosition(id, position);
+                        //mNodeManager->loadOperation(id, operation);
+
+                        /*if (operation)
                         {
                             mNodeManager->loadOperation(id, operation);
                             connections.insert(id, inputs);
                             operationNodeData.insert(id, QPair<QString, QPointF>(operation->name(), position));
-                        }
+                        }*/
                     }
                     else
                     {
-                        xml.skipCurrentElement();
+                        mStream.skipCurrentElement();
                     }
                 }
 
-                mNodeManager->connectLoadedOperations(connections);
+                mNodeManager->connectOperations(connections);
 
-                mNodeManager->swapLoadedSeeds();
-                mNodeManager->swapLoadedOperations();
+                // mNodeManager->swapLoadedSeeds();
+                // mNodeManager->swapLoadedOperations();
 
                 mNodeManager->sortOperations();
 
@@ -374,60 +415,62 @@ void ConfigurationParser::read()
 
                 graphWidget->connectNodes(connections);*/
             }
-            else if (xml.name() == "display")
+            else if (mStream.name() == "display")
             {
-                while (xml.readNextStartElement())
+                while (mStream.readNextStartElement())
                 {
-                    if (xml.name() == "image")
+                    if (mStream.name() == "image")
                     {
-                        while (xml.readNextStartElement())
+                        while (mStream.readNextStartElement())
                         {
-                            if (xml.name() == "width")
-                                imageWidth = xml.readElementText().toInt();
-                            else if (xml.name() == "height")
-                                imageHeight = xml.readElementText().toInt();
+                            if (mStream.name() == "width")
+                                imageWidth = mStream.readElementText().toInt();
+                            else if (mStream.name() == "height")
+                                imageHeight = mStream.readElementText().toInt();
                             else
-                                xml.skipCurrentElement();
+                                mStream.skipCurrentElement();
                         }
 
-                        emit newImageSizeRead(imageWidth, imageHeight);
+                        //emit newImageSizeRead(imageWidth, imageHeight);
                     }
-                    else if (xml.name() == "outputnode")
+                    else if (mStream.name() == "output_node")
                     {
-                        outputNodeId = QUuid(xml.readElementText());
+                        outputNodeId = QUuid(mStream.readElementText());
                     }
                     else
                     {
-                        xml.skipCurrentElement();
+                        mStream.skipCurrentElement();
                     }
                 }
             }
             else
             {
-                xml.skipCurrentElement();
+                mStream.skipCurrentElement();
             }   
         }
 
         if (!outputNodeId.isNull())
             mNodeManager->setOutput(outputNodeId);
 
-        //emit newImageSizeRead(imageWidth, imageHeight);
+        emit newImageSizeRead(imageWidth, imageHeight);
     }
 
-    if (xml.tokenType() == QXmlStreamReader::Invalid)
-        xml.readNext();
+    if (mStream.tokenType() == QXmlStreamReader::Invalid)
+        mStream.readNext();
 
-    if (xml.hasError())
-        xml.raiseError();
+    if (mStream.hasError())
+        mStream.raiseError();
 
     inFile.close();
 }
 
-ImageOperation* ConfigurationParser::readImageOperation()
-{
-    QString operationName = xml.attributes().value("name").toString();
 
-    bool enabled = xml.attributes().value("enabled").toInt();
+
+/*ImageOperation* ConfigurationParser::readImageOperation()
+{
+    QString operationName = mStream.attributes().value("name").toString();
+
+    bool enabled = mStream.attributes().value("enabled").toInt();
 
     std::vector<bool> boolParameters;
     std::vector<int> intParameters;
@@ -436,44 +479,44 @@ ImageOperation* ConfigurationParser::readImageOperation()
     std::vector<float> kernelElements;
     std::vector<float> matrixElements;
 
-    while (xml.readNextStartElement())
+    while (mStream.readNextStartElement())
     {
-        if (xml.name() == "parameter")
+        if (mStream.name() == "parameter")
         {
-            QString parameterType = xml.attributes().value("type").toString();
+            QString parameterType = mStream.attributes().value("type").toString();
 
             if (parameterType == "bool")
-                boolParameters.push_back(xml.readElementText().toInt());
+                boolParameters.push_back(mStream.readElementText().toInt());
             else if (parameterType == "int")
-                intParameters.push_back(xml.readElementText().toInt());
+                intParameters.push_back(mStream.readElementText().toInt());
             else if (parameterType == "float")
-                floatParameters.push_back(xml.readElementText().toFloat());
+                floatParameters.push_back(mStream.readElementText().toFloat());
             else if (parameterType == "interpolationflag")
-                interpolationFlagParameters.push_back(xml.readElementText().toInt());
+                interpolationFlagParameters.push_back(mStream.readElementText().toInt());
             else if (parameterType == "kernel")
             {
-                while (xml.readNextStartElement())
+                while (mStream.readNextStartElement())
                 {
-                    if (xml.name() == "element")
-                        kernelElements.push_back(xml.readElementText().toFloat());
+                    if (mStream.name() == "element")
+                        kernelElements.push_back(mStream.readElementText().toFloat());
                      else
-                        xml.skipCurrentElement();
+                        mStream.skipCurrentElement();
                 }
             }
             else if (parameterType == "matrix")
             {
-                while (xml.readNextStartElement())
+                while (mStream.readNextStartElement())
                 {
-                    if (xml.name() == "element")
-                        matrixElements.push_back(xml.readElementText().toFloat());
+                    if (mStream.name() == "element")
+                        matrixElements.push_back(mStream.readElementText().toFloat());
                     else
-                        xml.skipCurrentElement();
+                        mStream.skipCurrentElement();
                 }
             }
         }
         else
         {
-            xml.skipCurrentElement();
+            mStream.skipCurrentElement();
         }
     }
 
@@ -486,4 +529,4 @@ ImageOperation* ConfigurationParser::readImageOperation()
                 interpolationFlagParameters,
                 kernelElements,
                 matrixElements);
-}
+}*/

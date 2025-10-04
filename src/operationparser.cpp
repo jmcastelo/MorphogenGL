@@ -46,7 +46,10 @@ bool OperationParser::read(ImageOperation* operation, QString filename, bool rea
     bool success = false;
 
     if (mStream.readNextStartElement() && mStream.name() == "fosforo")
+    {
+        mStream.readNextStartElement();
         success = readOperation(operation, mStream, readIds);
+    }
 
     if (mStream.tokenType() == QXmlStreamReader::Invalid)
         mStream.readNext();
@@ -113,7 +116,7 @@ bool OperationParser::readOperation(ImageOperation* operation, QXmlStreamReader&
 {
     // Operation
 
-    if (stream.readNextStartElement() && stream.name() == "operation")
+    if (stream.name() == "operation")
     {
         operation->clearParameters();
 
@@ -224,7 +227,7 @@ void OperationParser::writeParameters(ImageOperation* operation, QXmlStreamWrite
         stream.writeAttribute("type", QString::number(parameter->uniformType()));
         stream.writeAttribute("numitems", QString::number(parameter->numItems()));
 
-        if (!parameter->empty())
+        // if (!parameter->empty())
         {
             foreach (auto number, parameter->numbers())
             {

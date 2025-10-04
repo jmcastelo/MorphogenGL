@@ -201,8 +201,8 @@ private slots:
     //void toggleRecordingOptionsWidget();
     //void toggleSortedOperationWidget();
     void plotsActionTriggered();
-    //void loadConfig();
-    //void saveConfig();
+    void loadConfig();
+    void saveConfig();
     void toggleOverlay();
     void about();
 

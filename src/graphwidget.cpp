@@ -93,6 +93,7 @@ GraphWidget::GraphWidget(Factory *factory, NodeManager* nodeManager, QWidget *pa
 
     connect(mFactory, &Factory::newOperationWidgetCreated, this, &GraphWidget::addNewNode);
     connect(mFactory, &Factory::newSeedWidgetCreated, this, &GraphWidget::addNewNode);
+    connect(mFactory, &Factory::cleared, this, &GraphWidget::clearScene);
 
     connect(mNodeManager, &NodeManager::nodesConnected, this, &GraphWidget::connectNodes);
     connect(mNodeManager, &NodeManager::nodeRemoved, this, &GraphWidget::removeNode);
@@ -260,6 +261,22 @@ void GraphWidget::addNewNode(QUuid id, QWidget *widget)
     Node* node = new Node(id, widget);
     scene()->addItem(node);
     node->setPos(mClickPoint);
+
+    //QGraphicsProxyWidget *proxyWidget = scene()->addWidget(mNodeManager->addNewOperation());
+    //proxyWidget->setPos(mapToScene(mapFromGlobal(data.toPoint())));
+
+    /*Node* proxyWidget = new Node(mNodeManager->addNewOperation());
+    scene()->addItem(proxyWidget);
+    proxyWidget->setPos(mapToScene(mapFromGlobal(data.toPoint())));*/
+}
+
+
+
+void GraphWidget::addNewNodeOnPos(QUuid id, QWidget *widget, QPointF pos)
+{
+    Node* node = new Node(id, widget);
+    scene()->addItem(node);
+    node->setPos(pos);
 
     //QGraphicsProxyWidget *proxyWidget = scene()->addWidget(mNodeManager->addNewOperation());
     //proxyWidget->setPos(mapToScene(mapFromGlobal(data.toPoint())));
@@ -825,7 +842,7 @@ void GraphWidget::drawBlendFactors(bool draw)
         }
     }
 }
-
+*/
 
 
 QPointF GraphWidget::nodePosition(QUuid id)
@@ -836,17 +853,9 @@ QPointF GraphWidget::nodePosition(QUuid id)
 
     for (QGraphicsItem* item : items)
     {
-        if (OperationNode* node = qgraphicsitem_cast<OperationNode*>(item))
+        if (Node* node = qgraphicsitem_cast<Node*>(item))
         {
-            if (node->id == id)
-            {
-                position = node->pos();
-                break;
-            }
-        }
-        if (SeedNode* node = qgraphicsitem_cast<SeedNode*>(item))
-        {
-            if (node->id == id)
+            if (node->id() == id)
             {
                 position = node->pos();
                 break;
@@ -859,13 +868,32 @@ QPointF GraphWidget::nodePosition(QUuid id)
 
 
 
+void GraphWidget::setNodePosition(QUuid id, QPointF position)
+{
+    const QList<QGraphicsItem*> items = scene()->items();
+
+    for (QGraphicsItem* item : items)
+    {
+        if (Node* node = qgraphicsitem_cast<Node*>(item))
+        {
+            if (node->id() == id)
+            {
+                node->setPos(position);
+                break;
+            }
+        }
+    }
+}
+
+
+
 void GraphWidget::clearScene()
 {
     scene()->clear();
 }
 
 
-
+/*
 void GraphWidget::loadSeedNode(QUuid id, QPointF position)
 {
     Node *node = new SeedNode(this, id, position);

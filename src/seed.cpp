@@ -24,11 +24,24 @@
 
 #include "seed.h"
 
+#include <QFile>
+
 
 
 Seed::Seed()
 {
     pOutTexId = new GLuint(0);
+}
+
+
+
+Seed::Seed(int type, bool fixed, QString imageFilename)
+{
+    pOutTexId = new GLuint(0);
+
+    mType = type;
+    mFixed = fixed;
+    mImageFilename = imageFilename;
 }
 
 
@@ -199,6 +212,8 @@ void Seed::init(GLenum texFormat, GLuint width, GLuint height, QOpenGLContext* c
     clearTexture(mClearTexId);
 
     mContext->doneCurrent();
+
+    loadImage(mImageFilename);
 }
 
 
@@ -271,21 +286,26 @@ void Seed::setVao(GLuint width, GLuint height)
 
 void Seed::loadImage(QString filename)
 {
-    QImage image = QImage(filename).convertToFormat(QImage::Format_RGBA8888).scaled(mTexWidth, mTexHeight, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+    QFile imageFile(filename);
 
-    mContext->makeCurrent(mSurface);
+    if (imageFile.exists())
+    {
+        QImage image = QImage(filename).convertToFormat(QImage::Format_RGBA8888).scaled(mTexWidth, mTexHeight, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
 
-    glBindTexture(GL_TEXTURE_2D, mImageTexId);
+        mContext->makeCurrent(mSurface);
 
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+        glBindTexture(GL_TEXTURE_2D, mImageTexId);
 
-    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, mTexWidth, mTexHeight, GL_RGBA, GL_UNSIGNED_BYTE, image.constBits());
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
-    glBindTexture(GL_TEXTURE_2D, 0);
+        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, mTexWidth, mTexHeight, GL_RGBA, GL_UNSIGNED_BYTE, image.constBits());
 
-    mContext->doneCurrent();
+        glBindTexture(GL_TEXTURE_2D, 0);
 
-    mImageFilename = filename;
+        mContext->doneCurrent();
+
+        mImageFilename = filename;
+    }
 }
 
 

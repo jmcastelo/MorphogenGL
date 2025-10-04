@@ -70,7 +70,6 @@ MainWindow::MainWindow()
 
     connect(morphoWidget, &MorphoWidget::openGLInitialized, this, [&](){
         renderManager->init(morphoWidget->context());
-        nodeManager->init(morphoWidget->context());
         plotsWidget->init(morphoWidget->context());
 
         numIterations = 0;
@@ -83,9 +82,9 @@ MainWindow::MainWindow()
         updateTimer->start();
     });
     connect(morphoWidget, &MorphoWidget::supportedTexFormats, controlWidget, &ControlWidget::populateTexFormatComboBox);
-    connect(morphoWidget, &MorphoWidget::sizeChanged, renderManager, &RenderManager::resize);
-    connect(morphoWidget, &MorphoWidget::sizeChanged, controlWidget, &ControlWidget::updateWindowSizeLineEdits);
-    connect(morphoWidget, &MorphoWidget::sizeChanged, plotsWidget, &PlotsWidget::setImageSize);
+    // connect(morphoWidget, &MorphoWidget::sizeChanged, renderManager, &RenderManager::resize);
+    // connect(morphoWidget, &MorphoWidget::sizeChanged, controlWidget, &ControlWidget::updateWindowSizeLineEdits);
+    // connect(morphoWidget, &MorphoWidget::sizeChanged, plotsWidget, &PlotsWidget::setImageSize);
 
     connect(morphoWidget, &MorphoWidget::scaleTransformChanged, plotsWidget, &PlotsWidget::transformSources);
     connect(morphoWidget, &MorphoWidget::selectedPointChanged, plotsWidget, &PlotsWidget::setSelectedPoint);
@@ -109,6 +108,7 @@ MainWindow::MainWindow()
     connect(controlWidget, &ControlWidget::stopRecording, this, &MainWindow::stopRecording);
     connect(controlWidget, &ControlWidget::takeScreenshot, this, &MainWindow::takeScreenshot);
     connect(controlWidget, &ControlWidget::imageSizeChanged, this, &MainWindow::setSize);
+    // connect(controlWidget, &ControlWidget::imageSizeChanged, renderManager, &RenderManager::resize);
     connect(controlWidget, &ControlWidget::showMidiWidget, this, &MainWindow::showMidiWidget);
     connect(controlWidget, &ControlWidget::overlayToggled, overlay, &Overlay::enable);
     connect(controlWidget, &ControlWidget::parameterValueChanged, overlay, &Overlay::addMessage);
@@ -300,6 +300,9 @@ void MainWindow::setSize(int width, int height)
     updateGeometry();
     stackedWidget->updateGeometry();
     QApplication::processEvents();
+
+    renderManager->resize(width, height);
+    plotsWidget->setImageSize(width, height);
 }
 
 
@@ -312,6 +315,13 @@ void MainWindow::resizeEvent(QResizeEvent* event)
         morphoWidget->resize(event->size());
     else
         controlWidget->resize(event->size());
+
+    int width = event->size().width();
+    int height = event->size().height();
+
+    renderManager->resize(width, height);
+    plotsWidget->setImageSize(width, height);
+    controlWidget->updateWindowSizeLineEdits(width, height);
 }
 
 

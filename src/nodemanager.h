@@ -56,12 +56,12 @@ public:
 
     QList<QString> availableOperations;
 
-    void init(QOpenGLContext* shareContext);
-
     bool isActive() { return active; }
     void setState(bool state) { active = state; }
 
     bool connectOperations(QUuid srcId, QUuid dstId, float factor);
+    void connectOperations(QMap<QUuid, QMap<QUuid, InputData*>> conections);
+
     void connectCopiedOperationsA(QUuid srcId0, QUuid dstId0, QUuid srcId1, QUuid dstId1);
     void connectCopiedOperationsB(QUuid srcId0, QUuid dstId0, QUuid srcId1, QUuid dstId1);
     void disconnectOperations(QUuid srcId, QUuid dstId);
@@ -105,22 +105,20 @@ public:
     void resetInputSeedTexId(QUuid id);
     bool isSeedFixed(QUuid id);
     void setSeedFixed(QUuid id, bool fixed);
-    void drawSeed(QUuid id);
-    void drawAllSeeds();
 
     void clearLoadedSeeds() { loadedSeeds.clear(); }
     void loadSeed(QUuid id, int type, bool fixed);
 
     bool isOutput(QUuid id) { return id == mOutputId; }
     void setOutput(QUuid id);
-    QUuid getOutput() { return mOutputId; }
+    QUuid outputId() { return mOutputId; }
     GLuint getOUtputFBO() { return outputFBO; }
     // GLuint outputTextureID() { return *mOutputTextureId; }
 
     void pasteOperations();
 
-    void swapLoadedOperations() { operationNodes = loadedOperationNodes; }
-    void swapLoadedSeeds() { seeds = loadedSeeds; }
+    void swapLoadedOperations() { mOperationNodesMap = loadedOperationNodes; }
+    void swapLoadedSeeds() { mSeedsMap = loadedSeeds; }
 
     void swapTwoOperations(QUuid id1, QUuid id2);
 
@@ -129,11 +127,10 @@ public:
     // void clearOperation(QUuid id);
     // void clearAllOperations();
 
-    QMap<QUuid, ImageOperationNode*> getOperationNodes() { return operationNodes; }
-    QMap<QUuid, Seed*> getSeeds() { return seeds; }
-    QList<QUuid> getOperationNodesIDs() { return operationNodes.keys(); }
+    QMap<QUuid, ImageOperationNode*> operationNodesMap() const { return mOperationNodesMap; }
+    QMap<QUuid, Seed*> seedsMap() { return mSeedsMap; }
 
-    bool isNode(QUuid id) { return operationNodes.contains(id) || seeds.contains(id); }
+    bool isNode(QUuid id) { return mOperationNodesMap.contains(id) || mSeedsMap.contains(id); }
 
     QString version = "1.0 alpha";
 
@@ -148,33 +145,35 @@ signals:
     void nodesDisconnected(QUuid srcId, QUuid dstId);
 
 public slots:
-    void addOperationNode(QUuid id, ImageOperation* operation);
-    void connectOperationWidget(QUuid id, OperationWidget* widget);
-    void addSeedNode(QUuid id, Seed* seed);
-    void connectSeedWidget(QUuid id, SeedWidget* widget);
     void onTexturesChanged();
 
 private:
     // RenderManager* mRenderManager;
     Factory* mFactory;
 
-    QMap<QUuid, ImageOperationNode*> operationNodes;
+    QMap<QUuid, ImageOperationNode*> mOperationNodesMap;
     QMap<QUuid, ImageOperationNode*> copiedOperationNodes[2];
     QMap<QUuid, ImageOperationNode*> loadedOperationNodes;
 
-    QMap<QUuid, Seed*> seeds;
+    QMap<QUuid, Seed*> mSeedsMap;
     QMap<QUuid, Seed*> copiedSeeds[2];
     QMap<QUuid, Seed*> loadedSeeds;
 
     QUuid connSrcId;
 
-    QOpenGLContext* mShareContext;
     GLuint outputFBO;
     QUuid mOutputId;
     GLuint* pOutputTextureId = nullptr;
     unsigned int iteration = 0;
 
     bool active = false;
+
+private slots:
+    void addOperationNode(QUuid id, ImageOperation* operation);
+    void addSeedNode(QUuid id, Seed* seed);
+    void connectOperationWidget(QUuid id, OperationWidget* widget);
+    void connectSeedWidget(QUuid id, SeedWidget* widget);
+    void removeAllNodes();
 };
 
 

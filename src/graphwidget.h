@@ -82,7 +82,8 @@ public:
 
     //void drawBlendFactors(bool draw);
 
-    //QPointF nodePosition(QUuid id);
+    QPointF nodePosition(QUuid id);
+    void setNodePosition(QUuid id, QPointF position);
 
     //void clearScene();
     //void loadSeedNode(QUuid id, QPointF position);
@@ -167,10 +168,12 @@ private slots:
     // void addSeedNode();
     //void pasteCopiedNodes();
     void addNewNode(QUuid id, QWidget* widget);
+    void addNewNodeOnPos(QUuid id, QWidget* widget, QPointF pos);
     // void addNewOperationNode(OperationWidget* widget);
     void connectNodes(QUuid srcId, QUuid dstId, EdgeWidget* widget);
     void removeNode(QUuid id);
     void removeEdge(QUuid srcId, QUuid dstId);
+    void clearScene();
 };
 
 

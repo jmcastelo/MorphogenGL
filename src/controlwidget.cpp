@@ -110,7 +110,7 @@ ControlWidget::ControlWidget(double itFPS, double updFPS, Factory* factory, Node
 
     // Parser
 
-    parser = new ConfigurationParser(mNodeManager, mRenderManager, graphWidget);
+    parser = new ConfigurationParser(factory, mNodeManager, mRenderManager, graphWidget);
 
     // Status bar
 
@@ -253,8 +253,8 @@ void ControlWidget::constructSystemToolBar()
     //connect(displayOptionsAction, &QAction::toggled, displayOptionsWidget, &QWidget::setVisible);
     connect(displayOptionsAction, &QAction::triggered, this, &ControlWidget::toggleDisplayOptionsWidget);
     //connect(recordingOptionsAction, &QAction::triggered, this, &ControlWidget::toggleRecordingOptionsWidget);
-    //connect(loadConfigAction, &QAction::triggered, this, &ControlWidget::loadConfig);
-    //connect(saveConfigAction, &QAction::triggered, this, &ControlWidget::saveConfig);
+    connect(loadConfigAction, &QAction::triggered, this, &ControlWidget::loadConfig);
+    connect(saveConfigAction, &QAction::triggered, this, &ControlWidget::saveConfig);
     connect(midiAction, &QAction::triggered, this, &ControlWidget::showMidiWidget);
     connect(overlayAction, &QAction::triggered, this, &ControlWidget::toggleOverlay);
     connect(aboutAction, &QAction::triggered, this, &ControlWidget::about);
@@ -276,9 +276,8 @@ void ControlWidget::iterate()
 
 void ControlWidget::reset()
 {
-    //mNodeManager->clearAllOperations();
-    //mNodeManager->drawAllSeeds();
     mRenderManager->clearAllOpsTextures();
+    mRenderManager->drawAllSeeds();
     mRenderManager->resetIterationNumer();
 }
 
@@ -358,32 +357,16 @@ void ControlWidget::plotsActionTriggered()
 
 
 
-/*void ControlWidget::loadConfig()
+void ControlWidget::loadConfig()
 {
-    QString filename = QFileDialog::getOpenFileName(this, "Load configuration", outputDir, "MorphogenGL configurations (*.morph)");
+    QString filename = QFileDialog::getOpenFileName(this, "Load configuration", QDir::currentPath() + "/configs", "Fosforo configurations (*.fos)");
 
     if (!filename.isEmpty())
     {
-        QList<QUuid> opIDs = generator->getOperationNodesIDs();
-        foreach (QUuid id, opIDs)
-        {
-            removeParametersWidget(id);
-        }
-
         parser->setFilename(filename);
         parser->read();
 
-        opIDs = generator->getOperationNodesIDs();
-        foreach (QUuid id, opIDs)
-        {
-            createParametersWidget(id);
-        }
-
-        generator->sortOperations();
-
-        // ToDo: connect with graph widget
-
-        generator->resetIterationNumer();
+        mRenderManager->resetIterationNumer();
 
         updateIterationNumberLabel();
         updateIterationMetricsLabels(0, 0);
@@ -395,14 +378,14 @@ void ControlWidget::plotsActionTriggered()
 
 void ControlWidget::saveConfig()
 {
-    QString filename = QFileDialog::getSaveFileName(this, "Save configuration", outputDir, "MorphogenGL configurations (*.morph)");
+    QString filename = QFileDialog::getSaveFileName(this, "Save configuration", QDir::currentPath() + "/configs", "Fosforo configurations (*.fos)");
 
     if (!filename.isEmpty())
     {
         parser->setFilename(filename);
         parser->write();
     }
-}*/
+}
 
 
 

@@ -24,6 +24,7 @@
 
 
 
+#include "factory.h"
 #include "nodemanager.h"
 #include "rendermanager.h"
 #include "graphwidget.h"
@@ -40,10 +41,11 @@ class ConfigurationParser: public QObject
     Q_OBJECT
 
 public:
-    ConfigurationParser(NodeManager* nodeManager, RenderManager* renderManager, GraphWidget* graph) :
+    ConfigurationParser(Factory* factory, NodeManager* nodeManager, RenderManager* renderManager, GraphWidget* graphWidget) :
+        mFactory { factory },
         mNodeManager { nodeManager },
         mRenderManager { renderManager},
-        graphWidget { graph }
+        mGraphWidget { graphWidget }
     {}
 
     void setFilename(QString theFilename) { filename = theFilename; }
@@ -54,14 +56,13 @@ signals:
     void newImageSizeRead(int width, int height);
 
 private:
+    Factory* mFactory;
     NodeManager* mNodeManager;
     RenderManager* mRenderManager;
-    GraphWidget* graphWidget;
+    GraphWidget* mGraphWidget;
     QString filename;
-    QXmlStreamWriter stream;
-    QXmlStreamReader xml;
 
-    void writeSeedNode(QUuid id, Seed* seed);
-    void writeOperationNode(ImageOperationNode* node);
-    ImageOperation* readImageOperation();
+    void writeSeedNode(QUuid id, Seed* seed, QXmlStreamWriter& stream);
+    void writeOperationNode(ImageOperationNode* node, QXmlStreamWriter& stream);
+    // ImageOperation* readImageOperation();
 };

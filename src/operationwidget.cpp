@@ -373,7 +373,7 @@ void OperationWidget::setup()
 
     // Once widgets set on grid, optimize its layout to set it with proper row and column spans and sizes
 
-    if (gridWidget->isVisible())
+    // if (gridWidget->isVisible())
         gridWidget->optimizeLayout();
 
     headerWidget->adjustSize();
