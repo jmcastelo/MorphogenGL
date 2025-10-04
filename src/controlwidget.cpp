@@ -1061,7 +1061,7 @@ void ControlWidget::populateSortedOperationsTable(QList<QPair<QUuid, QString>> s
 
 
 
-void ControlWidget::setupMidi(QString portName, bool open)
+/*void ControlWidget::setupMidi(QString portName, bool open)
 {
     if (open)
     {
@@ -1079,11 +1079,11 @@ void ControlWidget::setupMidi(QString portName, bool open)
 
     anyMidiPortOpen = !midiFloatLinks.isEmpty() || !midiIntLinks.isEmpty();
     setUpMidiLinks(anyMidiPortOpen);
-}
+}*/
 
 
 
-void ControlWidget::setUpMidiLinks(bool midiOn)
+/*void ControlWidget::setUpMidiLinks(bool midiOn)
 {
     for (auto [id, widget] : operationsWidgets.asKeyValueRange())
     {
@@ -1093,18 +1093,18 @@ void ControlWidget::setUpMidiLinks(bool midiOn)
             midiUnlinkParametersWidget(id);
     }
 
-    /*for (auto [id, widget] : blendFactorWidgets.asKeyValueRange())
+    for (auto [id, widget] : blendFactorWidgets.asKeyValueRange())
     {
         if (midiOn)
             midiLinkBlendFactorWidget(id);
         else
             midiUnlinkBlendFactorWidget(id);
-    }*/
-}
+    }
+}*/
 
 
 
-void ControlWidget::updateMidiLinks(QString portName, int key, int value)
+/*void ControlWidget::updateMidiLinks(QString portName, int key, int value)
 {
     if (linkingFloat != nullptr)
     {
@@ -1121,8 +1121,7 @@ void ControlWidget::updateMidiLinks(QString portName, int key, int value)
         linkingFloat->setIndexMax(127);
         linkingFloat->setMidiLinked(true);
 
-        connect(linkingFloat, &Number<float>::deleting, this, [=, this]()
-        {
+        connect(linkingFloat, &Number<float>::deleting, this, [=, this]() {
             midiFloatLinks[portName].remove(key);
         });
 
@@ -1165,7 +1164,7 @@ void ControlWidget::updateMidiLinks(QString portName, int key, int value)
             midiIntLinks[portName][key]->setIndex();
         }
     }
-}
+}*/
 
 
 
@@ -1207,16 +1206,14 @@ void ControlWidget::updateMidiLinks(QString portName, int key, int value)
 
 
 
-void ControlWidget::midiLinkParametersWidget(QUuid id)
+/*void ControlWidget::midiLinkParametersWidget(QUuid id)
 {
     operationsWidgets.value(id)->toggleMidiButton(anyMidiPortOpen);
 
-    connect(operationsWidgets.value(id), QOverload<Number<float>*>::of(&OperationWidget::linkWait), this, [=, this](Number<float>* number)
-    {
+    connect(operationsWidgets.value(id), QOverload<Number<float>*>::of(&OperationWidget::linkWait), this, [=, this](Number<float>* number) {
         linkingFloat = number;
     });
-    connect(operationsWidgets.value(id), QOverload<Number<int>*>::of(&OperationWidget::linkWait), this, [=, this](Number<int>* number)
-    {
+    connect(operationsWidgets.value(id), QOverload<Number<int>*>::of(&OperationWidget::linkWait), this, [=, this](Number<int>* number) {
         linkingInt = number;
     });
 
@@ -1250,11 +1247,11 @@ void ControlWidget::midiLinkParametersWidget(QUuid id)
             }
         }
     });
-}
+}*/
 
 
 
-void ControlWidget::midiUnlinkParametersWidget(QUuid id)
+/*void ControlWidget::midiUnlinkParametersWidget(QUuid id)
 {
     operationsWidgets.value(id)->toggleMidiButton(anyMidiPortOpen);
 
@@ -1263,7 +1260,7 @@ void ControlWidget::midiUnlinkParametersWidget(QUuid id)
 
     disconnect(operationsWidgets.value(id), QOverload<Number<float>*>::of(&OperationWidget::linkBreak), this, nullptr);
     disconnect(operationsWidgets.value(id), QOverload<Number<int>*>::of(&OperationWidget::linkBreak), this, nullptr);
-}
+}*/
 
 
 

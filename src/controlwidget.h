@@ -103,8 +103,8 @@ public slots:
     void updateIterationMetricsLabels(double uspf, double fps);
     void updateUpdateMetricsLabels(double uspf, double fps);
     void setVideoCaptureElapsedTimeLabel(int frameNumber);
-    void setupMidi(QString portName, bool open);
-    void updateMidiLinks(QString portName, int key, int value);
+    //void setupMidi(QString portName, bool open);
+    //void updateMidiLinks(QString portName, int key, int value);
 
 protected:
     //void resizeEvent(QResizeEvent* event) override;
@@ -212,10 +212,10 @@ private slots:
     //void createParametersWidget(QUuid id);
     //void setUpBlendFactorWidget(BlendFactorWidget* widget);
 
-    void setUpMidiLinks(bool midiOn);
+    // void setUpMidiLinks(bool midiOn);
 
-    void midiLinkParametersWidget(QUuid id);
-    void midiUnlinkParametersWidget(QUuid id);
+    // void midiLinkParametersWidget(QUuid id);
+    // void midiUnlinkParametersWidget(QUuid id);
 
     //void midiLinkBlendFactorWidget(QUuid id);
     //void midiUnlinkBlendFactorWidget(QUuid id);

@@ -11,6 +11,8 @@ OperationWidget::OperationWidget(ImageOperation* operation, bool midiEnabled, bo
     mOperation { operation },
     mMidiEnabled { midiEnabled }
 {
+    mMidiSignals = new MidiSignals(this);
+
     mOpBuilder = new OperationBuilder(mOperation);
     mOpBuilder->installEventFilter(this);
     mOpBuilder->setVisible(false);
@@ -650,6 +652,13 @@ void OperationWidget::toggleMidiButton(bool show)
 
 
 
+MidiSignals* OperationWidget::midiSignals()
+{
+    return mMidiSignals;
+}
+
+
+
 void OperationWidget::toggleSelParamWidgets(bool visible)
 {
     selParamSlider->setVisible(visible);
@@ -1066,12 +1075,12 @@ void OperationWidget::updateMidiButton(ParameterWidget<T>* widget)
         if (checked)
         {
             midiLinkButton->setStyleSheet("QPushButton { image: url(:/icons/circle-orange.png); background-color: transparent; border: 0; }");
-            emit linkWait(number);
+            emit mMidiSignals->linkWait(number);
         }
         else
         {
             midiLinkButton->setStyleSheet("QPushButton { image: url(:/icons/circle-grey.png); background-color: transparent; border: 0; }");
-            emit linkBreak(number);
+            emit mMidiSignals->linkBreak(number);
         }
     });
 

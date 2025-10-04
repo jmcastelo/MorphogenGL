@@ -12,7 +12,8 @@
 #include "recorder.h"
 #include "timerthread.h"
 #include "midicontrol.h"
-#include "midiwidget.h"
+#include "midilistwidget.h"
+#include "midilinkmanager.h"
 #include "overlay.h"
 
 #include <QMainWindow>
@@ -55,7 +56,8 @@ private:
     PlotsWidget* plotsWidget;
     Recorder* recorder = nullptr;
     MidiControl midiControl;
-    MidiWidget* midiWidget;
+    MidiListWidget* midiListWidget;
+    MidiLinkManager midiLinkManager;
     Overlay* overlay;
 
     TimerThread* updateTimer;

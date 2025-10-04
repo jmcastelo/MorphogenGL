@@ -1,11 +1,15 @@
-#include "midiwidget.h"
+
+
+
+#include "midilistwidget.h"
+
 #include <QListWidgetItem>
 #include <QCheckBox>
 #include <QVBoxLayout>
 
 
 
-MidiWidget::MidiWidget(QWidget *parent): QWidget{parent}
+MidiListWidget::MidiListWidget(QWidget *parent): QWidget{parent}
 {
     portsTable = new QListWidget();
 
@@ -19,7 +23,7 @@ MidiWidget::MidiWidget(QWidget *parent): QWidget{parent}
 
 
 
-void MidiWidget::populatePortsTable(QList<QString> portNames)
+void MidiListWidget::populatePortsTable(QList<QString> portNames)
 {
     portsTable->clear();
 

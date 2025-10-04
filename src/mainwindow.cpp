@@ -49,12 +49,13 @@ MainWindow::MainWindow()
 
     stackedLayout->setCurrentWidget(controlWidget);
 
-    midiWidget = new MidiWidget();
+    midiListWidget = new MidiListWidget();
 
-    connect(&midiControl, &MidiControl::inputPortsChanged, midiWidget, &MidiWidget::populatePortsTable);
-    connect(&midiControl, &MidiControl::inputPortOpen, controlWidget, &ControlWidget::setupMidi);
-    connect(&midiControl, &MidiControl::ccInputMessageReceived, controlWidget, &ControlWidget::updateMidiLinks);
-    connect(midiWidget, &MidiWidget::portSelected, &midiControl, &MidiControl::openPort);
+    connect(&midiControl, &MidiControl::inputPortsChanged, midiListWidget, &MidiListWidget::populatePortsTable);
+    connect(&midiControl, &MidiControl::inputPortOpen, &midiLinkManager, &MidiLinkManager::setupMidi);
+    connect(&midiControl, &MidiControl::ccInputMessageReceived, &midiLinkManager, &MidiLinkManager::updateMidiLinks);
+    connect(midiListWidget, &MidiListWidget::portSelected, &midiControl, &MidiControl::openPort);
+    connect(&midiLinkManager, &MidiLinkManager::midiEnabled, nodeManager, &NodeManager::midiEnabled);
 
     midiControl.setInputPorts();
 
@@ -68,7 +69,7 @@ MainWindow::MainWindow()
     connect(this, &MainWindow::iterationTimeMeasured, controlWidget, &ControlWidget::updateIterationMetricsLabels);
     connect(this, &MainWindow::updateTimeMeasured, controlWidget, &ControlWidget::updateUpdateMetricsLabels);
 
-    connect(morphoWidget, &MorphoWidget::openGLInitialized, this, [&](){
+    connect(morphoWidget, &MorphoWidget::openGLInitialized, this, [&]() {
         renderManager->init(morphoWidget->context());
         plotsWidget->init(morphoWidget->context());
 
@@ -102,6 +103,8 @@ MainWindow::MainWindow()
     connect(nodeManager, &NodeManager::outputFBOChanged, plotsWidget, &PlotsWidget::setFBO);
     connect(nodeManager, &NodeManager::sortedOperationsChanged, renderManager, &RenderManager::setSortedOperations);
     connect(nodeManager, &NodeManager::parameterValueChanged, overlay, &Overlay::addMessage);
+    connect(nodeManager, &NodeManager::midiSignalsCreated, &midiLinkManager, &MidiLinkManager::addMidiSignals);
+    connect(nodeManager, &NodeManager::midiSignalsRemoved, &midiLinkManager, &MidiLinkManager::removeMidiSignals);
 
     connect(controlWidget, &ControlWidget::iterationFPSChanged, this, &MainWindow::setIterationTimerInterval);
     connect(controlWidget, &ControlWidget::updateFPSChanged, this, &MainWindow::setUpdateTimerInterval);
@@ -133,7 +136,7 @@ MainWindow::~MainWindow()
     delete morphoWidget;
     delete overlay;
 
-    delete midiWidget;
+    delete midiListWidget;
 
     delete iterationTimer;
     delete updateTimer;
@@ -280,7 +283,7 @@ void MainWindow::takeScreenshot(QString filename)
 
 void MainWindow::showMidiWidget()
 {
-    midiWidget->setVisible(!midiWidget->isVisible());
+    midiListWidget->setVisible(!midiListWidget->isVisible());
 }
 
 
@@ -377,7 +380,7 @@ void MainWindow::closeEvent(QCloseEvent* event)
 
     renderManager->setActive(false);
 
-    midiWidget->close();
+    midiListWidget->close();
 
     controlWidget->close();
 

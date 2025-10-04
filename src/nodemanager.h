@@ -35,6 +35,7 @@
 #include "operationwidget.h"
 #include "seedwidget.h"
 #include "edgewidget.h"
+#include "midisignals.h"
 
 #include <QObject>
 #include <QList>
@@ -121,6 +122,11 @@ signals:
     void nodesConnected(QUuid srcId, QUuid dstId, EdgeWidget* widget);
     void nodeRemoved(QUuid id);
     void nodesDisconnected(QUuid srcId, QUuid dstId);
+
+    void midiSignalsCreated(QUuid id, MidiSignals* midisSignals);
+    void midiSignalsRemoved(QUuid id);
+
+    void midiEnabled(bool enabled);
 
     void parameterValueChanged(QUuid id, QString operationName, QString parameterName, QString value);
 

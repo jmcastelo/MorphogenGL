@@ -1,5 +1,5 @@
-#ifndef MIDIWIDGET_H
-#define MIDIWIDGET_H
+#ifndef MIDILISTWIDGET_H
+#define MIDILISTWIDGET_H
 
 
 
@@ -9,12 +9,12 @@
 
 
 
-class MidiWidget : public QWidget
+class MidiListWidget : public QWidget
 {
     Q_OBJECT
 
 public:
-    explicit MidiWidget(QWidget *parent = nullptr);
+    explicit MidiListWidget(QWidget *parent = nullptr);
 
 signals:
     void portSelected(int port, bool state);
@@ -26,4 +26,6 @@ private:
     QListWidget* portsTable;
 };
 
-#endif // MIDIWIDGET_H
+
+
+#endif // MIDILISTWIDGET_H

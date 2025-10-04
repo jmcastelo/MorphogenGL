@@ -547,7 +547,7 @@ void NodeManager::addOperationNode(QUuid id, ImageOperation* operation)
 
 void NodeManager::connectOperationWidget(QUuid id, OperationWidget* widget)
 {
-    connect(widget, &OperationWidget::outputChanged, this, [=, this](bool checked){
+    connect(widget, &OperationWidget::outputChanged, this, [=, this](bool checked) {
         if (checked)
         {
             setOutput(id);
@@ -562,7 +562,7 @@ void NodeManager::connectOperationWidget(QUuid id, OperationWidget* widget)
 
     connect(this, &NodeManager::outputNodeChanged, widget, &OperationWidget::toggleOutputAction);
 
-    connect(widget, &OperationWidget::connectTo, this, [=, this](){
+    connect(widget, &OperationWidget::connectTo, this, [=, this]() {
         if (connSrcId.isNull())
             connSrcId = id;
         else if (connectOperations(connSrcId, id, 1.0))
@@ -574,10 +574,15 @@ void NodeManager::connectOperationWidget(QUuid id, OperationWidget* widget)
             connSrcId = QUuid();
     });
 
-    connect(widget, &OperationWidget::remove, this, [=, this](){
+    connect(widget, &OperationWidget::remove, this, [=, this]() {
+        emit midiSignalsRemoved(id);
         emit nodeRemoved(id);
         removeOperation(id);
     });
+
+    emit midiSignalsCreated(id, widget->midiSignals());
+
+    connect(this, &NodeManager::midiEnabled, widget, &OperationWidget::toggleMidiButton);
 }
 
 

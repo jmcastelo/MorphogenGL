@@ -27,6 +27,7 @@
 
 
 
+#include "midisignals.h"
 #include "imageoperation.h"
 #include "widgets/uniformwidget.h"
 #include "widgets/uniformmat4widget.h"
@@ -62,16 +63,16 @@ public:
 
     void setup();
 
-    void toggleMidiButton(bool show);
+    MidiSignals* midiSignals();
 
 signals:
-    void linkWait(Number<float>* number);
+    /*void linkWait(Number<float>* number);
     void linkWait(Number<int>* number);
     void linkWait(Number<unsigned int>* number);
 
     void linkBreak(Number<float>* number);
     void linkBreak(Number<int>* number);
-    void linkBreak(Number<unsigned int>* number);
+    void linkBreak(Number<unsigned int>* number);*/
 
     void outputChanged(bool checked);
     void connectTo();
@@ -80,6 +81,7 @@ signals:
 public slots:
     void recreate();
     void toggleOutputAction(QWidget* widget);
+    void toggleMidiButton(bool show);
 
 protected:
     void closeEvent(QCloseEvent* event) override;
@@ -88,7 +90,9 @@ protected:
 
 private:
     ImageOperation* mOperation;
+
     bool mMidiEnabled;
+    MidiSignals* mMidiSignals;
 
     QVBoxLayout* mainLayout;
 
