@@ -167,6 +167,20 @@ RenderManager::~RenderManager()
 
 
 
+bool RenderManager::active() const
+{
+    return mActive;
+}
+
+
+
+void RenderManager::setActive(bool set)
+{
+    mActive = set;
+}
+
+
+
 void RenderManager::iterate()
 {
     if (!mSortedOperations.isEmpty())

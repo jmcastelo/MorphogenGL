@@ -56,9 +56,6 @@ public:
 
     QList<QString> availableOperations;
 
-    bool isActive() { return active; }
-    void setState(bool state) { active = state; }
-
     bool connectOperations(QUuid srcId, QUuid dstId, float factor);
     void connectOperations(QMap<QUuid, QMap<QUuid, InputData*>> conections);
 
@@ -164,9 +161,6 @@ private:
     GLuint outputFBO;
     QUuid mOutputId;
     GLuint* pOutputTextureId = nullptr;
-    unsigned int iteration = 0;
-
-    bool active = false;
 
 private slots:
     void addOperationNode(QUuid id, ImageOperation* operation);

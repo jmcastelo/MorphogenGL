@@ -56,6 +56,9 @@ public:
 
     // ImageOperation* createNewOperation();
 
+    bool active() const;
+    void setActive(bool set);
+
     void iterate();
 
     QImage outputImage();
@@ -118,6 +121,7 @@ private:
     GLuint* mOutputTexId = nullptr;
     GLuint mBlendArrayTexId = 0;
 
+    bool mActive = false;
     unsigned int mIterationNumber = 0;
 
     GLsync fence = 0;

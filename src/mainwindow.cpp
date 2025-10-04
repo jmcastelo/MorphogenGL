@@ -160,7 +160,7 @@ void MainWindow::beat()
 
 void MainWindow::iterate()
 {
-    if (nodeManager->isActive())
+    if (renderManager->active())
     {
         renderManager->iterate();
         plotsWidget->updatePlots();
@@ -214,7 +214,7 @@ void MainWindow::computeUpdateFPS()
 
 void MainWindow::setIterationState(bool state)
 {
-    nodeManager->setState(state);
+    renderManager->setActive(state);
 }
 
 
@@ -374,7 +374,7 @@ void MainWindow::closeEvent(QCloseEvent* event)
     iterationTimer->stop();
     updateTimer->stop();
 
-    nodeManager->setState(false);
+    renderManager->setActive(false);
 
     midiWidget->close();
 
