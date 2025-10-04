@@ -27,8 +27,9 @@ BaseUniformParameter<T>::BaseUniformParameter(QString theName, QString theUnifor
         mNumbers.append(number);
     }
 
-    for (int i = 0; i < mNumbers.size(); i++)
+    for (int i = 0; i < mNumbers.size(); i++) {
         connect(mNumbers[i], &NumberSignals::valueChanged, this, [=, this](QVariant value){ emit valueChanged(i, value); });
+    }
 }
 
 
@@ -45,8 +46,9 @@ BaseUniformParameter<T>::BaseUniformParameter(QString theName, QString theUnifor
         mNumbers.append(number);
     }
 
-    for (int i = 0; i < mNumbers.size(); i++)
+    for (int i = 0; i < mNumbers.size(); i++) {
         connect(mNumbers[i], &NumberSignals::valueChanged, this, [=, this](QVariant value){ emit valueChanged(i, value); });
+    }
 }
 
 
@@ -61,8 +63,9 @@ BaseUniformParameter<T>::BaseUniformParameter(const BaseUniformParameter<T>& par
         mNumbers.append(newNumber);
     }
 
-    for (int i = 0; i < mNumbers.size(); i++)
+    for (int i = 0; i < mNumbers.size(); i++) {
         connect(mNumbers[i], &NumberSignals::valueChanged, this, [=, this](QVariant value){ emit valueChanged(i, value); });
+    }
 
     mUniformName = parameter.mUniformName;
     mUniformType = parameter.mUniformType;
@@ -130,6 +133,7 @@ void BaseUniformParameter<T>::setValueFromIndex(int i, int index)
         mNumbers[i]->setValueFromIndex(index);
 
         emit valueChanged(i, QVariant(mNumbers[i]->value()));
+        emit valueChanged(QVariant(mNumbers[i]->value()));
 
         setUniform();
     }

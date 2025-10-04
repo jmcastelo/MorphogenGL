@@ -176,7 +176,7 @@ ControlWidget::~ControlWidget()
     delete parser;
     delete graphWidget;
     delete sortedOperationWidget;
-    qDeleteAll(operationsWidgets);
+    // qDeleteAll(operationsWidgets);
     //qDeleteAll(blendFactorWidgets);
 }
 
@@ -395,7 +395,7 @@ void ControlWidget::toggleOverlay()
 
     emit overlayToggled(overlayEnabled);
 
-    if (overlayEnabled)
+    /*if (overlayEnabled)
     {
         foreach (QUuid id, operationsWidgets.keys())
             overlayLinkParametersWidget(id);
@@ -410,7 +410,7 @@ void ControlWidget::toggleOverlay()
 
         //foreach (QUuid id, blendFactorWidgets.keys())
             //overlayUnlinkBlendFactorWidget(id);
-    }
+    }*/
 }
 
 
@@ -1263,50 +1263,6 @@ void ControlWidget::midiUnlinkParametersWidget(QUuid id)
 
     disconnect(operationsWidgets.value(id), QOverload<Number<float>*>::of(&OperationWidget::linkBreak), this, nullptr);
     disconnect(operationsWidgets.value(id), QOverload<Number<int>*>::of(&OperationWidget::linkBreak), this, nullptr);
-}
-
-
-
-void ControlWidget::overlayLinkParametersWidget(QUuid id)
-{
-    ImageOperation *operation = mNodeManager->getOperation(id);
-
-    foreach (auto parameter, operation->uniformParameters<float>())
-    {
-        connect(parameter, QOverload<QVariant>::of(&Parameter::valueChanged), this, [=, this](QVariant value){
-            emit parameterValueChanged(id, operation->name(), parameter->name(), QString::number(value.toFloat(), 'f', 6));
-        });
-    }
-
-    foreach (auto parameter, operation->uniformParameters<int>())
-    {
-        connect(parameter, QOverload<QVariant>::of(&Parameter::valueChanged), this, [=, this](QVariant value){
-            emit parameterValueChanged(id, operation->name(), parameter->name(), QString::number(value.toInt()));
-        });
-    }
-
-    foreach (auto parameter, operation->uniformParameters<unsigned int>())
-    {
-        connect(parameter, QOverload<QVariant>::of(&Parameter::valueChanged), this, [=, this](QVariant value){
-            emit parameterValueChanged(id, operation->name(), parameter->name(), QString::number(value.toUInt()));
-        });
-    }
-}
-
-
-
-void ControlWidget::overlayUnlinkParametersWidget(QUuid id)
-{
-    ImageOperation *operation = mNodeManager->getOperation(id);
-
-    foreach (auto parameter, operation->uniformParameters<float>())
-        disconnect(parameter, QOverload<QVariant>::of(&Parameter::valueChanged), this, nullptr);
-
-    foreach (auto parameter, operation->uniformParameters<int>())
-        disconnect(parameter, QOverload<QVariant>::of(&Parameter::valueChanged), this, nullptr);
-
-    foreach (auto parameter, operation->uniformParameters<unsigned int>())
-        disconnect(parameter, QOverload<QVariant>::of(&Parameter::valueChanged), this, nullptr);
 }
 
 

@@ -61,10 +61,12 @@ void Message::fade()
 
 void Message::setValue(QString parameter, QString value)
 {
-    if (values.contains(parameter))
+    if (values.contains(parameter)) {
         values[parameter] = value;
-    else
+    }
+    else {
         values.insert(parameter, value);
+    }
 
     setText();
     setFrame();

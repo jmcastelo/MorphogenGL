@@ -101,6 +101,7 @@ MainWindow::MainWindow()
     connect(nodeManager, &NodeManager::outputTextureChanged, plotsWidget, &PlotsWidget::setTextureID);
     connect(nodeManager, &NodeManager::outputFBOChanged, plotsWidget, &PlotsWidget::setFBO);
     connect(nodeManager, &NodeManager::sortedOperationsChanged, renderManager, &RenderManager::setSortedOperations);
+    connect(nodeManager, &NodeManager::parameterValueChanged, overlay, &Overlay::addMessage);
 
     connect(controlWidget, &ControlWidget::iterationFPSChanged, this, &MainWindow::setIterationTimerInterval);
     connect(controlWidget, &ControlWidget::updateFPSChanged, this, &MainWindow::setUpdateTimerInterval);
@@ -111,7 +112,7 @@ MainWindow::MainWindow()
     // connect(controlWidget, &ControlWidget::imageSizeChanged, renderManager, &RenderManager::resize);
     connect(controlWidget, &ControlWidget::showMidiWidget, this, &MainWindow::showMidiWidget);
     connect(controlWidget, &ControlWidget::overlayToggled, overlay, &Overlay::enable);
-    connect(controlWidget, &ControlWidget::parameterValueChanged, overlay, &Overlay::addMessage);
+    // connect(controlWidget, &ControlWidget::parameterValueChanged, overlay, &Overlay::addMessage);
 
     setWindowTitle("Fosforo");
     setWindowIcon(QIcon(":/icons/morphogengl.png"));

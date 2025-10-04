@@ -93,7 +93,6 @@ signals:
     void takeScreenshot(QString filename);
     void iterationFPSChanged(double newFPS);
     void updateFPSChanged(double newFPS);
-    void parameterValueChanged(QUuid id, QString operationName, QString parameterName, QString value);
 
 
 public slots:
@@ -217,9 +216,6 @@ private slots:
 
     void midiLinkParametersWidget(QUuid id);
     void midiUnlinkParametersWidget(QUuid id);
-
-    void overlayLinkParametersWidget(QUuid id);
-    void overlayUnlinkParametersWidget(QUuid id);
 
     //void midiLinkBlendFactorWidget(QUuid id);
     //void midiUnlinkBlendFactorWidget(QUuid id);

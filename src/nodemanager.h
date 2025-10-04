@@ -80,19 +80,6 @@ public:
     // void enableOperation(QUuid id, bool enabled);
     // bool isOperationEnabled(QUuid id);
 
-    void clearLoadedOperations() { loadedOperationNodes.clear(); }
-    void loadOperation(QUuid id, ImageOperation* operation);
-    void connectLoadedOperations(QMap<QUuid, QMap<QUuid, InputData*>> conections);
-    ImageOperation* loadImageOperation(
-        QString operationName,
-        bool enabled,
-        std::vector<bool> boolParameters,
-        std::vector<int> intParameters,
-        std::vector<float> floatParameters,
-        std::vector<int> interpolationParameters,
-        std::vector<float> kernelElements,
-        std::vector<float> matrixElements);
-
     // QPair<QUuid, SeedWidget*> addSeed();
     QUuid copySeed(QUuid srcId);
     void removeSeed(QUuid id);
@@ -103,9 +90,6 @@ public:
     bool isSeedFixed(QUuid id);
     void setSeedFixed(QUuid id, bool fixed);
 
-    void clearLoadedSeeds() { loadedSeeds.clear(); }
-    void loadSeed(QUuid id, int type, bool fixed);
-
     bool isOutput(QUuid id) { return id == mOutputId; }
     void setOutput(QUuid id);
     QUuid outputId() { return mOutputId; }
@@ -113,9 +97,6 @@ public:
     // GLuint outputTextureID() { return *mOutputTextureId; }
 
     void pasteOperations();
-
-    void swapLoadedOperations() { mOperationNodesMap = loadedOperationNodes; }
-    void swapLoadedSeeds() { mSeedsMap = loadedSeeds; }
 
     void swapTwoOperations(QUuid id1, QUuid id2);
 
@@ -141,6 +122,8 @@ signals:
     void nodeRemoved(QUuid id);
     void nodesDisconnected(QUuid srcId, QUuid dstId);
 
+    void parameterValueChanged(QUuid id, QString operationName, QString parameterName, QString value);
+
 public slots:
     void onTexturesChanged();
 
@@ -150,11 +133,9 @@ private:
 
     QMap<QUuid, ImageOperationNode*> mOperationNodesMap;
     QMap<QUuid, ImageOperationNode*> copiedOperationNodes[2];
-    QMap<QUuid, ImageOperationNode*> loadedOperationNodes;
 
     QMap<QUuid, Seed*> mSeedsMap;
     QMap<QUuid, Seed*> copiedSeeds[2];
-    QMap<QUuid, Seed*> loadedSeeds;
 
     QUuid connSrcId;
 

@@ -64,5 +64,4 @@ private:
 
     void writeSeedNode(QUuid id, Seed* seed, QXmlStreamWriter& stream);
     void writeOperationNode(ImageOperationNode* node, QXmlStreamWriter& stream);
-    // ImageOperation* readImageOperation();
 };

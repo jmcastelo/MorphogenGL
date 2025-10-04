@@ -18,11 +18,12 @@ Overlay::~Overlay()
 
 void Overlay::addMessage(QUuid id, QString operationName, QString parameterName, QString value)
 {
-    if (messages.contains(id))
-        messages.value(id)->setValue(parameterName, value);
+    if (messages.contains(id)) {
+        messages[id]->setValue(parameterName, value);
+    }
     else
     {
-        Message *message = new Message(operationName, parameterName, value);
+        Message* message = new Message(operationName, parameterName, value);
         connect(message, &Message::expired, this, &Overlay::removeMessage);
         messages.insert(id, message);
     }
@@ -57,8 +58,9 @@ void Overlay::setMessagesFrames()
 
     qreal totalHeight = 0.0;
 
-    for (auto [id, message] : messages.asKeyValueRange())
+    for (auto [id, message] : messages.asKeyValueRange()) {
         totalHeight += message->getFrame().height();
+    }
 
     totalHeight += (messages.size() + 1) * margin;
 

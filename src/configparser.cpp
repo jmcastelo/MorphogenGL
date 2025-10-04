@@ -24,10 +24,7 @@
 
 #include "configparser.h"
 #include "operationparser.h"
-#include "parameters/uniformparameter.h"
-#include "parameters/number.h"
 
-#include <vector>
 #include <QFile>
 
 
@@ -134,55 +131,6 @@ void ConfigurationParser::writeOperationNode(ImageOperationNode* node, QXmlStrea
 
     opParser.writeOperation(node->operation(), stream, true);
 
-    /*stream.writeStartElement("operation");
-
-    stream.writeAttribute("name", node->operation()->name());
-    stream.writeAttribute("enabled", QString::number(node->operation()->enabled()));
-
-    foreach (auto parameter, node->operation()->uniformParameters<float>())
-    {
-        stream.writeStartElement("parameter");
-        stream.writeAttribute("name", parameter->name());
-        stream.writeAttribute("type", "float");
-        foreach (auto number, parameter->numbers())
-        {
-            stream.writeStartElement("number");
-            stream.writeCharacters(QString::number(number->value()));
-            stream.writeEndElement();
-        }
-        stream.writeEndElement();
-    }
-
-    foreach (auto parameter, node->operation()->uniformParameters<int>())
-    {
-        stream.writeStartElement("parameter");
-        stream.writeAttribute("name", parameter->name());
-        stream.writeAttribute("type", "int");
-        foreach (auto number, parameter->numbers())
-        {
-            stream.writeStartElement("number");
-            stream.writeCharacters(QString::number(number->value()));
-            stream.writeEndElement();
-        }
-        stream.writeEndElement();
-    }
-
-    foreach (auto parameter, node->operation()->uniformParameters<unsigned int>())
-    {
-        stream.writeStartElement("parameter");
-        stream.writeAttribute("name", parameter->name());
-        stream.writeAttribute("type", "unsigned int");
-        foreach (auto number, parameter->numbers())
-        {
-            stream.writeStartElement("number");
-            stream.writeCharacters(QString::number(number->value()));
-            stream.writeEndElement();
-        }
-        stream.writeEndElement();
-    }
-
-    stream.writeEndElement();*/
-
     stream.writeStartElement("inputs");
 
     for (auto [id, inData]: node->inputs().asKeyValueRange())
@@ -245,11 +193,6 @@ void ConfigurationParser::read()
         {
             if (mStream.name() == "nodes")
             {
-                // mNodeManager->clearLoadedSeeds();
-                // mNodeManager->clearLoadedOperations();
-
-                // QMap<QUuid, QPointF> seedNodePositions;
-                // QMap<QUuid, QPair<QString, QPointF>> operationNodeData;
                 QMap<QUuid, QMap<QUuid, InputData*>> connections;
 
                 while (mStream.readNextStartElement())
@@ -301,10 +244,8 @@ void ConfigurationParser::read()
                         }
 
                         Seed* seed = new Seed(type, fixed, imageFilename);
-                        //mNodeManager->loadSeed(id, type, fixed);
                         mFactory->addSeed(id, seed);
                         mGraphWidget->setNodePosition(id, position);
-                        // seedNodePositions.insert(id, position);
                     }
                     else if (mStream.name() == "operation_node")
                     {
@@ -368,21 +309,11 @@ void ConfigurationParser::read()
                                         mStream.skipCurrentElement();
                                     }
                                 }
-
-                                // operationNodeData.insert(id, QPair<QString, QPointF>(operation->name(), position));
                             }
                         }
 
                         mFactory->addOperation(id, operation);
                         mGraphWidget->setNodePosition(id, position);
-                        //mNodeManager->loadOperation(id, operation);
-
-                        /*if (operation)
-                        {
-                            mNodeManager->loadOperation(id, operation);
-                            connections.insert(id, inputs);
-                            operationNodeData.insert(id, QPair<QString, QPointF>(operation->name(), position));
-                        }*/
                     }
                     else
                     {
@@ -391,29 +322,7 @@ void ConfigurationParser::read()
                 }
 
                 mNodeManager->connectOperations(connections);
-
-                // mNodeManager->swapLoadedSeeds();
-                // mNodeManager->swapLoadedOperations();
-
                 mNodeManager->sortOperations();
-
-                /*graphWidget->clearScene();
-
-                QMap<QUuid, QPointF>::const_iterator i = seedNodePositions.constBegin();
-                while (i != seedNodePositions.constEnd())
-                {
-                    graphWidget->loadSeedNode(i.key(), i.value());
-                    i++;
-                }
-
-                QMap<QUuid, QPair<QString, QPointF>>::const_iterator j = operationNodeData.constBegin();
-                while (j != operationNodeData.constEnd())
-                {
-                    graphWidget->loadOperationNode(j.key(), j.value().first, j.value().second);
-                    j++;
-                }
-
-                graphWidget->connectNodes(connections);*/
             }
             else if (mStream.name() == "display")
             {
@@ -430,8 +339,6 @@ void ConfigurationParser::read()
                             else
                                 mStream.skipCurrentElement();
                         }
-
-                        //emit newImageSizeRead(imageWidth, imageHeight);
                     }
                     else if (mStream.name() == "output_node")
                     {
@@ -463,70 +370,3 @@ void ConfigurationParser::read()
 
     inFile.close();
 }
-
-
-
-/*ImageOperation* ConfigurationParser::readImageOperation()
-{
-    QString operationName = mStream.attributes().value("name").toString();
-
-    bool enabled = mStream.attributes().value("enabled").toInt();
-
-    std::vector<bool> boolParameters;
-    std::vector<int> intParameters;
-    std::vector<float> floatParameters;
-    std::vector<int> interpolationFlagParameters;
-    std::vector<float> kernelElements;
-    std::vector<float> matrixElements;
-
-    while (mStream.readNextStartElement())
-    {
-        if (mStream.name() == "parameter")
-        {
-            QString parameterType = mStream.attributes().value("type").toString();
-
-            if (parameterType == "bool")
-                boolParameters.push_back(mStream.readElementText().toInt());
-            else if (parameterType == "int")
-                intParameters.push_back(mStream.readElementText().toInt());
-            else if (parameterType == "float")
-                floatParameters.push_back(mStream.readElementText().toFloat());
-            else if (parameterType == "interpolationflag")
-                interpolationFlagParameters.push_back(mStream.readElementText().toInt());
-            else if (parameterType == "kernel")
-            {
-                while (mStream.readNextStartElement())
-                {
-                    if (mStream.name() == "element")
-                        kernelElements.push_back(mStream.readElementText().toFloat());
-                     else
-                        mStream.skipCurrentElement();
-                }
-            }
-            else if (parameterType == "matrix")
-            {
-                while (mStream.readNextStartElement())
-                {
-                    if (mStream.name() == "element")
-                        matrixElements.push_back(mStream.readElementText().toFloat());
-                    else
-                        mStream.skipCurrentElement();
-                }
-            }
-        }
-        else
-        {
-            mStream.skipCurrentElement();
-        }
-    }
-
-    return mNodeManager->loadImageOperation(
-                operationName,
-                enabled,
-                boolParameters,
-                intParameters,
-                floatParameters,
-                interpolationFlagParameters,
-                kernelElements,
-                matrixElements);
-}*/

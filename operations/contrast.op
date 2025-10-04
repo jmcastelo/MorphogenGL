@@ -5,7 +5,7 @@
         <fragment_shader>I3ZlcnNpb24gMzMwIGNvcmUKCmluIHZlYzIgdGV4Q29vcmRzOwpvdXQgdmVjNCBmcmFnQ29sb3I7Cgp1bmlmb3JtIHNhbXBsZXIyRCBpblRleHR1cmU7Cgp1bmlmb3JtIGZsb2F0IGNvbnRyYXN0Owp1bmlmb3JtIGZsb2F0IG9wYWNpdHk7Cgp2b2lkIG1haW4oKQp7CiAgICB2ZWMzIHNyY0NvbG9yID0gdGV4dHVyZShpblRleHR1cmUsIHRleENvb3JkcykucmdiOwogICAgdmVjMyBkc3RDb2xvciA9IChzcmNDb2xvciAtIDAuNSkgKiBjb250cmFzdCArIDAuNTsKICAgIGZyYWdDb2xvciA9IHZlYzQobWl4KHNyY0NvbG9yLCBkc3RDb2xvciwgb3BhY2l0eSksIDEuMCk7Cn0K</fragment_shader>
         <parameter name="Contrast" type="float_uniform" editable="1" row="0" column="0">
             <uniform name="contrast" type="5126" numitems="1">
-                <number inf="0" sup="1" min="0" max="1">0</number>
+                <number inf="0" sup="2" min="0" max="2">1</number>
             </uniform>
         </parameter>
         <parameter name="Opacity" type="float_uniform" editable="1" row="0" column="1">

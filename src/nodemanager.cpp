@@ -484,60 +484,6 @@ bool NodeManager::isOperationEnabled(QUuid id)
 
 
 
-void NodeManager::loadOperation(QUuid id, ImageOperation* operation)
-{
-    ImageOperationNode *node = new ImageOperationNode(id, operation);
-    loadedOperationNodes.insert(id, node);
-}
-
-
-
-void NodeManager::connectLoadedOperations(QMap<QUuid, QMap<QUuid, InputData*>> connections)
-{
-    QMap<QUuid, QMap<QUuid, InputData*>>::iterator dst = connections.begin();
-
-    while (dst != connections.end())
-    {
-        QMap<QUuid, InputData*>::iterator src = dst.value().begin();
-
-        while (src != dst.value().constEnd())
-        {
-           if (loadedOperationNodes.contains(src.key()))
-           {
-               InputData* inputData = src.value();
-
-               if (inputData->type() == InputType::Normal)
-               {
-                    loadedOperationNodes.value(src.key())->enableBlit(false);
-                    inputData->setpTextureId(loadedOperationNodes.value(src.key())->pOutTextureId());
-               }
-               else if (inputData->type() == InputType::Blit)
-               {
-                   //inputData->setTextureId(loadedOperationNodes.value(src.key())->operation->blitTextureId());
-                    loadedOperationNodes.value(src.key())->enableBlit(true);
-                    inputData->setpTextureId(loadedOperationNodes.value(src.key())->pOutTextureId());
-               }
-
-               loadedOperationNodes.value(dst.key())->addInput(loadedOperationNodes.value(src.key()), inputData);
-               loadedOperationNodes.value(src.key())->addOutput(loadedOperationNodes.value(dst.key()));
-           }
-           else if (loadedSeeds.contains(src.key()))
-           {
-               InputData* inputData = src.value();
-               inputData->setpTextureId(loadedSeeds.value(src.key())->pOutTextureId());
-
-               loadedOperationNodes.value(dst.key())->addSeedInput(src.key(), inputData);
-           }
-
-            src++;
-        }
-
-        dst++;
-    }
-}
-
-
-
 EdgeWidget* NodeManager::addEdgeWidget(QUuid srcId, QUuid dstId, float factor)
 {
     EdgeWidget* edgeWidget = new EdgeWidget(factor, mOperationNodesMap.contains(srcId));
@@ -567,6 +513,34 @@ void NodeManager::addOperationNode(QUuid id, ImageOperation* operation)
 {
     ImageOperationNode *node = new ImageOperationNode(id, operation);
     mOperationNodesMap.insert(id, node);
+
+    foreach (auto parameter, operation->uniformParameters<float>())
+    {
+        connect(parameter, QOverload<QVariant>::of(&Parameter::valueChanged), this, [=, this](QVariant value){
+            emit parameterValueChanged(id, operation->name(), parameter->name(), QString::number(value.toFloat(), 'f', 6));
+        });
+    }
+
+    foreach (auto parameter, operation->uniformParameters<int>())
+    {
+        connect(parameter, QOverload<QVariant>::of(&Parameter::valueChanged), this, [=, this](QVariant value){
+            emit parameterValueChanged(id, operation->name(), parameter->name(), QString::number(value.toInt()));
+        });
+    }
+
+    foreach (auto parameter, operation->uniformParameters<unsigned int>())
+    {
+        connect(parameter, QOverload<QVariant>::of(&Parameter::valueChanged), this, [=, this](QVariant value){
+            emit parameterValueChanged(id, operation->name(), parameter->name(), QString::number(value.toUInt()));
+        });
+    }
+
+    foreach (auto parameter, operation->mat4UniformParameters())
+    {
+        connect(parameter, QOverload<QVariant>::of(&Parameter::valueChanged), this, [=, this](QVariant value){
+            emit parameterValueChanged(id, operation->name(), parameter->name(), QString::number(value.toFloat(), 'f', 6));
+        });
+    }
 }
 
 
@@ -762,123 +736,6 @@ void NodeManager::connectOperationWidget(QUuid id, OperationWidget* widget)
 
 
 
-ImageOperation* NodeManager::loadImageOperation(
-    QString operationName,
-    bool enabled,
-    std::vector<bool> boolParameters,
-    std::vector<int> intParameters,
-    std::vector<float> floatParameters,
-    std::vector<int> interpolationParameters,
-    std::vector<float> kernelElements,
-    std::vector<float> matrixElements)
-{
-    ImageOperation* operation = nullptr;
-/*
-    if (operationName == BilateralFilter::name)
-    {
-        operation = new BilateralFilter(enabled, sharedContext, intParameters[0], floatParameters[0], floatParameters[1], floatParameters[2], floatParameters[3]);
-    }
-    else if (operationName == Brightness::name)
-    {
-        operation = new Brightness(enabled, sharedContext, floatParameters[0], floatParameters[1]);
-    }
-    else if (operationName == ColorMix::name)
-    {
-        operation = new ColorMix(enabled, sharedContext, matrixElements, floatParameters[0]);
-    }
-    else if (operationName == ColorQuantization::name)
-    {
-        operation = new ColorQuantization(enabled, sharedContext, intParameters[0], intParameters[1], intParameters[2], floatParameters[0]);
-    }
-    else if (operationName == Contrast::name)
-    {
-        operation = new Contrast(enabled, sharedContext, floatParameters[0], floatParameters[1]);
-    }
-    else if (operationName == Convolution::name)
-    {
-        operation = new Convolution(enabled, sharedContext, kernelElements, floatParameters[0], floatParameters[1], floatParameters[2]);
-    }
-    else if (operationName == Dilation::name)
-    {
-        operation = new Dilation(enabled, sharedContext, floatParameters[0], floatParameters[1]);
-    }
-    else if (operationName == EqualizeHistogram::name)
-    {
-        operation = new EqualizeHistogram(enabled, sharedContext, intParameters[0], intParameters[1], floatParameters[0]);
-    }
-    else if (operationName == Erosion::name)
-    {
-        operation = new Erosion(enabled, sharedContext, floatParameters[0], floatParameters[1]);
-    }
-    else if (operationName == GammaCorrection::name)
-    {
-        operation = new GammaCorrection(enabled, sharedContext, floatParameters[0], floatParameters[1], floatParameters[2], floatParameters[3]);
-    }
-    else if (operationName == Geometry::name)
-    {
-        operation = new Geometry(enabled, sharedContext, floatParameters[0], floatParameters[1], floatParameters[2], floatParameters[3], floatParameters[4], interpolationParameters[0]);
-    }
-    else if (operationName == HueShift::name)
-    {
-        operation = new HueShift(enabled, sharedContext, floatParameters[0], floatParameters[1]);
-    }
-    else if (operationName == Identity::name)
-    {
-        operation = new Identity(enabled, sharedContext);
-    }
-    else if (operationName == Logistic::name)
-    {
-        operation = new Logistic(enabled, sharedContext, floatParameters[0], floatParameters[1]);
-    }
-    else if (operationName == Mask::name)
-    {
-        operation = new Mask(enabled, sharedContext, floatParameters[0], floatParameters[1]);
-    }
-    else if (operationName == Median::name)
-    {
-        operation = new Median(enabled, sharedContext, floatParameters[0], floatParameters[1]);
-    }
-    else if (operationName == Memory::name)
-    {
-        operation = new Memory(enabled, sharedContext, intParameters[0], floatParameters[0], floatParameters[1]);
-    }
-    else if (operationName == MorphologicalGradient::name)
-    {
-        operation = new MorphologicalGradient(enabled, sharedContext, floatParameters[0], floatParameters[1], floatParameters[2]);
-    }
-    else if (operationName == Pixelation::name)
-    {
-        operation = new Pixelation(enabled, sharedContext, floatParameters[0], floatParameters[1]);
-    }
-    else if (operationName == Power::name)
-    {
-        operation = new Power(enabled, sharedContext, floatParameters[0], floatParameters[1]);
-    }
-    else if (operationName == Rotation::name)
-    {
-        operation = new Rotation(enabled, sharedContext, floatParameters[0], interpolationParameters[0]);
-    }
-    else if (operationName == Saturation::name)
-    {
-        operation = new Saturation(enabled, sharedContext, floatParameters[0], floatParameters[1]);
-    }
-    else if (operationName == Scale::name)
-    {
-        operation = new Scale(enabled, sharedContext, floatParameters[0], interpolationParameters[0]);
-    }
-    else if (operationName == Value::name)
-    {
-        operation = new Value(enabled, sharedContext, floatParameters[0], floatParameters[1]);
-    }
-
-    if (operation)
-        operation->setParameters();
-*/
-    return operation;
-}
-
-
-
 void NodeManager::addSeedNode(QUuid id, Seed* seed)
 {
     mSeedsMap.insert(id, seed);
@@ -1022,17 +879,6 @@ void NodeManager::removeSeed(QUuid id)
     }
 }
 
-
-
-void NodeManager::loadSeed(QUuid id, int type, bool fixed)
-{
-    /*Seed* seed = mRenderManager->createNewSeed();
-
-    seed->setType(type);
-    seed->setFixed(fixed);
-
-    loadedSeeds.insert(id, seed);*/
-}
 
 
 
