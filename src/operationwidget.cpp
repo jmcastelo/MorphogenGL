@@ -206,9 +206,9 @@ OperationWidget::OperationWidget(ImageOperation* operation, bool midiEnabled, bo
     QVBoxLayout* selParamLayout = new QVBoxLayout;
 
     QHBoxLayout* paramNameLayout = new QHBoxLayout;
-    paramNameLayout->addWidget(midiLinkButton);
-    paramNameLayout->addWidget(paramNameLabel);
-    paramNameLayout->addWidget(paramNameLineEdit);
+    paramNameLayout->addWidget(paramNameLabel, 1, Qt::AlignLeft);
+    paramNameLayout->addWidget(paramNameLineEdit, 1, Qt::AlignLeft);
+    paramNameLayout->addWidget(midiLinkButton, 0, Qt::AlignRight);
 
     selParamLayout->addLayout(paramNameLayout);
 
@@ -749,10 +749,13 @@ void OperationWidget::updateSelParamControls(ParameterWidget<T>* widget)
     selParamSlider->setValue(number->index());
 
     selParamSliderConns.clear();
-    selParamSliderConns.resize(2);
+    selParamSliderConns.resize(3);
 
     selParamSliderConns[0] = connect(selParamSlider, &QAbstractSlider::sliderMoved, widget, &ParameterWidget<T>::setValueFromIndex);
     selParamSliderConns[1] = connect(number, &Number<T>::indexChanged, selParamSlider, &QAbstractSlider::setValue);
+    selParamSliderConns[2] = connect(number, &Number<T>::indexMaxChanged, this, [=, this](int indexMax) {
+        selParamSlider->setRange(0, indexMax);
+    });
 
     // Minimum
 
@@ -846,10 +849,13 @@ void OperationWidget::updateSelParamEditControls(ParameterWidget<T>* widget)
     selParamSlider->setValue(number->index());
 
     selParamSliderConns.clear();
-    selParamSliderConns.resize(2);
+    selParamSliderConns.resize(3);
 
     selParamSliderConns[0] = connect(selParamSlider, &QAbstractSlider::sliderMoved, widget, &ParameterWidget<T>::setValueFromIndex);
     selParamSliderConns[1] = connect(number, &Number<T>::indexChanged, selParamSlider, &QAbstractSlider::setValue);
+    selParamSliderConns[2] = connect(number, &Number<T>::indexMaxChanged, this, [=, this](int indexMax) {
+        selParamSlider->setRange(0, indexMax);
+    });
 
     // Inf (lowest)
 

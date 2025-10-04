@@ -61,7 +61,7 @@ UniformParameterWidget<T>::UniformParameterWidget(UniformParameter<T>* theUnifor
 
     for (int i = 0; i < mUniformParameter->numbers().size(); i++)
     {
-        ParameterWidget<T>::connect(mLineEdits[i], &FocusLineEdit::editingFinished, this, [=, this](){
+        ParameterWidget<T>::connect(mLineEdits[i], &FocusLineEdit::editingFinished, this, [=, this]() {
             if (std::is_same<T, float>::value)
                 mUniformParameter->setValue(i, mLineEdits[i]->text().toFloat());
             else if (std::is_same<T, int>::value)
@@ -70,12 +70,12 @@ UniformParameterWidget<T>::UniformParameterWidget(UniformParameter<T>* theUnifor
                 mUniformParameter->setValue(i, mLineEdits[i]->text().toUInt());
         });
 
-        ParameterWidget<T>::connect(mLineEdits[i], &FocusLineEdit::focusIn, this, [=, this](){
+        ParameterWidget<T>::connect(mLineEdits[i], &FocusLineEdit::focusIn, this, [=, this]() {
             ParameterWidget<T>::mSelectedNumber = mUniformParameter->number(i);
             ParameterWidget<T>::mLastFocusedWidget = mLineEdits[i];
             mLastIndex = i;
         });
-        ParameterWidget<T>::connect(mLineEdits[i], &FocusLineEdit::focusOut, this, [=, this](){
+        ParameterWidget<T>::connect(mLineEdits[i], &FocusLineEdit::focusOut, this, [=, this]() {
             mLineEdits[i]->setText(QString::number(mUniformParameter->number(i)->value()));
             mLineEdits[i]->setCursorPosition(0);
         });
@@ -83,7 +83,7 @@ UniformParameterWidget<T>::UniformParameterWidget(UniformParameter<T>* theUnifor
         ParameterWidget<T>::connect(mLineEdits[i], &FocusLineEdit::focusIn, this, &UniformParameterWidget::focusIn);
         ParameterWidget<T>::connect(mLineEdits[i], &FocusLineEdit::focusOut, this, &UniformParameterWidget::focusOut);
 
-        ParameterWidget<T>::connect(mUniformParameter, QOverload<int, QVariant>::of(&Parameter::valueChanged), this, [=, this](int i, QVariant newValue){
+        ParameterWidget<T>::connect(mUniformParameter, QOverload<int, QVariant>::of(&Parameter::valueChanged), this, [=, this](int i, QVariant newValue) {
             if (std::is_same<T, float>::value)
                 mLineEdits[i]->setText(QString::number(newValue.toFloat()));
             else if (std::is_same<T, int>::value)

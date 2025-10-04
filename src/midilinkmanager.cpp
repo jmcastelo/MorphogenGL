@@ -41,8 +41,11 @@ void MidiLinkManager::setupMidi(QString portName, bool open)
         intLinks.remove(portName);
     }
 
-    anyMidiPortOpen = !floatLinks.isEmpty() || intLinks.isEmpty();
+    anyMidiPortOpen = !floatLinks.isEmpty() || !intLinks.isEmpty();
+
     setUpConnections(anyMidiPortOpen);
+
+    emit midiEnabled(anyMidiPortOpen);
 }
 
 

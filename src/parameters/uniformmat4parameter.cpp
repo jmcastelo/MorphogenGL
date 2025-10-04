@@ -63,7 +63,10 @@ UniformMat4Parameter::UniformMat4Parameter(QString theName, QString theUniformNa
     mEmpty = mNumbers.empty();
 
     for (int i = 0; i < mNumbers.size(); i++)
-        connect(mNumbers[i], &NumberSignals::valueChanged, this, [=, this](QVariant value){ emit valueChanged(i, value); });
+        connect(mNumbers[i], &NumberSignals::valueChanged, this, [=, this](QVariant value) {
+            emit valueChanged(i, value);
+            setUniform();
+        });
 }
 
 
@@ -116,7 +119,10 @@ UniformMat4Parameter::UniformMat4Parameter(QString theName, QString theUniformNa
     mEmpty = mNumbers.empty();
 
     for (int i = 0; i < mNumbers.size(); i++)
-        connect(mNumbers[i], &NumberSignals::valueChanged, this, [=, this](QVariant value){ emit valueChanged(i, value); });
+        connect(mNumbers[i], &NumberSignals::valueChanged, this, [=, this](QVariant value) {
+            emit valueChanged(i, value);
+            setUniform();
+        });
 }
 
 
@@ -190,7 +196,10 @@ void UniformMat4Parameter::setType(UniformMat4Type type)
     mEmpty = mNumbers.empty();
 
     for (int i = 0; i < mNumbers.size(); i++)
-        connect(mNumbers[i], &NumberSignals::valueChanged, this, [=, this](QVariant value){ emit valueChanged(i, value); });
+        connect(mNumbers[i], &NumberSignals::valueChanged, this, [=, this](QVariant value) {
+            emit valueChanged(i, value);
+            setUniform();
+        });
 }
 
 

@@ -32,6 +32,8 @@ EdgeWidget::EdgeWidget(float factor, bool srcIsOp, QWidget *parent) :
 
     // Midi link
 
+    mMidiSignals = new MidiSignals(this);
+
     midiLinkAction = headerToolBar->addAction(QIcon(QPixmap(":/icons/circle-grey.png")), "Midi link");
     midiLinkAction->setCheckable(true);
     midiLinkAction->setVisible(false);
@@ -63,12 +65,12 @@ EdgeWidget::EdgeWidget(float factor, bool srcIsOp, QWidget *parent) :
         if (checked)
         {
             midiLinkAction->setIcon(QIcon(QPixmap(":/icons/circle-orange.png")));
-            emit linkWait(blendFactor);
+            emit mMidiSignals->linkWait(blendFactor);
         }
         else
         {
             midiLinkAction->setIcon(QIcon(QPixmap(":/icons/circle-grey.png")));
-            emit linkBreak(blendFactor);
+            emit mMidiSignals->linkBreak(blendFactor);
         }
     });
 
@@ -140,6 +142,13 @@ void EdgeWidget::setName(QString name)
 void EdgeWidget::setBlendFactor(float factor)
 {
     blendFactor->setValue(factor);
+}
+
+
+
+MidiSignals* EdgeWidget::midiSignals()
+{
+    return mMidiSignals;
 }
 
 

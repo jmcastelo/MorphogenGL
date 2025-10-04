@@ -4,6 +4,7 @@
 
 
 #include "parameters/number.h"
+#include "midisignals.h"
 
 #include <QWidget>
 #include <QUuid>
@@ -28,7 +29,8 @@ public:
 
     void setBlendFactor(float factor);
 
-    void toggleMidiAction(bool show);
+    MidiSignals* midiSignals();
+
     void toggleTypeAction(bool predge);
 
 signals:
@@ -37,14 +39,18 @@ signals:
     void edgeTypeChanged(bool predge);
     void typeActionToggled(bool checked);
 
-    void linkWait(Number<float>* number);
-    void linkBreak(Number<float>* number);
-
     void remove();
+
+public slots:
+    void toggleMidiAction(bool show);
 
 private:
     QString mName;
+
     Number<float>* blendFactor;
+
+    MidiSignals* mMidiSignals;
+
     QAction* midiLinkAction;
     QAction* mTypeAction;
     QAction* mRemoveAction;

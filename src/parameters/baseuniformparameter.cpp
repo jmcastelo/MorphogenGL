@@ -28,7 +28,10 @@ BaseUniformParameter<T>::BaseUniformParameter(QString theName, QString theUnifor
     }
 
     for (int i = 0; i < mNumbers.size(); i++) {
-        connect(mNumbers[i], &NumberSignals::valueChanged, this, [=, this](QVariant value){ emit valueChanged(i, value); });
+        connect(mNumbers[i], &NumberSignals::valueChanged, this, [=, this](QVariant value) {
+            emit valueChanged(i, value);
+            setUniform();
+        });
     }
 }
 
@@ -47,7 +50,10 @@ BaseUniformParameter<T>::BaseUniformParameter(QString theName, QString theUnifor
     }
 
     for (int i = 0; i < mNumbers.size(); i++) {
-        connect(mNumbers[i], &NumberSignals::valueChanged, this, [=, this](QVariant value){ emit valueChanged(i, value); });
+        connect(mNumbers[i], &NumberSignals::valueChanged, this, [=, this](QVariant value) {
+            emit valueChanged(i, value);
+            setUniform();
+        });
     }
 }
 
@@ -64,7 +70,10 @@ BaseUniformParameter<T>::BaseUniformParameter(const BaseUniformParameter<T>& par
     }
 
     for (int i = 0; i < mNumbers.size(); i++) {
-        connect(mNumbers[i], &NumberSignals::valueChanged, this, [=, this](QVariant value){ emit valueChanged(i, value); });
+        connect(mNumbers[i], &NumberSignals::valueChanged, this, [=, this](QVariant value) {
+            emit valueChanged(i, value);
+            setUniform();
+        });
     }
 
     mUniformName = parameter.mUniformName;

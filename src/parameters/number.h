@@ -19,6 +19,7 @@ public:
 signals:
     void valueChanged(QVariant value);
     void indexChanged(int index);
+    void indexMaxChanged(int indexMax);
     void minChanged();
     void maxChanged();
     void deleting();
@@ -204,6 +205,7 @@ public:
     void setIndexMax(int theIndexMax)
     {
         mIndexMax = theIndexMax;
+        emit indexMaxChanged(mIndexMax);
     }
 
     bool midiLinked() const
