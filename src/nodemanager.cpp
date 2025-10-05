@@ -198,6 +198,7 @@ void NodeManager::setOutput(QUuid id)
         pOutputTextureId = nullptr;
     }
 
+    emit outputNodeChanged(id);
     emit outputTextureChanged(pOutputTextureId);
 }
 
@@ -568,19 +569,16 @@ void NodeManager::addOperationNode(QUuid id, ImageOperation* operation)
 void NodeManager::connectOperationWidget(QUuid id, OperationWidget* widget)
 {
     connect(widget, &OperationWidget::outputChanged, this, [=, this](bool checked) {
-        if (checked)
-        {
+        if (checked) {
             setOutput(id);
-            emit outputNodeChanged(widget);
-        }
-        else
-        {
+        } else {
             setOutput(QUuid());
-            emit outputNodeChanged(nullptr);
         }
     });
 
-    connect(this, &NodeManager::outputNodeChanged, widget, &OperationWidget::toggleOutputAction);
+    connect(this, &NodeManager::outputNodeChanged, this, [=](QUuid outId) {
+        widget->toggleOutputAction(outId == id);
+    });
 
     connect(widget, &OperationWidget::connectTo, this, [=, this]() {
         if (connSrcId.isNull())
@@ -770,20 +768,17 @@ void NodeManager::addSeedNode(QUuid id, Seed* seed)
 
 void NodeManager::connectSeedWidget(QUuid id, SeedWidget* widget)
 {
-    connect(widget, &SeedWidget::outputChanged, this, [=, this](bool checked){
-        if (checked)
-        {
+    connect(widget, &SeedWidget::outputChanged, this, [=, this](bool checked) {
+        if (checked) {
             setOutput(id);
-            emit outputNodeChanged(widget);
-        }
-        else
-        {
+        } else {
             setOutput(QUuid());
-            emit outputNodeChanged(nullptr);
         }
     });
 
-    connect(this, &NodeManager::outputNodeChanged, widget, &SeedWidget::toggleOutputAction);
+    connect(this, &NodeManager::outputNodeChanged, this, [=](QUuid outId) {
+        widget->toggleOutputAction(outId == id);
+    });
 
     connect(widget, &SeedWidget::connectTo, this, [=, this](){
         if (connSrcId.isNull())

@@ -114,7 +114,7 @@ public:
     QString version = "1.0 alpha";
 
 signals:
-    void outputNodeChanged(QWidget* widget);
+    void outputNodeChanged(QUuid id);
     void outputFBOChanged(GLuint fbo);
     void outputTextureChanged(GLuint* pTexId);
     // void sortedOperationsChanged(QList<QPair<QUuid, QString>> sortedData, QList<QUuid> unsortedData);

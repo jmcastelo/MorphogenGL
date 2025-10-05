@@ -25,7 +25,7 @@ signals:
     void remove();
 
 public slots:
-    void toggleOutputAction(QWidget* widget);
+    void toggleOutputAction(bool show);
 
 private:
     Seed* mSeed;

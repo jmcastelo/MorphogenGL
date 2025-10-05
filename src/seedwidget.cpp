@@ -137,13 +137,12 @@ void SeedWidget::loadSeedImage()
 
 
 
-void SeedWidget::toggleOutputAction(QWidget *widget)
+void SeedWidget::toggleOutputAction(bool show)
 {
-    if (widget != this)
-    {
-        outputAction->setChecked(false);
+    outputAction->setChecked(show);
+    if (show) {
+        headerWidget->setStyleSheet("QWidget { background-color: rgb(164, 128, 128); }");
+    } else {
         headerWidget->setStyleSheet("QWidget { background-color: rgb(128, 128, 164); }");
     }
-    else
-        headerWidget->setStyleSheet("QWidget { background-color: rgb(164, 128, 128); }");
 }

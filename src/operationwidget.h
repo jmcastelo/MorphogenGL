@@ -80,7 +80,7 @@ signals:
 
 public slots:
     void recreate();
-    void toggleOutputAction(QWidget* widget);
+    void toggleOutputAction(bool show);
     void toggleMidiButton(bool show);
 
 protected:
