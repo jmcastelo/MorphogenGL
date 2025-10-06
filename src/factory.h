@@ -7,6 +7,7 @@
 #include "seed.h"
 #include "operationwidget.h"
 #include "seedwidget.h"
+#include "parameters/number.h"
 
 #include <QObject>
 #include <QUuid>
@@ -31,7 +32,7 @@ public:
 
     void addAvailableOperation(int index);
 
-    void addOperation(QUuid id, ImageOperation* operation);
+    void addOperation(QUuid id, ImageOperation* operation, bool midiEnabled);
     void addSeed(QUuid id, Seed* operation);
 
     void deleteOperation(ImageOperation* operation);
@@ -39,6 +40,9 @@ public:
 
     QList<QString> availableOperationNames();
     ImageOperation* availableOperation(int index);
+
+    template <class T>
+    Number<T>* number(QUuid id);
 
     void scan();
     void clear();

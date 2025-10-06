@@ -26,7 +26,13 @@ MainWindow::MainWindow()
     plotsWidgetOpacityEffect->setOpacity(opacity);
     plotsWidget->setGraphicsEffect(plotsWidgetOpacityEffect);
 
-    controlWidget = new ControlWidget(iterationFPS, updateFPS, factory, nodeManager, renderManager, plotsWidget);
+    graphWidget = new GraphWidget(factory, nodeManager);
+    graphWidget->setMinimumSize(0, 0);
+    graphWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+
+    configParser = new ConfigurationParser(factory, nodeManager, renderManager, graphWidget, &midiLinkManager);
+
+    controlWidget = new ControlWidget(iterationFPS, updateFPS, graphWidget, nodeManager, renderManager, plotsWidget);
     controlWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     controlWidget->setMinimumSize(0, 0);
 
@@ -83,10 +89,6 @@ MainWindow::MainWindow()
         updateTimer->start();
     });
     connect(morphoWidget, &MorphoWidget::supportedTexFormats, controlWidget, &ControlWidget::populateTexFormatComboBox);
-    // connect(morphoWidget, &MorphoWidget::sizeChanged, renderManager, &RenderManager::resize);
-    // connect(morphoWidget, &MorphoWidget::sizeChanged, controlWidget, &ControlWidget::updateWindowSizeLineEdits);
-    // connect(morphoWidget, &MorphoWidget::sizeChanged, plotsWidget, &PlotsWidget::setImageSize);
-
     connect(morphoWidget, &MorphoWidget::scaleTransformChanged, plotsWidget, &PlotsWidget::transformSources);
     connect(morphoWidget, &MorphoWidget::selectedPointChanged, plotsWidget, &PlotsWidget::setSelectedPoint);
     connect(plotsWidget, &PlotsWidget::selectedPointChanged, morphoWidget, &MorphoWidget::setCursor);
@@ -112,10 +114,13 @@ MainWindow::MainWindow()
     connect(controlWidget, &ControlWidget::stopRecording, this, &MainWindow::stopRecording);
     connect(controlWidget, &ControlWidget::takeScreenshot, this, &MainWindow::takeScreenshot);
     connect(controlWidget, &ControlWidget::imageSizeChanged, this, &MainWindow::setSize);
-    // connect(controlWidget, &ControlWidget::imageSizeChanged, renderManager, &RenderManager::resize);
     connect(controlWidget, &ControlWidget::showMidiWidget, this, &MainWindow::showMidiWidget);
     connect(controlWidget, &ControlWidget::overlayToggled, overlay, &Overlay::enable);
-    // connect(controlWidget, &ControlWidget::parameterValueChanged, overlay, &Overlay::addMessage);
+    connect(controlWidget, &ControlWidget::readConfig, configParser, &ConfigurationParser::read);
+    connect(controlWidget, &ControlWidget::writeConfig, configParser, &ConfigurationParser::write);
+
+    connect(configParser, &ConfigurationParser::newImageSizeRead, controlWidget, &ControlWidget::updateWindowSizeLineEdits);
+    connect(configParser, &ConfigurationParser::newImageSizeRead, this, &MainWindow::setSize);
 
     setWindowTitle("Fosforo");
     setWindowIcon(QIcon(":/icons/morphogengl.png"));
@@ -131,13 +136,13 @@ MainWindow::~MainWindow()
 
     delete plotsWidget;
     delete controlWidget;
+    delete configParser;
     delete nodeManager;
     delete renderManager;
     delete morphoWidget;
     delete overlay;
-
+    delete factory;
     delete midiListWidget;
-
     delete iterationTimer;
     delete updateTimer;
 }

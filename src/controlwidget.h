@@ -25,7 +25,6 @@
 
 
 
-#include "factory.h"
 #include "nodemanager.h"
 #include "rendermanager.h"
 #include "operationwidget.h"
@@ -67,10 +66,6 @@
 
 
 
-class ConfigurationParser;
-
-
-
 // ControlWidget: contains MorphogenGL's controls
 
 class ControlWidget : public QWidget
@@ -78,30 +73,43 @@ class ControlWidget : public QWidget
     Q_OBJECT
 
 public:
-    ControlWidget(double itFPS, double updFPS, Factory* factory, NodeManager* nodeManager, RenderManager* renderManager, PlotsWidget* thePlotsWidget, QWidget *parent = nullptr);
+    ControlWidget(double itFPS, double updFPS, GraphWidget* graphWidget, NodeManager* nodeManager, RenderManager* renderManager, PlotsWidget* plotsWidget, QWidget *parent = nullptr);
     ~ControlWidget();
 
 signals:
     void iterateStateChanged(bool state);
+
     void seedDrawn();
+
     void updateStateChanged(bool state);
+
     void showMidiWidget();
+
     void overlayToggled(bool show);
+
     void imageSizeChanged(int width, int height);
+
     void startRecording(QString recordFilename, int framesPerSecond, QMediaFormat format);
     void stopRecording();
     void takeScreenshot(QString filename);
+
     void iterationFPSChanged(double newFPS);
     void updateFPSChanged(double newFPS);
 
+    void readConfig(QString filename);
+    void writeConfig(QString filename);
 
 public slots:
     void reset();
+
     void updateWindowSizeLineEdits(int width, int height);
+
     void populateTexFormatComboBox(QList<TextureFormat> formats);
+
     void updateIterationNumberLabel();
     void updateIterationMetricsLabels(double uspf, double fps);
     void updateUpdateMetricsLabels(double uspf, double fps);
+
     void setVideoCaptureElapsedTimeLabel(int frameNumber);
     //void setupMidi(QString portName, bool open);
     //void updateMidiLinks(QString portName, int key, int value);
@@ -113,9 +121,7 @@ protected:
 private:
     NodeManager* mNodeManager;
     RenderManager* mRenderManager;
-    PlotsWidget* plotsWidget;
-    ConfigurationParser* parser;
-    GraphWidget* graphWidget;
+    PlotsWidget* mPlotsWidget;
 
     //OperationNode* selectedOperationNode = nullptr;
     //SeedNode* selectedSeedNode = nullptr;

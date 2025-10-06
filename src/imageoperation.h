@@ -153,6 +153,9 @@ public:
 
     void clearParameters();
 
+    template <class T>
+    Number<T>* number(QUuid id);
+
     // void applyOperation();
     // void blit();
     // void clear();

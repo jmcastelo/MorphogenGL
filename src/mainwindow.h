@@ -7,6 +7,8 @@
 #include "rendermanager.h"
 #include "nodemanager.h"
 #include "morphowidget.h"
+#include "graphwidget.h"
+#include "configparser.h"
 #include "controlwidget.h"
 #include "plotswidget.h"
 #include "recorder.h"
@@ -52,6 +54,8 @@ private:
     RenderManager* renderManager;
     NodeManager* nodeManager;
     MorphoWidget* morphoWidget;
+    GraphWidget* graphWidget;
+    ConfigurationParser* configParser;
     ControlWidget* controlWidget;
     PlotsWidget* plotsWidget;
     Recorder* recorder = nullptr;

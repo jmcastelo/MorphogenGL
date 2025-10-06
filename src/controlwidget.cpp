@@ -20,7 +20,6 @@
 *  along with MorphogenGL.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include "configparser.h"
 //#include "node.h"
 //#include "blendfactorwidget.h"
 #include "controlwidget.h"
@@ -34,11 +33,11 @@
 
 
 
-ControlWidget::ControlWidget(double itFPS, double updFPS, Factory* factory, NodeManager* nodeManager, RenderManager* renderManager, PlotsWidget* thePlotsWidget, QWidget* parent) :
+ControlWidget::ControlWidget(double itFPS, double updFPS, GraphWidget* graphWidget, NodeManager* nodeManager, RenderManager* renderManager, PlotsWidget* plotsWidget, QWidget* parent) :
     QWidget(parent),
     mNodeManager { nodeManager },
     mRenderManager { renderManager },
-    plotsWidget { thePlotsWidget }
+    mPlotsWidget { plotsWidget }
 {
     // Scroll area
 
@@ -69,12 +68,6 @@ ControlWidget::ControlWidget(double itFPS, double updFPS, Factory* factory, Node
     constructSortedOperationWidget();
 
     //updateScrollArea();
-
-    // Graph widget
-
-    graphWidget = new GraphWidget(factory, mNodeManager);
-    graphWidget->setMinimumSize(0, 0);
-    graphWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
     /*connect(graphWidget, &GraphWidget::singleNodeSelected, this, &ControlWidget::constructSingleNodeToolBar);
     connect(graphWidget, &GraphWidget::operationNodeSelected, this, &ControlWidget::showParametersWidget);
@@ -107,10 +100,6 @@ ControlWidget::ControlWidget(double itFPS, double updFPS, Factory* factory, Node
         if (operationsWidgets.contains(id))
             operationsWidgets.value(id)->toggleEnableButton(enabled);
     });*/
-
-    // Parser
-
-    parser = new ConfigurationParser(factory, mNodeManager, mRenderManager, graphWidget);
 
     // Status bar
 
@@ -161,10 +150,6 @@ ControlWidget::ControlWidget(double itFPS, double updFPS, Factory* factory, Node
 
     setAutoFillBackground(true);
     setWindowFlags(Qt::SubWindow);
-
-    // Signals + Slots
-
-    connect(parser, &ConfigurationParser::newImageSizeRead, this, &ControlWidget::imageSizeChanged);
 }
 
 
@@ -173,8 +158,7 @@ ControlWidget::~ControlWidget()
 {
     delete displayOptionsWidget;
     delete recordingOptionsWidget;
-    delete parser;
-    delete graphWidget;
+
     delete sortedOperationWidget;
     // qDeleteAll(operationsWidgets);
     //qDeleteAll(blendFactorWidgets);
@@ -352,7 +336,7 @@ void ControlWidget::toggleDisplayOptionsWidget()
 
 void ControlWidget::plotsActionTriggered()
 {
-    plotsWidget->setVisible(!plotsWidget->isVisible());
+    mPlotsWidget->setVisible(!mPlotsWidget->isVisible());
 }
 
 
@@ -363,8 +347,7 @@ void ControlWidget::loadConfig()
 
     if (!filename.isEmpty())
     {
-        parser->setFilename(filename);
-        parser->read();
+        emit readConfig(filename);
 
         mRenderManager->resetIterationNumer();
 
@@ -380,10 +363,8 @@ void ControlWidget::saveConfig()
 {
     QString filename = QFileDialog::getSaveFileName(this, "Save configuration", QDir::currentPath() + "/configs", "Fosforo configurations (*.fos)");
 
-    if (!filename.isEmpty())
-    {
-        parser->setFilename(filename);
-        parser->write();
+    if (!filename.isEmpty()) {
+        emit writeConfig(filename);
     }
 }
 

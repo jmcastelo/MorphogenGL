@@ -828,6 +828,68 @@ void ImageOperation::clearParameters()
 
 
 
+template <>
+Number<float>* ImageOperation::number(QUuid id)
+{
+    Number<float>* number = nullptr;
+
+    foreach (auto parameter, floatUniformParameters)
+    {
+        number = parameter->number(id);
+        if (number) {
+            return number;
+        }
+    }
+
+    foreach (auto parameter, mMat4UniformParameters)
+    {
+        number = parameter->number(id);
+        if (number) {
+            return number;
+        }
+    }
+
+    return nullptr;
+}
+
+
+
+template <>
+Number<int>* ImageOperation::number(QUuid id)
+{
+    Number<int>* number = nullptr;
+
+    foreach (auto parameter, intUniformParameters)
+    {
+        number = parameter->number(id);
+        if (number) {
+            return number;
+        }
+    }
+
+    return nullptr;
+}
+
+
+
+template <>
+Number<unsigned int>* ImageOperation::number(QUuid id)
+{
+    Number<unsigned int>* number = nullptr;
+
+    foreach (auto parameter, uintUniformParameters)
+    {
+        number = parameter->number(id);
+        if (number) {
+            return number;
+        }
+    }
+
+    return nullptr;
+}
+
+
+
 /*void ImageOperation::applyOperation()
 {
     if (mUpdate)

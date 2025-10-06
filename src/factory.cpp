@@ -73,12 +73,12 @@ void Factory::addAvailableOperation(int index)
 
 
 
-void Factory::addOperation(QUuid id, ImageOperation* operation)
+void Factory::addOperation(QUuid id, ImageOperation* operation, bool midiEnabled)
 {
     mOperations.append(operation);
     emit newOperationCreated(id, operation);
 
-    OperationWidget* widget = new OperationWidget(operation, false, false);
+    OperationWidget* widget = new OperationWidget(operation, midiEnabled, false);
     emit newOperationWidgetCreated(id, widget);
 }
 
@@ -128,6 +128,60 @@ ImageOperation* Factory::availableOperation(int index)
 {
     if (index >= 0 && index < mAvailOps.size()) {
         return mAvailOps[index];
+    }
+
+    return nullptr;
+}
+
+
+
+template<>
+Number<float>* Factory::number(QUuid id)
+{
+    Number<float>* number = nullptr;
+
+    foreach (ImageOperation* operation, mOperations)
+    {
+        number = operation->number<float>(id);
+        if (number) {
+            return number;
+        }
+    }
+
+    return nullptr;
+}
+
+
+
+template<>
+Number<int>* Factory::number(QUuid id)
+{
+    Number<int>* number = nullptr;
+
+    foreach (ImageOperation* operation, mOperations)
+    {
+        number = operation->number<int>(id);
+        if (number) {
+            return number;
+        }
+    }
+
+    return nullptr;
+}
+
+
+
+template<>
+Number<unsigned int>* Factory::number(QUuid id)
+{
+    Number<unsigned int>* number = nullptr;
+
+    foreach (ImageOperation* operation, mOperations)
+    {
+        number = operation->number<unsigned int>(id);
+        if (number) {
+            return number;
+        }
     }
 
     return nullptr;

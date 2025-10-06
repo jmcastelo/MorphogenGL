@@ -1068,10 +1068,11 @@ void OperationWidget::updateMidiButton(ParameterWidget<T>* widget)
 
     midiLinkButton->setChecked(number->midiLinked());
 
-    if (number->midiLinked())
+    if (number->midiLinked()) {
         midiLinkButton->setStyleSheet("QPushButton { image: url(:/icons/circle-green.png); background-color: transparent; border: 0; }");
-    else
+    } else {
         midiLinkButton->setStyleSheet("QPushButton { image: url(:/icons/circle-grey.png); background-color: transparent; border: 0; }");
+    }
 
     midiLinkButtonConns.clear();
     midiLinkButtonConns.resize(2);
@@ -1090,10 +1091,11 @@ void OperationWidget::updateMidiButton(ParameterWidget<T>* widget)
     });
 
     midiLinkButtonConns[1] = connect(number, &Number<T>::linked, this, [=, this](bool set){
-        if (set)
+        if (set) {
             midiLinkButton->setStyleSheet("QPushButton { image: url(:/icons/circle-green.png); background-color: transparent; border: 0; }");
-        else
+        } else {
             midiLinkButton->setStyleSheet("QPushButton { image: url(:/icons/circle-grey.png); background-color: transparent; border: 0; }");
+        }
     });
 }
 

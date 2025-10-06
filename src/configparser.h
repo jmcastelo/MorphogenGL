@@ -28,6 +28,7 @@
 #include "nodemanager.h"
 #include "rendermanager.h"
 #include "graphwidget.h"
+#include "midilinkmanager.h"
 
 #include <QObject>
 #include <QString>
@@ -41,27 +42,35 @@ class ConfigurationParser: public QObject
     Q_OBJECT
 
 public:
-    ConfigurationParser(Factory* factory, NodeManager* nodeManager, RenderManager* renderManager, GraphWidget* graphWidget) :
-        mFactory { factory },
-        mNodeManager { nodeManager },
-        mRenderManager { renderManager},
-        mGraphWidget { graphWidget }
+    ConfigurationParser(Factory* factory, NodeManager* nodeManager, RenderManager* renderManager, GraphWidget* graphWidget, MidiLinkManager* midiLinkManager) :
+    mFactory { factory },
+    mNodeManager { nodeManager },
+    mRenderManager { renderManager},
+    mGraphWidget { graphWidget },
+    mMidiLinkManager { midiLinkManager }
     {}
-
-    void setFilename(QString theFilename) { filename = theFilename; }
-    void write();
-    void read();
 
 signals:
     void newImageSizeRead(int width, int height);
+
+public slots:
+    void write(QString filename);
+    void read(QString filename);
 
 private:
     Factory* mFactory;
     NodeManager* mNodeManager;
     RenderManager* mRenderManager;
     GraphWidget* mGraphWidget;
-    QString filename;
+    MidiLinkManager* mMidiLinkManager;
 
+    void writeDisplay(QXmlStreamWriter& stream);
     void writeSeedNode(QUuid id, Seed* seed, QXmlStreamWriter& stream);
     void writeOperationNode(ImageOperationNode* node, QXmlStreamWriter& stream);
+    void writeMidiData(QXmlStreamWriter& stream);
+
+    void readDisplay(int& width, int& height, QUuid &outputNodeId, QXmlStreamReader& stream);
+    void readSeedNode(QXmlStreamReader& stream);
+    void readOperationNode(QMap<QUuid, QMap<QUuid, InputData*>>& connections, QXmlStreamReader& stream);
+    void readMidiData(QXmlStreamReader& stream);
 };

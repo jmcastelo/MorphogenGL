@@ -11,6 +11,48 @@ MidiLinkManager::MidiLinkManager(QObject *parent)
 
 
 
+bool MidiLinkManager::enabled()
+{
+    bool anyPortOpen = false;
+
+    foreach (bool open, mPortOpen) {
+        anyPortOpen |= open;
+    }
+
+    return anyPortOpen;
+}
+
+
+
+QMap<QString, QMap<int, Number<float>*>> MidiLinkManager::floatLinks()
+{
+    return mFloatLinks;
+}
+
+
+
+QMap<QString, QMap<int, Number<int>*>> MidiLinkManager::intLinks()
+{
+    return mIntLinks;
+}
+
+
+
+QMap<QString, QMap<int, Number<unsigned int>*>> MidiLinkManager::uintLinks()
+{
+    return mUintLinks;
+}
+
+
+
+void MidiLinkManager::clearLinks()
+{
+    mFloatLinks.clear();
+    mIntLinks.clear();
+}
+
+
+
 void MidiLinkManager::addMidiSignals(QUuid id, MidiSignals* midiSignals)
 {
     mMidiSignalsMap.insert(id, midiSignals);
@@ -29,86 +71,170 @@ void MidiLinkManager::setupMidi(QString portName, bool open)
 {
     if (open)
     {
-        if (!floatLinks.contains(portName))
-            floatLinks[portName] = QMap<int, Number<float>*>();
+        if (!mFloatLinks.contains(portName))
+            mFloatLinks[portName] = QMap<int, Number<float>*>();
 
-        if (!intLinks.contains(portName))
-            intLinks[portName] = QMap<int, Number<int>*>();
+        if (!mIntLinks.contains(portName))
+            mIntLinks[portName] = QMap<int, Number<int>*>();
     }
-    else
+    /*else
     {
-        floatLinks.remove(portName);
-        intLinks.remove(portName);
-    }
+        mFloatLinks.remove(portName);
+        mIntLinks.remove(portName);
+    }*/
 
-    anyMidiPortOpen = !floatLinks.isEmpty() || !intLinks.isEmpty();
+    mPortOpen[portName] = open;
 
-    setUpConnections(anyMidiPortOpen);
+    setUpConnections(enabled());
 
-    emit midiEnabled(anyMidiPortOpen);
+    emit midiEnabled(enabled());
 }
 
 
 
 void MidiLinkManager::updateMidiLinks(QString portName, int key, int value)
 {
-    if (linkingFloat != nullptr)
+    if (mLinkingFloat != nullptr)
     {
-        if (!floatLinks.contains(portName))
-            floatLinks[portName] = QMap<int, Number<float>*>();
+        // Linking a float number
 
-        if (floatLinks[portName].contains(key))
-        {
-            floatLinks[portName][key]->setIndexMax(100'000);
-            floatLinks[portName][key]->setMidiLinked(false);
-            floatLinks[portName].remove(key);
-        }
-
-        linkingFloat->setIndexMax(127);
-        linkingFloat->setMidiLinked(true);
-
-        connect(linkingFloat, &Number<float>::deleting, this, [=, this]() {
-            floatLinks[portName].remove(key);
-        });
-
-        floatLinks[portName][key] = linkingFloat;
-        linkingFloat = nullptr;
+        setupMidiLink(portName, key, mLinkingFloat);
+        mLinkingFloat = nullptr;
     }
-    else if (linkingInt != nullptr)
+    else if (mLinkingInt != nullptr)
     {
-        if (!intLinks.contains(portName))
-            intLinks[portName] = QMap<int, Number<int>*>();
+        // Linking an int or uint number
 
-        if (intLinks[portName].contains(key))
-        {
-            intLinks[portName][key]->setIndexMax(100'000);
-            intLinks[portName][key]->setMidiLinked(false);
-            intLinks[portName].remove(key);
-        }
+        setupMidiLink(portName, key, mLinkingInt);
+        mLinkingInt = nullptr;
+    }
+    else if (mLinkingUint != nullptr)
+    {
+        // Linking an int or uint number
 
-        linkingInt->setIndexMax(127);
-        linkingInt->setMidiLinked(true);
-
-        connect(linkingInt, &Number<int>::deleting, this, [=, this]() {
-            intLinks[portName].remove(key);
-        });
-
-        intLinks[portName][key] = linkingInt;
-        linkingInt = nullptr;
+        setupMidiLink(portName, key, mLinkingUint);
+        mLinkingUint = nullptr;
     }
     else
     {
-        if (floatLinks.contains(portName) && floatLinks[portName].contains(key))
+        // No number being linked: set value of already linked number
+
+        if (mFloatLinks.contains(portName) && mFloatLinks[portName].contains(key))
         {
-            floatLinks[portName][key]->setValueFromIndex(value);
-            floatLinks[portName][key]->setIndex();
+            mFloatLinks[portName][key]->setValueFromIndex(value);
+            mFloatLinks[portName][key]->setIndex();
         }
-        if (intLinks.contains(portName) && intLinks[portName].contains(key))
+        if (mIntLinks.contains(portName) && mIntLinks[portName].contains(key))
         {
-            intLinks[portName][key]->setValueFromIndex(value);
-            intLinks[portName][key]->setIndex();
+            mIntLinks[portName][key]->setValueFromIndex(value);
+            mIntLinks[portName][key]->setIndex();
         }
     }
+}
+
+
+
+void MidiLinkManager::setupMidiLink(QString portName, int key, Number<float>* number)
+{
+    // Init if no links map exists for this port
+
+    if (!mFloatLinks.contains(portName)) {
+        mFloatLinks[portName] = QMap<int, Number<float>*>();
+    }
+
+    // Remove previously assigned key
+
+    if (mFloatLinks[portName].contains(key))
+    {
+        mFloatLinks[portName][key]->setIndexMax(100'000);
+        mFloatLinks[portName][key]->setMidiLinked(false);
+        mFloatLinks[portName].remove(key);
+    }
+
+    // Adjust to midi range
+
+    number->setIndexMax(127);
+    number->setMidiLinked(true);
+
+    // Ensure removable on number deletion
+
+    connect(number, &Number<float>::deleting, this, [=, this]() {
+        mFloatLinks[portName].remove(key);
+    });
+
+    // Store link
+
+    mFloatLinks[portName][key] = number;
+}
+
+
+
+void MidiLinkManager::setupMidiLink(QString portName, int key, Number<int>* number)
+{
+    // Init if no links map exists for this port
+
+    if (!mIntLinks.contains(portName)) {
+        mIntLinks[portName] = QMap<int, Number<int>*>();
+    }
+
+    // Remove previously assigned key
+
+    if (mIntLinks[portName].contains(key))
+    {
+        mIntLinks[portName][key]->setIndexMax(100'000);
+        mIntLinks[portName][key]->setMidiLinked(false);
+        mIntLinks[portName].remove(key);
+    }
+
+    // Adjust to midi range
+
+    number->setIndexMax(127);
+    number->setMidiLinked(true);
+
+    // Ensure removable on number deletion
+
+    connect(number, &Number<int>::deleting, this, [=, this]() {
+        mIntLinks[portName].remove(key);
+    });
+
+    // Store link
+
+    mIntLinks[portName][key] = number;
+}
+
+
+
+void MidiLinkManager::setupMidiLink(QString portName, int key, Number<unsigned int>* number)
+{
+    // Init if no links map exists for this port
+
+    if (!mUintLinks.contains(portName)) {
+        mUintLinks[portName] = QMap<int, Number<unsigned int>*>();
+    }
+
+    // Remove previously assigned key
+
+    if (mUintLinks[portName].contains(key))
+    {
+        mUintLinks[portName][key]->setIndexMax(100'000);
+        mUintLinks[portName][key]->setMidiLinked(false);
+        mUintLinks[portName].remove(key);
+    }
+
+    // Adjust to midi range
+
+    number->setIndexMax(127);
+    number->setMidiLinked(true);
+
+    // Ensure removable on number deletion
+
+    connect(number, &Number<unsigned int>::deleting, this, [=, this]() {
+        mUintLinks[portName].remove(key);
+    });
+
+    // Store link
+
+    mUintLinks[portName][key] = number;
 }
 
 
@@ -129,22 +255,26 @@ void MidiLinkManager::setUpConnections(bool midiOn)
 void MidiLinkManager::connectMidiSignals(QUuid id)
 {
     connect(mMidiSignalsMap.value(id), QOverload<Number<float>*>::of(&MidiSignals::linkWait), this, [=, this](Number<float>* number) {
-        linkingFloat = number;
+        mLinkingFloat = number;
     });
 
     connect(mMidiSignalsMap.value(id), QOverload<Number<int>*>::of(&MidiSignals::linkWait), this, [=, this](Number<int>* number) {
-        linkingInt = number;
+        mLinkingInt = number;
+    });
+
+    connect(mMidiSignalsMap.value(id), QOverload<Number<unsigned int>*>::of(&MidiSignals::linkWait), this, [=, this](Number<unsigned int>* number) {
+        mLinkingUint = number;
     });
 
     connect(mMidiSignalsMap.value(id), QOverload<Number<float>*>::of(&MidiSignals::linkBreak), this, [=, this](Number<float>* number) {
-        for (auto [port, map] : floatLinks.asKeyValueRange())
+        for (auto [port, map] : mFloatLinks.asKeyValueRange())
         {
             for (auto [key, n] : map.asKeyValueRange())
             {
                 if (n == number)
                 {
                     number->setMidiLinked(false);
-                    floatLinks[port].remove(key);
+                    mFloatLinks[port].remove(key);
                     break;
                 }
             }
@@ -152,14 +282,29 @@ void MidiLinkManager::connectMidiSignals(QUuid id)
     });
 
     connect(mMidiSignalsMap.value(id), QOverload<Number<int>*>::of(&MidiSignals::linkBreak), this, [=, this](Number<int>* number) {
-        for (auto [port, map] : intLinks.asKeyValueRange())
+        for (auto [port, map] : mIntLinks.asKeyValueRange())
         {
             for (auto [key, n] : map.asKeyValueRange())
             {
                 if (n == number)
                 {
                     number->setMidiLinked(false);
-                    intLinks[port].remove(key);
+                    mIntLinks[port].remove(key);
+                    break;
+                }
+            }
+        }
+    });
+
+    connect(mMidiSignalsMap.value(id), QOverload<Number<unsigned int>*>::of(&MidiSignals::linkBreak), this, [=, this](Number<unsigned int>* number) {
+        for (auto [port, map] : mUintLinks.asKeyValueRange())
+        {
+            for (auto [key, n] : map.asKeyValueRange())
+            {
+                if (n == number)
+                {
+                    number->setMidiLinked(false);
+                    mUintLinks[port].remove(key);
                     break;
                 }
             }
@@ -173,7 +318,9 @@ void MidiLinkManager::disconnectMidiSignals(QUuid id)
 {
     disconnect(mMidiSignalsMap.value(id), QOverload<Number<float>*>::of(&MidiSignals::linkWait), this, nullptr);
     disconnect(mMidiSignalsMap.value(id), QOverload<Number<int>*>::of(&MidiSignals::linkWait), this, nullptr);
+    disconnect(mMidiSignalsMap.value(id), QOverload<Number<unsigned int>*>::of(&MidiSignals::linkWait), this, nullptr);
 
     disconnect(mMidiSignalsMap.value(id), QOverload<Number<float>*>::of(&MidiSignals::linkBreak), this, nullptr);
     disconnect(mMidiSignalsMap.value(id), QOverload<Number<int>*>::of(&MidiSignals::linkBreak), this, nullptr);
+    disconnect(mMidiSignalsMap.value(id), QOverload<Number<unsigned int>*>::of(&MidiSignals::linkBreak), this, nullptr);
 }

@@ -20,6 +20,14 @@ class MidiLinkManager : public QObject
 public:
     explicit MidiLinkManager(QObject *parent = nullptr);
 
+    bool enabled();
+
+    QMap<QString, QMap<int, Number<float>*>> floatLinks();
+    QMap<QString, QMap<int, Number<int>*>> intLinks();
+    QMap<QString, QMap<int, Number<unsigned int>*>> uintLinks();
+
+    void clearLinks();
+
 signals:
     void midiEnabled(bool enabled);
 
@@ -31,16 +39,22 @@ public slots:
 
     void updateMidiLinks(QString portName, int key, int value);
 
+    void setupMidiLink(QString portName, int key, Number<float>* number);
+    void setupMidiLink(QString portName, int key, Number<int>* number);
+    void setupMidiLink(QString portName, int key, Number<unsigned int>* number);
+
 private:
     QMap<QUuid, MidiSignals*> mMidiSignalsMap;
 
-    QMap<QString, QMap<int, Number<float>*>> floatLinks;
-    QMap<QString, QMap<int, Number<int>*>> intLinks;
+    QMap<QString, QMap<int, Number<float>*>> mFloatLinks;
+    QMap<QString, QMap<int, Number<int>*>> mIntLinks;
+    QMap<QString, QMap<int, Number<unsigned int>*>> mUintLinks;
 
-    Number<float>* linkingFloat = nullptr;
-    Number<int>* linkingInt = nullptr;
+    Number<float>* mLinkingFloat = nullptr;
+    Number<int>* mLinkingInt = nullptr;
+    Number<unsigned int>* mLinkingUint = nullptr;
 
-    bool anyMidiPortOpen = false;
+    QMap<QString, bool> mPortOpen;
 
     void setUpConnections(bool midiOn);
 
