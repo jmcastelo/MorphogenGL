@@ -35,7 +35,7 @@ SeedWidget::SeedWidget(Seed *seed, QWidget *parent) :
     grayScaleAction->setData(QVariant(1));
 
     imageAction = headerToolBar->addAction(QIcon(QPixmap(":/icons/image-x-generic.png")), "Image", this, &SeedWidget::setSeedType);
-    imageAction->setEnabled(false);
+    imageAction->setEnabled(mSeed->type() == 2);
     imageAction->setCheckable(true);
     imageAction->setData(QVariant(2));
 
