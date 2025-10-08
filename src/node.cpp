@@ -304,6 +304,7 @@ QVariant Node::itemChange(GraphicsItemChange change, const QVariant &value)
                 {
                     edge->setZValue(0);
                     edge->setWidgetVisible(true);
+                    edge->adjust();
                 }
             }
         }

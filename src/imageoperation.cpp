@@ -688,7 +688,7 @@ QList<float> ImageOperation::inputBlendFactors()
     mInputBlendFactors.clear();
 
     foreach(InputData* iData, mInputData) {
-        mInputBlendFactors.append(iData->blendFactor());
+        mInputBlendFactors.append(iData->blendFactor()->value());
     }
 
     return mInputBlendFactors;

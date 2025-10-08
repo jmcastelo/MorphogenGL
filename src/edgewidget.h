@@ -12,6 +12,7 @@
 #include <QLineEdit>
 #include <QDoubleValidator>
 #include <QSlider>
+#include <QToolBar>
 #include <QAction>
 
 
@@ -21,8 +22,7 @@ class EdgeWidget : public QFrame
     Q_OBJECT
 
 public:
-    explicit EdgeWidget(float factor, bool srcIsOp, QWidget *parent = nullptr);
-    ~EdgeWidget();
+    explicit EdgeWidget(Number<float>* blendFactor, bool srcIsOp, QWidget *parent = nullptr);
 
     QString const name();
     void setName(QString name);
@@ -33,8 +33,10 @@ public:
 
     void toggleTypeAction(bool predge);
 
+    void adjustAllSizes();
+
 signals:
-    void blendFactorChanged(float factor);
+    // void blendFactorChanged(float factor);
 
     void edgeTypeChanged(bool predge);
     void typeActionToggled(bool checked);
@@ -47,10 +49,11 @@ public slots:
 private:
     QString mName;
 
-    Number<float>* blendFactor;
+    Number<float>* mBlendFactor;
 
     MidiSignals* mMidiSignals;
 
+    QToolBar* headerToolBar;
     QAction* midiLinkAction;
     QAction* mTypeAction;
     QAction* mRemoveAction;

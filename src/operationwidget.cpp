@@ -59,6 +59,12 @@ OperationWidget::OperationWidget(QUuid id, ImageOperation* operation, bool midiE
 
     headerToolBar->addAction(QIcon(QPixmap(":/icons/network-connect.png")), "Connect", this, &OperationWidget::connectTo);
 
+    // Equalize blend factors action
+
+    headerToolBar->addAction(QIcon(QPixmap(":/icons/preferences-desktop.png")), "Equalize blend factors", this, [=, this]() {
+        emit equalizeBlendFactors(mId);
+    });
+
     // Toggle body action
 
     toggleBodyAction = headerToolBar->addAction(QIcon(QPixmap(":/icons/go-down.png")), "Hide", this, &OperationWidget::toggleBody);

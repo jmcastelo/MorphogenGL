@@ -157,7 +157,7 @@ void ConfigurationParser::writeOperationNode(ImageOperationNode* node, QXmlStrea
         stream.writeEndElement();
 
         stream.writeStartElement("blendfactor");
-        stream.writeCharacters(QString::number(inData->blendFactor()));
+        stream.writeCharacters(QString::number(inData->blendFactor()->value()));
         stream.writeEndElement();
 
         stream.writeEndElement();

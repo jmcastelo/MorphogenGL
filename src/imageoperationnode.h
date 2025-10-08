@@ -51,7 +51,7 @@ public:
     void setComputed(bool done);
     bool allInputsComputed();
 
-    float blendFactor(QUuid id);
+    Number<float>* blendFactor(QUuid id);
     void setBlendFactor(QUuid id, float factor);
     void equalizeBlendFactors();
 

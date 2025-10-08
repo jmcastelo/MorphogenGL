@@ -276,8 +276,10 @@ void Edge::adjust()
 
     // Edge widget visible if edge is long enough
 
-    if (mWidgetVisible)
+    if (mWidgetVisible) {
         mWidget->setVisible(!mProxyWidget->boundingRect().contains(mProxyWidget->mapFromScene(visibleLine.p1())) && !mProxyWidget->boundingRect().contains(mProxyWidget->mapFromScene(visibleLine.p2())));
+        mWidget->adjustAllSizes();
+    }
 }
 
 

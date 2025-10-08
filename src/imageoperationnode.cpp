@@ -231,7 +231,7 @@ void ImageOperationNode::setComputed(bool done)
 
 
 
-float ImageOperationNode::blendFactor(QUuid id)
+Number<float>* ImageOperationNode::blendFactor(QUuid id)
 {
     return mInputs.value(id)->blendFactor();
 }

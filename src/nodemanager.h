@@ -55,9 +55,7 @@ public:
     NodeManager(Factory* factory);
     ~NodeManager();
 
-    QList<QString> availableOperations;
-
-    bool connectOperations(QUuid srcId, QUuid dstId, float factor);
+    bool connectOperations(QUuid srcId, QUuid dstId, float blendFactor);
     void connectOperations(QMap<QUuid, QMap<QUuid, InputData*>> conections);
 
     void connectCopiedOperationsA(QUuid srcId0, QUuid dstId0, QUuid srcId1, QUuid dstId1);
@@ -66,11 +64,10 @@ public:
 
     void setOperationInputType(QUuid srcId, QUuid dstId, InputType type);
 
-    EdgeWidget* addEdgeWidget(QUuid srcId, QUuid dstId, float factor);
+    EdgeWidget* addEdgeWidget(QUuid srcId, QUuid dstId, Number<float>* blendFactor);
 
-    float blendFactor(QUuid srcId, QUuid dstId);
+    Number<float>* blendFactor(QUuid srcId, QUuid dstId);
     void setBlendFactor(QUuid srcId, QUuid dstId, float factor);
-    void equalizeBlendFactors(QUuid id);
 
     ImageOperation* getOperation(QUuid id);
     // QPair<QUuid, OperationWidget*> addNewOperation();
@@ -158,6 +155,7 @@ private slots:
     void removeOperationNode(QUuid id);
     void removeSeedNode(QUuid id);
     void removeAllNodes();
+    void equalizeBlendFactors(QUuid id);
 };
 
 

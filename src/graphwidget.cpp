@@ -348,15 +348,16 @@ void GraphWidget::reconnectNodes(Node* node)
 
             // Connect nodes
 
-            mNodeManager->connectOperations(input->sourceNode()->id(), output->destNode()->id(), mNodeManager->blendFactor(node->id(), output->destNode()->id()));
+            if (mNodeManager->connectOperations(input->sourceNode()->id(), output->destNode()->id(), mNodeManager->blendFactor(node->id(), output->destNode()->id())->value()))
+            {
+                EdgeWidget* edgeWidget = mNodeManager->addEdgeWidget(input->sourceNode()->id(), output->destNode()->id(), mNodeManager->blendFactor(node->id(), output->destNode()->id()));
+                Edge* newEdge = new Edge(input->sourceNode(), output->destNode(), edgeWidget);
 
-            EdgeWidget* edgeWidget = mNodeManager->addEdgeWidget(input->sourceNode()->id(), output->destNode()->id(), mNodeManager->blendFactor(node->id(), output->destNode()->id()));
-            Edge* newEdge = new Edge(input->sourceNode(), output->destNode(), edgeWidget);
+                if (input->isPredge() || output->isPredge())
+                    newEdge->setPredge(true);
 
-            if (input->isPredge() || output->isPredge())
-                newEdge->setPredge(true);
-
-            scene()->addItem(newEdge);
+                scene()->addItem(newEdge);
+            }
         }
     }
 }

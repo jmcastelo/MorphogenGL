@@ -204,13 +204,13 @@ void NodeManager::setOutput(QUuid id)
 
 
 
-bool NodeManager::connectOperations(QUuid srcId, QUuid dstId, float factor)
+bool NodeManager::connectOperations(QUuid srcId, QUuid dstId, float blendFactor)
 {
     if (srcId != dstId)
     {
         if (mOperationNodesMap.contains(srcId) && mOperationNodesMap.contains(dstId) && !mOperationNodesMap.value(dstId)->isInput(srcId))
         {
-            mOperationNodesMap.value(dstId)->addInput(mOperationNodesMap.value(srcId), new InputData(InputType::Normal, mOperationNodesMap.value(srcId)->pOutTextureId(), factor));
+            mOperationNodesMap.value(dstId)->addInput(mOperationNodesMap.value(srcId), new InputData(InputType::Normal, mOperationNodesMap.value(srcId)->pOutTextureId(), blendFactor));
             mOperationNodesMap.value(srcId)->addOutput(mOperationNodesMap.value(dstId));
 
             sortOperations();
@@ -219,7 +219,7 @@ bool NodeManager::connectOperations(QUuid srcId, QUuid dstId, float factor)
         }
         else if (mSeedsMap.contains(srcId) && mOperationNodesMap.contains(dstId) && !mOperationNodesMap.value(dstId)->isInput(srcId))
         {
-            mOperationNodesMap.value(dstId)->addSeedInput(srcId, new InputData(InputType::Seed, mSeedsMap.value(srcId)->pOutTextureId(), factor));
+            mOperationNodesMap.value(dstId)->addSeedInput(srcId, new InputData(InputType::Seed, mSeedsMap.value(srcId)->pOutTextureId(), blendFactor));
 
             sortOperations();
 
@@ -272,14 +272,14 @@ void NodeManager::connectCopiedOperationsA(QUuid srcId0, QUuid dstId0, QUuid src
 {
     if (mOperationNodesMap.contains(srcId0))
     {
-        float factor = mOperationNodesMap.value(dstId0)->blendFactor(srcId0);
+        float factor = mOperationNodesMap.value(dstId0)->blendFactor(srcId0)->value();
 
         copiedOperationNodes[0].value(dstId1)->addInput(copiedOperationNodes[0].value(srcId1), new InputData(InputType::Normal, copiedOperationNodes[0].value(srcId1)->pOutTextureId(), factor));
         copiedOperationNodes[0].value(srcId1)->addOutput(copiedOperationNodes[0].value(dstId1));
     }
     else if (mSeedsMap.contains(srcId0))
     {
-        float factor = mOperationNodesMap.value(dstId0)->blendFactor(srcId0);
+        float factor = mOperationNodesMap.value(dstId0)->blendFactor(srcId0)->value();
         copiedOperationNodes[0].value(dstId1)->addSeedInput(srcId1, new InputData(InputType::Seed, mSeedsMap.value(srcId0)->pOutTextureId(), factor));
     }
 }
@@ -290,14 +290,14 @@ void NodeManager::connectCopiedOperationsB(QUuid srcId0, QUuid dstId0, QUuid src
 {
     if (copiedOperationNodes[1].contains(srcId0))
     {
-        float factor = copiedOperationNodes[1].value(dstId0)->blendFactor(srcId0);
+        float factor = copiedOperationNodes[1].value(dstId0)->blendFactor(srcId0)->value();
 
         copiedOperationNodes[0].value(dstId1)->addInput(copiedOperationNodes[0].value(srcId1), new InputData(InputType::Normal, copiedOperationNodes[0].value(srcId1)->pOutTextureId(), factor));
         copiedOperationNodes[0].value(srcId1)->addOutput(copiedOperationNodes[0].value(dstId1));
     }
     else if (copiedSeeds[1].contains(srcId0))
     {
-        float factor = copiedOperationNodes[1].value(dstId0)->blendFactor(srcId0);
+        float factor = copiedOperationNodes[1].value(dstId0)->blendFactor(srcId0)->value();
         copiedOperationNodes[0].value(dstId1)->addSeedInput(srcId1, new InputData(InputType::Seed, copiedSeeds[0].value(srcId1)->pOutTextureId(), factor));
     }
 }
@@ -376,7 +376,7 @@ void NodeManager::swapTwoOperations(QUuid id1, QUuid id2)
 
 
 
-float NodeManager::blendFactor(QUuid srcId, QUuid dstId)
+Number<float>* NodeManager::blendFactor(QUuid srcId, QUuid dstId)
 {
     return mOperationNodesMap.value(dstId)->blendFactor(srcId);
 }
@@ -486,15 +486,15 @@ bool NodeManager::isOperationEnabled(QUuid id)
 
 
 
-EdgeWidget* NodeManager::addEdgeWidget(QUuid srcId, QUuid dstId, float factor)
+EdgeWidget* NodeManager::addEdgeWidget(QUuid srcId, QUuid dstId, Number<float>* blendFactor)
 {
-    EdgeWidget* edgeWidget = new EdgeWidget(factor, mOperationNodesMap.contains(srcId));
+    EdgeWidget* edgeWidget = new EdgeWidget(blendFactor, mOperationNodesMap.contains(srcId));
 
     QUuid id = QUuid::createUuid();
 
-    connect(edgeWidget, &EdgeWidget::blendFactorChanged, this, [=, this](float newFactor) {
+    /*connect(edgeWidget, &EdgeWidget::blendFactorChanged, this, [=, this](float newFactor) {
         setBlendFactor(srcId, dstId, newFactor);
-    });
+    });*/
 
     connect(edgeWidget, &EdgeWidget::edgeTypeChanged, this, [=, this](bool predge) {
         if (predge)
@@ -576,22 +576,31 @@ void NodeManager::connectOperationWidget(QUuid id, OperationWidget* widget)
     connect(widget, &OperationWidget::remove, this, &NodeManager::nodeRemoved);
 
     connect(widget, &OperationWidget::outputChanged, this, &NodeManager::setOutput);
-
     connect(this, &NodeManager::outputNodeChanged, widget, &OperationWidget::toggleOutputAction);
 
     connect(widget, &OperationWidget::connectTo, this, [=, this]() {
-        if (connSrcId.isNull()) {
+        if (connSrcId.isNull())
+        {
+            // Set id of source node
+
             connSrcId = widget->id();
         }
         else if (connectOperations(connSrcId, widget->id(), 1.0))
         {
-            emit nodesConnected(connSrcId, widget->id(), addEdgeWidget(connSrcId, widget->id(), 1.0));
+            // Connected source node with this node
+
+            emit nodesConnected(connSrcId, widget->id(), addEdgeWidget(connSrcId, widget->id(), blendFactor(connSrcId, widget->id())));
             connSrcId = QUuid();
         }
-        else {
+        else
+        {
+            // Unable to connect
+
             connSrcId = QUuid();
         }
     });
+
+    connect(widget, &OperationWidget::equalizeBlendFactors, this, &NodeManager::equalizeBlendFactors);
 
     emit midiSignalsCreated(widget->id(), widget->midiSignals());
 
@@ -778,7 +787,7 @@ void NodeManager::connectSeedWidget(QUuid id, SeedWidget* widget)
         }
         else if (connectOperations(connSrcId, widget->id(), 1.0))
         {
-            emit nodesConnected(connSrcId, widget->id(), addEdgeWidget(connSrcId, widget->id(), 1.0));
+            emit nodesConnected(connSrcId, widget->id(), addEdgeWidget(connSrcId, widget->id(), blendFactor(connSrcId, widget->id())));
             connSrcId = QUuid();
         }
         else {
