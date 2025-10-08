@@ -3,13 +3,15 @@
 
 #include "operationwidget.h"
 #include "parameters/uniformmat4parameter.h"
+#include "factory.h"
 
 
 
-OperationWidget::OperationWidget(QUuid id, ImageOperation* operation, bool midiEnabled, bool editMode, QWidget* parent) :
+OperationWidget::OperationWidget(QUuid id, ImageOperation* operation, bool midiEnabled, bool editMode, Factory *factory, QWidget* parent) :
     QFrame { parent },
     mId { id },
     mOperation { operation },
+    mFactory { factory },
     mMidiEnabled { midiEnabled }
 {
     mMidiSignals = new MidiSignals(this);
@@ -48,6 +50,14 @@ OperationWidget::OperationWidget(QUuid id, ImageOperation* operation, bool midiE
         emit outputChanged(checked ? mId : QUuid());
     });
     outputAction->setCheckable(true);
+
+    // Replace operation action and menu
+
+    replaceOpAction = headerToolBar->addAction(QIcon(QPixmap(":/icons/view-refresh-2.png")), "Replace", this, &OperationWidget::populateAvailOpsMenu);
+    mAvailOpsMenu = new QMenu("Replace with");
+    replaceOpAction->setMenu(mAvailOpsMenu);
+
+    connect(mAvailOpsMenu, &QMenu::triggered, this, &OperationWidget::replaceOperation);
 
     // Edit action
 
@@ -265,6 +275,7 @@ OperationWidget::OperationWidget(QUuid id, ImageOperation* operation, bool midiE
 OperationWidget::~OperationWidget()
 {
     delete mOpBuilder;
+    qDeleteAll(mAvailOpsActions);
 }
 
 
@@ -386,7 +397,7 @@ void OperationWidget::setup()
 
     // Once widgets set on grid, optimize its layout to set it with proper row and column spans and sizes
 
-    // if (gridWidget->isVisible())
+    if (gridWidget->isVisible())
         gridWidget->optimizeLayout();
 
     headerWidget->adjustSize();
@@ -661,6 +672,7 @@ void OperationWidget::toggleOutputAction(QUuid id)
 void OperationWidget::toggleMidiButton(bool show)
 {
     midiLinkButton->setVisible(show);
+    mMidiEnabled = show;
 }
 
 
@@ -1235,3 +1247,41 @@ void OperationWidget::toggleEditMode(bool mode)
     recreate();
 }
 
+
+
+void OperationWidget::populateAvailOpsMenu()
+{
+    mAvailOpsMenu->clear();
+
+    qDeleteAll(mAvailOpsActions);
+    mAvailOpsActions.clear();
+
+    mFactory->scan();
+
+    foreach (QString opName, mFactory->availableOperationNames()) {
+        mAvailOpsActions.append(new QAction(opName));
+    }
+
+    mAvailOpsMenu->addActions(mAvailOpsActions);
+    mAvailOpsMenu->exec(QCursor::pos());
+}
+
+
+
+void OperationWidget::replaceOperation(QAction* action)
+{
+    if (mAvailOpsActions.contains(action))
+    {
+        int index = mAvailOpsActions.indexOf(action);
+
+        ImageOperation* operation = mFactory->createReplaceOp(mId, mOperation, index);
+
+        mOpBuilder->setOperation(operation);
+
+        ImageOperation* oldOperation = mOperation;
+        mOperation = operation;
+        mFactory->deleteOperation(oldOperation);
+
+        recreate();
+    }
+}

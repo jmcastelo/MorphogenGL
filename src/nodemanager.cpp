@@ -30,6 +30,9 @@ NodeManager::NodeManager(Factory* factory) :
     mFactory { factory }
 {
     connect(mFactory, &Factory::newOperationCreated, this, &NodeManager::addOperationNode);
+    connect(mFactory, &Factory::newOperationCreated, this, &NodeManager::connectOperation);
+    connect(mFactory, &Factory::replaceOpCreated, this, &NodeManager::connectOperation);
+    connect(mFactory, &Factory::replaceOpCreated, this, &NodeManager::replaceNodeOperation);
     connect(mFactory, &Factory::newSeedCreated, this, &NodeManager::addSeedNode);
     connect(mFactory, &Factory::newOperationWidgetCreated, this, &NodeManager::connectOperationWidget);
     connect(mFactory, &Factory::newSeedWidgetCreated, this, &NodeManager::connectSeedWidget);
@@ -522,7 +525,12 @@ void NodeManager::addOperationNode(QUuid id, ImageOperation* operation)
 {
     ImageOperationNode* node = new ImageOperationNode(id, operation);
     mOperationNodesMap.insert(id, node);
+}
 
+
+
+void NodeManager::connectOperation(QUuid id, ImageOperation* operation)
+{
     foreach (auto parameter, operation->uniformParameters<float>())
     {
         connect(parameter, QOverload<int, QVariant>::of(&Parameter::valueChanged), this, [=, this](int i, QVariant value) {
@@ -563,6 +571,14 @@ void NodeManager::addOperationNode(QUuid id, ImageOperation* operation)
             emit parameterValueChanged(id, operation->name(), parameter->name() + " " + numberName, QString::number(value.toFloat(), 'f', 6));
         });
     }
+}
+
+
+
+void NodeManager::replaceNodeOperation(QUuid id, ImageOperation* operation)
+{
+    mOperationNodesMap.value(id)->setOperation(operation);
+    sortOperations();
 }
 
 
@@ -895,14 +911,6 @@ void NodeManager::removeSeedNode(QUuid id)
 
         sortOperations();
     }
-}
-
-
-
-
-void NodeManager::loadSeedImage(QUuid id, QString filename)
-{
-    mSeedsMap.value(id)->loadImage(filename);
 }
 
 

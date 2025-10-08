@@ -33,6 +33,7 @@ RenderManager::RenderManager(Factory *factory)
     : mFactory { factory }
 {
     connect(mFactory, &Factory::newOperationCreated, this, &RenderManager::initOperation);
+    connect(mFactory, &Factory::replaceOpCreated, this, &RenderManager::initOperation);
     connect(mFactory, &Factory::newSeedCreated, this, &RenderManager::initSeed);
 }
 

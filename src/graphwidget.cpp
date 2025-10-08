@@ -400,8 +400,8 @@ void GraphWidget::removeNode(QUuid id)
         }
 
         scene()->removeItem(node);
-        // node->deleteLater();
-        delete node;
+        node->deleteLater();
+        // delete node;
 
         searchElementaryCycles();
     }

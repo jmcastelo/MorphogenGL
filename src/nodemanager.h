@@ -71,9 +71,9 @@ public:
 
     ImageOperation* getOperation(QUuid id);
     // QPair<QUuid, OperationWidget*> addNewOperation();
-    //QUuid addOperation(QString operationName);
+    // QUuid addOperation(QString operationName);
     QUuid copyOperation(QUuid srcId);
-    //void setOperation(QUuid id, QString operationName);
+    // void setOperation(QUuid id, QString operationName);
 
     // void enableOperation(QUuid id, bool enabled);
     // bool isOperationEnabled(QUuid id);
@@ -81,7 +81,6 @@ public:
     // QPair<QUuid, SeedWidget*> addSeed();
     QUuid copySeed(QUuid srcId);
 
-    void loadSeedImage(QUuid id, QString filename);
     int getSeedType(QUuid id);
     void setSeedType(QUuid id, int set);
     void resetInputSeedTexId(QUuid id);
@@ -150,11 +149,18 @@ private:
 private slots:
     void addOperationNode(QUuid id, ImageOperation* operation);
     void addSeedNode(QUuid id, Seed* seed);
+
+    void connectOperation(QUuid id, ImageOperation* operation);
+    void replaceNodeOperation(QUuid id, ImageOperation* operation);
+
     void connectOperationWidget(QUuid id, OperationWidget* widget);
     void connectSeedWidget(QUuid id, SeedWidget* widget);
+
     void removeOperationNode(QUuid id);
     void removeSeedNode(QUuid id);
+
     void removeAllNodes();
+
     void equalizeBlendFactors(QUuid id);
 };
 

@@ -45,10 +45,6 @@ ImageOperation::ImageOperation(const ImageOperation& operation) :
     mEnabled { operation.mEnabled },
     mInputData { operation.mInputData }
 {
-    // Generate textures with format and size given externally
-
-    // genTextures(texFormat, width, height);
-
     pOutTexId = new GLuint(0);
     setOutTextureId();
 
@@ -86,6 +82,52 @@ ImageOperation::ImageOperation(const ImageOperation& operation) :
     }
 }
 
+
+
+ImageOperation::ImageOperation(const ImageOperation& operation, const ImageOperation& oldOperation) :
+    mName { operation.mName },
+    mVertexShader { operation.mVertexShader },
+    mFragmentShader { operation.mFragmentShader },
+    mMinMagFilter { operation.mMinMagFilter },
+    mEnabled { oldOperation.mEnabled },
+    mInputData { oldOperation.mInputData }
+{
+    pOutTexId = new GLuint(0);
+    setOutTextureId();
+
+    // Copy parameters
+
+    for (auto parameter: operation.floatUniformParameters)
+    {
+        auto newParameter = new UniformParameter<float>(*parameter);
+        newParameter->setOperation(this);
+        floatUniformParameters.append(newParameter);
+    }
+    for (auto parameter: operation.intUniformParameters)
+    {
+        auto newParameter = new UniformParameter<int>(*parameter);
+        newParameter->setOperation(this);
+        intUniformParameters.append(newParameter);
+    }
+    for (auto parameter: operation.uintUniformParameters)
+    {
+        auto newParameter = new UniformParameter<unsigned int>(*parameter);
+        newParameter->setOperation(this);
+        uintUniformParameters.append(newParameter);
+    }
+    for (auto parameter : operation.glenumOptionsParameters)
+    {
+        auto newParameter = new OptionsParameter<GLenum>(*parameter);
+        newParameter->setOperation(this);
+        glenumOptionsParameters.append(newParameter);
+    }
+    for (auto parameter : operation.mMat4UniformParameters)
+    {
+        auto newParameter = new UniformMat4Parameter(*parameter);
+        newParameter->setOperation(this);
+        mMat4UniformParameters.append(newParameter);
+    }
+}
 
 
 ImageOperation::~ImageOperation()

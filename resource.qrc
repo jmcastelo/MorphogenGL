@@ -83,5 +83,6 @@
         <file>shaders/random.vert</file>
         <file>shaders/random.frag</file>
         <file>icons/dialog-ok.png</file>
+        <file>icons/view-refresh-2.png</file>
     </qresource>
 </RCC>

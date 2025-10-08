@@ -141,6 +141,20 @@ OperationBuilder::~OperationBuilder()
 
 
 
+void OperationBuilder::setOperation(ImageOperation* operation)
+{
+    mOperation = operation;
+
+    mContext->setFormat(mOperation->context()->format());
+    mContext->setShareContext(mOperation->context());
+
+    mSurface->setFormat(mOperation->context()->format());
+
+    vertexEditor->setPlainText(mOperation->vertexShader());
+    fragmentEditor->setPlainText(mOperation->fragmentShader());
+}
+
+
 void OperationBuilder::addMat4UniformParameter(UniformMat4Parameter* parameter)
 {
     mat4ParamMap.insert(parameter->uniformName(), parameter);

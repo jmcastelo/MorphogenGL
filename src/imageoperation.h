@@ -54,6 +54,7 @@ class ImageOperation : protected QOpenGLExtraFunctions
 public:
     ImageOperation();
     ImageOperation(const ImageOperation& operation);
+    ImageOperation(const ImageOperation& newOperation, const ImageOperation& oldOperation);
     ~ImageOperation();
 
     void init(QOpenGLContext* context, QOffscreenSurface *surface);

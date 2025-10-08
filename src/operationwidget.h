@@ -50,6 +50,11 @@
 #include <QToolBar>
 #include <QAction>
 #include <QUuid>
+#include <QMenu>
+
+
+
+class Factory;
 
 
 
@@ -58,7 +63,7 @@ class OperationWidget : public QFrame
     Q_OBJECT
 
 public:
-    explicit OperationWidget(QUuid id, ImageOperation* operation, bool midiEnabled, bool editMode, QWidget* parent = nullptr);
+    explicit OperationWidget(QUuid id, ImageOperation* operation, bool midiEnabled, bool editMode, Factory* factory, QWidget* parent = nullptr);
     ~OperationWidget();
 
     void setup();
@@ -68,14 +73,6 @@ public:
     MidiSignals* midiSignals();
 
 signals:
-    /*void linkWait(Number<float>* number);
-    void linkWait(Number<int>* number);
-    void linkWait(Number<unsigned int>* number);
-
-    void linkBreak(Number<float>* number);
-    void linkBreak(Number<int>* number);
-    void linkBreak(Number<unsigned int>* number);*/
-
     void outputChanged(QUuid id);
     void connectTo();
     void remove(QUuid id);
@@ -95,6 +92,8 @@ private:
     QUuid mId;
     ImageOperation* mOperation;
 
+    Factory* mFactory;
+
     bool mMidiEnabled;
     MidiSignals* mMidiSignals;
 
@@ -106,8 +105,12 @@ private:
 
     QAction* enableAction;
     QAction* outputAction;
+    QAction* replaceOpAction;
     QAction* editAction;
     QAction* toggleBodyAction;
+
+    QMenu* mAvailOpsMenu;
+    QList<QAction*> mAvailOpsActions;
 
     QLabel* opNameLabel;
     QLineEdit* opNameLineEdit;
@@ -211,6 +214,8 @@ private slots:
     void toggleBody(bool visible);
     void toggleEditMode(bool mode);
     void enableOperation(bool checked);
+    void populateAvailOpsMenu();
+    void replaceOperation(QAction* action);
 };
 
 

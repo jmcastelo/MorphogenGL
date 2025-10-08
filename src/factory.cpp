@@ -11,10 +11,14 @@
 
 Factory::Factory(QObject *parent)
     : QObject{parent}
-{
-    //scan();
-}
+{}
 
+
+
+Factory::~Factory()
+{
+    qDeleteAll(mAvailOps);
+}
 
 
 QList<ImageOperation*> Factory::operations()
@@ -39,7 +43,7 @@ void Factory::createNewOperation()
     mOperations.append(operation);
     emit newOperationCreated(id, operation);
 
-    OperationWidget* widget = new OperationWidget(id, operation, false, true);
+    OperationWidget* widget = new OperationWidget(id, operation, false, true, this);
     emit newOperationWidgetCreated(id, widget);
 }
 
@@ -67,7 +71,7 @@ void Factory::addAvailableOperation(int index)
     mOperations.append(operation);
     emit newOperationCreated(id, operation);
 
-    OperationWidget* widget = new OperationWidget(id, operation, false, false);
+    OperationWidget* widget = new OperationWidget(id, operation, false, false, this);
     emit newOperationWidgetCreated(id, widget);
 }
 
@@ -78,7 +82,7 @@ void Factory::addOperation(QUuid id, ImageOperation* operation, bool midiEnabled
     mOperations.append(operation);
     emit newOperationCreated(id, operation);
 
-    OperationWidget* widget = new OperationWidget(id, operation, midiEnabled, false);
+    OperationWidget* widget = new OperationWidget(id, operation, midiEnabled, false, this);
     emit newOperationWidgetCreated(id, widget);
 }
 
@@ -93,6 +97,17 @@ void Factory::addSeed(QUuid id, Seed* seed)
     emit newSeedWidgetCreated(id, widget);
 }
 
+
+
+ImageOperation* Factory::createReplaceOp(QUuid id, ImageOperation* oldOperation, int index)
+{
+    ImageOperation* operation = new ImageOperation(*mAvailOps[index], *oldOperation);
+    mOperations.append(operation);
+
+    emit replaceOpCreated(id, operation);
+
+    return operation;
+}
 
 
 void Factory::deleteOperation(ImageOperation* operation)
@@ -200,6 +215,7 @@ void Factory::scan()
 
         QStringList fileNames = opsDir.entryList(filters, QDir::Files | QDir::NoSymLinks, QDir::Name);
 
+        qDeleteAll(mAvailOps);
         mAvailOps.clear();
 
         OperationParser opParser;

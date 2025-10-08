@@ -30,6 +30,8 @@ public:
     explicit OperationBuilder(ImageOperation* operation, QWidget *parent = nullptr);
     ~OperationBuilder();
 
+    void setOperation(ImageOperation* operation);
+
     void addMat4UniformParameter(UniformMat4Parameter* parameter);
     void removeMat4UniformParameter(UniformMat4Parameter* parameter);
 

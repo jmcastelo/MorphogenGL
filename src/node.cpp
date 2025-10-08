@@ -59,7 +59,7 @@ Node::Node(QUuid id, QWidget *widget, QGraphicsItem* parent) :
 
 Node::~Node()
 {
-    delete mProxyWidget;
+    // delete mProxyWidget;
 }
 
 

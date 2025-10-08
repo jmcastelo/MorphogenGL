@@ -23,6 +23,7 @@ class Factory : public QObject
 
 public:
     explicit Factory(QObject *parent = nullptr);
+    ~Factory();
 
     QList<ImageOperation*> operations();
     QList<Seed*> seeds();
@@ -34,6 +35,8 @@ public:
 
     void addOperation(QUuid id, ImageOperation* operation, bool midiEnabled);
     void addSeed(QUuid id, Seed* operation);
+
+    ImageOperation* createReplaceOp(QUuid id, ImageOperation* oldOperation, int index);
 
     void deleteOperation(ImageOperation* operation);
     void deleteSeed(Seed* seed);
@@ -53,6 +56,8 @@ signals:
 
     void newOperationWidgetCreated(QUuid id, OperationWidget* widget);
     void newSeedWidgetCreated(QUuid id, SeedWidget* widget);
+
+    void replaceOpCreated(QUuid id, ImageOperation* operation);
 
     void cleared();
 
