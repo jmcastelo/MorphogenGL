@@ -6,8 +6,9 @@
 
 
 
-OperationWidget::OperationWidget(ImageOperation* operation, bool midiEnabled, bool editMode, QWidget* parent) :
+OperationWidget::OperationWidget(QUuid id, ImageOperation* operation, bool midiEnabled, bool editMode, QWidget* parent) :
     QFrame { parent },
+    mId { id },
     mOperation { operation },
     mMidiEnabled { midiEnabled }
 {
@@ -43,7 +44,9 @@ OperationWidget::OperationWidget(ImageOperation* operation, bool midiEnabled, bo
 
     // Output action
 
-    outputAction = headerToolBar->addAction(QIcon(QPixmap(":/icons/eye.png")), "Set as output", this, &OperationWidget::outputChanged);
+    outputAction = headerToolBar->addAction(QIcon(QPixmap(":/icons/eye.png")), "Set as output", this, [=, this](bool checked) {
+        emit outputChanged(checked ? mId : QUuid());
+    });
     outputAction->setCheckable(true);
 
     // Edit action
@@ -66,7 +69,9 @@ OperationWidget::OperationWidget(ImageOperation* operation, bool midiEnabled, bo
 
     // Delete action
 
-    headerToolBar->addAction(QIcon(QPixmap(":/icons/dialog-close.png")), "Delete", this, &OperationWidget::remove);
+    headerToolBar->addAction(QIcon(QPixmap(":/icons/dialog-close.png")), "Delete", this, [=, this]() {
+        emit remove(mId);
+    });
 
     // Operation name label
 
@@ -632,10 +637,13 @@ void OperationWidget::removeInterpolation()
 
 
 
-void OperationWidget::toggleOutputAction(bool show)
+void OperationWidget::toggleOutputAction(QUuid id)
 {
-    outputAction->setChecked(show);
-    if (show) {
+    bool checked = (id == mId);
+
+    outputAction->setChecked(checked);
+
+    if (checked) {
         headerWidget->setStyleSheet("QWidget { background-color: rgb(164, 128, 128); }");
     } else {
         headerWidget->setStyleSheet("QWidget { background-color: rgb(128, 128, 164); }");
@@ -647,6 +655,13 @@ void OperationWidget::toggleOutputAction(bool show)
 void OperationWidget::toggleMidiButton(bool show)
 {
     midiLinkButton->setVisible(show);
+}
+
+
+
+QUuid OperationWidget::id()
+{
+    return mId;
 }
 
 

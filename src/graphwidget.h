@@ -94,7 +94,7 @@ public:
 
     //void closeWidgets();
 
-//public slots:
+public slots:
     //void drawSelectedSeeds();
     //void enableSelectedOperations();
     //void disableSelectedOperations();

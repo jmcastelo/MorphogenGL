@@ -11,8 +11,9 @@
 
 
 
-SeedWidget::SeedWidget(Seed *seed, QWidget *parent) :
-    QFrame(parent),
+SeedWidget::SeedWidget(QUuid id, Seed *seed, QWidget *parent) :
+    QFrame { parent },
+    mId { id },
     mSeed { seed }
 {
     // Header widget
@@ -58,7 +59,9 @@ SeedWidget::SeedWidget(Seed *seed, QWidget *parent) :
 
     // Set as output action
 
-    outputAction = headerToolBar->addAction(QIcon(QPixmap(":/icons/eye.png")), "Set as output", this, &SeedWidget::outputChanged);
+    outputAction = headerToolBar->addAction(QIcon(QPixmap(":/icons/eye.png")), "Set as output", this, [=, this](bool checked) {
+        emit outputChanged(checked ? mId : QUuid());
+    });
     outputAction->setCheckable(true);
 
     // Set fixed action
@@ -77,7 +80,9 @@ SeedWidget::SeedWidget(Seed *seed, QWidget *parent) :
 
     // Remove action
 
-    headerToolBar->addAction(QIcon(QPixmap(":/icons/dialog-close.png")), "Delete", this, &SeedWidget::remove);
+    headerToolBar->addAction(QIcon(QPixmap(":/icons/dialog-close.png")), "Delete", this, [=, this]() {
+        emit remove(mId);
+    });
 
     QHBoxLayout* headerLayout = new QHBoxLayout;
     headerLayout->addWidget(headerToolBar);
@@ -98,6 +103,13 @@ SeedWidget::SeedWidget(Seed *seed, QWidget *parent) :
     setMidLineWidth(3);
     setLineWidth(3);
     setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+}
+
+
+
+QUuid SeedWidget::id()
+{
+    return mId;
 }
 
 
@@ -137,10 +149,13 @@ void SeedWidget::loadSeedImage()
 
 
 
-void SeedWidget::toggleOutputAction(bool show)
+void SeedWidget::toggleOutputAction(QUuid id)
 {
-    outputAction->setChecked(show);
-    if (show) {
+    bool checked = (id == mId);
+
+    outputAction->setChecked(checked);
+
+    if (checked) {
         headerWidget->setStyleSheet("QWidget { background-color: rgb(164, 128, 128); }");
     } else {
         headerWidget->setStyleSheet("QWidget { background-color: rgb(128, 128, 164); }");

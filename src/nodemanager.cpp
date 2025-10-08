@@ -452,7 +452,7 @@ QUuid NodeManager::copyOperation(QUuid srcId)
 
 
 
-void NodeManager::removeOperation(QUuid id)
+void NodeManager::removeOperationNode(QUuid id)
 {
     // Delete operation
 
@@ -463,8 +463,9 @@ void NodeManager::removeOperation(QUuid id)
     delete mOperationNodesMap.value(id);
     mOperationNodesMap.remove(id);
 
-    if (id == mOutputId)
+    if (id == mOutputId) {
         setOutput(QUuid());
+    }
 
     sortOperations();
 }
@@ -519,7 +520,7 @@ EdgeWidget* NodeManager::addEdgeWidget(QUuid srcId, QUuid dstId, float factor)
 
 void NodeManager::addOperationNode(QUuid id, ImageOperation* operation)
 {
-    ImageOperationNode *node = new ImageOperationNode(id, operation);
+    ImageOperationNode* node = new ImageOperationNode(id, operation);
     mOperationNodesMap.insert(id, node);
 
     foreach (auto parameter, operation->uniformParameters<float>())
@@ -568,37 +569,31 @@ void NodeManager::addOperationNode(QUuid id, ImageOperation* operation)
 
 void NodeManager::connectOperationWidget(QUuid id, OperationWidget* widget)
 {
-    connect(widget, &OperationWidget::outputChanged, this, [=, this](bool checked) {
-        if (checked) {
-            setOutput(id);
-        } else {
-            setOutput(QUuid());
-        }
-    });
+    Q_UNUSED(id)
 
-    connect(this, &NodeManager::outputNodeChanged, this, [=](QUuid outId) {
-        widget->toggleOutputAction(outId == id);
-    });
+    connect(widget, &OperationWidget::remove, this, &NodeManager::removeOperationNode);
+    connect(widget, &OperationWidget::remove, this, &NodeManager::midiSignalsRemoved);
+    connect(widget, &OperationWidget::remove, this, &NodeManager::nodeRemoved);
+
+    connect(widget, &OperationWidget::outputChanged, this, &NodeManager::setOutput);
+
+    connect(this, &NodeManager::outputNodeChanged, widget, &OperationWidget::toggleOutputAction);
 
     connect(widget, &OperationWidget::connectTo, this, [=, this]() {
-        if (connSrcId.isNull())
-            connSrcId = id;
-        else if (connectOperations(connSrcId, id, 1.0))
+        if (connSrcId.isNull()) {
+            connSrcId = widget->id();
+        }
+        else if (connectOperations(connSrcId, widget->id(), 1.0))
         {
-            emit nodesConnected(connSrcId, id, addEdgeWidget(connSrcId, id, 1.0));
+            emit nodesConnected(connSrcId, widget->id(), addEdgeWidget(connSrcId, widget->id(), 1.0));
             connSrcId = QUuid();
         }
-        else
+        else {
             connSrcId = QUuid();
+        }
     });
 
-    connect(widget, &OperationWidget::remove, this, [=, this]() {
-        emit midiSignalsRemoved(id);
-        emit nodeRemoved(id);
-        removeOperation(id);
-    });
-
-    emit midiSignalsCreated(id, widget->midiSignals());
+    emit midiSignalsCreated(widget->id(), widget->midiSignals());
 
     connect(this, &NodeManager::midiEnabled, widget, &OperationWidget::toggleMidiButton);
 }
@@ -768,45 +763,39 @@ void NodeManager::addSeedNode(QUuid id, Seed* seed)
 
 void NodeManager::connectSeedWidget(QUuid id, SeedWidget* widget)
 {
-    connect(widget, &SeedWidget::outputChanged, this, [=, this](bool checked) {
-        if (checked) {
-            setOutput(id);
-        } else {
-            setOutput(QUuid());
+    Q_UNUSED(id)
+
+    connect(widget, &SeedWidget::remove, this, &NodeManager::nodeRemoved);
+    connect(widget, &SeedWidget::remove, this, &NodeManager::removeSeedNode);
+
+    connect(widget, &SeedWidget::outputChanged, this, &NodeManager::setOutput);
+
+    connect(this, &NodeManager::outputNodeChanged, widget, &SeedWidget::toggleOutputAction);
+
+    connect(widget, &SeedWidget::connectTo, this, [=, this]() {
+        if (connSrcId.isNull()) {
+            connSrcId = widget->id();
         }
-    });
-
-    connect(this, &NodeManager::outputNodeChanged, this, [=](QUuid outId) {
-        widget->toggleOutputAction(outId == id);
-    });
-
-    connect(widget, &SeedWidget::connectTo, this, [=, this](){
-        if (connSrcId.isNull())
-            connSrcId = id;
-        else if (connectOperations(connSrcId, id, 1.0))
+        else if (connectOperations(connSrcId, widget->id(), 1.0))
         {
-            emit nodesConnected(connSrcId, id, addEdgeWidget(connSrcId, id, 1.0));
+            emit nodesConnected(connSrcId, widget->id(), addEdgeWidget(connSrcId, widget->id(), 1.0));
             connSrcId = QUuid();
         }
-        else
+        else {
             connSrcId = QUuid();
+        }
     });
 
     connect(widget, &SeedWidget::typeChanged, this, [=, this](){
-        if (isOutput(id))
+        if (isOutput(widget->id()))
         {
-            pOutputTextureId = mSeedsMap.value(id)->pOutTextureId();
+            pOutputTextureId = mSeedsMap.value(widget->id())->pOutTextureId();
 
             emit outputTextureChanged(pOutputTextureId);
             //emit outputFBOChanged(seeds.value(id)->getFBO());
         }
 
-        resetInputSeedTexId(id);
-    });
-
-    connect(widget, &SeedWidget::remove, this, [=, this](){
-        emit nodeRemoved(id);
-        removeSeed(id);
+        resetInputSeedTexId(widget->id());
     });
 }
 
@@ -882,7 +871,7 @@ QUuid NodeManager::copySeed(QUuid srcId)
 
 
 
-void NodeManager::removeSeed(QUuid id)
+void NodeManager::removeSeedNode(QUuid id)
 {
     if (mSeedsMap.contains(id))
     {

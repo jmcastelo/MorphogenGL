@@ -57,6 +57,12 @@ Node::Node(QUuid id, QWidget *widget, QGraphicsItem* parent) :
 
 
 
+Node::~Node()
+{
+    delete mProxyWidget;
+}
+
+
 void Node::closeEvent(QCloseEvent* event)
 {
     mWidget->close();

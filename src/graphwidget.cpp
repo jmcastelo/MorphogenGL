@@ -387,17 +387,20 @@ void GraphWidget::removeNode(QUuid id)
 
         foreach (Edge *edge, node->edges())
         {
-            if (edge->sourceNode())
+            if (edge->sourceNode()) {
                 edge->sourceNode()->removeEdge(edge);
-            if (edge->destNode())
+            }
+            if (edge->destNode()) {
                 edge->destNode()->removeEdge(edge);
+            }
 
             scene()->removeItem(edge);
             delete edge;
         }
 
         scene()->removeItem(node);
-        node->deleteLater();
+        // node->deleteLater();
+        delete node;
 
         searchElementaryCycles();
     }

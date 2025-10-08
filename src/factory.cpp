@@ -39,7 +39,7 @@ void Factory::createNewOperation()
     mOperations.append(operation);
     emit newOperationCreated(id, operation);
 
-    OperationWidget* widget = new OperationWidget(operation, false, true);
+    OperationWidget* widget = new OperationWidget(id, operation, false, true);
     emit newOperationWidgetCreated(id, widget);
 }
 
@@ -53,7 +53,7 @@ void Factory::createNewSeed()
     mSeeds.append(seed);
     emit newSeedCreated(id, seed);
 
-    SeedWidget* widget = new SeedWidget(seed);
+    SeedWidget* widget = new SeedWidget(id, seed);
     emit newSeedWidgetCreated(id, widget);
 }
 
@@ -67,7 +67,7 @@ void Factory::addAvailableOperation(int index)
     mOperations.append(operation);
     emit newOperationCreated(id, operation);
 
-    OperationWidget* widget = new OperationWidget(operation, false, false);
+    OperationWidget* widget = new OperationWidget(id, operation, false, false);
     emit newOperationWidgetCreated(id, widget);
 }
 
@@ -78,7 +78,7 @@ void Factory::addOperation(QUuid id, ImageOperation* operation, bool midiEnabled
     mOperations.append(operation);
     emit newOperationCreated(id, operation);
 
-    OperationWidget* widget = new OperationWidget(operation, midiEnabled, false);
+    OperationWidget* widget = new OperationWidget(id, operation, midiEnabled, false);
     emit newOperationWidgetCreated(id, widget);
 }
 
@@ -89,7 +89,7 @@ void Factory::addSeed(QUuid id, Seed* seed)
     mSeeds.append(seed);
     emit newSeedCreated(id, seed);
 
-    SeedWidget* widget = new SeedWidget(seed);
+    SeedWidget* widget = new SeedWidget(id, seed);
     emit newSeedWidgetCreated(id, widget);
 }
 

@@ -49,7 +49,7 @@
 #include <QFrame>
 #include <QToolBar>
 #include <QAction>
-#include <QOpenGLFunctions>
+#include <QUuid>
 
 
 
@@ -58,10 +58,12 @@ class OperationWidget : public QFrame
     Q_OBJECT
 
 public:
-    explicit OperationWidget(ImageOperation* operation, bool midiEnabled, bool editMode, QWidget* parent = nullptr);
+    explicit OperationWidget(QUuid id, ImageOperation* operation, bool midiEnabled, bool editMode, QWidget* parent = nullptr);
     ~OperationWidget();
 
     void setup();
+
+    QUuid id();
 
     MidiSignals* midiSignals();
 
@@ -74,13 +76,13 @@ signals:
     void linkBreak(Number<int>* number);
     void linkBreak(Number<unsigned int>* number);*/
 
-    void outputChanged(bool checked);
+    void outputChanged(QUuid id);
     void connectTo();
-    void remove();
+    void remove(QUuid id);
 
 public slots:
     void recreate();
-    void toggleOutputAction(bool show);
+    void toggleOutputAction(QUuid id);
     void toggleMidiButton(bool show);
 
 protected:
@@ -89,6 +91,7 @@ protected:
     bool eventFilter(QObject *obj, QEvent *event) override;
 
 private:
+    QUuid mId;
     ImageOperation* mOperation;
 
     bool mMidiEnabled;

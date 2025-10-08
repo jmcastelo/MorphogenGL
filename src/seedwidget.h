@@ -7,6 +7,7 @@
 
 #include <QObject>
 #include <QFrame>
+#include <QUuid>
 
 
 
@@ -15,19 +16,22 @@ class SeedWidget : public QFrame
     Q_OBJECT
 
 public:
-    SeedWidget(Seed* seed, QWidget* parent = nullptr);
+    SeedWidget(QUuid id, Seed* seed, QWidget* parent = nullptr);
+
+    QUuid id();
 
 signals:
-    void outputChanged(bool checked);
+    void outputChanged(QUuid id);
     void typeChanged();
     void seedDrawn();
     void connectTo();
-    void remove();
+    void remove(QUuid id);
 
 public slots:
-    void toggleOutputAction(bool show);
+    void toggleOutputAction(QUuid id);
 
 private:
+    QUuid mId;
     Seed* mSeed;
 
     QWidget* headerWidget;

@@ -77,13 +77,13 @@ public:
     //QUuid addOperation(QString operationName);
     QUuid copyOperation(QUuid srcId);
     //void setOperation(QUuid id, QString operationName);
-    void removeOperation(QUuid id);
+
     // void enableOperation(QUuid id, bool enabled);
     // bool isOperationEnabled(QUuid id);
 
     // QPair<QUuid, SeedWidget*> addSeed();
     QUuid copySeed(QUuid srcId);
-    void removeSeed(QUuid id);
+
     void loadSeedImage(QUuid id, QString filename);
     int getSeedType(QUuid id);
     void setSeedType(QUuid id, int set);
@@ -92,7 +92,7 @@ public:
     void setSeedFixed(QUuid id, bool fixed);
 
     bool isOutput(QUuid id) { return id == mOutputId; }
-    void setOutput(QUuid id);
+
     QUuid outputId() { return mOutputId; }
     GLuint getOUtputFBO() { return outputFBO; }
     // GLuint outputTextureID() { return *mOutputTextureId; }
@@ -131,6 +131,7 @@ signals:
     void parameterValueChanged(QUuid id, QString operationName, QString parameterName, QString value);
 
 public slots:
+    void setOutput(QUuid id);
     void onTexturesChanged();
 
 private:
@@ -154,6 +155,8 @@ private slots:
     void addSeedNode(QUuid id, Seed* seed);
     void connectOperationWidget(QUuid id, OperationWidget* widget);
     void connectSeedWidget(QUuid id, SeedWidget* widget);
+    void removeOperationNode(QUuid id);
+    void removeSeedNode(QUuid id);
     void removeAllNodes();
 };
 
