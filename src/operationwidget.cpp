@@ -32,6 +32,7 @@ OperationWidget::OperationWidget(QUuid id, ImageOperation* operation, bool midiE
     headerWidget = new QWidget;
     headerWidget->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Maximum);
     headerWidget->setStyleSheet("QWidget { background-color: rgb(128, 128, 164); }");
+    headerWidget->setContentsMargins(0, 0, 0, 0);
 
     // Header toolbar
 
@@ -92,6 +93,7 @@ OperationWidget::OperationWidget(QUuid id, ImageOperation* operation, bool midiE
     // Operation name label
 
     opNameLabel = new QLabel;
+    opNameLabel->setMargin(8);
     opNameLabel->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
     opNameLabel->setStyleSheet("QLabel { font-size: 16pt; }");
 
@@ -112,10 +114,18 @@ OperationWidget::OperationWidget(QUuid id, ImageOperation* operation, bool midiE
         adjustSize();
     });
 
-    QHBoxLayout* headerLayout = new QHBoxLayout;
-    headerLayout->addWidget(headerToolBar, 0);
-    headerLayout->addWidget(opNameLabel, 1, Qt::AlignLeft);
-    headerLayout->addWidget(opNameLineEdit, 1, Qt::AlignLeft);
+    // Separator
+
+    separator[0] = new QFrame;
+    separator[0]->setFrameShape(QFrame::HLine);
+
+    QVBoxLayout* headerLayout = new QVBoxLayout;
+    headerLayout->setContentsMargins(0, 0, 0, 0);
+    headerLayout->setSpacing(0);
+    headerLayout->addWidget(opNameLabel, 0, Qt::AlignLeft | Qt::AlignVCenter);
+    headerLayout->addWidget(opNameLineEdit, 0, Qt::AlignLeft | Qt::AlignVCenter);
+    headerLayout->addWidget(separator[0], 0, Qt::AlignVCenter);
+    headerLayout->addWidget(headerToolBar, 0, Qt::AlignLeft | Qt::AlignVCenter);
 
     headerWidget->setLayout(headerLayout);
 
@@ -123,10 +133,10 @@ OperationWidget::OperationWidget(QUuid id, ImageOperation* operation, bool midiE
 
     // Separator
 
-    separator[0] = new QFrame;
-    separator[0]->setFrameShape(QFrame::HLine);
+    separator[1] = new QFrame;
+    separator[1]->setFrameShape(QFrame::HLine);
 
-    mainLayout->addWidget(separator[0], 0, Qt::AlignTop);
+    mainLayout->addWidget(separator[1], 0, Qt::AlignTop);
 
     // Grid widget containing parameter widgets
 
@@ -139,10 +149,10 @@ OperationWidget::OperationWidget(QUuid id, ImageOperation* operation, bool midiE
 
     // Separator
 
-    separator[1] = new QFrame;
-    separator[1]->setFrameShape(QFrame::HLine);
+    separator[2] = new QFrame;
+    separator[2]->setFrameShape(QFrame::HLine);
 
-    mainLayout->addWidget(separator[1], 0, Qt::AlignTop);
+    mainLayout->addWidget(separator[2], 0, Qt::AlignTop);
 
     // Selected parameter widgets
 
@@ -289,12 +299,12 @@ void OperationWidget::setup()
     foreach (auto parameter, mOperation->uniformParameters<float>())
     {
         UniformParameterWidget<float>* widget = new UniformParameterWidget<float>(parameter);
-        gridWidget->addWidget(widget->widget(), parameter->row(), parameter->col());
+
+        if (mEditMode || (!mEditMode && parameter->editable())) {
+            gridWidget->addWidget(widget->widget(), parameter->row(), parameter->col());
+        }
 
         widget->setCheckable(mEditMode);
-
-        if (!mEditMode && !parameter->editable())
-            widget->toggleVisibility(false);
 
         floatParamWidgets.append(widget);
         uniformFloatParamWidgets.append(widget);
@@ -305,12 +315,12 @@ void OperationWidget::setup()
     foreach (auto parameter, mOperation->uniformParameters<int>())
     {
         UniformParameterWidget<int>* widget = new UniformParameterWidget<int>(parameter);
-        gridWidget->addWidget(widget->widget(), parameter->row(), parameter->col());
+
+        if (mEditMode || (!mEditMode && parameter->editable())) {
+            gridWidget->addWidget(widget->widget(), parameter->row(), parameter->col());
+        }
 
         widget->setCheckable(mEditMode);
-
-        if (!mEditMode && !parameter->editable())
-            widget->toggleVisibility(false);
 
         intParamWidgets.append(widget);
         uniformIntParamWidgets.append(widget);
@@ -321,12 +331,12 @@ void OperationWidget::setup()
     foreach (auto parameter, mOperation->uniformParameters<unsigned int>())
     {
         UniformParameterWidget<unsigned int>* widget = new UniformParameterWidget<unsigned int>(parameter);
-        gridWidget->addWidget(widget->widget(), parameter->row(), parameter->col());
+
+        if (mEditMode || (!mEditMode && parameter->editable())) {
+            gridWidget->addWidget(widget->widget(), parameter->row(), parameter->col());
+        }
 
         widget->setCheckable(mEditMode);
-
-        if (!mEditMode && !parameter->editable())
-            widget->toggleVisibility(false);
 
         uintParamWidgets.append(widget);
         uniformUintParamWidgets.append(widget);
@@ -337,12 +347,12 @@ void OperationWidget::setup()
     foreach (auto parameter, mOperation->mat4UniformParameters())
     {
         UniformMat4ParameterWidget* widget = new UniformMat4ParameterWidget(parameter);
-        gridWidget->addWidget(widget->widget(), parameter->row(), parameter->col());
+
+        if (mEditMode || (!mEditMode && parameter->editable())) {
+            gridWidget->addWidget(widget->widget(), parameter->row(), parameter->col());
+        }
 
         widget->setCheckable(mEditMode);
-
-        if (!mEditMode && !parameter->editable())
-            widget->toggleVisibility(false);
 
         mat4ParamWidgets.append(widget);
         uniformMat4ParamWidgets.append(widget);
@@ -353,12 +363,12 @@ void OperationWidget::setup()
     foreach (auto parameter, mOperation->optionsParameters<GLenum>())
     {
         OptionsParameterWidget<GLenum>* widget = new OptionsParameterWidget<GLenum>(parameter);
-        gridWidget->addWidget(widget->widget(), parameter->row(), parameter->col());
+
+        if (mEditMode || (!mEditMode && parameter->editable())) {
+            gridWidget->addWidget(widget->widget(), parameter->row(), parameter->col());
+        }
 
         widget->setCheckable(mEditMode);
-
-        if (!mEditMode && !parameter->editable())
-            widget->toggleVisibility(false);
 
         glenumOptionsWidgets.append(widget);
     }
@@ -380,8 +390,9 @@ void OperationWidget::setup()
 
         connectUniformMat4ParamWidgets();
 
-        if (lastFocusedWidget)
+        if (lastFocusedWidget) {
             lastFocusedWidget->setFocus();
+        }
     }
 
     // Operation name controls
@@ -396,9 +407,13 @@ void OperationWidget::setup()
     midiLinkButton->setVisible(mMidiEnabled);
 
     // Once widgets set on grid, optimize its layout to set it with proper row and column spans and sizes
+    // Operation widget must be visible: show it
 
-    if (gridWidget->isVisible())
-        gridWidget->optimizeLayout();
+    if (!isVisible()) {
+        show();
+    }
+
+    gridWidget->optimizeLayout();
 
     headerWidget->adjustSize();
     selParamWidget->adjustSize();
@@ -1209,8 +1224,8 @@ void OperationWidget::toggleBody(bool visible)
     else
         mainLayout->setStretchFactor(gridWidget, 0);
 
-    separator[0]->setVisible(visible);
     separator[1]->setVisible(visible);
+    separator[2]->setVisible(visible);
 
     adjustSize();
 }

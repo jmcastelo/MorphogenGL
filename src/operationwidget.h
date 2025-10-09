@@ -115,7 +115,7 @@ private:
     QLabel* opNameLabel;
     QLineEdit* opNameLineEdit;
 
-    QFrame* separator[2];
+    QFrame* separator[3];
 
     GridWidget* gridWidget;
 

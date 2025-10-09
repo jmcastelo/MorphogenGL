@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<fosforo>
+    <operation name="Mask" enabled="1">
+        <vertex_shader>I3ZlcnNpb24gMzMwIGNvcmUKCmxheW91dChsb2NhdGlvbiA9IDApIGluIHZlYzIgcG9zOwpsYXlvdXQobG9jYXRpb24gPSAxKSBpbiB2ZWMyIHRleDsKCm91dCB2ZWMyIHRleENvb3JkczsKCnZvaWQgbWFpbigpCnsKICAgIGdsX1Bvc2l0aW9uID0gdmVjNChwb3MsIDAuMCwgMS4wKTsKICAgIHRleENvb3JkcyA9IHRleDsKfQo=</vertex_shader>
+        <fragment_shader>I3ZlcnNpb24gMzMwIGNvcmUKCmluIHZlYzIgdGV4Q29vcmRzOwpvdXQgdmVjNCBmcmFnQ29sb3I7Cgp1bmlmb3JtIHNhbXBsZXIyRCBpblRleHR1cmU7Cgp1bmlmb3JtIGZsb2F0IGlubmVyUmFkaXVzOwp1bmlmb3JtIGZsb2F0IG91dGVyUmFkaXVzOwoKdm9pZCBtYWluKCkKewogICAgaXZlYzIgdGV4U2l6ZSA9IHRleHR1cmVTaXplKGluVGV4dHVyZSwgMCk7CiAgICAKICAgIHZlYzIgc2NhbGUgPSB2ZWMyKDEuMCk7CgogICAgaWYgKHRleFNpemUueSA+PSB0ZXhTaXplLngpIHsKICAgICAgICBzY2FsZS55ID0gZmxvYXQodGV4U2l6ZS55KSAvIGZsb2F0KHRleFNpemUueCk7CiAgICB9IGVsc2UgewogICAgICAgIHNjYWxlLnggPSBmbG9hdCh0ZXhTaXplLngpIC8gZmxvYXQodGV4U2l6ZS55KTsKICAgIH0KCiAgICBmbG9hdCByID0gZGlzdGFuY2UodGV4Q29vcmRzICogc2NhbGUsIHZlYzIoMC41LCAwLjUpICogc2NhbGUpOwoKICAgIGlmIChyIDwgaW5uZXJSYWRpdXMgfHwgciA+IG91dGVyUmFkaXVzKQogICAgICAgIGZyYWdDb2xvciA9IHZlYzQoMC4wLCAwLjAsIDAuMCwgMS4wKTsKICAgIGVsc2UKICAgICAgICBmcmFnQ29sb3IgPSB0ZXh0dXJlKGluVGV4dHVyZSwgdGV4Q29vcmRzKTsKfQo=</fragment_shader>
+        <parameter name="Inner radius" type="float_uniform" editable="1" row="0" column="0">
+            <uniform name="innerRadius" type="5126" numitems="1">
+                <number inf="0" sup="1" min="0" max="1">0.0</number>
+            </uniform>
+        </parameter>
+        <parameter name="Outer radius" type="float_uniform" editable="1" row="0" column="1">
+            <uniform name="outerRadius" type="5126" numitems="1">
+                <number inf="0" sup="1" min="0" max="1">0.5</number>
+            </uniform>
+        </parameter>
+    </operation>
+</fosforo>
