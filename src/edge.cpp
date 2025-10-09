@@ -73,7 +73,7 @@ Edge::Edge(Node* sourceNode, Node* destNode, EdgeWidget *widget, QGraphicsItem* 
 {
     setAcceptedMouseButtons(Qt::NoButton);
     setCacheMode(DeviceCoordinateCache);
-    setZValue(-1);
+    setZValue(-2);
 
     // Set proxy
 
@@ -219,7 +219,7 @@ void Edge::togglePredge(bool predge)
     }
 }*/
 
-QPointF Edge::intersectionPoint(Node *node, QLineF line)
+QPointF Edge::intersectionPoint(Node* node, QLineF line)
 {
     QRectF nodeRect = node->mapRectToScene(node->boundingRect());
 

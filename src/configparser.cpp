@@ -387,7 +387,7 @@ void ConfigurationParser::readSeedNode(QXmlStreamReader& stream)
 
 
 
-void ConfigurationParser::readOperationNode(QMap<QUuid, QMap<QUuid, InputData *> > &connections, QXmlStreamReader& stream)
+void ConfigurationParser::readOperationNode(QMap<QUuid, QMap<QUuid, InputData*>> &connections, QXmlStreamReader& stream)
 {
     QUuid id = QUuid(stream.attributes().value("id").toString());
     ImageOperation* operation = new ImageOperation();
@@ -447,8 +447,7 @@ void ConfigurationParser::readOperationNode(QMap<QUuid, QMap<QUuid, InputData *>
         }
     }
 
-    mFactory->addOperation(id, operation, mMidiLinkManager->enabled());
-    mGraphWidget->setNodePosition(id, position);
+    mFactory->addOperation(id, operation, mMidiLinkManager->enabled(), position);
 }
 
 

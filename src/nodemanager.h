@@ -55,7 +55,9 @@ public:
     NodeManager(Factory* factory);
     ~NodeManager();
 
-    bool connectOperations(QUuid srcId, QUuid dstId, float blendFactor);
+    bool tryConnectOperations(QUuid srcId, QUuid dstId, float blendFactor);
+    void connectOperations(QUuid srcId, QUuid dstId, float blendFactor);
+
     void connectOperations(QMap<QUuid, QMap<QUuid, InputData*>> conections);
 
     void connectCopiedOperationsA(QUuid srcId0, QUuid dstId0, QUuid srcId1, QUuid dstId1);
@@ -153,7 +155,7 @@ private slots:
     void connectOperation(QUuid id, ImageOperation* operation);
     void replaceNodeOperation(QUuid id, ImageOperation* operation);
 
-    void connectOperationWidget(QUuid id, OperationWidget* widget);
+    void connectOperationWidget(OperationWidget* widget);
     void connectSeedWidget(QUuid id, SeedWidget* widget);
 
     void removeOperationNode(QUuid id);

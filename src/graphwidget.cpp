@@ -91,7 +91,8 @@ GraphWidget::GraphWidget(Factory *factory, NodeManager* nodeManager, QWidget *pa
 
     // Connections
 
-    connect(mFactory, &Factory::newOperationWidgetCreated, this, &GraphWidget::addNewNode);
+    connect(mFactory, QOverload<QUuid, OperationWidget*>::of(&Factory::newOpWidgetCreated), this, &GraphWidget::addNewNode);
+    connect(mFactory, QOverload<QUuid, OperationWidget*, QPointF>::of(&Factory::newOpWidgetCreated), this, &GraphWidget::addNewNodeOnPos);
     connect(mFactory, &Factory::newSeedWidgetCreated, this, &GraphWidget::addNewNode);
     connect(mFactory, &Factory::cleared, this, &GraphWidget::clearScene);
 
@@ -256,7 +257,7 @@ void GraphWidget::closeEvent(QCloseEvent* event)
 
 
 
-void GraphWidget::addNewNode(QUuid id, QWidget *widget)
+void GraphWidget::addNewNode(QUuid id, QWidget* widget)
 {
     Node* node = new Node(id, widget);
     scene()->addItem(node);
@@ -272,7 +273,7 @@ void GraphWidget::addNewNode(QUuid id, QWidget *widget)
 
 
 
-void GraphWidget::addNewNodeOnPos(QUuid id, QWidget *widget, QPointF pos)
+void GraphWidget::addNewNodeOnPos(QUuid id, QWidget* widget, QPointF pos)
 {
     Node* node = new Node(id, widget);
     scene()->addItem(node);
@@ -318,46 +319,41 @@ void GraphWidget::reconnectNodes(Node* node)
 {
     if (node->edges().size() == 2)
     {
-        Edge* input = nullptr;
-        Edge* output = nullptr;
+        Edge* inEdge = nullptr;
+        Edge* outEdge = nullptr;
 
         // Identify input and output edges
 
         if (node->edges().constFirst()->destNode() == node && node->edges().constLast()->sourceNode() == node)
         {
-            input = node->edges().constFirst();
-            output = node->edges().constLast();
+            inEdge = node->edges().constFirst();
+            outEdge = node->edges().constLast();
         }
         else if (node->edges().constLast()->destNode() == node && node->edges().constFirst()->sourceNode() == node)
         {
-            input = node->edges().constLast();
-            output = node->edges().constFirst();
+            inEdge = node->edges().constLast();
+            outEdge = node->edges().constFirst();
         }
 
         // Avoid connecting node with itself
 
-        if (input && output && (input->sourceNode() != output->destNode()))
+        if (inEdge && outEdge && (inEdge->sourceNode() != outEdge->destNode()))
         {
             // Avoid connecting already connected nodes
 
-            foreach (Edge* edge, input->sourceNode()->edges())
+            foreach (Edge* edge, inEdge->sourceNode()->edges())
             {
-                if (edge->destNode() == output->destNode())
+                if (edge->destNode() == outEdge->destNode())
                     return;
             }
 
-            // Connect nodes
+            // Reconnect nodes
 
-            if (mNodeManager->connectOperations(input->sourceNode()->id(), output->destNode()->id(), mNodeManager->blendFactor(node->id(), output->destNode()->id())->value()))
-            {
-                EdgeWidget* edgeWidget = mNodeManager->addEdgeWidget(input->sourceNode()->id(), output->destNode()->id(), mNodeManager->blendFactor(node->id(), output->destNode()->id()));
-                Edge* newEdge = new Edge(input->sourceNode(), output->destNode(), edgeWidget);
+            QUuid srcId = inEdge->sourceNode()->id();
+            QUuid dstId = outEdge->destNode()->id();
+            float blendFactor = mNodeManager->blendFactor(inEdge->sourceNode()->id(), node->id())->value();
 
-                if (input->isPredge() || output->isPredge())
-                    newEdge->setPredge(true);
-
-                scene()->addItem(newEdge);
-            }
+            mNodeManager->connectOperations(srcId, dstId, blendFactor);
         }
     }
 }

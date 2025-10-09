@@ -34,7 +34,7 @@ NodeManager::NodeManager(Factory* factory) :
     connect(mFactory, &Factory::replaceOpCreated, this, &NodeManager::connectOperation);
     connect(mFactory, &Factory::replaceOpCreated, this, &NodeManager::replaceNodeOperation);
     connect(mFactory, &Factory::newSeedCreated, this, &NodeManager::addSeedNode);
-    connect(mFactory, &Factory::newOperationWidgetCreated, this, &NodeManager::connectOperationWidget);
+    connect(mFactory, QOverload<OperationWidget*>::of(&Factory::newOpWidgetCreated), this, &NodeManager::connectOperationWidget);
     connect(mFactory, &Factory::newSeedWidgetCreated, this, &NodeManager::connectSeedWidget);
     connect(mFactory, &Factory::cleared, this, &NodeManager::removeAllNodes);
 
@@ -207,7 +207,7 @@ void NodeManager::setOutput(QUuid id)
 
 
 
-bool NodeManager::connectOperations(QUuid srcId, QUuid dstId, float blendFactor)
+bool NodeManager::tryConnectOperations(QUuid srcId, QUuid dstId, float blendFactor)
 {
     if (srcId != dstId)
     {
@@ -231,6 +231,16 @@ bool NodeManager::connectOperations(QUuid srcId, QUuid dstId, float blendFactor)
     }
 
     return false;
+}
+
+
+
+void NodeManager::connectOperations(QUuid srcId, QUuid dstId, float factor)
+{
+    bool connected = tryConnectOperations(srcId, dstId, factor);
+    if (connected) {
+        emit nodesConnected(srcId, dstId, addEdgeWidget(srcId, dstId, blendFactor(srcId, dstId)));
+    }
 }
 
 
@@ -583,13 +593,11 @@ void NodeManager::replaceNodeOperation(QUuid id, ImageOperation* operation)
 
 
 
-void NodeManager::connectOperationWidget(QUuid id, OperationWidget* widget)
+void NodeManager::connectOperationWidget(OperationWidget* widget)
 {
-    Q_UNUSED(id)
-
-    connect(widget, &OperationWidget::remove, this, &NodeManager::removeOperationNode);
-    connect(widget, &OperationWidget::remove, this, &NodeManager::midiSignalsRemoved);
     connect(widget, &OperationWidget::remove, this, &NodeManager::nodeRemoved);
+    connect(widget, &OperationWidget::remove, this, &NodeManager::midiSignalsRemoved);
+    connect(widget, &OperationWidget::remove, this, &NodeManager::removeOperationNode);
 
     connect(widget, &OperationWidget::outputChanged, this, &NodeManager::setOutput);
     connect(this, &NodeManager::outputNodeChanged, widget, &OperationWidget::toggleOutputAction);
@@ -601,17 +609,9 @@ void NodeManager::connectOperationWidget(QUuid id, OperationWidget* widget)
 
             connSrcId = widget->id();
         }
-        else if (connectOperations(connSrcId, widget->id(), 1.0))
-        {
-            // Connected source node with this node
-
-            emit nodesConnected(connSrcId, widget->id(), addEdgeWidget(connSrcId, widget->id(), blendFactor(connSrcId, widget->id())));
-            connSrcId = QUuid();
-        }
         else
         {
-            // Unable to connect
-
+            connectOperations(connSrcId, widget->id(), 1.0);
             connSrcId = QUuid();
         }
     });
@@ -801,12 +801,9 @@ void NodeManager::connectSeedWidget(QUuid id, SeedWidget* widget)
         if (connSrcId.isNull()) {
             connSrcId = widget->id();
         }
-        else if (connectOperations(connSrcId, widget->id(), 1.0))
+        else
         {
-            emit nodesConnected(connSrcId, widget->id(), addEdgeWidget(connSrcId, widget->id(), blendFactor(connSrcId, widget->id())));
-            connSrcId = QUuid();
-        }
-        else {
+            connectOperations(connSrcId, widget->id(), 1.0);
             connSrcId = QUuid();
         }
     });

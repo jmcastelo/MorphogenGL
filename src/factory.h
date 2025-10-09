@@ -33,7 +33,7 @@ public:
 
     void addAvailableOperation(int index);
 
-    void addOperation(QUuid id, ImageOperation* operation, bool midiEnabled);
+    void addOperation(QUuid id, ImageOperation* operation, bool midiEnabled, QPointF position);
     void addSeed(QUuid id, Seed* operation);
 
     ImageOperation* createReplaceOp(QUuid id, ImageOperation* oldOperation, int index);
@@ -54,7 +54,9 @@ signals:
     void newOperationCreated(QUuid id, ImageOperation* operation);
     void newSeedCreated(QUuid id, Seed* seed);
 
-    void newOperationWidgetCreated(QUuid id, OperationWidget* widget);
+    void newOpWidgetCreated(OperationWidget* widget);
+    void newOpWidgetCreated(QUuid id, OperationWidget* widget);
+    void newOpWidgetCreated(QUuid id, OperationWidget* widget, QPointF position);
     void newSeedWidgetCreated(QUuid id, SeedWidget* widget);
 
     void replaceOpCreated(QUuid id, ImageOperation* operation);

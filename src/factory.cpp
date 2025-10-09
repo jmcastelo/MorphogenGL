@@ -44,7 +44,8 @@ void Factory::createNewOperation()
     emit newOperationCreated(id, operation);
 
     OperationWidget* widget = new OperationWidget(id, operation, false, true, this);
-    emit newOperationWidgetCreated(id, widget);
+    emit newOpWidgetCreated(widget);
+    emit newOpWidgetCreated(id, widget);
 }
 
 
@@ -72,18 +73,20 @@ void Factory::addAvailableOperation(int index)
     emit newOperationCreated(id, operation);
 
     OperationWidget* widget = new OperationWidget(id, operation, false, false, this);
-    emit newOperationWidgetCreated(id, widget);
+    emit newOpWidgetCreated(widget);
+    emit newOpWidgetCreated(id, widget);
 }
 
 
 
-void Factory::addOperation(QUuid id, ImageOperation* operation, bool midiEnabled)
+void Factory::addOperation(QUuid id, ImageOperation* operation, bool midiEnabled, QPointF position)
 {
     mOperations.append(operation);
     emit newOperationCreated(id, operation);
 
     OperationWidget* widget = new OperationWidget(id, operation, midiEnabled, false, this);
-    emit newOperationWidgetCreated(id, widget);
+    emit newOpWidgetCreated(widget);
+    emit newOpWidgetCreated(id, widget, position);
 }
 
 

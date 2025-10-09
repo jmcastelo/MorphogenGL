@@ -32,7 +32,7 @@ OperationWidget::OperationWidget(QUuid id, ImageOperation* operation, bool midiE
     headerWidget = new QWidget;
     headerWidget->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Maximum);
     headerWidget->setStyleSheet("QWidget { background-color: rgb(128, 128, 164); }");
-    headerWidget->setContentsMargins(0, 0, 0, 0);
+    // headerWidget->setContentsMargins(0, 0, 0, 0);
 
     // Header toolbar
 
@@ -129,7 +129,7 @@ OperationWidget::OperationWidget(QUuid id, ImageOperation* operation, bool midiE
 
     headerWidget->setLayout(headerLayout);
 
-    mainLayout->addWidget(headerWidget, 0);
+    mainLayout->addWidget(headerWidget);
 
     // Separator
 

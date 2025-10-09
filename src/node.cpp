@@ -46,6 +46,7 @@ Node::Node(QUuid id, QWidget *widget, QGraphicsItem* parent) :
     mWidget { widget }
 {
     setFlags(ItemIsMovable | ItemIsSelectable | ItemSendsGeometryChanges);
+    setAcceptedMouseButtons(Qt::AllButtons);
     setCacheMode(DeviceCoordinateCache);
     setZValue(-1);
 
@@ -53,6 +54,8 @@ Node::Node(QUuid id, QWidget *widget, QGraphicsItem* parent) :
 
     mProxyWidget = new QGraphicsProxyWidget(this);
     mProxyWidget->setWidget(mWidget);
+
+    resize(mProxyWidget->size());
 }
 
 
@@ -71,7 +74,7 @@ void Node::closeEvent(QCloseEvent* event)
 
 
 
-void Node::resizeEvent(QGraphicsSceneResizeEvent *event)
+void Node::resizeEvent(QGraphicsSceneResizeEvent* event)
 {
     mProxyWidget->resize(event->newSize());
 
@@ -93,11 +96,11 @@ void Node::resizeEvent(QGraphicsSceneResizeEvent *event)
 
 
 
-bool Node::eventFilter(QObject *obj, QEvent *event)
+bool Node::eventFilter(QObject* obj, QEvent* event)
 {
     if (obj == mWidget && event->type() == QEvent::Resize)
     {
-        QResizeEvent *resizeEvent = static_cast<QResizeEvent*>(event);
+        QResizeEvent* resizeEvent = static_cast<QResizeEvent*>(event);
         QSizeF newSize = resizeEvent->size();
 
         resize(newSize);
@@ -159,7 +162,7 @@ void Node::removeEdge(Edge *edge)
 
 
 
-QVector<Edge *> Node::edges() const
+QVector<Edge*> Node::edges() const
 {
     return edgeList;
 }
@@ -168,7 +171,7 @@ QVector<Edge *> Node::edges() const
 
 bool Node::connectedTo(Node *node)
 {
-    foreach (Edge *edge, edgeList)
+    foreach (Edge* edge, edgeList)
         if (edge->destNode() == node)
             return true;
 
@@ -198,10 +201,10 @@ QRectF Node::textBoundingRect() const
 */
 
 
-/*QRectF Node::boundingRect() const
+QRectF Node::boundingRect() const
 {
-    return textBoundingRect().adjusted(-(ellipseMargin + penSize), -(ellipseMargin + penSize), ellipseMargin + penSize, ellipseMargin + penSize);
-}*/
+    return mProxyWidget->boundingRect();
+}
 
 
 
@@ -285,12 +288,13 @@ QVariant Node::itemChange(GraphicsItemChange change, const QVariant &value)
     }
     else if (change == QGraphicsItem::ItemPositionHasChanged)
     {
-        foreach (Edge *edge, edgeList)
+        foreach (Edge* edge, edgeList) {
             edge->adjust();
+        }
 
         // Draw graph's background
 
-        //graph->resetCachedContent();
+        // graph->resetCachedContent();
     }
     else if (change == QGraphicsItem::ItemSelectedChange)
     {
@@ -302,7 +306,7 @@ QVariant Node::itemChange(GraphicsItemChange change, const QVariant &value)
             {
                 if (edge->destNode() == this)
                 {
-                    edge->setZValue(0);
+                    edge->setZValue(-1);
                     edge->setWidgetVisible(true);
                     edge->adjust();
                 }
@@ -311,11 +315,12 @@ QVariant Node::itemChange(GraphicsItemChange change, const QVariant &value)
         else
         {
             setZValue(-1);
+
             foreach (auto edge, edgeList)
             {
                 if (edge->destNode() == this)
                 {
-                    edge->setZValue(-1);
+                    edge->setZValue(-2);
                     edge->setWidgetVisible(false);
                 }
             }
