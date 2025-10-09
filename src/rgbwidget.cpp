@@ -26,7 +26,10 @@
 #include <QGraphicsOpacityEffect>
 
 
-RGBWidget::RGBWidget(int w, int h, QWidget* parent) : QOpenGLWidget(parent), texWidth { w }, texHeight{ h }
+RGBWidget::RGBWidget(int w, int h, QWidget* parent) :
+    QOpenGLWidget(parent),
+    texWidth { w },
+    texHeight { h }
 {
     /*QSurfaceFormat format;
     format.setDepthBufferSize(24);
@@ -72,7 +75,7 @@ void RGBWidget::initializeGL()
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 
     program = new QOpenGLShaderProgram();
     if (!program->addShaderFromSourceFile(QOpenGLShader::Vertex, ":/shaders/rgb.vert"))

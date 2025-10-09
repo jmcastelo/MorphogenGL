@@ -30,9 +30,14 @@
 
 
 
-PlotsWidget::PlotsWidget(GLuint w, GLuint h, QWidget* parent) : QWidget(parent)
+PlotsWidget::PlotsWidget(RenderManager*renderManager, QWidget* parent) :
+    QWidget { parent },
+    mRenderManager { renderManager }
 {
-    rgbWidget = new RGBWidget(w, h);
+    mTexWidth = mRenderManager->texWidth();
+    mTexHeight = mRenderManager->texHeight();
+
+    rgbWidget = new RGBWidget(mTexWidth, mTexHeight);
 
     selectPathComboBox = new QComboBox;
     selectPathComboBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
@@ -53,11 +58,11 @@ PlotsWidget::PlotsWidget(GLuint w, GLuint h, QWidget* parent) : QWidget(parent)
     removePathButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
 
     xCoordLineEdit = new QLineEdit;
-    xCoordValidator = new QIntValidator(0, imageWidth - 1, xCoordLineEdit);
+    xCoordValidator = new QIntValidator(0, mTexWidth - 1, xCoordLineEdit);
     xCoordLineEdit->setValidator(xCoordValidator);
 
     yCoordLineEdit = new QLineEdit;
-    yCoordValidator = new QIntValidator(0, imageHeight - 1, xCoordLineEdit);
+    yCoordValidator = new QIntValidator(0, mTexHeight - 1, xCoordLineEdit);
     yCoordLineEdit->setValidator(yCoordValidator);
 
     QPushButton* viewSourcePushButton = new QPushButton(QIcon(QPixmap(":/icons/eye.png")), "");
@@ -78,7 +83,7 @@ PlotsWidget::PlotsWidget(GLuint w, GLuint h, QWidget* parent) : QWidget(parent)
     layout->addLayout(controlsLayout);
     layout->addWidget(rgbWidget);
 
-    connect(enableButton, &QPushButton::toggled, this, [&](bool checked){
+    connect(enableButton, &QPushButton::toggled, this, [&](bool checked) {
         rgbWidget->setUpdatesEnabled(checked);
         enabled = checked;
     });
@@ -89,14 +94,16 @@ PlotsWidget::PlotsWidget(GLuint w, GLuint h, QWidget* parent) : QWidget(parent)
 
     connect(numItsLineEdit, &QLineEdit::editingFinished, this, &PlotsWidget::setNumIts);
 
-    setImageSize(w, h);
+    setSize(mRenderManager->texWidth(), mRenderManager->texHeight());
 
-    cursor.setX(w / 2);
-    cursor.setY(h / 2);
+    cursor.setX(mTexWidth / 2);
+    cursor.setY(mTexHeight / 2);
 
     addColorPath();
 
     setLayout(layout);
+
+    resize(800, 800);
 }
 
 
@@ -105,13 +112,13 @@ PlotsWidget::~PlotsWidget()
 {
     delete rgbWidget;
 
-    delete context;
-    delete surface;
+    // delete context;
+    // delete surface;
 }
 
 
 
-void PlotsWidget::init(QOpenGLContext *mainContext)
+/*void PlotsWidget::init(QOpenGLContext *mainContext)
 {
     context = new QOpenGLContext();
     context->setFormat(mainContext->format());
@@ -125,7 +132,7 @@ void PlotsWidget::init(QOpenGLContext *mainContext)
     context->makeCurrent(surface);
     initializeOpenGLFunctions();
     context->doneCurrent();
-}
+}*/
 
 
 
@@ -161,18 +168,18 @@ void PlotsWidget::setTextureID(GLuint* texId)
 
 
 
-void PlotsWidget::setImageSize(int w, int h)
+void PlotsWidget::setSize(int width, int height)
 {
-    imageWidth = w;
-    imageHeight = h;
+    mTexWidth = width;
+    mTexHeight = height;
 
-    xCoordValidator->setTop(w - 1);
-    yCoordValidator->setTop(h - 1);
+    xCoordValidator->setTop(width - 1);
+    yCoordValidator->setTop(height - 1);
 
     if (rgbWidget->isValid())
     {
         rgbWidget->makeCurrent();
-        rgbWidget->setupBuffer(w, h);
+        rgbWidget->setupBuffer(width, height);
         rgbWidget->doneCurrent();
     }
 }
@@ -222,10 +229,10 @@ void PlotsWidget::checkPoint(QPoint &point)
         point.setX(0);
     if (point.y() < 0)
         point.setY(0);
-    if (point.x() >= static_cast<int>(imageWidth))
-        point.setX(imageWidth - 1);
-    if (point.y() >= static_cast<int>(imageHeight))
-        point.setY(imageHeight - 1);
+    if (point.x() >= static_cast<int>(mTexWidth))
+        point.setX(mTexWidth - 1);
+    if (point.y() >= static_cast<int>(mTexHeight))
+        point.setY(mTexHeight - 1);
 }
 
 
@@ -288,7 +295,7 @@ void PlotsWidget::setNumIts()
 
 
 
-void PlotsWidget::setPixelRGB()
+/*void PlotsWidget::setPixelRGB()
 {
     context->makeCurrent(surface);
 
@@ -310,8 +317,22 @@ void PlotsWidget::setPixelRGB()
     context->doneCurrent();
 
     setVertices();
-}
+}*/
 
+
+
+void PlotsWidget::setPixelRGB()
+{
+    for (ColorPath &path : colorPaths)
+    {
+        float rgb[3];
+        if (mRenderManager->rgbPixel(path.source(), rgb)) {
+            path.addPoint(rgb[0], rgb[1], rgb[2]);
+        }
+    }
+
+    setVertices();
+}
 
 
 void PlotsWidget::setVertices()

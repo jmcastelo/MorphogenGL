@@ -19,12 +19,8 @@ MainWindow::MainWindow()
     morphoWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     morphoWidget->setMinimumSize(0, 0);
 
-    plotsWidget = new PlotsWidget(renderManager->texWidth(), renderManager->texHeight());
+    plotsWidget = new PlotsWidget(renderManager);
     plotsWidget->setVisible(false);
-
-    plotsWidgetOpacityEffect = new QGraphicsOpacityEffect(plotsWidget);
-    plotsWidgetOpacityEffect->setOpacity(opacity);
-    plotsWidget->setGraphicsEffect(plotsWidgetOpacityEffect);
 
     graphWidget = new GraphWidget(factory, nodeManager);
     graphWidget->setMinimumSize(0, 0);
@@ -77,7 +73,7 @@ MainWindow::MainWindow()
 
     connect(morphoWidget, &MorphoWidget::openGLInitialized, this, [&]() {
         renderManager->init(morphoWidget->context());
-        plotsWidget->init(morphoWidget->context());
+        // plotsWidget->init(morphoWidget->context());
 
         numIterations = 0;
         numUpdates = 0;
@@ -102,7 +98,7 @@ MainWindow::MainWindow()
     connect(nodeManager, &NodeManager::outputTextureChanged, renderManager, &RenderManager::setOutputTextureId);
     connect(nodeManager, &NodeManager::outputTextureChanged, morphoWidget, &MorphoWidget::setOutputTextureId);
     connect(nodeManager, &NodeManager::outputTextureChanged, plotsWidget, &PlotsWidget::setTextureID);
-    connect(nodeManager, &NodeManager::outputFBOChanged, plotsWidget, &PlotsWidget::setFBO);
+    // connect(nodeManager, &NodeManager::outputFBOChanged, plotsWidget, &PlotsWidget::setFBO);
     connect(nodeManager, &NodeManager::sortedOperationsChanged, renderManager, &RenderManager::setSortedOperations);
     connect(nodeManager, &NodeManager::parameterValueChanged, overlay, &Overlay::addMessage);
     connect(nodeManager, &NodeManager::midiSignalsCreated, &midiLinkManager, &MidiLinkManager::addMidiSignals);
@@ -173,6 +169,7 @@ void MainWindow::iterate()
     {
         renderManager->iterate();
         plotsWidget->updatePlots();
+        // update();
     }
 }
 
@@ -311,7 +308,7 @@ void MainWindow::setSize(int width, int height)
     QApplication::processEvents();
 
     renderManager->resize(width, height);
-    plotsWidget->setImageSize(width, height);
+    plotsWidget->setSize(width, height);
 }
 
 
@@ -329,7 +326,7 @@ void MainWindow::resizeEvent(QResizeEvent* event)
     int height = event->size().height();
 
     renderManager->resize(width, height);
-    plotsWidget->setImageSize(width, height);
+    plotsWidget->setSize(width, height);
     controlWidget->updateWindowSizeLineEdits(width, height);
 }
 
@@ -355,7 +352,6 @@ void MainWindow::keyPressEvent(QKeyEvent* event)
             if (opacity > 1.0)
                 opacity = 1.0;
             controlWidgetOpacityEffect->setOpacity(opacity);
-            plotsWidgetOpacityEffect->setOpacity(opacity);
             morphoWidget->update();
         }
         else if (event->key() == Qt::Key_PageDown)
@@ -364,7 +360,6 @@ void MainWindow::keyPressEvent(QKeyEvent* event)
             if (opacity < 0.0)
                 opacity = 0.0;
             controlWidgetOpacityEffect->setOpacity(opacity);
-            plotsWidgetOpacityEffect->setOpacity(opacity);
             morphoWidget->update();
         }
     }
@@ -388,6 +383,8 @@ void MainWindow::closeEvent(QCloseEvent* event)
     midiListWidget->close();
 
     controlWidget->close();
+
+    plotsWidget->close();
 
     event->accept();
 }

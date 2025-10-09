@@ -121,12 +121,12 @@ ControlWidget::ControlWidget(double itFPS, double updFPS, GraphWidget* graphWidg
 
     // Main layout
 
-    QHBoxLayout* hLayout = new QHBoxLayout;
+    /*QHBoxLayout* hLayout = new QHBoxLayout;
     hLayout->setSizeConstraint(QLayout::SetNoConstraint);
-    hLayout->addWidget(graphWidget);
+    hLayout->addWidget(graphWidget);*/
     //hLayout->addWidget(nodesToolBar);
 
-    QWidget* widget = new QWidget;
+    /*QWidget* widget = new QWidget;
     widget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     widget->setLayout(hLayout);
 
@@ -135,12 +135,13 @@ ControlWidget::ControlWidget(double itFPS, double updFPS, GraphWidget* graphWidg
     splitter->setOrientation(Qt::Vertical);
     splitter->setChildrenCollapsible(true);
     splitter->addWidget(widget);
-    splitter->addWidget(plotsWidget);
+    splitter->addWidget(plotsWidget);*/
 
     QVBoxLayout* mainVBoxLayout = new QVBoxLayout;
     mainVBoxLayout->setSizeConstraint(QLayout::SetNoConstraint);
     mainVBoxLayout->addWidget(systemToolBar);
-    mainVBoxLayout->addWidget(splitter);
+    mainVBoxLayout->addWidget(graphWidget);
+    //mainVBoxLayout->addWidget(splitter);
     //mainVBoxLayout->addWidget(scrollArea);
     mainVBoxLayout->addWidget(statusBar);
 

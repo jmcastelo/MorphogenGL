@@ -62,6 +62,7 @@ public:
     void iterate();
 
     QImage outputImage();
+    bool rgbPixel(QPoint pos, float* rgb);
 
     TextureFormat texFormat();
     void setTextureFormat(TextureFormat format);

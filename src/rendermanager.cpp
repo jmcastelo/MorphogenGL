@@ -247,7 +247,7 @@ QImage RenderManager::outputImage()
 
         glReadPixels(0, 0, mTexWidth, mTexHeight, GL_RGBA, GL_UNSIGNED_BYTE, image.bits());
 
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
 
         mContext->doneCurrent();
     }
@@ -257,6 +257,31 @@ QImage RenderManager::outputImage()
     }
 
     return image;
+}
+
+
+
+bool RenderManager::rgbPixel(QPoint pos, float* rgb)
+{
+    if (mOutputTexId)
+    {
+        mContext->makeCurrent(mSurface);
+
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, mReadFbo);
+        glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, *mOutputTexId, 0);
+
+        glReadBuffer(GL_COLOR_ATTACHMENT0);
+
+        glReadPixels(pos.x(), pos.y(), 1, 1, GL_RGB, GL_FLOAT, rgb);
+
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
+
+        mContext->doneCurrent();
+
+        return true;
+    }
+
+    return false;
 }
 
 
@@ -713,9 +738,13 @@ void RenderManager::clearAllOpsTextures()
         texIds.append(operation->textureIds());
     }
 
+    mContext->makeCurrent(mSurface);
+
     foreach (GLuint* texId, texIds) {
         clearTexture(texId);
     }
+
+    mContext->doneCurrent();
 }
 
 
@@ -835,11 +864,13 @@ void RenderManager::render()
 
     foreach (ImageOperation* operation, mSortedOperations)
     {
-        if (operation->blendEnabled())
+        if (operation->blendEnabled()) {
             blend(operation);
+        }
 
-        if (operation->enabled())
+        if (operation->enabled()) {
             renderOperation(operation);
+        }
     }
 
     glBindVertexArray(0);

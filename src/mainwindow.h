@@ -84,7 +84,6 @@ private:
     QStackedLayout* stackedLayout;
 
     QGraphicsOpacityEffect* controlWidgetOpacityEffect;
-    QGraphicsOpacityEffect* plotsWidgetOpacityEffect;
     qreal opacity = 0.9;
 
 private slots:

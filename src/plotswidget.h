@@ -24,13 +24,11 @@
 
 
 
+#include "rendermanager.h"
 #include "rgbwidget.h"
 #include "colorpath.h"
 
 #include <QWidget>
-#include <QOpenGLExtraFunctions>
-#include <QOpenGLContext>
-#include <QOffscreenSurface>
 #include <QComboBox>
 #include <QLineEdit>
 #include <QIntValidator>
@@ -38,15 +36,15 @@
 
 
 
-class PlotsWidget : public QWidget, protected QOpenGLExtraFunctions
+class PlotsWidget : public QWidget
 {
     Q_OBJECT
 
 public:
-    PlotsWidget(GLuint width, GLuint height, QWidget* parent = nullptr);
+    PlotsWidget(RenderManager* renderManager, QWidget* parent = nullptr);
     ~PlotsWidget();
 
-    void init(QOpenGLContext* mainContext);
+    // void init(QOpenGLContext* mainContext);
     bool isEnabled(){ return enabled; }
     void updatePlots();
 
@@ -55,22 +53,24 @@ signals:
     void drawCursor(bool on);
 
 public slots:
-    void setFBO(GLuint theFBO) { fbo = theFBO; };
+    // void setFBO(GLuint theFBO) { fbo = theFBO; };
     void setTextureID(GLuint* texId);
-    void setImageSize(int width, int height);
+    void setSize(int width, int height);
     void setSelectedPoint(QPoint point);
     void transformSources(QTransform transform);
 
 private:
+    RenderManager* mRenderManager;
     RGBWidget* rgbWidget;
 
-    QOpenGLContext* context;
-    QOffscreenSurface* surface;
+    // QOpenGLContext* context;
+    // QOffscreenSurface* surface;
 
-    GLuint fbo = 0;
+    // GLuint fbo = 0;
     GLuint* textureID = nullptr;
 
-    GLuint imageWidth, imageHeight;
+    GLuint mTexWidth;
+    GLuint mTexHeight;
 
     QPoint cursor;
 
