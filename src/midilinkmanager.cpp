@@ -129,6 +129,11 @@ void MidiLinkManager::updateMidiLinks(QString portName, int key, int value)
             mIntLinks[portName][key]->setValueFromIndex(value);
             mIntLinks[portName][key]->setIndex();
         }
+        if (mUintLinks.contains(portName) && mUintLinks[portName].contains(key))
+        {
+            mUintLinks[portName][key]->setValueFromIndex(value);
+            mUintLinks[portName][key]->setIndex();
+        }
     }
 }
 

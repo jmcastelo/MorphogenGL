@@ -2,7 +2,7 @@
 <fosforo>
     <operation name="Convolution" enabled="0">
         <vertex_shader>I3ZlcnNpb24gMzMwIGNvcmUKCmxheW91dChsb2NhdGlvbiA9IDApIGluIHZlYzIgcG9zOwpsYXlvdXQobG9jYXRpb24gPSAxKSBpbiB2ZWMyIHRleDsKCm91dCB2ZWMyIHRleENvb3JkczsKCnZvaWQgbWFpbigpCnsKICAgIGdsX1Bvc2l0aW9uID0gdmVjNChwb3MsIDAuMCwgMS4wKTsKICAgIHRleENvb3JkcyA9IHRleDsKfQo=</vertex_shader>
-        <fragment_shader>I3ZlcnNpb24gMzMwIGNvcmUKCmluIHZlYzIgdGV4Q29vcmRzOwpvdXQgdmVjNCBmcmFnQ29sb3I7Cgp1bmlmb3JtIHNhbXBsZXIyRCBpblRleHR1cmU7Cgp1bmlmb3JtIGZsb2F0IGtlcm5lbFs5XTsKdW5pZm9ybSBmbG9hdCBzaXplOwp1bmlmb3JtIGZsb2F0IG9wYWNpdHk7Cgpjb25zdCB2ZWMyIG9mZnNldFs5XSA9IHZlYzJbXSgKICAgIHZlYzIoLTEuMCwgMS4wKSwgdmVjMigwLjAsIDEuMCksIHZlYzIoMS4wLCAxLjApLAogICAgdmVjMigtMS4wLCAwLjApLCB2ZWMyKDAuMCwgMC4wKSwgdmVjMigxLjAsIDAuMCksCiAgICB2ZWMyKC0xLjAsIC0xLjApLCB2ZWMyKDAuMCwgLTEuMCksIHZlYzIoMS4wLCAtMS4wKQopOwoKdm9pZCBtYWluKCkKewogICAgdmVjMyBzcmNDb2xvciA9IHRleHR1cmUoaW5UZXh0dXJlLCB0ZXhDb29yZHMpLnJnYjsKCiAgICBpdmVjMiB0ZXhTaXplID0gdGV4dHVyZVNpemUoaW5UZXh0dXJlLCAwKTsKICAgIHZlYzIgZmFjdG9yID0gdmVjMihzaXplLCBzaXplKSAvIHZlYzIodGV4U2l6ZSk7CgogICAgZmxvYXQga1N1bSA9IDAuMDsKICAgIGZvciAoaW50IGkgPSAwOyBpIDwgOTsgaSsrKSB7CiAgICAgICAga1N1bSArPSBrZXJuZWxbaV07CiAgICB9CgogICAgdmVjMyBkc3RDb2xvciA9IHZlYzMoMC4wKTsKICAgIGZvciAoaW50IGkgPSAwOyBpIDwgOTsgaSsrKSB7CiAgICAgICAgZHN0Q29sb3IgKz0ga2VybmVsW2ldICogdGV4dHVyZShpblRleHR1cmUsIGNsYW1wKHRleENvb3JkcyArIGZhY3RvciAqIG9mZnNldFtpXSwgMC4wLCAxLjApKS5yZ2I7CiAgICB9CgogICAgaWYgKGtTdW0gIT0gMC4wKQogICAgICAgIGRzdENvbG9yIC89IGFicyhrU3VtKTsKCiAgICBmcmFnQ29sb3IgPSB2ZWM0KG1peChzcmNDb2xvciwgY2xhbXAoZHN0Q29sb3IsIDAuMCwgMS4wKSwgb3BhY2l0eSksIDEuMCk7Cn0K</fragment_shader>
+        <fragment_shader>I3ZlcnNpb24gMzMwIGNvcmUKCmluIHZlYzIgdGV4Q29vcmRzOwpvdXQgdmVjNCBmcmFnQ29sb3I7Cgp1bmlmb3JtIHNhbXBsZXIyRCBpblRleHR1cmU7Cgp1bmlmb3JtIGZsb2F0IGtlcm5lbFs5XTsKdW5pZm9ybSB1aW50IHNpemU7CnVuaWZvcm0gZmxvYXQgb3BhY2l0eTsKCmNvbnN0IHZlYzIgb2Zmc2V0WzldID0gdmVjMltdKAogICAgdmVjMigtMS4wLCAxLjApLCB2ZWMyKDAuMCwgMS4wKSwgdmVjMigxLjAsIDEuMCksCiAgICB2ZWMyKC0xLjAsIDAuMCksIHZlYzIoMC4wLCAwLjApLCB2ZWMyKDEuMCwgMC4wKSwKICAgIHZlYzIoLTEuMCwgLTEuMCksIHZlYzIoMC4wLCAtMS4wKSwgdmVjMigxLjAsIC0xLjApCik7Cgp2b2lkIG1haW4oKQp7CiAgICB2ZWMzIHNyY0NvbG9yID0gdGV4dHVyZShpblRleHR1cmUsIHRleENvb3JkcykucmdiOwoKICAgIGl2ZWMyIHRleFNpemUgPSB0ZXh0dXJlU2l6ZShpblRleHR1cmUsIDApOwogICAgdmVjMiBmYWN0b3IgPSB2ZWMyKHNpemUpIC8gdmVjMih0ZXhTaXplKTsKCiAgICBmbG9hdCBrU3VtID0gMC4wOwogICAgZm9yIChpbnQgaSA9IDA7IGkgPCA5OyBpKyspIHsKICAgICAgICBrU3VtICs9IGtlcm5lbFtpXTsKICAgIH0KCiAgICB2ZWMzIGRzdENvbG9yID0gdmVjMygwLjApOwogICAgZm9yIChpbnQgaSA9IDA7IGkgPCA5OyBpKyspIHsKICAgICAgICBkc3RDb2xvciArPSBrZXJuZWxbaV0gKiB0ZXh0dXJlKGluVGV4dHVyZSwgY2xhbXAodGV4Q29vcmRzICsgZmFjdG9yICogb2Zmc2V0W2ldLCAwLjAsIDEuMCkpLnJnYjsKICAgIH0KCiAgICBpZiAoa1N1bSAhPSAwLjApCiAgICAgICAgZHN0Q29sb3IgLz0gYWJzKGtTdW0pOwoKICAgIGZyYWdDb2xvciA9IHZlYzQobWl4KHNyY0NvbG9yLCBjbGFtcChkc3RDb2xvciwgMC4wLCAxLjApLCBvcGFjaXR5KSwgMS4wKTsKfQo=</fragment_shader>
         <parameter name="Kernel" type="float_uniform" editable="1" row="0" column="0">
             <uniform name="kernel[0]" type="5126" numitems="9">
                 <number inf="-999" sup="999" min="-10" max="10">0</number>
@@ -84,14 +84,14 @@
                 </preset>
             </presets>
         </parameter>
-        <parameter name="Size" type="float_uniform" editable="1" row="2" column="0">
-            <uniform name="size" type="5126" numitems="1">
-                <number inf="1" sup="999999" min="1" max="100">1</number>
-            </uniform>
-        </parameter>
         <parameter name="Opacity" type="float_uniform" editable="1" row="2" column="1">
             <uniform name="opacity" type="5126" numitems="1">
                 <number inf="0" sup="1" min="0" max="1">0</number>
+            </uniform>
+        </parameter>
+        <parameter name="Size" type="uint_uniform" editable="1" row="2" column="0">
+            <uniform name="size" type="5125" numitems="1">
+                <number inf="1" sup="999" min="1" max="20">1</number>
             </uniform>
         </parameter>
     </operation>

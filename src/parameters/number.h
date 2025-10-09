@@ -75,8 +75,9 @@ public:
 
     void setLimits()
     {
-        if (mInf > mSup)
+        if (mInf > mSup) {
             mInf = mSup;
+        }
 
         if (mMin < mInf)
         {
@@ -177,8 +178,8 @@ public:
 
     void setValueFromIndex(int theIndex)
     {
-        T value = static_cast<T>(mMin + (mMax - mMin) * static_cast<float>(theIndex) / static_cast<float>(mIndexMax));
-        setValue(value);
+        mValue = static_cast<T>(mMin + (mMax - mMin) * static_cast<float>(theIndex) / static_cast<float>(mIndexMax));
+        emit valueChanged(QVariant(mValue));
     }
 
     T value() const

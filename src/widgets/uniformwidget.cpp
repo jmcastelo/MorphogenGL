@@ -62,12 +62,15 @@ UniformParameterWidget<T>::UniformParameterWidget(UniformParameter<T>* theUnifor
     for (int i = 0; i < mUniformParameter->numbers().size(); i++)
     {
         ParameterWidget<T>::connect(mLineEdits[i], &FocusLineEdit::editingFinished, this, [=, this]() {
-            if (std::is_same<T, float>::value)
+            if (std::is_same<T, float>::value) {
                 mUniformParameter->setValue(i, mLineEdits[i]->text().toFloat());
-            else if (std::is_same<T, int>::value)
+            }
+            else if (std::is_same<T, int>::value) {
                 mUniformParameter->setValue(i, mLineEdits[i]->text().toInt());
-            else if (std::is_same<T, unsigned int>::value)
+            }
+            else if (std::is_same<T, unsigned int>::value) {
                 mUniformParameter->setValue(i, mLineEdits[i]->text().toUInt());
+            }
         });
 
         ParameterWidget<T>::connect(mLineEdits[i], &FocusLineEdit::focusIn, this, [=, this]() {
@@ -84,12 +87,15 @@ UniformParameterWidget<T>::UniformParameterWidget(UniformParameter<T>* theUnifor
         ParameterWidget<T>::connect(mLineEdits[i], &FocusLineEdit::focusOut, this, &UniformParameterWidget::focusOut);
 
         ParameterWidget<T>::connect(mUniformParameter, QOverload<int, QVariant>::of(&Parameter::valueChanged), this, [=, this](int i, QVariant newValue) {
-            if (std::is_same<T, float>::value)
+            if (std::is_same<T, float>::value) {
                 mLineEdits[i]->setText(QString::number(newValue.toFloat()));
-            else if (std::is_same<T, int>::value)
+            }
+            else if (std::is_same<T, int>::value) {
                 mLineEdits[i]->setText(QString::number(newValue.toInt()));
-            else if (std::is_same<T, unsigned int>::value)
+            }
+            else if (std::is_same<T, unsigned int>::value) {
                 mLineEdits[i]->setText(QString::number(newValue.toUInt()));
+            }
 
             mLineEdits[i]->setCursorPosition(0);
         });
@@ -109,13 +115,16 @@ void UniformParameterWidget<T>::setValidators()
     {
         QValidator* validator = nullptr;
 
-        if (std::is_same<T, float>::value)
+        if (std::is_same<T, float>::value) {
             validator = new QDoubleValidator(number->inf(), number->sup(), 5, mLineEdits[i]);
-        else if (std::is_same<T, int>::value || std::is_same<T, unsigned int>::value)
+        }
+        else if (std::is_same<T, int>::value || std::is_same<T, unsigned int>::value) {
             validator = new QIntValidator(number->inf(), number->sup(), mLineEdits[i]);
+        }
 
-        if (validator)
+        if (validator) {
             mLineEdits[i]->setValidator(validator);
+        }
 
         i++;
     }

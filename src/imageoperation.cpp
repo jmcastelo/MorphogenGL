@@ -931,38 +931,6 @@ Number<unsigned int>* ImageOperation::number(QUuid id)
 }
 
 
-
-/*void ImageOperation::applyOperation()
-{
-    if (mUpdate)
-    {
-        if (blenderEnabled)
-            blender->blend();
-
-        if (mEnabled)
-            fbo->draw();
-        else
-            fbo->identity();
-    }
-}*/
-
-
-
-/*void ImageOperation::blit()
-{
-    if (blitEnabled)
-        fbo->blit();
-}*/
-
-
-
-/*void ImageOperation::clear()
-{
-    fbo->clear();
-}*/
-
-
-
 /*void ImageOperation::genTextures(GLenum texFormat, GLuint width, GLuint height)
 {
     // Allocated on immutable storage (glTexStorage2D)

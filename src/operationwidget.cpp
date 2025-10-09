@@ -5,6 +5,8 @@
 #include "parameters/uniformmat4parameter.h"
 #include "factory.h"
 
+#include <limits>
+
 
 
 OperationWidget::OperationWidget(QUuid id, ImageOperation* operation, bool midiEnabled, bool editMode, Factory *factory, QWidget* parent) :
@@ -32,7 +34,6 @@ OperationWidget::OperationWidget(QUuid id, ImageOperation* operation, bool midiE
     headerWidget = new QWidget;
     headerWidget->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Maximum);
     headerWidget->setStyleSheet("QWidget { background-color: rgb(128, 128, 164); }");
-    // headerWidget->setContentsMargins(0, 0, 0, 0);
 
     // Header toolbar
 
@@ -485,10 +486,12 @@ void OperationWidget::connectUniformParamWidgets(QList<UniformParameterWidget<T>
     foreach (auto widget, widgets)
     {
         connect(widget, &UniformParameterWidget<T>::focusIn, this, [=, this](){
-            if (mEditMode)
+            if (mEditMode) {
                 updateSelParamEditControls<T>(widget);
-            else
+            }
+            else {
                 updateSelParamControls<T>(widget);
+            }
 
             updateMidiButton<T>(widget);
 
@@ -964,12 +967,15 @@ void OperationWidget::updateSelParamEditControls(ParameterWidget<T>* widget)
     });
 
     selParamMinLineEditConns[1] = connect(selParamMinLineEdit, &FocusLineEdit::editingFinished, this, [=, this](){
-        if (std::is_same<T, float>::value)
+        if (std::is_same<T, float>::value) {
             number->setMin(selParamMinLineEdit->text().toFloat());
-        else if (std::is_same<T, int>::value)
+        }
+        else if (std::is_same<T, int>::value) {
             number->setMin(selParamMinLineEdit->text().toInt());
-        else if (std::is_same<T, unsigned int>::value)
+        }
+        else if (std::is_same<T, unsigned int>::value) {
             number->setMin(selParamMinLineEdit->text().toUInt());
+        }
     });
 
     selParamMinLineEditConns[2] = connect(selParamMinLineEdit, &FocusLineEdit::focusOut, this, [=, this](){
@@ -998,12 +1004,15 @@ void OperationWidget::updateSelParamEditControls(ParameterWidget<T>* widget)
     selParamSupLineEditConns[0] = connect(selParamSupLineEdit, &FocusLineEdit::editingFinished, this, [=, this](){
         T sup = number->sup();
 
-        if (std::is_same<T, float>::value)
+        if (std::is_same<T, float>::value) {
             sup = selParamSupLineEdit->text().toFloat();
-        else if (std::is_same<T, int>::value)
+        }
+        else if (std::is_same<T, int>::value) {
             sup = selParamSupLineEdit->text().toInt();
-        else if (std::is_same<T, unsigned int>::value)
+        }
+        else if (std::is_same<T, unsigned int>::value) {
             sup = selParamSupLineEdit->text().toUInt();
+        }
 
         widget->setSup(sup);
         setValidator<T>(maxValidator, selParamMaxLineEdit, number->min(), sup);
@@ -1039,12 +1048,15 @@ void OperationWidget::updateSelParamEditControls(ParameterWidget<T>* widget)
     });
 
     selParamMaxLineEditConns[1] = connect(selParamMaxLineEdit, &FocusLineEdit::editingFinished, this, [=, this](){
-        if (std::is_same<T, float>::value)
+        if (std::is_same<T, float>::value) {
             number->setMax(selParamMaxLineEdit->text().toFloat());
-        else if (std::is_same<T, int>::value)
+        }
+        else if (std::is_same<T, int>::value) {
             number->setMax(selParamMaxLineEdit->text().toInt());
-        else if (std::is_same<T, unsigned int>::value)
+        }
+        else if (std::is_same<T, unsigned int>::value) {
             number->setMax(selParamMaxLineEdit->text().toUInt());
+        }
     });
 
     selParamMaxLineEditConns[2] = connect(selParamMaxLineEdit, &FocusLineEdit::focusOut, this, [=, this](){
@@ -1092,13 +1104,19 @@ void OperationWidget::setValidator(QValidator* validator, QLineEdit* lineEdit, T
         validator = nullptr;
     }
 
-    if (std::is_same<T, float>::value)
-        validator = new QDoubleValidator(bottom, top, 5, lineEdit);
-    else if (std::is_same<T, int>::value || std::is_same<T, unsigned int>::value)
-        validator = new QIntValidator(bottom, top, lineEdit);
+    if (std::is_same<T, float>::value) {
+        validator = new QDoubleValidator(bottom, top, 5);
+    }
+    else if (std::is_same<T, int>::value || std::is_same<T, unsigned int>::value) {
+        if (top > std::numeric_limits<int>::max()) {
+            top = std::numeric_limits<int>::max();
+        }
+        validator = new QIntValidator(bottom, top);
+    }
 
-    if (validator)
+    if (validator) {
         lineEdit->setValidator(validator);
+    }
 }
 
 
