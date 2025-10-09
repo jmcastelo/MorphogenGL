@@ -32,6 +32,8 @@ OperationBuilder::OperationBuilder(ImageOperation *operation, QWidget *parent) :
 
     mProgram = new QOpenGLShaderProgram();
 
+    populateParamContainers();
+
     // Toolbar
 
     QToolBar* toolBar = new QToolBar;
@@ -141,6 +143,41 @@ OperationBuilder::~OperationBuilder()
 
 
 
+void OperationBuilder::populateParamContainers()
+{
+    fParamMap.clear();
+    iParamMap.clear();
+    uiParamMap.clear();
+    mat4ParamMap.clear();
+    paramList.clear();
+
+    foreach (auto parameter, mOperation->uniformParameters<float>())
+    {
+        fParamMap.insert(parameter->uniformName(), parameter);
+        paramList.append(parameter->uniformName());
+    }
+
+    foreach (auto parameter, mOperation->uniformParameters<int>())
+    {
+        iParamMap.insert(parameter->uniformName(), parameter);
+        paramList.append(parameter->uniformName());
+    }
+
+    foreach (auto parameter, mOperation->uniformParameters<unsigned int>())
+    {
+        uiParamMap.insert(parameter->uniformName(), parameter);
+        paramList.append(parameter->uniformName());
+    }
+
+    foreach (auto parameter, mOperation->mat4UniformParameters())
+    {
+        mat4ParamMap.insert(parameter->uniformName(), parameter);
+        paramList.append(parameter->uniformName());
+    }
+}
+
+
+
 void OperationBuilder::setOperation(ImageOperation* operation)
 {
     mOperation = operation;
@@ -152,6 +189,8 @@ void OperationBuilder::setOperation(ImageOperation* operation)
 
     vertexEditor->setPlainText(mOperation->vertexShader());
     fragmentEditor->setPlainText(mOperation->fragmentShader());
+
+    populateParamContainers();
 }
 
 
@@ -204,12 +243,6 @@ void OperationBuilder::loadOperation()
         vertexEditor->clear();
         fragmentEditor->clear();
 
-        fParamMap.clear();
-        iParamMap.clear();
-        uiParamMap.clear();
-        mat4ParamMap.clear();
-        paramList.clear();
-
         //inAttribList.clear();
 
         //attrComboBox->clear();
@@ -239,29 +272,7 @@ void OperationBuilder::loadOperation()
 
         // Uniforms
 
-        foreach (auto parameter, mOperation->uniformParameters<float>())
-        {
-            fParamMap.insert(parameter->uniformName(), parameter);
-            paramList.append(parameter->uniformName());
-        }
-
-        foreach (auto parameter, mOperation->uniformParameters<int>())
-        {
-            iParamMap.insert(parameter->uniformName(), parameter);
-            paramList.append(parameter->uniformName());
-        }
-
-        foreach (auto parameter, mOperation->uniformParameters<unsigned int>())
-        {
-            uiParamMap.insert(parameter->uniformName(), parameter);
-            paramList.append(parameter->uniformName());
-        }
-
-        foreach (auto parameter, mOperation->mat4UniformParameters())
-        {
-            mat4ParamMap.insert(parameter->uniformName(), parameter);
-            paramList.append(parameter->uniformName());
-        }
+        populateParamContainers();
 
         // Input attributes
 

@@ -72,6 +72,8 @@ private:
     QMap<QString, UniformParameter<unsigned int>*> uiParamMap;
     QMap<QString, UniformMat4Parameter*> mat4ParamMap;
 
+    void populateParamContainers();
+
     bool linkProgram();
     void parseInputAttributes();
     void parseUniforms();
