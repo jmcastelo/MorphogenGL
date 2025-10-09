@@ -419,6 +419,15 @@ void RenderManager::setSortedOperations(QList<ImageOperation*> sortedOperations)
 
 
 
+void RenderManager::reset()
+{
+    clearAllOpsTextures();
+    drawAllSeeds();
+    resetIterationNumer();
+}
+
+
+
 void RenderManager::setBlenderProgram()
 {
     mBlenderProgram->addShaderFromSourceFile(QOpenGLShader::Vertex, ":/shaders/blender.vert");

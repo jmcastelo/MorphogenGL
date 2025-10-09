@@ -370,7 +370,7 @@ void MainWindow::keyPressEvent(QKeyEvent* event)
     }
     else if (event->key() == Qt::Key_Space)
     {
-        controlWidget->reset();
+        renderManager->reset();
     }
 
     event->accept();

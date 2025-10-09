@@ -334,7 +334,7 @@ void Seed::setType(int type)
     draw();
 
 
-    setOutTextureId();
+    // setOutTextureId();
     // setClearTexture();
 }
 
@@ -384,6 +384,8 @@ void Seed::draw()
         drawRandom(mType == 1);
 
     mCleared = false;
+
+    setOutTextureId();
 }
 
 

@@ -85,6 +85,7 @@ public slots:
     void initOperation(QUuid id, ImageOperation* operation);
     void initSeed(QUuid id, Seed* seed);
     void setSortedOperations(QList<ImageOperation*> sortedOperations);
+    void reset();
 
 private:
     Factory* mFactory;

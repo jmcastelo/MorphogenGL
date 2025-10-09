@@ -231,7 +231,7 @@ void ControlWidget::constructSystemToolBar()
     QAction* aboutAction = systemToolBar->addAction(QIcon(QPixmap(":/icons/help-about.png")), "About");
 
     connect(iterateAction, &QAction::triggered, this, &ControlWidget::iterate);
-    connect(resetAction, &QAction::triggered, this, &ControlWidget::reset);
+    connect(resetAction, &QAction::triggered, mRenderManager, &RenderManager::reset);
     connect(screenshotAction, &QAction::triggered, this, &ControlWidget::setScreenshotFilename);
     connect(recordAction, &QAction::triggered, this, &ControlWidget::record);
     //connect(displayOptionsAction, &QAction::toggled, displayOptionsWidget, &QWidget::setVisible);
