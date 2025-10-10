@@ -41,13 +41,14 @@
 
 
 Node::Node(QUuid id, QWidget *widget, QGraphicsItem* parent) :
-    QGraphicsWidget(parent),
+    QGraphicsWidget { parent },
     mId { id },
     mWidget { widget }
 {
     setFlags(ItemIsMovable | ItemIsSelectable | ItemSendsGeometryChanges);
     setAcceptedMouseButtons(Qt::AllButtons);
     setCacheMode(DeviceCoordinateCache);
+
     setZValue(-1);
 
     mWidget->installEventFilter(this);
@@ -208,12 +209,12 @@ QRectF Node::boundingRect() const
 
 
 
-/*QPainterPath Node::shape() const
+QPainterPath Node::shape() const
 {
     QPainterPath path;
-    path.addEllipse(textBoundingRect().adjusted(-(ellipseMargin + penSize), -(ellipseMargin + penSize), ellipseMargin + penSize, ellipseMargin + penSize));
+    path.addRoundedRect(mWidget->rect().toRectF(), 20.0, 20.0);
     return path;
-}*/
+}
 
 
 

@@ -20,7 +20,8 @@ SeedWidget::SeedWidget(QUuid id, Seed *seed, QWidget *parent) :
 
     headerWidget = new QWidget;
     headerWidget->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
-    headerWidget->setStyleSheet("QWidget { background-color: rgb(128, 128, 164); }");
+    headerWidget->setObjectName("header");
+    headerWidget->setStyleSheet("QWidget#header { border: 1px solid gray; }");
 
     QToolBar* headerToolBar = new QToolBar;
     headerToolBar->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
@@ -100,8 +101,8 @@ SeedWidget::SeedWidget(QUuid id, Seed *seed, QWidget *parent) :
 
     setFrameShape(QFrame::Box);
     setFrameShadow(QFrame::Raised);
-    setMidLineWidth(3);
-    setLineWidth(3);
+    setMidLineWidth(1);
+    setLineWidth(1);
     setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
 }
 
@@ -156,8 +157,9 @@ void SeedWidget::toggleOutputAction(QUuid id)
     outputAction->setChecked(checked);
 
     if (checked) {
-        headerWidget->setStyleSheet("QWidget { background-color: rgb(164, 128, 128); }");
-    } else {
-        headerWidget->setStyleSheet("QWidget { background-color: rgb(128, 128, 164); }");
+        headerWidget->setStyleSheet("QWidget#header { border: 1px solid pink; }");
+    }
+    else {
+        headerWidget->setStyleSheet("QWidget#header { border: 1px solid gray; }");
     }
 }

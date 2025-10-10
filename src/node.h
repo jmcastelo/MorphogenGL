@@ -72,7 +72,7 @@ public:
     //QRectF textBoundingRect() const;
 
     QRectF boundingRect() const override;
-    //QPainterPath shape() const override;
+    QPainterPath shape() const override;
     void paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget = nullptr) override;
 
 //public slots:

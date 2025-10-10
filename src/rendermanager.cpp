@@ -299,11 +299,13 @@ void RenderManager::setTextureFormat(TextureFormat format)
 
     QList<GLuint*> oldTexIds;
 
-    foreach (Seed* seed, mFactory->seeds())
+    foreach (Seed* seed, mFactory->seeds()) {
         oldTexIds.append(seed->textureIds());
+    }
 
-    foreach (ImageOperation* operation, mFactory->operations())
+    foreach (ImageOperation* operation, mFactory->operations()) {
         oldTexIds.append(operation->textureIds());
+    }
 
     mContext->makeCurrent(mSurface);
 

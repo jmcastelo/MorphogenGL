@@ -56,17 +56,18 @@ GraphWidget::GraphWidget(Factory *factory, NodeManager* nodeManager, QWidget *pa
     setDragMode(RubberBandDrag);
     setRubberBandSelectionMode(Qt::ContainsItemShape);
 
-    setOptimizationFlags(DontAdjustForAntialiasing | DontSavePainterState);
+    // setOptimizationFlags(DontAdjustForAntialiasing | DontSavePainterState);
 
     setCacheMode(CacheBackground);
-    setViewportUpdateMode(BoundingRectViewportUpdate);
-    //setViewportUpdateMode(FullViewportUpdate);
-    setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform);
+    // setViewportUpdateMode(BoundingRectViewportUpdate);
+    // setViewportUpdateMode(FullViewportUpdate);
+    // setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform);
+    setRenderHints(QPainter::Antialiasing);
     setTransformationAnchor(AnchorUnderMouse);
     setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    //setFocusPolicy(Qt::NoFocus);
-    setFocusPolicy(Qt::StrongFocus);
+    // setFocusPolicy(Qt::NoFocus);
+    setFocusPolicy(Qt::ClickFocus);
 
     scale(qreal(1.0), qreal(1.0));
     center = sceneRect().center();

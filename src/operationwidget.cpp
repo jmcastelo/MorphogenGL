@@ -6,6 +6,7 @@
 #include "factory.h"
 
 #include <limits>
+#include <QPainterPath>
 
 
 
@@ -33,7 +34,8 @@ OperationWidget::OperationWidget(QUuid id, ImageOperation* operation, bool midiE
 
     headerWidget = new QWidget;
     headerWidget->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Maximum);
-    headerWidget->setStyleSheet("QWidget { background-color: rgb(128, 128, 164); }");
+    headerWidget->setObjectName("header");
+    headerWidget->setStyleSheet("QWidget#header { border: 1px solid gray; }");
 
     // Header toolbar
 
@@ -96,13 +98,13 @@ OperationWidget::OperationWidget(QUuid id, ImageOperation* operation, bool midiE
     opNameLabel = new QLabel;
     opNameLabel->setMargin(8);
     opNameLabel->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
-    opNameLabel->setStyleSheet("QLabel { font-size: 16pt; }");
+    opNameLabel->setStyleSheet("QLabel { font-size: 14pt; }");
 
     // Operation name line edit
 
     opNameLineEdit = new QLineEdit;
     opNameLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
-    opNameLineEdit->setStyleSheet("QLineEdit { font-size: 16pt; }");
+    opNameLineEdit->setStyleSheet("QLineEdit { font-size: 14pt; }");
 
     connect(opNameLineEdit, &QLineEdit::textEdited, this, [=, this](QString name){
         operation->setName(name);
@@ -115,29 +117,16 @@ OperationWidget::OperationWidget(QUuid id, ImageOperation* operation, bool midiE
         adjustSize();
     });
 
-    // Separator
-
-    separator[0] = new QFrame;
-    separator[0]->setFrameShape(QFrame::HLine);
-
     QVBoxLayout* headerLayout = new QVBoxLayout;
-    headerLayout->setContentsMargins(0, 0, 0, 0);
+    headerLayout->setContentsMargins(1, 1, 1, 1);
     headerLayout->setSpacing(0);
     headerLayout->addWidget(opNameLabel, 0, Qt::AlignLeft | Qt::AlignVCenter);
     headerLayout->addWidget(opNameLineEdit, 0, Qt::AlignLeft | Qt::AlignVCenter);
-    headerLayout->addWidget(separator[0], 0, Qt::AlignVCenter);
     headerLayout->addWidget(headerToolBar, 0, Qt::AlignLeft | Qt::AlignVCenter);
 
     headerWidget->setLayout(headerLayout);
 
     mainLayout->addWidget(headerWidget);
-
-    // Separator
-
-    separator[1] = new QFrame;
-    separator[1]->setFrameShape(QFrame::HLine);
-
-    mainLayout->addWidget(separator[1], 0, Qt::AlignTop);
 
     // Grid widget containing parameter widgets
 
@@ -147,13 +136,6 @@ OperationWidget::OperationWidget(QUuid id, ImageOperation* operation, bool midiE
     connect(gridWidget, &GridWidget::itemRowColChanged, this, &OperationWidget::updateWidgetRowCol);
 
     mainLayout->addWidget(gridWidget, 1, Qt::AlignTop | Qt::AlignLeft);
-
-    // Separator
-
-    separator[2] = new QFrame;
-    separator[2]->setFrameShape(QFrame::HLine);
-
-    mainLayout->addWidget(separator[2], 0, Qt::AlignTop);
 
     // Selected parameter widgets
 
@@ -265,6 +247,8 @@ OperationWidget::OperationWidget(QUuid id, ImageOperation* operation, bool midiE
 
     selParamWidget = new QWidget;
     selParamWidget->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Maximum);
+    selParamWidget->setObjectName("selParamWidget");
+    selParamWidget->setStyleSheet("QWidget#selParamWidget { border-top: 1px dotted gray; }");
 
     selParamWidget->setLayout(selParamLayout);
 
@@ -274,8 +258,8 @@ OperationWidget::OperationWidget(QUuid id, ImageOperation* operation, bool midiE
 
     setFrameShape(QFrame::Box);
     setFrameShadow(QFrame::Raised);
-    setMidLineWidth(3);
-    setLineWidth(3);
+    setMidLineWidth(1);
+    setLineWidth(1);
     setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
 
     toggleEditMode(editMode);
@@ -679,9 +663,10 @@ void OperationWidget::toggleOutputAction(QUuid id)
     outputAction->setChecked(checked);
 
     if (checked) {
-        headerWidget->setStyleSheet("QWidget { background-color: rgb(164, 128, 128); }");
-    } else {
-        headerWidget->setStyleSheet("QWidget { background-color: rgb(128, 128, 164); }");
+        headerWidget->setStyleSheet("QWidget#header { border: 1px solid pink; }");
+    }
+    else {
+        headerWidget->setStyleSheet("QWidget#header { border: 1px solid gray; }");
     }
 }
 
@@ -1241,9 +1226,6 @@ void OperationWidget::toggleBody(bool visible)
         mainLayout->setStretchFactor(gridWidget, 1);
     else
         mainLayout->setStretchFactor(gridWidget, 0);
-
-    separator[1]->setVisible(visible);
-    separator[2]->setVisible(visible);
 
     adjustSize();
 }
