@@ -170,8 +170,6 @@ ControlWidget::~ControlWidget()
 void ControlWidget::closeEvent(QCloseEvent* event)
 {
     displayOptionsWidget->close();
-    //graphWidget->close();
-
     event->accept();
 }
 

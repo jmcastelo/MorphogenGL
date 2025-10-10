@@ -186,16 +186,19 @@ void GraphWidget::onActionTriggered(QAction* action)
 }
 
 
+
 void GraphWidget::closeEvent(QCloseEvent* event)
 {
     const QList<QGraphicsItem*> items = scene()->items();
 
     foreach (QGraphicsItem* item, items)
     {
-        if (Node* node = qgraphicsitem_cast<Node*>(item))
+        if (Node* node = qgraphicsitem_cast<Node*>(item)) {
             node->close();
-        else if (Edge* edge = qgraphicsitem_cast<Edge*>(item))
+        }
+        else if (Edge* edge = qgraphicsitem_cast<Edge*>(item)) {
             edge->close();
+        }
     }
 
     event->accept();
