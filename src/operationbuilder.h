@@ -11,10 +11,10 @@
 #include <QOffscreenSurface>
 #include <QOpenGLShaderProgram>
 #include <QPlainTextEdit>
-#include <QComboBox>
-#include <QPushButton>
 #include <QTabWidget>
 #include <QAction>
+#include <QStatusBar>
+#include <QLabel>
 
 
 
@@ -54,16 +54,16 @@ private:
 
     QList<QString> inAttribList;
 
-    //QComboBox* attrComboBox;
-
     QList<QString> newParamList;
     QList<QString> paramList;
-
-    //QPushButton* setupOperationButton;
 
     QAction* setupOpAction;
 
     QTabWidget* shadersTabWidget;
+
+    QStatusBar* statusBar;
+
+    QLabel* cursorPosLabel;
 
     ImageOperation* mOperation;
 
@@ -82,8 +82,6 @@ private:
 
     bool checkInputAttributes();
 
-    //void setAttribComboBox();
-
 private slots:
     void loadOperation();
     void saveOperation();
@@ -91,6 +89,7 @@ private slots:
     void loadFragmentShader();
     void parseShaders();
     void setupOperation();
+    void updateCursorPosLabel();
 };
 
 

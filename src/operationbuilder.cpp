@@ -1,3 +1,6 @@
+
+
+
 #include "operationbuilder.h"
 #include "imageoperation.h"
 #include "operationparser.h"
@@ -8,6 +11,7 @@
 #include <QHBoxLayout>
 #include <QMessageBox>
 #include <QVBoxLayout>
+#include <QTextCursor>
 
 
 
@@ -67,6 +71,7 @@ OperationBuilder::OperationBuilder(ImageOperation *operation, QWidget *parent) :
 
     vertexEditor = new QPlainTextEdit;
     vertexEditor->setLineWrapMode(QPlainTextEdit::NoWrap);
+    vertexEditor->setUndoRedoEnabled(true);
     vertexEditor->setFont(fixed);
     vertexEditor->setPlainText(mOperation->vertexShader());
 
@@ -74,8 +79,11 @@ OperationBuilder::OperationBuilder(ImageOperation *operation, QWidget *parent) :
         setupOpAction->setEnabled(false);
     });
 
+    connect(vertexEditor, &QPlainTextEdit::cursorPositionChanged, this, &OperationBuilder::updateCursorPosLabel);
+
     fragmentEditor = new QPlainTextEdit;
     fragmentEditor->setLineWrapMode(QPlainTextEdit::NoWrap);
+    fragmentEditor->setUndoRedoEnabled(true);
     fragmentEditor->setFont(fixed);
     fragmentEditor->setPlainText(mOperation->fragmentShader());
 
@@ -83,53 +91,80 @@ OperationBuilder::OperationBuilder(ImageOperation *operation, QWidget *parent) :
         setupOpAction->setEnabled(false);
     });
 
-    /*attrComboBox = new QComboBox;
-    attrComboBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
-    attrComboBox->setEditable(false);
-
-    QFormLayout* attrFormLayout = new QFormLayout;
-    attrFormLayout->addRow("Select vertex position input attribute:", attrComboBox);
-
-    setupOperationButton = new QPushButton("Setup operation");
-    setupOperationButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
-    setupOperationButton->setEnabled(false);*/
-
-    /*QVBoxLayout* overviewLayout = new QVBoxLayout;
-    overviewLayout->addLayout(attrFormLayout);
-    overviewLayout->addWidget(setupOperationButton);
-
-    QWidget* overviewWidget = new QWidget;
-    overviewWidget->setLayout(overviewLayout);*/
+    connect(fragmentEditor, &QPlainTextEdit::cursorPositionChanged, this, &OperationBuilder::updateCursorPosLabel);
 
     shadersTabWidget = new QTabWidget;
     shadersTabWidget->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
     shadersTabWidget->addTab(vertexEditor, "Vertex shader");
     shadersTabWidget->addTab(fragmentEditor, "Fragment shader");
-    //shadersTabWidget->addTab(overviewWidget, "Overview");
 
-    /*connect(setupOperationButton, &QPushButton::clicked, this, [=, this](){
-        if (mOperation->setShadersFromSourceCode(vertexEditor->toPlainText(), fragmentEditor->toPlainText()))
-        {
-            emit operationSetUp();
+    connect(shadersTabWidget, &QTabWidget::currentChanged, this, &OperationBuilder::updateCursorPosLabel);
 
-            //mOperation->setInAttributes();
-            mOperation->enableUpdate(true);
+    // Status bar
+
+    statusBar = new QStatusBar;
+    statusBar->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Maximum);
+    statusBar->setSizeGripEnabled(false);
+
+    QToolBar* viewToolBar = new QToolBar;
+    viewToolBar->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+
+    viewToolBar->addAction(QIcon(QPixmap(":/icons/zoom-in.png")), "Zoom in", this, [=, this]() {
+        int index = shadersTabWidget->currentIndex();
+        if (index == 0) {
+            vertexEditor->zoomIn(1);
         }
-        else
-        {
-             QMessageBox::information(this, "GLSL Shaders error", "Could not set up operation due to GLSL shaders error.");
+        else if (index == 1) {
+            fragmentEditor->zoomIn(1);
         }
-    });*/
+    });
+
+    viewToolBar->addAction(QIcon(QPixmap(":/icons/zoom-out.png")), "Zoom out", this, [=, this]() {
+        int index = shadersTabWidget->currentIndex();
+        if (index == 0) {
+            vertexEditor->zoomOut(1);
+        }
+        else if (index == 1) {
+            fragmentEditor->zoomOut(1);
+        }
+    });
+
+    viewToolBar->addAction(QIcon(QPixmap(":/icons/edit-undo-2.png")), "Undo", this, [=, this]() {
+        int index = shadersTabWidget->currentIndex();
+        if (index == 0) {
+            vertexEditor->undo();
+        }
+        else if (index == 1) {
+            fragmentEditor->undo();
+        }
+    });
+
+    viewToolBar->addAction(QIcon(QPixmap(":/icons/edit-redo-2.png")), "Redo", this, [=, this]() {
+        int index = shadersTabWidget->currentIndex();
+        if (index == 0) {
+            vertexEditor->redo();
+        }
+        else if (index == 1) {
+            fragmentEditor->redo();
+        }
+    });
+
+    cursorPosLabel = new QLabel("Row: 0, Col: 0");
+
+    statusBar->insertWidget(0, cursorPosLabel, 1);
+    statusBar->insertWidget(1, viewToolBar, 0);
 
     // Layouts
 
     QVBoxLayout* shadersLayout = new QVBoxLayout;
-    shadersLayout->addWidget(toolBar);
-    shadersLayout->addWidget(shadersTabWidget);
+    shadersLayout->addWidget(toolBar, 0);
+    shadersLayout->addWidget(shadersTabWidget, 1);
+    shadersLayout->addWidget(statusBar, 0);
 
     setLayout(shadersLayout);
 
     setWindowTitle("Operation Builder");
+    resize(500, 500);
 }
 
 
@@ -243,10 +278,6 @@ void OperationBuilder::loadOperation()
         vertexEditor->clear();
         fragmentEditor->clear();
 
-        //inAttribList.clear();
-
-        //attrComboBox->clear();
-
         setupOpAction->setEnabled(false);
 
         // Parse operation
@@ -273,13 +304,6 @@ void OperationBuilder::loadOperation()
         // Uniforms
 
         populateParamContainers();
-
-        // Input attributes
-
-        // inAttribList.append(mOperation->posInAttribName());
-        // inAttribList.append(mOperation->texInAttribName());
-
-        // setAttribComboBox();
 
         setupOpAction->setEnabled(true);
 
@@ -419,11 +443,8 @@ void OperationBuilder::parseInputAttributes()
     {
         inAttribList = newInAttribList;
 
-        if (checkInputAttributes())
-        {
-            //setAttribComboBox();
+        if (checkInputAttributes()) {
             setupOpAction->setEnabled(true);
-            //shadersTabWidget->setCurrentIndex(2);
         }
         else
         {
@@ -431,9 +452,7 @@ void OperationBuilder::parseInputAttributes()
             setupOpAction->setEnabled(false);
         }
     }
-    else
-    {
-        //shadersTabWidget->setCurrentIndex(2);
+    else {
         setupOpAction->setEnabled(true);
     }
 }
@@ -577,29 +596,6 @@ bool OperationBuilder::checkInputAttributes()
 
 
 
-/*void OperationBuilder::setAttribComboBox()
-{
-    attrComboBox->disconnect();
-    attrComboBox->clear();
-
-    attrComboBox->addItems(inAttribList);
-
-    attrComboBox->setCurrentIndex(0);
-
-    mOperation->setPosInAttribName(inAttribList.at(0));
-    mOperation->setTexInAttribName(inAttribList.at(1));
-
-    connect(attrComboBox, &QComboBox::activated, this, [=, this](int index){
-        if (index >= 0 && index < 2)
-        {
-            mOperation->setPosInAttribName(inAttribList.at(index));
-            mOperation->setTexInAttribName(inAttribList.at((index + 1) % 2));
-        }
-    });
-}*/
-
-
-
 void OperationBuilder::setupOperation()
 {
     mOperation->setVertexShader(vertexEditor->toPlainText());
@@ -608,12 +604,28 @@ void OperationBuilder::setupOperation()
     if (mOperation->linkShaders())
     {
         emit operationSetUp();
-
-        //mOperation->setInAttributes();
         mOperation->enableUpdate(true);
     }
     else
     {
         QMessageBox::information(this, "GLSL Shaders error", "Could not set up operation due to GLSL shaders error.");
+    }
+}
+
+
+
+void OperationBuilder::updateCursorPosLabel()
+{
+    int index = shadersTabWidget->currentIndex();
+
+    if (index == 0)
+    {
+        QTextCursor cursor = vertexEditor->textCursor();
+        cursorPosLabel->setText("Row: " + QString::number(cursor.blockNumber()) + ", Col: " + QString::number(cursor.positionInBlock()));
+    }
+    else if (index == 1)
+    {
+        QTextCursor cursor = fragmentEditor->textCursor();
+        cursorPosLabel->setText("Row: " + QString::number(cursor.blockNumber()) + ", Col: " + QString::number(cursor.positionInBlock()));
     }
 }
