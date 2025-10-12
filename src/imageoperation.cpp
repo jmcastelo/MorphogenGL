@@ -620,7 +620,6 @@ void ImageOperation::setInputData(QList<InputData*> data)
     {
         mBlendEnabled = true;
         pInputTexId = &mBlendOutTexId;
-
     }
     else if (data.size() == 1)
     {
@@ -631,13 +630,22 @@ void ImageOperation::setInputData(QList<InputData*> data)
     {
         mBlendEnabled = false;
         pInputTexId = nullptr;
-        // ppInputTexId = nullptr;
     }
 
     setOutTextureId();
     setBlitInTextureId();
 
     mInputData = data;
+
+    mInputTextures.clear();
+    foreach(InputData* iData, data) {
+        mInputTextures.append(iData->pTextureId());
+    }
+
+    mInputBlendFactors.clear();
+    foreach(InputData* iData, data) {
+        mInputBlendFactors.append(iData->blendFactor());
+    }
 }
 
 
@@ -714,25 +722,13 @@ QList<GLuint*> ImageOperation::textureIds()
 
 QList<GLuint*> ImageOperation::inputTextures()
 {
-    mInputTextures.clear();
-
-    foreach(InputData* iData, mInputData) {
-        mInputTextures.append(iData->pTextureId());
-    }
-
     return mInputTextures;
 }
 
 
 
-QList<float> ImageOperation::inputBlendFactors()
+QList<Number<float>*> ImageOperation::inputBlendFactors()
 {
-    mInputBlendFactors.clear();
-
-    foreach(InputData* iData, mInputData) {
-        mInputBlendFactors.append(iData->blendFactor()->value());
-    }
-
     return mInputBlendFactors;
 }
 

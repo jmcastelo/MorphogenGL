@@ -54,7 +54,7 @@ void Recorder::setVideoFrameInputReady()
 
 
 
-void Recorder::sendVideoFrame(const QImage &image)
+void Recorder::sendVideoFrame(const QImage& image)
 {
     QVideoFrame frame(image);
 

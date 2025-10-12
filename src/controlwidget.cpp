@@ -170,6 +170,7 @@ ControlWidget::~ControlWidget()
 void ControlWidget::closeEvent(QCloseEvent* event)
 {
     displayOptionsWidget->close();
+    recordingOptionsWidget->close();
     event->accept();
 }
 
@@ -235,7 +236,7 @@ void ControlWidget::constructSystemToolBar()
     connect(recordAction, &QAction::triggered, this, &ControlWidget::record);
     //connect(displayOptionsAction, &QAction::toggled, displayOptionsWidget, &QWidget::setVisible);
     connect(displayOptionsAction, &QAction::triggered, this, &ControlWidget::toggleDisplayOptionsWidget);
-    //connect(recordingOptionsAction, &QAction::triggered, this, &ControlWidget::toggleRecordingOptionsWidget);
+    connect(recordingOptionsAction, &QAction::triggered, this, &ControlWidget::toggleRecordingOptionsWidget);
     connect(loadConfigAction, &QAction::triggered, this, &ControlWidget::loadConfig);
     connect(saveConfigAction, &QAction::triggered, this, &ControlWidget::saveConfig);
     connect(midiAction, &QAction::triggered, this, &ControlWidget::showMidiWidget);
@@ -299,20 +300,10 @@ void ControlWidget::toggleDisplayOptionsWidget()
 
 
 
-/*void ControlWidget::toggleRecordingOptionsWidget()
+void ControlWidget::toggleRecordingOptionsWidget()
 {
     recordingOptionsWidget->setVisible(!recordingOptionsWidget->isVisible());
-
-    if (recordingOptionsWidget->isVisible())
-    {
-        scrollLayout->addWidget(recordingOptionsWidget);
-        scrollArea->ensureWidgetVisible(recordingOptionsWidget);
-    }
-    else
-        scrollLayout->removeWidget(recordingOptionsWidget);
-
-    updateScrollArea();
-}*/
+}
 
 
 
@@ -742,8 +733,8 @@ QString ControlWidget::textureFormatToString(TextureFormat format) {
         case TextureFormat::RGBA2: return "RGBA2";
         case TextureFormat::RGBA4: return "RGBA4";
         case TextureFormat::RGBA8: return "RGBA8";
-        case TextureFormat::RGBA8_SNORM: return "RGBA8_SNORM";
-        case TextureFormat::RGB10_A2: return "RGB10_A2";
+        //case TextureFormat::RGBA8_SNORM: return "RGBA8_SNORM";
+        //case TextureFormat::RGB10_A2: return "RGB10_A2";
         //case TextureFormat::RGB10_A2UI: return "RGB10_A2";
         case TextureFormat::RGBA12: return "RGBA12";
         //case TextureFormat::SRGB8_ALPHA8: return "SRGB8_ALPHA8";
@@ -818,6 +809,7 @@ void ControlWidget::constructRecordingOptionsWidget()
     mainLayout->addWidget(videoGroupBox);
 
     recordingOptionsWidget = new QWidget;
+    recordingOptionsWidget->setWindowTitle("Recording options");
     recordingOptionsWidget->setLayout(mainLayout);
     recordingOptionsWidget->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
     recordingOptionsWidget->setVisible(false);
@@ -919,10 +911,11 @@ void ControlWidget::populateVideoCodecsComboBox()
 
 void ControlWidget::setOutputDir()
 {
-    QString dir = QFileDialog::getExistingDirectory(this, "Select output directory", outputDir);
+    QString dir = QFileDialog::getExistingDirectory(recordingOptionsWidget, "Select output directory", outputDir);
 
-    if (!dir.isEmpty())
+    if (!dir.isEmpty()) {
         outputDir = dir;
+    }
 }
 
 

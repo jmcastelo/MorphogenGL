@@ -126,7 +126,7 @@ public:
     // void setTexSize(GLuint width, GLuint height);
 
     QList<GLuint*> inputTextures();
-    QList<float> inputBlendFactors();
+    QList<Number<float>*> inputBlendFactors();
 
     template <typename T>
     QList<UniformParameter<T>*> uniformParameters();
@@ -198,7 +198,7 @@ private:
 
     QList<InputData*> mInputData;
     QList<GLuint*> mInputTextures;
-    QList<float> mInputBlendFactors;
+    QList<Number<float>*> mInputBlendFactors;
 
     GLuint mOutTexId = 0;
     GLuint mBlitOutTexId = 0;

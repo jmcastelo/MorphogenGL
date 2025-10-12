@@ -4,10 +4,11 @@ in vec2 texCoords;
 out vec4 fragColor;
 
 uniform sampler2DArray inArrayTex;
-uniform int layerCount;
 uniform float weights[32];
 
 void main() {
+    int layerCount = textureSize(inArrayTex, 0).z;
+
     vec3 blend = vec3(0.0);
 
     for (int i = 0; i < layerCount; i++) {

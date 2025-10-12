@@ -32,6 +32,8 @@
 RenderManager::RenderManager(Factory *factory)
     : mFactory { factory }
 {
+    setOutputImage();
+
     connect(mFactory, &Factory::newOperationCreated, this, &RenderManager::initOperation);
     connect(mFactory, &Factory::replaceOpCreated, this, &RenderManager::initOperation);
     connect(mFactory, &Factory::newSeedCreated, this, &RenderManager::initSeed);
@@ -93,10 +95,23 @@ void RenderManager::init(QOpenGLContext* shareContext)
     // Shader program
 
     mBlenderProgram = new QOpenGLShaderProgram();
-    mIdentityProgram = new QOpenGLShaderProgram();
-
     setBlenderProgram();
-    setIdentityProgram();
+
+    // mIdentityProgram = new QOpenGLShaderProgram();
+    // setIdentityProgram();
+
+    // Frame texture: for video recording
+
+    genTexture(&mFrameTexId, TextureFormat::RGBA8);
+
+    // Pixel buffer objects: generate and set up
+
+    mPbos.resize(mPboCount, 0);
+    mFences.resize(mPboCount, 0);
+
+    glGenBuffers(mPboCount, mPbos.data());
+
+    setPbos();
 
     mContext->doneCurrent();
 }
@@ -123,48 +138,17 @@ RenderManager::~RenderManager()
     glDeleteTextures(1, &mBlendArrayTexId);
 
     delete mBlenderProgram;
-    delete mIdentityProgram;
+    // delete mIdentityProgram;
+
+    glDeleteBuffers(mPboCount, mPbos.data());
 
     mContext->doneCurrent();
 
+    delete mOutputImage;
+
     delete mContext;
     delete mSurface;
-
-    // foreach(Seed* seed, mSeeds)
-        // delete seed;
 }
-
-
-
-/*Seed* RenderManager::createNewSeed()
-{
-    Seed* seed = new Seed(static_cast<GLenum>(mTexFormat), mTexWidth, mTexHeight, mContext, mSurface);
-
-    mSeeds.append(seed);
-
-    return seed;
-}*/
-
-
-
-/*void RenderManager::deleteSeed(Seed* seed)
-{
-    if (mSeeds.removeOne(seed))
-        delete seed;
-}*/
-
-
-
-/*ImageOperation* RenderManager::createNewOperation()
-{
-    ImageOperation* operation = new ImageOperation("New Operation", static_cast<GLenum>(mTexFormat), mTexWidth, mTexHeight, mContext, mSurface);
-
-    genOpTextures(operation);
-
-    mOperations.append(operation);
-
-    return operation;
-}*/
 
 
 
@@ -188,45 +172,47 @@ void RenderManager::iterate()
     {
         mContext->makeCurrent(mSurface);
 
-        blit();
+        copyTextures();
         render();
 
         mContext->doneCurrent();
     }
 
-    foreach (Seed* seed, mFactory->seeds())
+    foreach (Seed* seed, mFactory->seeds()) {
         seed->setClearTexture();
+    }
 
     mIterationNumber++;
 }
 
 
 
-GLenum RenderManager::getFormat(GLenum format)
+void RenderManager::setPbos()
 {
-    GLint redType, greenType, blueType, alphaType;
-
-    glGetInternalformativ(GL_TEXTURE_2D, format, GL_INTERNALFORMAT_RED_TYPE, 1, &redType);
-    glGetInternalformativ(GL_TEXTURE_2D, format, GL_INTERNALFORMAT_GREEN_TYPE, 1, &greenType);
-    glGetInternalformativ(GL_TEXTURE_2D, format, GL_INTERNALFORMAT_BLUE_TYPE, 1, &blueType);
-    glGetInternalformativ(GL_TEXTURE_2D, format, GL_INTERNALFORMAT_ALPHA_TYPE, 1, &alphaType);
-
-    if (redType == GL_INT || redType == GL_UNSIGNED_INT ||
-        greenType == GL_INT || greenType == GL_UNSIGNED_INT ||
-        blueType == GL_INT || blueType == GL_UNSIGNED_INT ||
-        alphaType == GL_INT || alphaType == GL_UNSIGNED_INT)
+    foreach (GLuint pbo, mPbos)
     {
-        return GL_RGBA_INTEGER;
+        glBindBuffer(GL_PIXEL_PACK_BUFFER, pbo);
+        glBufferData(GL_PIXEL_PACK_BUFFER, GLsizeiptr(mOutputImage->sizeInBytes()), nullptr, GL_STREAM_READ);
     }
-    else
-    {
-        return GL_RGBA;
-    }
+
+    glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
 }
 
 
 
-QImage RenderManager::outputImage()
+void RenderManager::setOutputImage()
+{
+    if (mOutputImage) {
+        delete mOutputImage;
+    }
+
+    mOutputImage = new QImage(mTexWidth, mTexHeight, QImage::Format_RGBA8888);
+    mOutputImage->fill(Qt::black);
+}
+
+
+
+/*QImage RenderManager::outputImage()
 {
     QImage image(mTexWidth, mTexHeight, QImage::Format_RGBA8888);
 
@@ -257,31 +243,110 @@ QImage RenderManager::outputImage()
     }
 
     return image;
-}
+}*/
 
 
 
-bool RenderManager::rgbPixel(QPoint pos, float* rgb)
+QImage RenderManager::outputImage()
 {
     if (mOutputTexId)
     {
         mContext->makeCurrent(mSurface);
 
-        glBindFramebuffer(GL_READ_FRAMEBUFFER, mReadFbo);
-        glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, *mOutputTexId, 0);
+        glPixelStorei(GL_PACK_ALIGNMENT, 1);
 
-        glReadBuffer(GL_COLOR_ATTACHMENT0);
+        // Ensure previous fence for the PBO we're about to reuse is complete.
+        if (mFences[mSubmitIndex])
+        {
+            // Wait until GPU finished writing into pbos[submitIndex] from its previous use.
+            // Block here until signaled to guarantee we can reuse the PBO safely.
+            glClientWaitSync(mFences[mSubmitIndex], GL_SYNC_FLUSH_COMMANDS_BIT, GLuint64(-1));
 
-        glReadPixels(pos.x(), pos.y(), 1, 1, GL_RGB, GL_FLOAT, rgb);
+            // It's acceptable to ignore the return because we used infinite timeout.
+            glDeleteSync(mFences[mSubmitIndex]);
+            mFences[mSubmitIndex] = 0;
+        }
 
-        glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
+        GLuint* pReadTexId = mOutputTexId;
+
+        if (mTexFormat != TextureFormat::RGBA8)
+        {
+            blitTextures(*mOutputTexId, mTexWidth, mTexHeight, mFrameTexId, mTexWidth, mTexHeight);
+            pReadTexId = &mFrameTexId;
+        }
+
+        // Bind PBO and issue async read into it
+        glBindBuffer(GL_PIXEL_PACK_BUFFER, mPbos[mSubmitIndex]);
+
+        // Issue read into PBO (offset 0)
+        glGetTextureSubImage(*pReadTexId, 0, 0, 0, 0, mTexWidth, mTexHeight, 1, GL_RGBA, GL_UNSIGNED_BYTE, GLsizei(mOutputImage->sizeInBytes()), 0);
+
+        // Insert fence for this PBO transfer to know when it's done
+        mFences[mSubmitIndex] = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+
+        // Advance submitIndex (we will map the oldest PBO next)
+        mSubmitIndex = (mSubmitIndex + 1) % mPboCount;
+
+        // Map/read the oldest PBO (readIndex). Wait for its fence if present.
+        if (mFences[mReadIndex])
+        {
+            // Blocking wait until readIndex's transfer completes
+            glClientWaitSync(mFences[mReadIndex], GL_SYNC_FLUSH_COMMANDS_BIT, GLuint64(-1));
+            glDeleteSync(mFences[mReadIndex]);
+            mFences[mReadIndex] = 0;
+        }
+
+        // If there's no fence, the buffer was never used; still safe to map (it contains allocated but undefined bytes).
+
+        // Bind and map readIndex PBO
+        glBindBuffer(GL_PIXEL_PACK_BUFFER, mPbos[mReadIndex]);
+
+        void* mapped = glMapBufferRange(GL_PIXEL_PACK_BUFFER, 0, GLsizeiptr(mOutputImage->sizeInBytes()), GL_MAP_READ_BIT);
+
+        if (mapped)
+        {
+            std::memcpy(mOutputImage->bits(), mapped, mOutputImage->sizeInBytes());
+
+            // Unmap after copying
+            glUnmapBuffer(GL_PIXEL_PACK_BUFFER);
+        }
+        else
+        {
+            mOutputImage->fill(Qt::black);
+        }
+
+        // Unbind PBO
+        glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
+
+        // Advance readIndex to next oldest buffer
+        mReadIndex = (mReadIndex + 1) % mPboCount;
 
         mContext->doneCurrent();
-
-        return true;
+    }
+    else
+    {
+        mOutputImage->fill(Qt::black);
     }
 
-    return false;
+    return *mOutputImage;
+}
+
+
+
+QList<float> RenderManager::rgbPixel(QPoint pos)
+{
+    QList<float> rgb(3, 0.0f);
+
+    if (mOutputTexId)
+    {
+        mContext->makeCurrent(mSurface);
+
+        glGetTextureSubImage(*mOutputTexId, 0, pos.x(), pos.y(), 0, 1, 1, 1, GL_RGB, GL_FLOAT, rgb.size() * sizeof(float), rgb.data());
+
+        mContext->doneCurrent();
+    }
+
+    return rgb;
 }
 
 
@@ -312,7 +377,7 @@ void RenderManager::setTextureFormat(TextureFormat format)
     foreach (GLuint* oldTexId, oldTexIds)
     {
         GLuint newTexId = 0;
-        genTexture(&newTexId);
+        genTexture(&newTexId, mTexFormat);
 
         glBindFramebuffer(GL_READ_FRAMEBUFFER, mReadFbo);
         glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, *oldTexId, 0);
@@ -382,20 +447,24 @@ int RenderManager::iterationNumber()
 
 void RenderManager::resize(GLuint width, GLuint height)
 {
+    mOldTexWidth = mTexWidth;
+    mOldTexHeight = mTexHeight;
+
+    mTexWidth = width;
+    mTexHeight = height;
+
+    setOutputImage();
+
     if (mContext)
     {
-        mOldTexWidth = mTexWidth;
-        mOldTexHeight = mTexHeight;
-
-        mTexWidth = width;
-        mTexHeight = height;
-
         mContext->makeCurrent(mSurface);
 
         setVao();
         foreach (Seed* seed, mFactory->seeds()) {
             seed->setVao(width, height);
         }
+
+        setPbos();
 
         glViewport(0, 0, mTexWidth, mTexHeight);
 
@@ -490,7 +559,7 @@ void RenderManager::setBlenderProgram()
 
 
 
-void RenderManager::setIdentityProgram()
+/*void RenderManager::setIdentityProgram()
 {
     mIdentityProgram->addShaderFromSourceFile(QOpenGLShader::Vertex, ":/shaders/identity.vert");
     mIdentityProgram->addShaderFromSourceFile(QOpenGLShader::Fragment, ":/shaders/identity.frag");
@@ -520,7 +589,7 @@ void RenderManager::setIdentityProgram()
 
         mIdentityProgram->release();
     }
-}
+}*/
 
 
 
@@ -602,7 +671,7 @@ void RenderManager::adjustOrtho()
 
 
 
-void RenderManager::genTexture(GLuint* texId)
+void RenderManager::genTexture(GLuint* texId, TextureFormat texFormat)
 {
     // Allocated on immutable storage (glTexStorage2D)
     // To be called within active OpenGL context
@@ -611,7 +680,7 @@ void RenderManager::genTexture(GLuint* texId)
 
     glBindTexture(GL_TEXTURE_2D, *texId);
 
-    glTexStorage2D(GL_TEXTURE_2D, 1, static_cast<GLenum>(mTexFormat), mTexWidth, mTexHeight);
+    glTexStorage2D(GL_TEXTURE_2D, 1, static_cast<GLenum>(texFormat), mTexWidth, mTexHeight);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -629,7 +698,7 @@ void RenderManager::genOpTextures(ImageOperation* operation)
 
     foreach (GLuint* texId, operation->textureIds())
     {
-        genTexture(texId);
+        genTexture(texId, mTexFormat);
         clearTexture(texId);
     }
 
@@ -655,6 +724,23 @@ void RenderManager::genBlendArrayTexture()
 }
 
 
+
+void RenderManager::blitTextures(GLuint srcTexId, GLuint srcTexWidth, GLuint srcTexHeight, GLuint dstTexId, GLuint dstTexWidth, GLuint dstTexHeight)
+{
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, mReadFbo);
+    glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, srcTexId, 0);
+
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, mDrawFbo);
+    glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, dstTexId, 0);
+
+    glBlitFramebuffer(0, 0, srcTexWidth, srcTexHeight, 0, 0, dstTexWidth, dstTexHeight, GL_COLOR_BUFFER_BIT, GL_LINEAR);
+
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+}
+
+
+
 void RenderManager::resizeTextures()
 {
     QList<GLuint*> oldTexIds;
@@ -668,19 +754,9 @@ void RenderManager::resizeTextures()
     foreach (GLuint* oldTexId, oldTexIds)
     {
         GLuint newTexId = 0;
-        genTexture(&newTexId);
+        genTexture(&newTexId, mTexFormat);
 
-        glBindFramebuffer(GL_READ_FRAMEBUFFER, mReadFbo);
-        glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, *oldTexId, 0);
-
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, mDrawFbo);
-
-        glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, newTexId, 0);
-
-        glBlitFramebuffer(0, 0, mOldTexWidth, mOldTexHeight, 0, 0, mTexWidth, mTexHeight, GL_COLOR_BUFFER_BIT, GL_LINEAR);
-
-        glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+        blitTextures(*oldTexId, mOldTexWidth, mOldTexHeight, newTexId, mTexWidth, mTexHeight);
 
         glDeleteTextures(1, oldTexId);
         *oldTexId = newTexId;
@@ -695,6 +771,14 @@ void RenderManager::resizeTextures()
     }
 
     emit texturesChanged();
+
+    // Resize frame texture
+
+    GLuint newTexId = 0;
+    genTexture(&newTexId, TextureFormat::RGBA8);
+    blitTextures(mFrameTexId, mOldTexWidth, mOldTexHeight, newTexId, mTexWidth, mTexHeight);
+    glDeleteTextures(1, &mFrameTexId);
+    mFrameTexId = newTexId;
 }
 
 
@@ -711,11 +795,13 @@ void RenderManager::recreateBlendArrayTexture()
 void RenderManager::copyTexturesToBlendArrayTexture(QList<GLuint*> textures)
 {
     int nTextures = textures.size();
-    if (nTextures > mMaxArrayTexLayers)
+    if (nTextures > mMaxArrayTexLayers) {
         nTextures = mMaxArrayTexLayers;
+    }
 
-    for (int i = 0; i < nTextures; i++)
+    for (int i = 0; i < nTextures; i++) {
         glCopyImageSubData(*textures[i], GL_TEXTURE_2D, 0, 0, 0, 0, mBlendArrayTexId, GL_TEXTURE_2D_ARRAY, 0, 0, 0, i, mTexWidth, mTexHeight, 1);
+    }
 }
 
 
@@ -760,27 +846,13 @@ void RenderManager::drawAllSeeds()
 
 
 
-void RenderManager::blit()
+void RenderManager::copyTextures()
 {
     // Expects active OpenGL context
 
-    foreach (ImageOperation* operation, mSortedOperations)
-    {
-        if (operation->blitEnabled())
-        {
-            glBindFramebuffer(GL_READ_FRAMEBUFFER, mReadFbo);
-            glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, operation->blitInTextureId(), 0);
-
-            glBindFramebuffer(GL_DRAW_FRAMEBUFFER, mDrawFbo);
-            glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, operation->blitOutTextureId(), 0);
-
-            glReadBuffer(GL_COLOR_ATTACHMENT0);
-            glDrawBuffer(GL_COLOR_ATTACHMENT0);
-
-            glBlitFramebuffer(0, 0, mTexWidth, mTexHeight, 0, 0, mTexWidth, mTexHeight, GL_COLOR_BUFFER_BIT, GL_NEAREST);
-
-            glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
-            glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+    foreach (ImageOperation* operation, mSortedOperations) {
+        if (operation->blitEnabled()) {
+            glCopyImageSubData(operation->blitInTextureId(), GL_TEXTURE_2D, 0, 0, 0, 0, operation->blitOutTextureId(), GL_TEXTURE_2D, 0, 0, 0, 0, mTexWidth, mTexHeight, 1);
         }
     }
 }
@@ -805,22 +877,20 @@ void RenderManager::blend(ImageOperation *operation)
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D_ARRAY, mBlendArrayTexId);
 
-    // Set number of input textures
-
-    int nInputs = operation->inputTextures().size();
-
-    GLint locCount = mBlenderProgram->uniformLocation("layerCount");
-    glUniform1i(locCount, nInputs);
-
     // Set blend factors
 
-    GLint locWeights = mBlenderProgram->uniformLocation("weights");
-    QList<float> blendFactors = operation->inputBlendFactors();
-
     QList<float> weights(mNumArrayTexLayers, 0.0f);
-    for (int i = 0; i < nInputs; ++i)
-        weights[i] = blendFactors[i];
+    int i = 0;
+    for (auto factor : operation->inputBlendFactors())
+    {
+        weights[i++] = factor->value();
 
+        if (i > mNumArrayTexLayers) {
+            break;
+        }
+    }
+
+    GLint locWeights = mBlenderProgram->uniformLocation("weights");
     glUniform1fv(locWeights, mNumArrayTexLayers, weights.constData());
 
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);

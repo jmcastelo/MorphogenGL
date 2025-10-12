@@ -250,8 +250,9 @@ void ImageOperationNode::equalizeBlendFactors()
 {
     int numInputs = mInputs.size();
 
-    foreach (InputData* data, mInputs)
+    foreach (InputData* data, mInputs) {
         data->setBlendFactor(1.0 / numInputs);
+    }
 
     //mOperation->setInputData(inputsList());
 }
@@ -262,8 +263,9 @@ QList<InputData*> ImageOperationNode::inputsList()
 {
     QList<InputData*> inputData;
 
-    foreach(InputData* inData, mInputs)
+    foreach(InputData* inData, mInputs) {
         inputData.append(inData);
+    }
 
     return inputData;
 }

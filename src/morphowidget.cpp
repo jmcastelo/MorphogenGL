@@ -300,8 +300,8 @@ void MorphoWidget::getSupportedTexFormats()
         TextureFormat::RGBA2,
         TextureFormat::RGBA4,
         TextureFormat::RGBA8,
-        TextureFormat::RGBA8_SNORM,
-        TextureFormat::RGB10_A2,
+        //TextureFormat::RGBA8_SNORM,
+        //TextureFormat::RGB10_A2,
         //TextureFormat::RGB10_A2UI,
         TextureFormat::RGBA12,
         //TextureFormat::SRGB8_ALPHA8,
@@ -324,8 +324,9 @@ void MorphoWidget::getSupportedTexFormats()
     foreach (TextureFormat format, allFormats)
     {
         glGetInternalformativ(GL_TEXTURE_2D, static_cast<GLenum>(format), GL_INTERNALFORMAT_SUPPORTED, 1, &supported);
-        if (supported == GL_TRUE)
+        if (supported == GL_TRUE) {
             supportedFormats.append(format);
+        }
     }
 
     doneCurrent();

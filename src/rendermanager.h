@@ -33,7 +33,8 @@
 #include "factory.h"
 
 #include <QObject>
-#include <QOpenGLExtraFunctions>
+// #include <QOpenGLExtraFunctions>
+#include <QOpenGLFunctions_4_5_Core>
 #include <QOpenGLContext>
 #include <QOffscreenSurface>
 #include <QOpenGLShaderProgram>
@@ -41,7 +42,7 @@
 
 
 
-class RenderManager : public QObject, protected QOpenGLExtraFunctions
+class RenderManager : public QObject, protected QOpenGLFunctions_4_5_Core
 {
     Q_OBJECT
 
@@ -62,7 +63,7 @@ public:
     void iterate();
 
     QImage outputImage();
-    bool rgbPixel(QPoint pos, float* rgb);
+    QList<float> rgbPixel(QPoint pos);
 
     TextureFormat texFormat();
     void setTextureFormat(TextureFormat format);
@@ -110,11 +111,14 @@ private:
 
     TextureFormat mTexFormat = TextureFormat::RGBA8;
 
+    QImage* mOutputImage = nullptr;
+    QImage::Format mOutputImageFormat = QImage::Format_RGBA8888;
+
     GLint mMaxArrayTexLayers;
     const GLint mNumArrayTexLayers = 32;
 
     QOpenGLShaderProgram* mBlenderProgram;
-    QOpenGLShaderProgram* mIdentityProgram;
+    // QOpenGLShaderProgram* mIdentityProgram;
 
     GLuint mVao;
     GLuint mVboPos;
@@ -126,20 +130,29 @@ private:
     bool mActive = false;
     unsigned int mIterationNumber = 0;
 
-    GLsync fence = 0;
+    GLuint mFrameTexId = 0;
 
-    GLenum getFormat(GLenum format);
+    const int mPboCount = 3;
+    QList<GLuint> mPbos;
+    int mSubmitIndex = 0;
+    int mReadIndex = 0;
+    QList<GLsync> mFences;
+
+    void setPbos();
+    void setOutputImage();
 
     void setBlenderProgram();
-    void setIdentityProgram();
+    // void setIdentityProgram();
 
     void verticesCoords(GLfloat& left, GLfloat& right, GLfloat& bottom, GLfloat& top);
     void setVao();
     void adjustOrtho();
 
-    void genTexture(GLuint* texId);
+    void genTexture(GLuint* texId, TextureFormat texFormat);
     void genOpTextures(ImageOperation* operation);
     void resizeTextures();
+
+    void blitTextures(GLuint srcTexId, GLuint srcTexWidth, GLuint srcTexHeight, GLuint newTexId, GLuint dstTexWidth, GLuint dstTexHeight);
 
     void genBlendArrayTexture();
     void recreateBlendArrayTexture();
@@ -147,7 +160,7 @@ private:
 
     void clearTexture(GLuint* texId);
 
-    void blit();
+    void copyTextures();
     void blend(ImageOperation* operation);
     void renderOperation(ImageOperation* operation);
     void render();

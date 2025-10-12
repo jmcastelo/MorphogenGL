@@ -424,7 +424,7 @@ void ConfigurationParser::readOperationNode(QMap<QUuid, QMap<QUuid, InputData*>>
                         }
                     }
 
-                    inputs.insert(srcId, new InputData(type, 0, blendFactor));
+                    inputs.insert(srcId, new InputData(type, nullptr, blendFactor));
                 }
             }
 

@@ -325,10 +325,8 @@ void PlotsWidget::setPixelRGB()
 {
     for (ColorPath &path : colorPaths)
     {
-        float rgb[3];
-        if (mRenderManager->rgbPixel(path.source(), rgb)) {
-            path.addPoint(rgb[0], rgb[1], rgb[2]);
-        }
+        QList<float> rgb = mRenderManager->rgbPixel(path.source());
+        path.addPoint(rgb[0], rgb[1], rgb[2]);
     }
 
     setVertices();
