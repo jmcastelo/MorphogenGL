@@ -139,7 +139,7 @@ void SeedWidget::setSeedType()
 
 void SeedWidget::loadSeedImage()
 {
-    QString filename = QFileDialog::getOpenFileName(this, "Load image", QDir::homePath(), "Images (*.bmp *.jpeg *.jpg *.png *.tif *.tiff)");
+    QString filename = QFileDialog::getOpenFileName(this->parentWidget(), "Load image", QDir::homePath(), "Images (*.bmp *.jpeg *.jpg *.png *.tif *.tiff)");
 
     if (!filename.isEmpty())
     {
