@@ -189,6 +189,33 @@ void ImageOperation::init(QOpenGLContext* context, QOffscreenSurface *surface)
 }
 
 
+
+void ImageOperation::render()
+{
+    if (mEnabled)
+    {
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, mOutTexId, 0);
+
+        glClear(GL_COLOR_BUFFER_BIT);
+
+        mProgram->bind();
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, inTextureId());
+
+        glBindSampler(0, mSamplerId);
+
+        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+        glBindSampler(0, 0);
+
+        glBindTexture(GL_TEXTURE_2D, 0);
+
+        mProgram->release();
+    }
+}
+
+
 QOpenGLShaderProgram* ImageOperation::program()
 {
     return mProgram;
@@ -263,70 +290,6 @@ bool ImageOperation::linkShaders()
 
 
 
-/*QString ImageOperation::posInAttribName() const
-{
-    return mPosInAttribName;
-}
-
-
-
-void ImageOperation::setPosInAttribName(QString name)
-{
-    mPosInAttribName = name;
-}
-
-
-
-QString ImageOperation::texInAttribName() const
-{
-    return mTexInAttribName;
-}
-
-
-
-void ImageOperation::setTexInAttribName(QString name)
-{
-    mTexInAttribName = name;
-}
-
-
-
-void ImageOperation::setInAttributes()
-{
-    mContext->makeCurrent(mSurface);
-
-    mProgram->bind();
-
-    // Vertex coordinates
-
-    mProgram->setAttributeBuffer(0, GL_FLOAT, 0, 2);
-    mProgram->enableAttributeArray(0);
-
-    // Texture coordinates
-
-    mProgram->setAttributeBuffer(1, GL_FLOAT, 0, 2);
-    mProgram->enableAttributeArray(1);
-
-    mProgram->release();
-
-    mContext->doneCurrent();
-}
-
-
-
-void ImageOperation::setOrthoName(QString name)
-{
-    mOrthoName = name;
-}
-
-
-
-void ImageOperation::enableOrtho(bool on)
-{
-    mOrthoEnabled = on;
-}*/
-
-
 void ImageOperation::adjustOrtho(GLfloat left, GLfloat right, GLfloat bottom, GLfloat top)
 {
     foreach (UniformMat4Parameter* parameter, mMat4UniformParameters)
@@ -334,22 +297,6 @@ void ImageOperation::adjustOrtho(GLfloat left, GLfloat right, GLfloat bottom, GL
         if (parameter->type() == UniformMat4Type::ORTHOGRAPHIC)
             parameter->setValues(QList<float> { left, right, bottom, top });
     }
-
-    /*if (mOrthoEnabled)
-    {
-        QMatrix4x4 transform;
-        transform.setToIdentity();
-        transform.ortho(left, right, bottom, top, -1.0, 1.0);
-
-        // mContext->makeCurrent(mSurface);
-
-        mProgram->bind();
-        int location = mProgram->uniformLocation(mOrthoName);
-        mProgram->setUniformValue(location, transform);
-        mProgram->release();
-
-        // mContext->doneCurrent();
-    }*/
 }
 
 
@@ -683,10 +630,12 @@ GLuint ImageOperation::blendOutTextureId()
 
 GLuint ImageOperation::inTextureId()
 {
-    if (pInputTexId)
+    if (pInputTexId) {
         return *pInputTexId;
-    else
+    }
+    else {
         return 0;
+    }
 }
 
 
@@ -925,43 +874,6 @@ Number<unsigned int>* ImageOperation::number(QUuid id)
 
     return nullptr;
 }
-
-
-/*void ImageOperation::genTextures(GLenum texFormat, GLuint width, GLuint height)
-{
-    // Allocated on immutable storage (glTexStorage2D)
-    // To be called within active OpenGL context
-
-    foreach (GLuint* texId, textureIds())
-    {
-        glGenTextures(1, texId);
-
-        glBindTexture(GL_TEXTURE_2D, *texId);
-
-        glTexStorage2D(GL_TEXTURE_2D, 1, texFormat, width, height);
-
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-        glBindTexture(GL_TEXTURE_2D, 0);
-    }
-
-    // Define texture contents, as opaque black
-
-    QList<GLubyte> zeros;
-    zeros.fill(0, width * height * 4);
-    for (unsigned int i = 0; i < width * height; ++i)
-        zeros[i * 4 + 3] = 255;
-
-    foreach (GLuint* texId, textureIds())
-    {
-        glBindTexture(GL_TEXTURE_2D, *texId);
-        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, zeros.constData());
-        glBindTexture(GL_TEXTURE_2D, 0);
-    }
-}*/
 
 
 

@@ -25,6 +25,7 @@
 #include "seed.h"
 
 #include <QFile>
+#include <QPainter>
 
 
 
@@ -288,9 +289,36 @@ void Seed::loadImage(QString filename)
 {
     QFile imageFile(filename);
 
-    if (imageFile.exists())
+    if (imageFile.exists()) {
+        mImage = QImage(filename).convertToFormat(QImage::Format_RGBA8888);
+        resizeImage();
+        mImageFilename = filename;
+    }
+}
+
+
+
+void Seed::resizeImage()
+{
+    if (!mImage.isNull())
     {
-        QImage image = QImage(filename).convertToFormat(QImage::Format_RGBA8888).scaled(mTexWidth, mTexHeight, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+        qreal sx = static_cast<qreal>(mTexWidth)  / mImage.width();
+        qreal sy = static_cast<qreal>(mTexHeight) / mImage.height();
+        qreal scale = qMin(1.0, qMin(sx, sy));
+
+        int displayWidth = qRound(mImage.width() * scale);
+        int displayHeight = qRound(mImage.height() * scale);
+
+        int offsetX = (mTexWidth  - displayWidth) / 2;
+        int offsetY = (mTexHeight - displayHeight) / 2;
+
+        QImage scaled = mImage.scaled(displayWidth, displayHeight, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+
+        QImage buffer(mTexWidth, mTexHeight, QImage::Format_RGBA8888);
+        buffer.fill(Qt::black);
+
+        QPainter painter(&buffer);
+        painter.drawImage(offsetX, offsetY, scaled);
 
         mContext->makeCurrent(mSurface);
 
@@ -298,13 +326,11 @@ void Seed::loadImage(QString filename)
 
         glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
-        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, mTexWidth, mTexHeight, GL_RGBA, GL_UNSIGNED_BYTE, image.constBits());
+        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, mTexWidth, mTexHeight, GL_RGBA, GL_UNSIGNED_BYTE, buffer.constBits());
 
         glBindTexture(GL_TEXTURE_2D, 0);
 
         mContext->doneCurrent();
-
-        mImageFilename = filename;
     }
 }
 
@@ -320,22 +346,7 @@ void Seed::setType(int type)
 {
     mType = type;
 
-    // if (mType == 0 || mType == 1)
-        // draw();
-
-    /*if (mFixed)
-    {
-        if (mType == 0 || mType == 1)
-            *pOutTexId = mRandomTexId;
-        else if (mType == 2)
-            *pOutTexId = mImageTexId;
-    }*/
-
     draw();
-
-
-    // setOutTextureId();
-    // setClearTexture();
 }
 
 
@@ -352,21 +363,6 @@ void Seed::setFixed(bool set)
     mFixed = set;
 
     setOutTextureId();
-
-    /*if (set)
-    {
-        // setOutTextureId();
-        if (mType == 0 || mType == 1)
-            *pOutTexId = mRandomTexId;
-        else if (mType == 2)
-            *pOutTexId = mImageTexId;
-    }*/
-    /*else
-    {
-        // mCleared = false;
-        // setClearTexture();
-        *pOutTexId = mClearTexId;
-    }*/
 }
 
 

@@ -59,6 +59,8 @@ public:
 
     void init(QOpenGLContext* context, QOffscreenSurface *surface);
 
+    void render();
+
     QOpenGLShaderProgram* program();
 
     QString vertexShader() const;
@@ -69,16 +71,6 @@ public:
 
     bool linkShaders();
 
-    // QString posInAttribName() const;
-    // void setPosInAttribName(QString name);
-
-    // QString texInAttribName() const;
-    // void setTexInAttribName(QString name);
-
-    // void setInAttributes();
-
-    // void setOrthoName(QString name);
-    // void enableOrtho(bool on);
     void adjustOrtho(GLfloat left, GLfloat right, GLfloat bottom, GLfloat top);
 
     template <typename T>
@@ -114,7 +106,6 @@ public:
     GLuint blendOutTextureId();
     GLuint inTextureId();
     GLuint* pOutTextureId();
-    // GLuint** ppOutTextureId();
 
     QList<GLuint*> textureIds();
 
@@ -122,8 +113,6 @@ public:
     void setBlitInTextureId();
 
     GLuint samplerId();
-
-    // void setTexSize(GLuint width, GLuint height);
 
     QList<GLuint*> inputTextures();
     QList<Number<float>*> inputBlendFactors();

@@ -72,6 +72,7 @@ public:
     void setFixed(bool set);
 
     QString imageFilename() const;
+    void resizeImage();
 
 private:
     int mType = 0;
@@ -79,6 +80,7 @@ private:
     bool mCleared = true;
 
     QString mImageFilename;
+    QImage mImage;
 
     QOpenGLContext* mContext;
     QOffscreenSurface* mSurface;

@@ -763,6 +763,7 @@ void RenderManager::resizeTextures()
     }
 
     foreach (Seed* seed, mFactory->seeds()) {
+        seed->resizeImage();
         seed->setOutTextureId();
     }
 
@@ -940,9 +941,11 @@ void RenderManager::render()
             blend(operation);
         }
 
-        if (operation->enabled()) {
+        /*if (operation->enabled()) {
             renderOperation(operation);
-        }
+        }*/
+
+        operation->render();
     }
 
     glBindVertexArray(0);
