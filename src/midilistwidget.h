@@ -18,6 +18,8 @@ public:
 
 signals:
     void portSelected(int port, bool state);
+    void multiLinkButtonChecked(bool checked);
+    void clearLinksButtonClicked();
 
 public slots:
     void populatePortsTable(QList<QString> portNames);

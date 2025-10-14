@@ -447,7 +447,7 @@ void ConfigurationParser::readOperationNode(QMap<QUuid, QMap<QUuid, InputData*>>
         }
     }
 
-    mFactory->addOperation(id, operation, mMidiLinkManager->enabled(), position);
+    mFactory->addOperation(id, operation, position);
 }
 
 

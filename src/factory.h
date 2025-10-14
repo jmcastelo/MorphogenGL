@@ -33,7 +33,7 @@ public:
 
     void addAvailableOperation(int index);
 
-    void addOperation(QUuid id, ImageOperation* operation, bool midiEnabled, QPointF position);
+    void addOperation(QUuid id, ImageOperation* operation, QPointF position);
     void addSeed(QUuid id, Seed* operation);
 
     ImageOperation* createReplaceOp(QUuid id, ImageOperation* oldOperation, int index);
@@ -63,10 +63,15 @@ signals:
 
     void cleared();
 
+public slots:
+    void setMidiEnabled(bool enabled);
+
 private:
     QList<ImageOperation*> mAvailOps;
     QList<ImageOperation*> mOperations;
     QList<Seed*> mSeeds;
+
+    bool mMidiEnabled = false;
 };
 
 

@@ -43,7 +43,7 @@ void Factory::createNewOperation()
     mOperations.append(operation);
     emit newOperationCreated(id, operation);
 
-    OperationWidget* widget = new OperationWidget(id, operation, false, true, this);
+    OperationWidget* widget = new OperationWidget(id, operation, mMidiEnabled, true, this);
     emit newOpWidgetCreated(widget);
     emit newOpWidgetCreated(id, widget);
 }
@@ -72,19 +72,19 @@ void Factory::addAvailableOperation(int index)
     mOperations.append(operation);
     emit newOperationCreated(id, operation);
 
-    OperationWidget* widget = new OperationWidget(id, operation, false, false, this);
+    OperationWidget* widget = new OperationWidget(id, operation, mMidiEnabled, false, this);
     emit newOpWidgetCreated(widget);
     emit newOpWidgetCreated(id, widget);
 }
 
 
 
-void Factory::addOperation(QUuid id, ImageOperation* operation, bool midiEnabled, QPointF position)
+void Factory::addOperation(QUuid id, ImageOperation* operation, QPointF position)
 {
     mOperations.append(operation);
     emit newOperationCreated(id, operation);
 
-    OperationWidget* widget = new OperationWidget(id, operation, midiEnabled, false, this);
+    OperationWidget* widget = new OperationWidget(id, operation, mMidiEnabled, false, this);
     emit newOpWidgetCreated(widget);
     emit newOpWidgetCreated(id, widget, position);
 }
@@ -111,6 +111,7 @@ ImageOperation* Factory::createReplaceOp(QUuid id, ImageOperation* oldOperation,
 
     return operation;
 }
+
 
 
 void Factory::deleteOperation(ImageOperation* operation)
@@ -247,4 +248,11 @@ void Factory::clear()
     mSeeds.clear();
 
     emit cleared();
+}
+
+
+
+void Factory::setMidiEnabled(bool enabled)
+{
+    mMidiEnabled = enabled;
 }

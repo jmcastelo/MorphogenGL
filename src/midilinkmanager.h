@@ -8,6 +8,7 @@
 
 #include <QObject>
 #include <QMap>
+#include <QMultiMap>
 #include <QUuid>
 #include <QString>
 
@@ -22,11 +23,9 @@ public:
 
     bool enabled();
 
-    QMap<QString, QMap<int, Number<float>*>> floatLinks();
-    QMap<QString, QMap<int, Number<int>*>> intLinks();
-    QMap<QString, QMap<int, Number<unsigned int>*>> uintLinks();
-
-    void clearLinks();
+    QMap<QString, QMultiMap<int, Number<float>*>> floatLinks();
+    QMap<QString, QMultiMap<int, Number<int>*>> intLinks();
+    QMap<QString, QMultiMap<int, Number<unsigned int>*>> uintLinks();
 
 signals:
     void midiEnabled(bool enabled);
@@ -43,18 +42,25 @@ public slots:
     void setupMidiLink(QString portName, int key, Number<int>* number);
     void setupMidiLink(QString portName, int key, Number<unsigned int>* number);
 
+    void clearLinks();
+    void setMultiLink(bool enabled);
+
 private:
     QMap<QUuid, MidiSignals*> mMidiSignalsMap;
 
-    QMap<QString, QMap<int, Number<float>*>> mFloatLinks;
-    QMap<QString, QMap<int, Number<int>*>> mIntLinks;
-    QMap<QString, QMap<int, Number<unsigned int>*>> mUintLinks;
+    QMap<QString, QMultiMap<int, Number<float>*>> mFloatLinks;
+    QMap<QString, QMultiMap<int, Number<int>*>> mIntLinks;
+    QMap<QString, QMultiMap<int, Number<unsigned int>*>> mUintLinks;
 
     Number<float>* mLinkingFloat = nullptr;
     Number<int>* mLinkingInt = nullptr;
     Number<unsigned int>* mLinkingUint = nullptr;
 
     QMap<QString, bool> mPortOpen;
+
+    bool mMultiLink = false;
+
+    void removeKey(int key);
 
     void setUpConnections(bool midiOn);
 

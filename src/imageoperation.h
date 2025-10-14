@@ -146,19 +146,6 @@ public:
     template <class T>
     Number<T>* number(QUuid id);
 
-    // void applyOperation();
-    // void blit();
-    // void clear();
-
-    //ImageOperation* clone() { return new ImageOperation(*this); }
-
-    //GLuint getFBO() { return fbo->getFBO(); }
-
-    //void resize() { blender->resize(); fbo->resize(); }
-
-    //QImage outputImage(){ return fbo->outputImage(); }
-    //void setTextureFormat(){ fbo->setTextureFormat(); }
-
 private:
     QString mName = "New Operation";
 
@@ -169,12 +156,6 @@ private:
 
     QString mVertexShader;
     QString mFragmentShader;
-
-    // QString mPosInAttribName;
-    // QString mTexInAttribName;
-
-    // bool mOrthoEnabled = false;
-    // QString mOrthoName;
 
     GLenum mMinMagFilter = GL_NEAREST;
     GLuint mSamplerId = 0;

@@ -57,7 +57,10 @@ MainWindow::MainWindow()
     connect(&midiControl, &MidiControl::inputPortOpen, &midiLinkManager, &MidiLinkManager::setupMidi);
     connect(&midiControl, &MidiControl::ccInputMessageReceived, &midiLinkManager, &MidiLinkManager::updateMidiLinks);
     connect(midiListWidget, &MidiListWidget::portSelected, &midiControl, &MidiControl::openPort);
+    connect(midiListWidget, &MidiListWidget::multiLinkButtonChecked, &midiLinkManager, &MidiLinkManager::setMultiLink);
+    connect(midiListWidget, &MidiListWidget::clearLinksButtonClicked, &midiLinkManager, &MidiLinkManager::clearLinks);
     connect(&midiLinkManager, &MidiLinkManager::midiEnabled, nodeManager, &NodeManager::midiEnabled);
+    connect(&midiLinkManager, &MidiLinkManager::midiEnabled, factory, &Factory::setMidiEnabled);
 
     midiControl.setInputPorts();
 
