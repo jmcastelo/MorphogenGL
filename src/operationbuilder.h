@@ -52,8 +52,6 @@ private:
     QString vertexShader;
     QString fragmentShader;
 
-    QList<QString> inAttribList;
-
     QList<QString> newParamList;
     QList<QString> paramList;
 
@@ -75,12 +73,11 @@ private:
     void populateParamContainers();
 
     bool linkProgram();
-    void parseInputAttributes();
+    bool parseInputAttributes();
+    bool parseSamplers();
     void parseUniforms();
 
     void addUniformParameter(QString uniformName, int uniformType, int numItems);
-
-    bool checkInputAttributes();
 
 private slots:
     void loadOperation();

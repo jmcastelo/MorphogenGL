@@ -3,6 +3,7 @@
     <operation name="Mask" enabled="1">
         <vertex_shader>I3ZlcnNpb24gMzMwIGNvcmUKCmxheW91dCAobG9jYXRpb24gPSAwKSBpbiB2ZWMyIHBvczsKbGF5b3V0IChsb2NhdGlvbiA9IDEpIGluIHZlYzIgdGV4OwoKdW5pZm9ybSBtYXQ0IHRyYW5zZm9ybTsKCm91dCB2ZWMyIHRleENvb3JkczsKCnZvaWQgbWFpbigpCnsKICAgIGdsX1Bvc2l0aW9uID0gdHJhbnNmb3JtICogdmVjNChwb3MsIDAuMCwgMS4wKTsKICAgIHRleENvb3JkcyA9IHRleDsKfQo=</vertex_shader>
         <fragment_shader>I3ZlcnNpb24gMzMwIGNvcmUKCmluIHZlYzIgdGV4Q29vcmRzOwpvdXQgdmVjNCBmcmFnQ29sb3I7Cgp1bmlmb3JtIHNhbXBsZXIyRCBpblRleHR1cmU7Cgp1bmlmb3JtIGZsb2F0IGlubmVyUmFkaXVzOwp1bmlmb3JtIGZsb2F0IG91dGVyUmFkaXVzOwoKdm9pZCBtYWluKCkKewogICAgaXZlYzIgdGV4U2l6ZSA9IHRleHR1cmVTaXplKGluVGV4dHVyZSwgMCk7CiAgICAKICAgIHZlYzIgc2NhbGUgPSB2ZWMyKDEuMCk7CgogICAgaWYgKHRleFNpemUueCA+PSB0ZXhTaXplLnkpIHsKICAgICAgICBzY2FsZS54ID0gZmxvYXQodGV4U2l6ZS54KSAvIGZsb2F0KHRleFNpemUueSk7CiAgICB9IGVsc2UgewogICAgICAgIHNjYWxlLnkgPSBmbG9hdCh0ZXhTaXplLnkpIC8gZmxvYXQodGV4U2l6ZS54KTsKICAgIH0KCiAgICBmbG9hdCByID0gZGlzdGFuY2UoKHRleENvb3JkcyAtIHZlYzIoMC41LCAwLjUpKSAqIHNjYWxlLCB2ZWMyKDAuMCkpOwoKICAgIGlmIChyIDwgaW5uZXJSYWRpdXMgfHwgciA+IG91dGVyUmFkaXVzKQogICAgICAgIGZyYWdDb2xvciA9IHZlYzQoMC4wLCAwLjAsIDAuMCwgMS4wKTsKICAgIGVsc2UKICAgICAgICBmcmFnQ29sb3IgPSB0ZXh0dXJlKGluVGV4dHVyZSwgdGV4Q29vcmRzKTsKfQo=</fragment_shader>
+        <sampler2d>inTexture</sampler2d>
         <parameter name="Inner radius" type="float_uniform" editable="1" row="0" column="0">
             <uniform name="innerRadius" type="5126" numitems="1">
                 <number inf="0" sup="1" min="0" max="1">0</number>

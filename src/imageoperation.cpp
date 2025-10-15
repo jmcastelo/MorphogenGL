@@ -200,8 +200,26 @@ void ImageOperation::render()
 
         mProgram->bind();
 
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, inTextureId());
+        GLuint unit = 0;
+
+        // Bind input texture unit and set sampler2D to unit
+
+        if (mSampler2DAvailable)
+        {
+            glBindTextureUnit(unit, inTextureId());
+            int location = mProgram->uniformLocation(mSampler2DName);
+            glUniform1i(location, unit);
+            unit++;
+        }
+
+        // Bind input texture unit and set sampler2DArray to unit
+
+        if (mSampler2DArrayAvailable)
+        {
+            glBindTextureUnit(unit, mArrayTexId);
+            int location = mProgram->uniformLocation(mSampler2DArrayName);
+            glUniform1i(location, unit);
+        }
 
         glBindSampler(0, mSamplerId);
 
@@ -661,11 +679,17 @@ QList<GLuint*> ImageOperation::textureIds()
 
 
 
-/*void ImageOperation::setTexSize(GLuint width, GLuint height)
+GLuint* ImageOperation::arrayTextureId()
 {
-    mTexWidth = width;
-    mTexHeight = height;
-}*/
+    return &mArrayTexId;
+}
+
+
+
+GLsizei ImageOperation::arrayTextureDepth()
+{
+    return mArrayTexDepth;
+}
 
 
 
@@ -679,6 +703,62 @@ QList<GLuint*> ImageOperation::inputTextures()
 QList<Number<float>*> ImageOperation::inputBlendFactors()
 {
     return mInputBlendFactors;
+}
+
+
+
+bool ImageOperation::sampler2DAvail() const
+{
+    return mSampler2DAvailable;
+}
+
+
+
+void ImageOperation::setSampler2DAvail(bool available)
+{
+    mSampler2DAvailable = available;
+}
+
+
+
+QString ImageOperation::sampler2DName() const
+{
+    return mSampler2DName;
+}
+
+
+
+void ImageOperation::setSampler2DName(QString name)
+{
+    mSampler2DName = name;
+}
+
+
+
+bool ImageOperation::sampler2DArrayAvail() const
+{
+    return mSampler2DArrayAvailable;
+}
+
+
+
+void ImageOperation::setSampler2DArrayAvail(bool available)
+{
+    mSampler2DArrayAvailable = available;
+}
+
+
+
+QString ImageOperation::sampler2DArrayName() const
+{
+    return mSampler2DArrayName;
+}
+
+
+
+void ImageOperation::setSampler2DArrayName(QString name)
+{
+    mSampler2DArrayName = name;
 }
 
 

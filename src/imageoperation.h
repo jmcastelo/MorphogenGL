@@ -32,7 +32,7 @@
 #include "parameters/uniformmat4parameter.h"
 #include "parameters/optionsparameter.h"
 
-#include <QOpenGLExtraFunctions>
+#include <QOpenGLFunctions_4_5_Core>
 #include <QOpenGLContext>
 #include <QOffscreenSurface>
 #include <QOpenGLShaderProgram>
@@ -49,7 +49,7 @@
 
 
 
-class ImageOperation : protected QOpenGLExtraFunctions
+class ImageOperation : protected QOpenGLFunctions_4_5_Core
 {
 public:
     ImageOperation();
@@ -109,6 +109,9 @@ public:
 
     QList<GLuint*> textureIds();
 
+    GLuint* arrayTextureId();
+    GLsizei arrayTextureDepth();
+
     void setOutTextureId();
     void setBlitInTextureId();
 
@@ -116,6 +119,18 @@ public:
 
     QList<GLuint*> inputTextures();
     QList<Number<float>*> inputBlendFactors();
+
+    bool sampler2DAvail() const;
+    void setSampler2DAvail(bool available);
+
+    QString sampler2DName() const;
+    void setSampler2DName(QString name);
+
+    bool sampler2DArrayAvail() const;
+    void setSampler2DArrayAvail(bool available);
+
+    QString sampler2DArrayName() const;
+    void setSampler2DArrayName(QString name);
 
     template <typename T>
     QList<UniformParameter<T>*> uniformParameters();
@@ -176,10 +191,15 @@ private:
     GLuint* pInputTexId = nullptr;
     GLuint* pBlitInTexId = nullptr;
     GLuint* pOutTexId = nullptr;
-    // GLuint** ppOutTexId = nullptr;
 
-    // GLuint mTexWidth;
-    // GLuint mTexHeight;
+    GLuint mArrayTexId = 0;
+    GLsizei mArrayTexDepth = 10;
+
+    QString mSampler2DName;
+    QString mSampler2DArrayName;
+
+    bool mSampler2DAvailable = false;
+    bool mSampler2DArrayAvailable = false;
 
     QList<UniformParameter<float>*> floatUniformParameters;
     QList<UniformParameter<int>*> intUniformParameters;
@@ -189,7 +209,6 @@ private:
 
     QList<OptionsParameter<GLenum>*> glenumOptionsParameters;
 
-    // void genTextures(GLenum texFormat, GLuint width, GLuint height);
     void setMinMagFilter(GLenum filter);
 };
 

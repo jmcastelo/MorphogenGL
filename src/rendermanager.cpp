@@ -90,7 +90,8 @@ void RenderManager::init(QOpenGLContext* shareContext)
     if (mMaxArrayTexLayers > mNumArrayTexLayers)
         mMaxArrayTexLayers = mNumArrayTexLayers;
 
-    genBlendArrayTexture();
+    // genBlendArrayTexture();
+    genArrayTexture(&mBlendArrayTexId, mNumArrayTexLayers);
 
     // Shader program
 
@@ -173,6 +174,7 @@ void RenderManager::iterate()
         mContext->makeCurrent(mSurface);
 
         copyTextures();
+        cyclicCopyArrayTextures();
         render();
 
         mContext->doneCurrent();
@@ -469,7 +471,15 @@ void RenderManager::resize(GLuint width, GLuint height)
         glViewport(0, 0, mTexWidth, mTexHeight);
 
         resizeTextures();
-        recreateBlendArrayTexture();
+        // recreateBlendArrayTexture();
+        recreateArrayTexture(&mBlendArrayTexId, mBlendArrayTexId);
+
+        foreach (ImageOperation* operation, mFactory->operations())
+        {
+            if (operation->sampler2DArrayAvail()) {
+                recreateArrayTexture(operation->arrayTextureId(), operation->arrayTextureDepth());
+            }
+        }
 
         mContext->doneCurrent();
 
@@ -494,7 +504,6 @@ void RenderManager::initOperation(QUuid id, ImageOperation* operation)
     operation->linkShaders();
     operation->setAllParameters();
     genOpTextures(operation);
-
 }
 
 
@@ -702,6 +711,10 @@ void RenderManager::genOpTextures(ImageOperation* operation)
         clearTexture(texId);
     }
 
+    if (operation->sampler2DArrayAvail()) {
+        genArrayTexture(operation->arrayTextureId(), operation->arrayTextureDepth());
+    }
+
     mContext->doneCurrent();
 }
 
@@ -714,6 +727,24 @@ void RenderManager::genBlendArrayTexture()
     glBindTexture(GL_TEXTURE_2D_ARRAY, mBlendArrayTexId);
 
     glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, static_cast<GLenum>(mTexFormat), mTexWidth, mTexHeight, mMaxArrayTexLayers);
+
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
+}
+
+
+
+void RenderManager::genArrayTexture(GLuint* arrayTexId, GLsizei arrayTexDepth)
+{
+    glGenTextures(1, arrayTexId);
+
+    glBindTexture(GL_TEXTURE_2D_ARRAY, *arrayTexId);
+
+    glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, static_cast<GLenum>(mTexFormat), mTexWidth, mTexHeight, arrayTexDepth);
 
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -788,7 +819,38 @@ void RenderManager::recreateBlendArrayTexture()
 {
     glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
     glDeleteTextures(1, &mBlendArrayTexId);
-    genBlendArrayTexture();
+    // genBlendArrayTexture();
+    genArrayTexture(&mBlendArrayTexId, mNumArrayTexLayers);
+}
+
+
+
+void RenderManager::recreateArrayTexture(GLuint* arrayTexId, GLsizei arrayTexDepth)
+{
+    glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
+    glDeleteTextures(1, arrayTexId);
+    genArrayTexture(arrayTexId, arrayTexDepth);
+}
+
+
+
+void RenderManager::cyclicCopyArrayTextures()
+{
+    foreach (ImageOperation* operation, mSortedOperations)
+    {
+        if (operation->sampler2DArrayAvail())
+        {
+            // Shift layers back by copying
+
+            for (GLint z = operation->arrayTextureDepth() - 2; z >= 0; z--) {
+                glCopyImageSubData(*operation->arrayTextureId(), GL_TEXTURE_2D_ARRAY, 0, 0, 0, z, *operation->arrayTextureId(), GL_TEXTURE_2D_ARRAY, 0, 0, 0, z + 1, mTexWidth, mTexHeight, 1);
+            }
+
+            // Copy output texture to first layer
+
+            glCopyImageSubData(operation->outTextureId(), GL_TEXTURE_2D, 0, 0, 0, 0, *operation->arrayTextureId(), GL_TEXTURE_2D_ARRAY, 0, 0, 0, 0, mTexWidth, mTexHeight, 1);
+        }
+    }
 }
 
 
@@ -940,10 +1002,6 @@ void RenderManager::render()
         if (operation->blendEnabled()) {
             blend(operation);
         }
-
-        /*if (operation->enabled()) {
-            renderOperation(operation);
-        }*/
 
         operation->render();
     }

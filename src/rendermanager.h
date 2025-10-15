@@ -33,7 +33,6 @@
 #include "factory.h"
 
 #include <QObject>
-// #include <QOpenGLExtraFunctions>
 #include <QOpenGLFunctions_4_5_Core>
 #include <QOpenGLContext>
 #include <QOffscreenSurface>
@@ -51,11 +50,6 @@ public:
     ~RenderManager();
 
     void init(QOpenGLContext* shareContext);
-
-    // Seed* createNewSeed();
-    // void deleteSeed(Seed* seed);
-
-    // ImageOperation* createNewOperation();
 
     bool active() const;
     void setActive(bool set);
@@ -156,7 +150,12 @@ private:
 
     void genBlendArrayTexture();
     void recreateBlendArrayTexture();
-    void copyTexturesToBlendArrayTexture(QList<GLuint *> textures);
+    void copyTexturesToBlendArrayTexture(QList<GLuint*> textures);
+
+    void genArrayTexture(GLuint* arrayTexId, GLsizei arrayTexDepth);
+    void recreateArrayTexture(GLuint* arrayTexId, GLsizei arrayTexDepth);
+
+    void cyclicCopyArrayTextures();
 
     void clearTexture(GLuint* texId);
 

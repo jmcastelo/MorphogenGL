@@ -8,7 +8,7 @@
 
 
 GridWidget::GridWidget(QWidget *parent) :
-    QWidget{parent}
+    QWidget { parent }
 {
     gridLayout = new QGridLayout;
     gridLayout->setSizeConstraint(QLayout::SetMinAndMaxSize);
@@ -65,11 +65,13 @@ void GridWidget::computeMinWidgetSize()
     {
         QRect itemRect = gridLayout->itemAt(index)->widget()->geometry();
 
-        if (minWidgetWidth < 0 || itemRect.width() < minWidgetWidth)
+        if (minWidgetWidth < 0 || itemRect.width() < minWidgetWidth) {
             minWidgetWidth = itemRect.width();
+        }
 
-        if (minWidgetHeight < 0 || itemRect.height() < minWidgetHeight)
+        if (minWidgetHeight < 0 || itemRect.height() < minWidgetHeight) {
             minWidgetHeight = itemRect.height();
+        }
     }
 }
 
@@ -228,8 +230,9 @@ int GridWidget::getMaxCol()
             int row, col, rowSpan, colSpan;
             gridLayout->getItemPosition(index, &row, &col, &rowSpan, &colSpan);
 
-            if (col + colSpan - 1 > maxCol)
+            if (col + colSpan - 1 > maxCol) {
                 maxCol = col + colSpan - 1;
+            }
         }
     }
 
@@ -248,15 +251,19 @@ void GridWidget::moveItem(QLayoutItem* item, int deltaRow, int deltaCol)
         gridLayout->getItemPosition(index, &row, &col, &rowSpan, &colSpan);
 
         int newRow = row + deltaRow;
-        if (newRow < 0)
+        if (newRow < 0) {
             newRow = 0;
+        }
 
         int newCol = col + deltaCol;
-        if (newCol < 0)
+        if (newCol < 0) {
             newCol = 0;
+        }
 
         gridLayout->removeItem(item);
         gridLayout->addItem(item, newRow, newCol, rowSpan, colSpan, Qt::AlignCenter);
+
+        item->widget()->show();
 
         setRowColSizes();
 
@@ -410,8 +417,9 @@ void GridWidget::dragMoveEvent(QDragMoveEvent *event)
             for (int colSpan = 0; colSpan < sourceColSpan; colSpan++)
             {
                 QLayoutItem* item = gridLayout->itemAtPosition(sourceRow + rowSpan + deltaRow, sourceCol + colSpan + deltaCol);
-                if (item && item != sourceItem)
+                if (item && item != sourceItem) {
                     targetEmpty = false;
+                }
             }
         }
 

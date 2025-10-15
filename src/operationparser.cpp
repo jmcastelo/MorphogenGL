@@ -14,50 +14,53 @@ OperationParser::OperationParser(){}
 void OperationParser::write(ImageOperation *operation, QString filename, bool writeIds)
 {
     QFile outFile(filename);
-    outFile.open(QIODevice::WriteOnly);
+    if (outFile.open(QIODevice::WriteOnly))
+    {
+        QXmlStreamWriter mStream;
+        mStream.setDevice(&outFile);
+        mStream.setAutoFormatting(true);
 
-    QXmlStreamWriter mStream;
-    mStream.setDevice(&outFile);
-    mStream.setAutoFormatting(true);
+        mStream.writeStartDocument();
 
-    mStream.writeStartDocument();
+        mStream.writeStartElement("fosforo");
 
-    mStream.writeStartElement("fosforo");
+        writeOperation(operation, mStream, writeIds);
 
-    writeOperation(operation, mStream, writeIds);
+        mStream.writeEndElement();
 
-    mStream.writeEndElement();
+        mStream.writeEndDocument();
 
-    mStream.writeEndDocument();
-
-    outFile.close();
+        outFile.close();
+    }
 }
 
 
 
 bool OperationParser::read(ImageOperation* operation, QString filename, bool readIds)
 {
-    QFile inFile(filename);
-    inFile.open(QIODevice::ReadOnly);
-
-    QXmlStreamReader mStream;
-    mStream.setDevice(&inFile);
-
     bool success = false;
 
-    if (mStream.readNextStartElement() && mStream.name() == "fosforo")
+    QFile inFile(filename);
+    if (inFile.open(QIODevice::ReadOnly))
     {
-        mStream.readNextStartElement();
-        success = readOperation(operation, mStream, readIds);
+
+        QXmlStreamReader mStream;
+        mStream.setDevice(&inFile);
+
+        if (mStream.readNextStartElement() && mStream.name() == "fosforo")
+        {
+            mStream.readNextStartElement();
+            success = readOperation(operation, mStream, readIds);
+        }
+
+        if (mStream.tokenType() == QXmlStreamReader::Invalid)
+            mStream.readNext();
+
+        if (mStream.hasError())
+            mStream.raiseError();
+
+        inFile.close();
     }
-
-    if (mStream.tokenType() == QXmlStreamReader::Invalid)
-        mStream.readNext();
-
-    if (mStream.hasError())
-        mStream.raiseError();
-
-    inFile.close();
 
     return success;
 }
@@ -83,19 +86,21 @@ void OperationParser::writeOperation(ImageOperation *operation, QXmlStreamWriter
     stream.writeCharacters(QString::fromUtf8(operation->fragmentShader().toUtf8().toBase64()));
     stream.writeEndElement();
 
-    // In attributes
+    // Sampler2D and Sampler2DArray
 
-    /*stream.writeStartElement("input_attributes");
+    if (operation->sampler2DAvail())
+    {
+        stream.writeStartElement("sampler2d");
+        stream.writeCharacters(operation->sampler2DName());
+        stream.writeEndElement();
+    }
 
-    stream.writeStartElement("position");
-    stream.writeCharacters(operation->posInAttribName());
-    stream.writeEndElement();
-
-    stream.writeStartElement("texture");
-    stream.writeCharacters(operation->texInAttribName());
-    stream.writeEndElement();
-
-    stream.writeEndElement();*/
+    if (operation->sampler2DArrayAvail())
+    {
+        stream.writeStartElement("sampler2darray");
+        stream.writeCharacters(operation->sampler2DArrayName());
+        stream.writeEndElement();
+    }
 
     // Parameters
 
@@ -126,50 +131,33 @@ bool OperationParser::readOperation(ImageOperation* operation, QXmlStreamReader&
         operation->setName(name);
         operation->enable(enabled);
 
+        operation->setSampler2DAvail(false);
+        operation->setSampler2DArrayAvail(false);
+
         while (stream.readNextStartElement())
         {
             if (stream.name() == "vertex_shader")
             {
                 QString vertexShader = QString::fromUtf8(QByteArray::fromBase64(stream.readElementText().toUtf8()));
                 operation->setVertexShader(vertexShader);
-
-                /*if (!vertexShader.isEmpty() && !fragmentShader.isEmpty())
-                    if (!operation->setShadersFromSourceCode(vertexShader, fragmentShader))
-                    {
-                        stream.raiseError("GLSL Shaders error");
-                        return false;
-                    }*/
             }
             else if (stream.name() == "fragment_shader")
             {
                 QString fragmentShader = QString::fromUtf8(QByteArray::fromBase64(stream.readElementText().toUtf8()));
                 operation->setFragmentShader(fragmentShader);
-
-                /*if (!vertexShader.isEmpty() && !fragmentShader.isEmpty())
-                    if (!operation->setShadersFromSourceCode(vertexShader, fragmentShader))
-                    {
-                        stream.raiseError("GLSL Shaders error");
-                        return false;
-                    }*/
             }
-            /*else if (stream.name() == "input_attributes")
+            else if (stream.name() == "sampler2d")
             {
-                while (stream.readNextStartElement())
-                {
-                    if (stream.name() == "position")
-                    {
-                        QString posInAttribName = stream.readElementText();
-                        operation->setPosInAttribName(posInAttribName);
-                    }
-                    else if (stream.name() == "texture")
-                    {
-                        QString texInAttribName = stream.readElementText();
-                        operation->setTexInAttribName(texInAttribName);
-                    }
-                    else
-                        stream.skipCurrentElement();
-                }
-            }*/
+                QString sampler2DName = stream.readElementText();
+                operation->setSampler2DName(sampler2DName);
+                operation->setSampler2DAvail(true);
+            }
+            else if (stream.name() == "sampler2darray")
+            {
+                QString sampler2DArrayName = stream.readElementText();
+                operation->setSampler2DArrayName(sampler2DArrayName);
+                operation->setSampler2DArrayAvail(true);
+            }
             else if (stream.name() == "parameter")
             {
                 QString paramType = stream.attributes().value("type").toString();
@@ -185,11 +173,10 @@ bool OperationParser::readOperation(ImageOperation* operation, QXmlStreamReader&
                 else if (paramType == "options")
                     readOptionsParameters(operation, stream);
             }
-            else
+            else {
                 stream.skipCurrentElement();
+            }
         }
-
-        //operation->setInAttributes();
 
         return true;
     }
@@ -379,10 +366,12 @@ void OperationParser::readParameters(ImageOperation* operation, QXmlStreamReader
 
     UniformParameter<T>* parameter = nullptr;
 
-    if (readIds)
+    if (readIds) {
         parameter = new UniformParameter<T>(paramName, uniformName, uniformType, numItems, editable, ids, values, mins, maxs, infs, sups, operation);
-    else
+    }
+    else {
         parameter = new UniformParameter<T>(paramName, uniformName, uniformType, numItems, editable, values, mins, maxs, infs, sups, operation);
+    }
 
     parameter->setPresets(presets);
 
@@ -390,8 +379,6 @@ void OperationParser::readParameters(ImageOperation* operation, QXmlStreamReader
     parameter->setCol(col);
 
     operation->addUniformParameter<T>(parameter);
-
-    //parameter->setUniform();
 }
 
 
@@ -542,10 +529,12 @@ void OperationParser::readMat4Parameters(ImageOperation* operation, QXmlStreamRe
 
     UniformMat4Parameter* parameter = nullptr;
 
-    if (readIds)
+    if (readIds) {
         parameter = new UniformMat4Parameter(paramName, uniformName, editable, mat4Type, ids, values, mins, maxs, infs, sups, operation);
-    else
+    }
+    else {
         parameter = new UniformMat4Parameter(paramName, uniformName, editable, mat4Type, values, mins, maxs, infs, sups, operation);
+    }
 
     parameter->setPresets(presets);
 
@@ -616,6 +605,4 @@ void OperationParser::readOptionsParameters(ImageOperation* operation, QXmlStrea
     parameter->setCol(col);
 
     operation->addOptionsParameter<GLenum>(parameter);
-
-    //parameter->setValue();
 }

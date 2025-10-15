@@ -379,7 +379,22 @@ void OperationBuilder::parseShaders()
     if (linkProgram())
     {
         parseUniforms();
-        parseInputAttributes();
+
+        bool success = true;
+
+        if (!parseSamplers()) {
+            QString message = "You may specify a sampler2D and/or a sampler2DArray in the fragment shader, corresponding to the input texture and/or imput array texture.";
+            QMessageBox::information(this, "Samplers error", message);
+            success = false;
+        }
+
+        if (!parseInputAttributes()) {
+            QString message = "Exactly two active vec2 input attributes must be specified in the vertex shader, corresponding to the 2D vertex position (location 0) and texture coordinates (location 1).";
+            QMessageBox::information(this, "Input attributes error", message);
+            success = false;
+        }
+
+        setupOpAction->setEnabled(success);
     }
 }
 
@@ -410,9 +425,9 @@ bool OperationBuilder::linkProgram()
 
 
 
-void OperationBuilder::parseInputAttributes()
+bool OperationBuilder::parseInputAttributes()
 {
-    QList<QString> newInAttribList;
+    QList<QString> inAttribList;
 
     mProgram->bind();
 
@@ -433,28 +448,89 @@ void OperationBuilder::parseInputAttributes()
         int attributeType = values.at(1);
         int numItems = values.at(2);
 
-        if (attributeType == GL_FLOAT_VEC2 && numItems == 1)
-            newInAttribList.append(attributeName);
+        if (attributeType == GL_FLOAT_VEC2 && numItems == 1) {
+            inAttribList.append(attributeName);
+        }
     }
 
     mProgram->release();
 
-    if (newInAttribList != inAttribList)
-    {
-        inAttribList = newInAttribList;
+    return (inAttribList.size() == 2);
+}
 
-        if (checkInputAttributes()) {
-            setupOpAction->setEnabled(true);
-        }
-        else
+
+
+bool OperationBuilder::parseSamplers()
+{
+    int numSampler2D = 0;
+    int numSampler2DArray = 0;
+
+    QString sampler2DName;
+    QString sampler2DArrayName;
+
+    mProgram->bind();
+
+    GLint numUniforms;
+    glGetProgramInterfaceiv(mProgram->programId(), GL_UNIFORM, GL_ACTIVE_RESOURCES, &numUniforms);
+
+    for (GLint index = 0; index < numUniforms; index++)
+    {
+        QList<GLenum> properties = { GL_NAME_LENGTH, GL_TYPE, GL_ARRAY_SIZE };
+        QList<GLint> values(properties.size());
+
+        glGetProgramResourceiv(mProgram->programId(), GL_UNIFORM, index, properties.size(), properties.data(), values.size(), NULL, values.data());
+
+        QList<GLchar> name(values.at(0));
+        glGetProgramResourceName(mProgram->programId(), GL_UNIFORM, index, name.size(), nullptr, name.data());
+
+        QString uniformName(name.constData());
+        int uniformType = values.at(1);
+        int numItems = values.at(2);
+
+        if (uniformType == GL_SAMPLER_2D && numItems == 1)
         {
-            inAttribList.clear();
-            setupOpAction->setEnabled(false);
+            sampler2DName = uniformName;
+            numSampler2D++;
+        }
+        else if (uniformType == GL_SAMPLER_2D_ARRAY && numItems == 1)
+        {
+            sampler2DArrayName = uniformName;
+            numSampler2DArray++;
         }
     }
-    else {
-        setupOpAction->setEnabled(true);
+
+    mProgram->release();
+
+    bool success = ((numSampler2D == 1 && numSampler2DArray == 0) || (numSampler2D == 0 && numSampler2DArray == 1) || (numSampler2D == 1 && numSampler2DArray == 1));
+
+    if (success)
+    {
+        if (numSampler2D == 1) {
+            mOperation->setSampler2DName(sampler2DName);
+        }
+        else {
+            mOperation->setSampler2DName("");
+        }
+        mOperation->setSampler2DAvail(numSampler2D == 1);
+
+        if (numSampler2DArray == 1) {
+            mOperation->setSampler2DArrayName(sampler2DArrayName);
+        }
+        else {
+            mOperation->setSampler2DArrayName("");
+        }
+        mOperation->setSampler2DArrayAvail(numSampler2DArray == 1);
     }
+    else
+    {
+        mOperation->setSampler2DName("");
+        mOperation->setSampler2DAvail(false);
+
+        mOperation->setSampler2DArrayName("");
+        mOperation->setSampler2DArrayAvail(false);
+    }
+
+    return success;
 }
 
 
@@ -578,20 +654,6 @@ void OperationBuilder::addUniformParameter(QString uniformName, int uniformType,
 
     if (parameter)
         newParamList.append(uniformName);
-}
-
-
-
-bool OperationBuilder::checkInputAttributes()
-{
-    if (inAttribList.size() != 2)
-    {
-        QString message = "Exactly two active vec2 input attributes must be specified in the vertex shader, corresponding to the 2D vertex position (location 0) and texture coordinates (location 1).";
-        QMessageBox::information(this, "Input attributes error", message);
-        return false;
-    }
-
-    return true;
 }
 
 
