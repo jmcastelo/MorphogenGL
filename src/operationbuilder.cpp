@@ -427,7 +427,7 @@ bool OperationBuilder::linkProgram()
 
 bool OperationBuilder::parseInputAttributes()
 {
-    QList<QString> inAttribList;
+    int numVec2InAttribs = 0;
 
     mProgram->bind();
 
@@ -436,26 +436,22 @@ bool OperationBuilder::parseInputAttributes()
 
     for (GLint index = 0; index < numAttributes; index++)
     {
-        QList<GLenum> properties = { GL_NAME_LENGTH, GL_TYPE, GL_ARRAY_SIZE };
+        QList<GLenum> properties = { GL_TYPE, GL_ARRAY_SIZE };
         QList<GLint> values(properties.size());
 
         glGetProgramResourceiv(mProgram->programId(), GL_PROGRAM_INPUT, index, properties.size(), properties.data(), values.size(), NULL, values.data());
 
-        QList<GLchar> name(values.at(0));
-        glGetProgramResourceName(mProgram->programId(), GL_PROGRAM_INPUT, index, name.size(), nullptr, name.data());
-
-        QString attributeName(name.constData());
-        int attributeType = values.at(1);
-        int numItems = values.at(2);
+        int attributeType = values.at(0);
+        int numItems = values.at(1);
 
         if (attributeType == GL_FLOAT_VEC2 && numItems == 1) {
-            inAttribList.append(attributeName);
+            numVec2InAttribs++;
         }
     }
 
     mProgram->release();
 
-    return (inAttribList.size() == 2);
+    return (numVec2InAttribs == 2);
 }
 
 

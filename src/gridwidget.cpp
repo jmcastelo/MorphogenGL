@@ -8,7 +8,7 @@
 
 
 GridWidget::GridWidget(QWidget *parent) :
-    QWidget { parent }
+    QFrame { parent }
 {
     gridLayout = new QGridLayout;
     gridLayout->setSizeConstraint(QLayout::SetMinAndMaxSize);
@@ -17,6 +17,32 @@ GridWidget::GridWidget(QWidget *parent) :
 
     setAcceptDrops(false);
     setLayout(gridLayout);
+
+    setFrameShape(QFrame::Box);
+    setFrameShadow(QFrame::Raised);
+    setMidLineWidth(1);
+    setLineWidth(1);
+}
+
+
+
+void GridWidget::setEditMode(bool editMode)
+{
+    setAcceptDrops(editMode);
+
+    if (editMode)
+    {
+        int left = margin;
+        int right = minWidgetWidth > 0 ? minWidgetWidth : margin;
+        int top = margin;
+        int bottom = minWidgetHeight > 0 ? minWidgetHeight : margin;
+
+        gridLayout->setContentsMargins(left, top, right, bottom);
+    }
+    else
+    {
+        gridLayout->setContentsMargins(margin, margin, margin, margin);
+    }
 }
 
 
@@ -262,8 +288,6 @@ void GridWidget::moveItem(QLayoutItem* item, int deltaRow, int deltaCol)
 
         gridLayout->removeItem(item);
         gridLayout->addItem(item, newRow, newCol, rowSpan, colSpan, Qt::AlignCenter);
-
-        item->widget()->show();
 
         setRowColSizes();
 

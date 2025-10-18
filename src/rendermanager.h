@@ -148,14 +148,12 @@ private:
 
     void blitTextures(GLuint srcTexId, GLuint srcTexWidth, GLuint srcTexHeight, GLuint newTexId, GLuint dstTexWidth, GLuint dstTexHeight);
 
-    void genBlendArrayTexture();
-    void recreateBlendArrayTexture();
     void copyTexturesToBlendArrayTexture(QList<GLuint*> textures);
 
     void genArrayTexture(GLuint* arrayTexId, GLsizei arrayTexDepth);
     void recreateArrayTexture(GLuint* arrayTexId, GLsizei arrayTexDepth);
 
-    void cyclicCopyArrayTextures();
+    void shiftCopyArrayTextures();
 
     void clearTexture(GLuint* texId);
 

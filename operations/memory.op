@@ -2,16 +2,16 @@
 <fosforo>
     <operation name="Memory" enabled="0">
         <vertex_shader>I3ZlcnNpb24gMzMwIGNvcmUKCmxheW91dChsb2NhdGlvbiA9IDApIGluIHZlYzIgcG9zOwpsYXlvdXQobG9jYXRpb24gPSAxKSBpbiB2ZWMyIHRleDsKCm91dCB2ZWMyIHRleENvb3JkczsKCnZvaWQgbWFpbigpCnsKICAgIGdsX1Bvc2l0aW9uID0gdmVjNChwb3MsIDAuMCwgMS4wKTsKICAgIHRleENvb3JkcyA9IHRleDsKfQo=</vertex_shader>
-        <fragment_shader>I3ZlcnNpb24gMzMwIGNvcmUKCmluIHZlYzIgdGV4Q29vcmRzOwpvdXQgdmVjNCBmcmFnQ29sb3I7Cgp1bmlmb3JtIHNhbXBsZXIyRCBpblRleHR1cmU7CnVuaWZvcm0gc2FtcGxlcjJEQXJyYXkgaW5BcnJheVRleDsKCnVuaWZvcm0gZmxvYXQgZGVjYXk7CnVuaWZvcm0gZmxvYXQgYmxlbmQ7Cgp2b2lkIG1haW4oKQp7CiAgICB2ZWMzIHNyY0NvbG9yID0gdGV4dHVyZShpblRleHR1cmUsIHRleENvb3JkcykucmdiOwogICAgdmVjMyBkc3RDb2xvciA9IHNyY0NvbG9yOwoKICAgIGludCBsYXllckNvdW50ID0gdGV4dHVyZVNpemUoaW5BcnJheVRleCwgMCkuejsKCiAgICBmbG9hdCBmYWN0b3IgPSAxLjA7CgogICAgZm9yIChpbnQgaSA9IDA7IGkgPCBsYXllckNvdW50OyBpKyspIHsKICAgICAgICB2ZWMzIGxheWVyQ29sb3IgPSBmYWN0b3IgKiB0ZXh0dXJlKGluQXJyYXlUZXgsIHZlYzModGV4Q29vcmRzLCBmbG9hdChpKSkpLnJnYjsKICAgICAgICBkc3RDb2xvciA9IG1peChkc3RDb2xvciwgbGF5ZXJDb2xvciwgYmxlbmQpOwogICAgICAgIGZhY3RvciAqPSBkZWNheTsKICAgIH0KICAgIGZyYWdDb2xvciA9IHZlYzQoZHN0Q29sb3IsIDEuMCk7Cn0K</fragment_shader>
+        <fragment_shader>I3ZlcnNpb24gMzMwIGNvcmUKCmluIHZlYzIgdGV4Q29vcmRzOwpvdXQgdmVjNCBmcmFnQ29sb3I7Cgp1bmlmb3JtIHNhbXBsZXIyRCBpblRleHR1cmU7CnVuaWZvcm0gc2FtcGxlcjJEQXJyYXkgaW5BcnJheVRleDsKCnVuaWZvcm0gZmxvYXQgZGVjYXk7CnVuaWZvcm0gZmxvYXQgb3BhY2l0eTsKCnZvaWQgbWFpbigpCnsKICAgIHZlYzMgc3JjQ29sb3IgPSB0ZXh0dXJlKGluVGV4dHVyZSwgdGV4Q29vcmRzKS5yZ2I7CiAgICB2ZWMzIGRzdENvbG9yID0gc3JjQ29sb3I7CgogICAgaW50IGxheWVyQ291bnQgPSB0ZXh0dXJlU2l6ZShpbkFycmF5VGV4LCAwKS56OwoKICAgIGZsb2F0IGZhY3RvciA9IDEuMDsKCiAgICBmb3IgKGludCBpID0gMDsgaSA8IGxheWVyQ291bnQ7IGkrKykgewogICAgICAgIGRzdENvbG9yICs9IGZhY3RvciAqIHRleHR1cmUoaW5BcnJheVRleCwgdmVjMyh0ZXhDb29yZHMsIGZsb2F0KGkpKSkucmdiOwogICAgICAgIGZhY3RvciAqPSBkZWNheTsKICAgIH0KCiAgICBkc3RDb2xvciAvPSBmbG9hdChsYXllckNvdW50ICsgMSk7CgogICAgZnJhZ0NvbG9yID0gdmVjNChtaXgoc3JjQ29sb3IsIGRzdENvbG9yLCBvcGFjaXR5KSwgMS4wKTsKfQo=</fragment_shader>
         <sampler2d>inTexture</sampler2d>
         <sampler2darray>inArrayTex</sampler2darray>
         <parameter name="Decay" type="float_uniform" editable="1" row="0" column="0">
             <uniform name="decay" type="5126" numitems="1">
-                <number inf="0" sup="1" min="0" max="1">0.5</number>
+                <number inf="0" sup="1" min="0" max="1">0.9</number>
             </uniform>
         </parameter>
-        <parameter name="Blend" type="float_uniform" editable="1" row="0" column="1">
-            <uniform name="blend" type="5126" numitems="1">
+        <parameter name="Opacity" type="float_uniform" editable="1" row="0" column="1">
+            <uniform name="opacity" type="5126" numitems="1">
                 <number inf="0" sup="1" min="0" max="1">0.5</number>
             </uniform>
         </parameter>

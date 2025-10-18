@@ -87,10 +87,10 @@ void RenderManager::init(QOpenGLContext* shareContext)
 
     glGetIntegerv(GL_MAX_ARRAY_TEXTURE_LAYERS , &mMaxArrayTexLayers);
 
-    if (mMaxArrayTexLayers > mNumArrayTexLayers)
+    if (mMaxArrayTexLayers > mNumArrayTexLayers) {
         mMaxArrayTexLayers = mNumArrayTexLayers;
+    }
 
-    // genBlendArrayTexture();
     genArrayTexture(&mBlendArrayTexId, mNumArrayTexLayers);
 
     // Shader program
@@ -174,7 +174,7 @@ void RenderManager::iterate()
         mContext->makeCurrent(mSurface);
 
         copyTextures();
-        cyclicCopyArrayTextures();
+        shiftCopyArrayTextures();
         render();
 
         mContext->doneCurrent();
@@ -401,12 +401,19 @@ void RenderManager::setTextureFormat(TextureFormat format)
 
     glBindTexture(GL_TEXTURE_2D, 0);
 
-    recreateBlendArrayTexture();
+    recreateArrayTexture(&mBlendArrayTexId, mNumArrayTexLayers);
+
+    foreach (ImageOperation* operation, mFactory->operations()) {
+        if (operation->sampler2DArrayAvail()) {
+            recreateArrayTexture(operation->arrayTextureId(), operation->arrayTextureDepth());
+        }
+    }
 
     mContext->doneCurrent();
 
-    foreach (Seed* seed, mFactory->seeds())
+    foreach (Seed* seed, mFactory->seeds()) {
         seed->setOutTextureId();
+    }
 
     foreach (ImageOperation* operation, mFactory->operations())
     {
@@ -471,8 +478,7 @@ void RenderManager::resize(GLuint width, GLuint height)
         glViewport(0, 0, mTexWidth, mTexHeight);
 
         resizeTextures();
-        // recreateBlendArrayTexture();
-        recreateArrayTexture(&mBlendArrayTexId, mBlendArrayTexId);
+        recreateArrayTexture(&mBlendArrayTexId, mNumArrayTexLayers);
 
         foreach (ImageOperation* operation, mFactory->operations())
         {
@@ -720,24 +726,6 @@ void RenderManager::genOpTextures(ImageOperation* operation)
 
 
 
-void RenderManager::genBlendArrayTexture()
-{
-    glGenTextures(1, &mBlendArrayTexId);
-
-    glBindTexture(GL_TEXTURE_2D_ARRAY, mBlendArrayTexId);
-
-    glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, static_cast<GLenum>(mTexFormat), mTexWidth, mTexHeight, mMaxArrayTexLayers);
-
-    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-    glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
-}
-
-
-
 void RenderManager::genArrayTexture(GLuint* arrayTexId, GLsizei arrayTexDepth)
 {
     glGenTextures(1, arrayTexId);
@@ -815,16 +803,6 @@ void RenderManager::resizeTextures()
 
 
 
-void RenderManager::recreateBlendArrayTexture()
-{
-    glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
-    glDeleteTextures(1, &mBlendArrayTexId);
-    // genBlendArrayTexture();
-    genArrayTexture(&mBlendArrayTexId, mNumArrayTexLayers);
-}
-
-
-
 void RenderManager::recreateArrayTexture(GLuint* arrayTexId, GLsizei arrayTexDepth)
 {
     glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
@@ -834,7 +812,7 @@ void RenderManager::recreateArrayTexture(GLuint* arrayTexId, GLsizei arrayTexDep
 
 
 
-void RenderManager::cyclicCopyArrayTextures()
+void RenderManager::shiftCopyArrayTextures()
 {
     foreach (ImageOperation* operation, mSortedOperations)
     {
@@ -846,9 +824,9 @@ void RenderManager::cyclicCopyArrayTextures()
                 glCopyImageSubData(*operation->arrayTextureId(), GL_TEXTURE_2D_ARRAY, 0, 0, 0, z, *operation->arrayTextureId(), GL_TEXTURE_2D_ARRAY, 0, 0, 0, z + 1, mTexWidth, mTexHeight, 1);
             }
 
-            // Copy output texture to first layer
+            // Copy input texture to first layer
 
-            glCopyImageSubData(operation->outTextureId(), GL_TEXTURE_2D, 0, 0, 0, 0, *operation->arrayTextureId(), GL_TEXTURE_2D_ARRAY, 0, 0, 0, 0, mTexWidth, mTexHeight, 1);
+            glCopyImageSubData(operation->inTextureId(), GL_TEXTURE_2D, 0, 0, 0, 0, *operation->arrayTextureId(), GL_TEXTURE_2D_ARRAY, 0, 0, 0, 0, mTexWidth, mTexHeight, 1);
         }
     }
 }

@@ -385,7 +385,7 @@ void MainWindow::closeEvent(QCloseEvent* event)
 
     midiListWidget->close();
 
-    // graphWidget->close();
+    graphWidget->close();
 
     controlWidget->close();
 

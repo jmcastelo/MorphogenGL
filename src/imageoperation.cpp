@@ -43,7 +43,11 @@ ImageOperation::ImageOperation(const ImageOperation& operation) :
     mFragmentShader { operation.mFragmentShader },
     mMinMagFilter { operation.mMinMagFilter },
     mEnabled { operation.mEnabled },
-    mInputData { operation.mInputData }
+    mInputData { operation.mInputData },
+    mSampler2DName { operation.mSampler2DName },
+    mSampler2DArrayName { operation.mSampler2DArrayName },
+    mSampler2DAvailable { operation.mSampler2DAvailable },
+    mSampler2DArrayAvailable { operation.mSampler2DArrayAvailable }
 {
     pOutTexId = new GLuint(0);
     setOutTextureId();
@@ -90,7 +94,11 @@ ImageOperation::ImageOperation(const ImageOperation& operation, const ImageOpera
     mFragmentShader { operation.mFragmentShader },
     mMinMagFilter { operation.mMinMagFilter },
     mEnabled { oldOperation.mEnabled },
-    mInputData { oldOperation.mInputData }
+    mInputData { oldOperation.mInputData },
+    mSampler2DName { operation.mSampler2DName },
+    mSampler2DArrayName { operation.mSampler2DArrayName },
+    mSampler2DAvailable { operation.mSampler2DAvailable },
+    mSampler2DArrayAvailable { operation.mSampler2DArrayAvailable }
 {
     pOutTexId = new GLuint(0);
     setOutTextureId();

@@ -388,10 +388,11 @@ void MidiLinkManager::setUpConnections(bool midiOn)
 {
     for (auto [id, widget] : mMidiSignalsMap.asKeyValueRange())
     {
-        if (midiOn)
+        if (midiOn) {
             connectMidiSignals(id);
-        else
+        } else {
             disconnectMidiSignals(id);
+        }
     }
 }
 

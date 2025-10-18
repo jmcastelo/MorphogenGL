@@ -1130,7 +1130,7 @@ void GraphWidget::drawBackground(QPainter *painter, const QRectF &rect)
 {
     QLinearGradient gradient(rect.topLeft(), rect.bottomLeft());
     gradient.setColorAt(0, Qt::black);
-    gradient.setColorAt(1, QColor(32, 32, 32));
+    gradient.setColorAt(1, QColor(64, 64, 64));
     painter->fillRect(rect, gradient);
 
     QRectF bound = scene()->itemsBoundingRect();

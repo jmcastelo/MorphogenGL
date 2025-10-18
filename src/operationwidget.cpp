@@ -131,11 +131,10 @@ OperationWidget::OperationWidget(QUuid id, ImageOperation* operation, bool midiE
     // Grid widget containing parameter widgets
 
     gridWidget = new GridWidget;
-    gridWidget->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
 
     connect(gridWidget, &GridWidget::itemRowColChanged, this, &OperationWidget::updateWidgetRowCol);
 
-    mainLayout->addWidget(gridWidget, 1, Qt::AlignTop | Qt::AlignLeft);
+    mainLayout->addWidget(gridWidget, 1, Qt::AlignCenter);
 
     // Selected parameter widgets
 
@@ -1241,7 +1240,12 @@ void OperationWidget::toggleEditMode(bool mode)
     opNameLabel->setVisible(!mEditMode);
     opNameLineEdit->setVisible(mEditMode);
 
-    gridWidget->setAcceptDrops(mEditMode);
+    if (mEditMode) {
+        mainLayout->setAlignment(gridWidget, Qt::AlignTop | Qt::AlignLeft);
+    } else {
+        mainLayout->setAlignment(gridWidget, Qt::AlignCenter);
+    }
+    gridWidget->setEditMode(mEditMode);
 
     paramNameLabel->setVisible(!mEditMode);
     paramNameLineEdit->setVisible(mEditMode);

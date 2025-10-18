@@ -3,6 +3,7 @@
 
 
 
+#include <QFrame>
 #include <QWidget>
 #include <QGridLayout>
 #include <QMouseEvent>
@@ -11,7 +12,7 @@
 
 
 
-class GridWidget : public QWidget
+class GridWidget : public QFrame
 {
     Q_OBJECT
 
@@ -22,6 +23,7 @@ public:
     void removeWidget(QWidget* widget);
     void clear();
     void optimizeLayout();
+    void setEditMode(bool editMode);
 
 signals:
     void itemRowColChanged(QWidget* widget, int row, int column);
@@ -35,7 +37,7 @@ protected:
 private:
     QGridLayout* gridLayout;
 
-    int margin = 25;
+    int margin = 10;
     int spacing = 10;
 
     int minWidgetWidth = -1;
