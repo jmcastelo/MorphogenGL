@@ -20,8 +20,8 @@ GridWidget::GridWidget(QWidget *parent) :
 
     setFrameShape(QFrame::Box);
     setFrameShadow(QFrame::Raised);
-    setMidLineWidth(1);
-    setLineWidth(1);
+    setMidLineWidth(0);
+    setLineWidth(0);
 }
 
 
@@ -38,10 +38,16 @@ void GridWidget::setEditMode(bool editMode)
         int bottom = minWidgetHeight > 0 ? minWidgetHeight : margin;
 
         gridLayout->setContentsMargins(left, top, right, bottom);
+
+        setMidLineWidth(1);
+        setLineWidth(1);
     }
     else
     {
         gridLayout->setContentsMargins(margin, margin, margin, margin);
+
+        setMidLineWidth(0);
+        setLineWidth(0);
     }
 }
 
@@ -367,7 +373,7 @@ void GridWidget::mousePressEvent(QMouseEvent* event)
 
             dragPoint = widget->pos();
 
-            QPixmap pixmap = widget->grab();
+            // QPixmap pixmap = widget->grab();
 
             QByteArray itemData;
             QDataStream dataStream(&itemData, QIODevice::WriteOnly);
@@ -378,7 +384,7 @@ void GridWidget::mousePressEvent(QMouseEvent* event)
 
             QDrag *drag = new QDrag(this);
             drag->setMimeData(mimeData);
-            drag->setPixmap(pixmap);
+            // drag->setPixmap(pixmap);
             drag->setHotSpot(offset);
             drag->exec(Qt::MoveAction);
         }
