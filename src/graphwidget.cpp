@@ -199,11 +199,8 @@ void GraphWidget::closeEvent(QCloseEvent* event)
 
     foreach (QGraphicsItem* item, items)
     {
-        if (Node* node = qgraphicsitem_cast<Node*>(item)) {
-            node->close();
-        }
-        else if (Edge* edge = qgraphicsitem_cast<Edge*>(item)) {
-            edge->close();
+        if (auto proxy = qgraphicsitem_cast<QGraphicsProxyWidget*>(item)) {
+            proxy->widget()->close();
         }
     }
 

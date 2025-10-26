@@ -127,7 +127,7 @@ void VideoInputControl::setVideoInputs()
     {
         if (!deviceMap.contains(id))
         {
-            disconnect(videoInput, &VideoInput::videoFrameChanged, nullptr, nullptr);
+            disconnect(videoInput, &VideoInput::videoFrameChanged, this, nullptr);
 
             unuseCamera(id);
 

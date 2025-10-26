@@ -48,6 +48,7 @@ QMap<QString, QMultiMap<int, Number<unsigned int>*>> MidiLinkManager::uintLinks(
 void MidiLinkManager::addMidiSignals(QUuid id, MidiSignals* midiSignals)
 {
     mMidiSignalsMap.insert(id, midiSignals);
+    connectMidiSignals(id);
 }
 
 
@@ -55,6 +56,7 @@ void MidiLinkManager::addMidiSignals(QUuid id, MidiSignals* midiSignals)
 void MidiLinkManager::removeMidiSignals(QUuid id)
 {
     mMidiSignalsMap.remove(id);
+    disconnectMidiSignals(id);
 }
 
 
@@ -83,7 +85,7 @@ void MidiLinkManager::setupMidi(QString portName, bool open)
 
     mPortOpen[portName] = open;
 
-    setUpConnections(enabled());
+    // setUpConnections(enabled());
 
     emit midiEnabled(enabled());
 }
@@ -116,7 +118,7 @@ void MidiLinkManager::updateMidiLinks(QString portName, int key, int value)
     else
     {
         // No number being linked: set value of already linked number
-        // For each QMUltiMap, iterate over all QMultiMap items
+        // For each QMultiMap, iterate over all QMultiMap items
 
         if (mFloatLinks.contains(portName) && mFloatLinks[portName].contains(key))
         {
