@@ -58,7 +58,7 @@ class Factory;
 
 
 
-class OperationWidget : public QFrame
+class OperationWidget : public QWidget
 {
     Q_OBJECT
 

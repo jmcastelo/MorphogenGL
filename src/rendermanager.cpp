@@ -26,6 +26,7 @@
 
 #include <QApplication>
 #include <QMessageBox>
+#include <QPainter>
 
 
 
@@ -539,6 +540,85 @@ void RenderManager::reset()
 
 
 
+void RenderManager::genImageTexture(QByteArray devId)
+{
+    if (!mVideoTextures.contains(devId))
+    {
+        GLuint newTexId = 0;
+        genTexture(&newTexId, mTexFormat);
+        mVideoTextures.insert(devId, newTexId);
+    }
+}
+
+
+
+void RenderManager::delImageTexture(QByteArray devId)
+{
+    if (mVideoTextures.contains(devId))
+    {
+        mContext->makeCurrent(mSurface);
+        glDeleteTextures(1, &mVideoTextures[devId]);
+        mContext->doneCurrent();
+
+        mVideoTextures.remove(devId);
+    }
+}
+
+
+void RenderManager::setVideoTextures()
+{
+    foreach (Seed* seed, mFactory->seeds())
+    {
+        QByteArray devId = seed->videoDevId();
+        if (mVideoTextures.contains(devId)) {
+            seed->setVideoTexture(mVideoTextures.value(devId));
+        }
+        else {
+            seed->setVideoTexture(0);
+        }
+    }
+}
+
+
+
+void RenderManager::setImageTexture(QByteArray devId, const QImage& image)
+{
+    if (!image.isNull())
+    {
+        qreal sx = static_cast<qreal>(mTexWidth)  / image.width();
+        qreal sy = static_cast<qreal>(mTexHeight) / image.height();
+        qreal scale = qMin(1.0, qMin(sx, sy));
+
+        int displayWidth = qRound(image.width() * scale);
+        int displayHeight = qRound(image.height() * scale);
+
+        int offsetX = (mTexWidth  - displayWidth) / 2;
+        int offsetY = (mTexHeight - displayHeight) / 2;
+
+        QImage scaled = image.scaled(displayWidth, displayHeight, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+
+        QImage buffer(mTexWidth, mTexHeight, QImage::Format_RGBA8888);
+        buffer.fill(Qt::black);
+
+        QPainter painter(&buffer);
+        painter.drawImage(offsetX, offsetY, scaled);
+
+        mContext->makeCurrent(mSurface);
+
+        glBindTexture(GL_TEXTURE_2D, mVideoTextures[devId]);
+
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
+        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, mTexWidth, mTexHeight, GL_RGBA, GL_UNSIGNED_BYTE, buffer.constBits());
+
+        glBindTexture(GL_TEXTURE_2D, 0);
+
+        mContext->doneCurrent();
+    }
+}
+
+
+
 void RenderManager::setBlenderProgram()
 {
     mBlenderProgram->addShaderFromSourceFile(QOpenGLShader::Vertex, ":/shaders/blender.vert");
@@ -799,6 +879,19 @@ void RenderManager::resizeTextures()
     blitTextures(mFrameTexId, mOldTexWidth, mOldTexHeight, newTexId, mTexWidth, mTexHeight);
     glDeleteTextures(1, &mFrameTexId);
     mFrameTexId = newTexId;
+
+    // Resize video textures
+
+    for (auto [devId, texId] : mVideoTextures.asKeyValueRange())
+    {
+        GLuint newTexId = 0;
+        genTexture(&newTexId, mTexFormat);
+
+        blitTextures(texId, mOldTexWidth, mOldTexHeight, newTexId, mTexWidth, mTexHeight);
+
+        glDeleteTextures(1, &texId);
+        mVideoTextures[devId] = newTexId;
+    }
 }
 
 
@@ -859,6 +952,21 @@ void RenderManager::clearTexture(GLuint* texId)
 
 
 
+void RenderManager::clearArrayTexture(GLuint* texId, GLsizei arrayTexDepth)
+{
+    glBindFramebuffer(GL_FRAMEBUFFER, mOutFbo);
+
+    for (GLsizei layer = 0; layer < arrayTexDepth; layer++)
+    {
+        glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, *texId, 0, layer);
+        glClear(GL_COLOR_BUFFER_BIT);
+    }
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+
+
 void RenderManager::clearAllOpsTextures()
 {
     QList<GLuint*> texIds;
@@ -871,6 +979,12 @@ void RenderManager::clearAllOpsTextures()
 
     foreach (GLuint* texId, texIds) {
         clearTexture(texId);
+    }
+
+    foreach (ImageOperation* operation, mFactory->operations()) {
+        if (operation->sampler2DArrayAvail()) {
+            clearArrayTexture(operation->arrayTextureId(), operation->arrayTextureDepth());
+        }
     }
 
     mContext->doneCurrent();

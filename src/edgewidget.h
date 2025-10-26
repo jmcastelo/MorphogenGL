@@ -5,6 +5,7 @@
 
 #include "parameters/number.h"
 #include "midisignals.h"
+#include "factory.h"
 
 #include <QWidget>
 #include <QUuid>
@@ -14,15 +15,16 @@
 #include <QSlider>
 #include <QToolBar>
 #include <QAction>
+#include <QMenu>
 
 
 
-class EdgeWidget : public QFrame
+class EdgeWidget : public QWidget
 {
     Q_OBJECT
 
 public:
-    explicit EdgeWidget(Number<float>* blendFactor, bool srcIsOp, QWidget *parent = nullptr);
+    explicit EdgeWidget(Number<float>* blendFactor, bool srcIsOp, Factory* factory, QWidget *parent = nullptr);
 
     QString const name();
     void setName(QString name);
@@ -36,11 +38,10 @@ public:
     void adjustAllSizes();
 
 signals:
-    // void blendFactorChanged(float factor);
-
     void edgeTypeChanged(bool predge);
     void typeActionToggled(bool checked);
 
+    void operationInsert(int index);
     void remove();
 
 public slots:
@@ -56,7 +57,17 @@ private:
     QToolBar* headerToolBar;
     QAction* midiLinkAction;
     QAction* mTypeAction;
+    QAction* mInsertOpAction;
     QAction* mRemoveAction;
+
+    QMenu* mAvailOpsMenu;
+    QList<QAction*> mAvailOpsActions;
+
+    Factory* mFactory;
+
+private slots:
+    void populateAvailOpsMenu();
+    void insertOperation(QAction* action);
 };
 
 

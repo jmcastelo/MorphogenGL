@@ -11,7 +11,7 @@
 
 
 OperationWidget::OperationWidget(QUuid id, ImageOperation* operation, bool midiEnabled, bool editMode, Factory *factory, QWidget* parent) :
-    QFrame { parent },
+    QWidget{ parent },
     mId { id },
     mOperation { operation },
     mFactory { factory },
@@ -27,7 +27,7 @@ OperationWidget::OperationWidget(QUuid id, ImageOperation* operation, bool midiE
 
     mainLayout = new QVBoxLayout;
     mainLayout->setSizeConstraint(QLayout::SetMinAndMaxSize);
-    mainLayout->setContentsMargins(0, 0, 0, 0);
+    mainLayout->setContentsMargins(5, 5, 5, 5);
     mainLayout->setSpacing(0);
 
     // Header widget
@@ -35,7 +35,7 @@ OperationWidget::OperationWidget(QUuid id, ImageOperation* operation, bool midiE
     headerWidget = new QWidget;
     headerWidget->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Maximum);
     headerWidget->setObjectName("header");
-    headerWidget->setStyleSheet("QWidget#header { border: 1px solid gray; }");
+    headerWidget->setStyleSheet("QWidget#header { border: 1px dotted gray; }");
 
     // Header toolbar
 
@@ -255,10 +255,6 @@ OperationWidget::OperationWidget(QUuid id, ImageOperation* operation, bool midiE
 
     setLayout(mainLayout);
 
-    setFrameShape(QFrame::Box);
-    setFrameShadow(QFrame::Raised);
-    setMidLineWidth(1);
-    setLineWidth(1);
     setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
 
     toggleEditMode(editMode);
@@ -662,10 +658,10 @@ void OperationWidget::toggleOutputAction(QUuid id)
     outputAction->setChecked(checked);
 
     if (checked) {
-        headerWidget->setStyleSheet("QWidget#header { border: 1px solid pink; }");
+        headerWidget->setStyleSheet("QWidget#header { border: 1px solid orange; }");
     }
     else {
-        headerWidget->setStyleSheet("QWidget#header { border: 1px solid gray; }");
+        headerWidget->setStyleSheet("QWidget#header { border: 1px dotted gray; }");
     }
 }
 

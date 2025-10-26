@@ -74,6 +74,11 @@ public:
     QString imageFilename() const;
     void resizeImage();
 
+    QByteArray videoDevId() const;
+    void setVideoDevId(QByteArray devId);
+
+    void setVideoTexture(GLuint texId);
+
 private:
     int mType = 0;
     bool mFixed = false;
@@ -93,6 +98,9 @@ private:
     GLuint mImageTexId = 0;
     GLuint mClearTexId = 0;
     GLuint* pOutTexId = nullptr;
+
+    GLuint* pVideoTexId = nullptr;
+    QByteArray mVideoDevId;
 
     GLuint mTexWidth;
     GLuint mTexHeight;

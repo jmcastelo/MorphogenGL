@@ -32,6 +32,7 @@
 Seed::Seed()
 {
     pOutTexId = new GLuint(0);
+    pVideoTexId = new GLuint(0);
 }
 
 
@@ -39,6 +40,7 @@ Seed::Seed()
 Seed::Seed(int type, bool fixed, QString imageFilename)
 {
     pOutTexId = new GLuint(0);
+    pVideoTexId = new GLuint(0);
 
     mType = type;
     mFixed = fixed;
@@ -162,6 +164,7 @@ Seed::~Seed()
     glDeleteTextures(3, texIds);
 
     delete pOutTexId;
+    delete pVideoTexId;
 
     delete mRandomProgram;
 
@@ -336,6 +339,27 @@ void Seed::resizeImage()
 
 
 
+QByteArray Seed::videoDevId() const
+{
+    return mVideoDevId;
+}
+
+
+
+void Seed::setVideoDevId(QByteArray devId)
+{
+    mVideoDevId = devId;
+}
+
+
+
+void Seed::setVideoTexture(GLuint texId)
+{
+    *pVideoTexId = texId;
+}
+
+
+
 int Seed::type() const
 {
     return mType;
@@ -401,13 +425,17 @@ void Seed::setOutTextureId()
 {
     if (mFixed || !mCleared)
     {
-        if (mType == 0 || mType == 1)
+        if (mType == 0 || mType == 1) {
             *pOutTexId = mRandomTexId;
-        else if (mType == 2)
+        }
+        else if (mType == 2) {
             *pOutTexId = mImageTexId;
+        }
+        else if (mType == 3) {
+            *pOutTexId = *pVideoTexId;
+        }
     }
-    else
-    {
+    else {
         *pOutTexId = mClearTexId;
     }
 }

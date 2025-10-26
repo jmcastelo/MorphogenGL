@@ -75,6 +75,10 @@ UniformMat4ParameterWidget::UniformMat4ParameterWidget(UniformMat4Parameter* the
         ParameterWidget<float>::connect(mUniformMat4Parameter, QOverload<int, QVariant>::of(&Parameter::valueChanged), this, [=, this](int i, QVariant newValue){
             mLineEdits[i]->setText(QString::number(newValue.toFloat()));
             mLineEdits[i]->setCursorPosition(0);
+
+            if (!mLineEdits[i]->hasFocus()) {
+                mLineEdits[i]->focusIn();
+            }
         });
     }
 }

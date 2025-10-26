@@ -100,6 +100,7 @@ GraphWidget::GraphWidget(Factory *factory, NodeManager* nodeManager, QWidget *pa
     connect(mNodeManager, &NodeManager::nodesConnected, this, &GraphWidget::connectNodes);
     connect(mNodeManager, &NodeManager::nodeRemoved, this, &GraphWidget::removeNode);
     connect(mNodeManager, &NodeManager::nodesDisconnected, this, &GraphWidget::removeEdge);
+    connect(mNodeManager, &NodeManager::nodeInserted, this, &GraphWidget::centerNodeBetween);
 
     connect(mMainMenu, &QMenu::triggered, this, &GraphWidget::onActionTriggered);
 }
@@ -145,8 +146,9 @@ Node* GraphWidget::getNode(QUuid id)
     {
         if (Node* node = qgraphicsitem_cast<Node*>(item))
         {
-            if (node->id() == id)
+            if (node->id() == id) {
                 return node;
+            }
         }
     }
 
@@ -163,8 +165,9 @@ Edge* GraphWidget::getEdge(QUuid srcId, QUuid dstId)
     {
         if (Edge* edge = qgraphicsitem_cast<Edge*>(item))
         {
-            if (edge->sourceNode()->id() == srcId && edge->destNode()->id() == dstId)
+            if (edge->sourceNode()->id() == srcId && edge->destNode()->id() == dstId) {
                 return edge;
+            }
         }
     }
 
@@ -175,10 +178,12 @@ Edge* GraphWidget::getEdge(QUuid srcId, QUuid dstId)
 
 void GraphWidget::onActionTriggered(QAction* action)
 {
-    if (action == mAddSeedAction)
+    if (action == mAddSeedAction) {
         mFactory->createNewSeed();
-    else if (action == mBuildNewOpAction)
+    }
+    else if (action == mBuildNewOpAction) {
         mFactory->createNewOperation();
+    }
     else if (mAvailOpsActions.contains(action))
     {
         int index = mAvailOpsActions.indexOf(action);
@@ -891,6 +896,18 @@ void GraphWidget::setNodePosition(QUuid id, QPointF position)
 
 
 
+void GraphWidget::centerNodeBetween(QUuid srcId, QUuid dstId, QUuid opId)
+{
+    Edge* edge = getEdge(srcId, dstId);
+    Node* node = getNode(opId);
+
+    if (edge && node) {
+        node->centerBetween(edge->srcPoint(), edge->dstPoint());
+    }
+}
+
+
+
 void GraphWidget::clearScene()
 {
     scene()->clear();
@@ -1130,7 +1147,7 @@ void GraphWidget::drawBackground(QPainter *painter, const QRectF &rect)
 {
     QLinearGradient gradient(rect.topLeft(), rect.bottomLeft());
     gradient.setColorAt(0, Qt::black);
-    gradient.setColorAt(1, QColor(64, 64, 64));
+    gradient.setColorAt(1, QColor(128, 128, 128));
     painter->fillRect(rect, gradient);
 
     QRectF bound = scene()->itemsBoundingRect();

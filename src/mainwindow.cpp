@@ -7,7 +7,9 @@ MainWindow::MainWindow()
     iterationTimer = new TimerThread(iterationFPS, this);
     updateTimer = new TimerThread(updateFPS, this);
 
-    factory = new Factory();
+    videoInControl = new VideoInputControl();
+
+    factory = new Factory(videoInControl);
 
     renderManager = new RenderManager(factory);
 
@@ -50,6 +52,11 @@ MainWindow::MainWindow()
     setCentralWidget(stackedWidget);
 
     stackedLayout->setCurrentWidget(controlWidget);
+
+    connect(videoInControl, &VideoInputControl::cameraUsed, renderManager, &RenderManager::genImageTexture);
+    connect(videoInControl, &VideoInputControl::cameraUnused, renderManager, &RenderManager::delImageTexture);
+    connect(videoInControl, &VideoInputControl::numUsedCamerasChanged, renderManager, &RenderManager::setVideoTextures);
+    connect(videoInControl, &VideoInputControl::newFrameImage, renderManager, &RenderManager::setImageTexture);
 
     midiListWidget = new MidiListWidget();
 
@@ -130,8 +137,9 @@ MainWindow::MainWindow()
 
 MainWindow::~MainWindow()
 {
-    if (recorder)
+    if (recorder) {
         delete recorder;
+    }
 
     delete plotsWidget;
     delete controlWidget;
@@ -142,6 +150,7 @@ MainWindow::~MainWindow()
     delete overlay;
     delete factory;
     delete midiListWidget;
+    delete videoInControl;
     delete iterationTimer;
     delete updateTimer;
 }
@@ -346,8 +355,9 @@ void MainWindow::keyPressEvent(QKeyEvent* event)
                 stackedLayout->setCurrentWidget(morphoWidget);
                 morphoWidget->update();
             }
-            else
+            else {
                 stackedLayout->setCurrentWidget(controlWidget);
+            }
         }
         else if (event->key() == Qt::Key_PageUp)
         {

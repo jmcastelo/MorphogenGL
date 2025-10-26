@@ -88,5 +88,7 @@
         <file>icons/zoom-out.png</file>
         <file>icons/edit-redo-2.png</file>
         <file>icons/edit-undo-2.png</file>
+        <file>icons/go-bottom.png</file>
+        <file>icons/camera-web.png</file>
     </qresource>
 </RCC>

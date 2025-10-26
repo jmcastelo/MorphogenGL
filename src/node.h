@@ -69,6 +69,8 @@ public:
 
     bool connectedTo(Node *node);
 
+    void centerBetween(QPointF src, QPointF dst);
+
     //QRectF textBoundingRect() const;
 
     QRectF boundingRect() const override;

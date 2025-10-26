@@ -20,7 +20,6 @@ GridWidget::GridWidget(QWidget *parent) :
 
     setFrameShape(QFrame::Box);
     setFrameShadow(QFrame::Raised);
-    setMidLineWidth(0);
     setLineWidth(0);
 }
 
@@ -39,14 +38,12 @@ void GridWidget::setEditMode(bool editMode)
 
         gridLayout->setContentsMargins(left, top, right, bottom);
 
-        setMidLineWidth(1);
         setLineWidth(1);
     }
     else
     {
         gridLayout->setContentsMargins(margin, margin, margin, margin);
 
-        setMidLineWidth(0);
         setLineWidth(0);
     }
 }

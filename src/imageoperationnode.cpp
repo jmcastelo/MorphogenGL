@@ -20,16 +20,19 @@ ImageOperationNode::ImageOperationNode(QUuid id, ImageOperation* operation)
 
 ImageOperationNode::~ImageOperationNode()
 {
-    foreach (ImageOperationNode* input, mInputNodes)
+    foreach (ImageOperationNode* input, mInputNodes) {
         input->removeOutput(this);
+    }
 
-    foreach (ImageOperationNode* output, mOutputNodes)
+    foreach (ImageOperationNode* output, mOutputNodes) {
         output->removeInput(this);
+    }
 
     // delete mOperation;
 
-    foreach (InputData* data, mInputs)
+    foreach (InputData* data, mInputs) {
         delete data;
+    }
 }
 
 

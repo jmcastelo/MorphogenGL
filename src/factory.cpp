@@ -9,8 +9,9 @@
 
 
 
-Factory::Factory(QObject *parent)
-    : QObject{parent}
+Factory::Factory(VideoInputControl *videoInCtrl, QObject *parent)
+    : QObject{parent},
+    mVideoInputControl { videoInCtrl }
 {}
 
 
@@ -18,6 +19,8 @@ Factory::Factory(QObject *parent)
 Factory::~Factory()
 {
     qDeleteAll(mAvailOps);
+    qDeleteAll(mOperations);
+    qDeleteAll(mSeeds);
 }
 
 
@@ -58,7 +61,7 @@ void Factory::createNewSeed()
     mSeeds.append(seed);
     emit newSeedCreated(id, seed);
 
-    SeedWidget* widget = new SeedWidget(id, seed);
+    SeedWidget* widget = new SeedWidget(id, seed, mVideoInputControl);
     emit newSeedWidgetCreated(id, widget);
 }
 
@@ -67,6 +70,21 @@ void Factory::createNewSeed()
 void Factory::addAvailableOperation(int index)
 {
     QUuid id = QUuid::createUuid();
+
+    ImageOperation* operation = new ImageOperation(*mAvailOps[index]);
+    mOperations.append(operation);
+    emit newOperationCreated(id, operation);
+
+    OperationWidget* widget = new OperationWidget(id, operation, mMidiEnabled, false, this);
+    emit newOpWidgetCreated(widget);
+    emit newOpWidgetCreated(id, widget);
+}
+
+
+
+void Factory::addAvailableOperation(int index, QUuid& id)
+{
+    id = QUuid::createUuid();
 
     ImageOperation* operation = new ImageOperation(*mAvailOps[index]);
     mOperations.append(operation);
@@ -96,7 +114,7 @@ void Factory::addSeed(QUuid id, Seed* seed)
     mSeeds.append(seed);
     emit newSeedCreated(id, seed);
 
-    SeedWidget* widget = new SeedWidget(id, seed);
+    SeedWidget* widget = new SeedWidget(id, seed, mVideoInputControl);
     emit newSeedWidgetCreated(id, widget);
 }
 

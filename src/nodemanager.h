@@ -120,6 +120,7 @@ signals:
     void nodesConnected(QUuid srcId, QUuid dstId, EdgeWidget* widget);
     void nodeRemoved(QUuid id);
     void nodesDisconnected(QUuid srcId, QUuid dstId);
+    void nodeInserted(QUuid srcId, QUuid dstId, QUuid opId);
 
     void midiSignalsCreated(QUuid id, MidiSignals* midisSignals);
     void midiSignalsRemoved(QUuid id);

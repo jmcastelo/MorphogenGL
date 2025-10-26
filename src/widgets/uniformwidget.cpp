@@ -98,6 +98,10 @@ UniformParameterWidget<T>::UniformParameterWidget(UniformParameter<T>* theUnifor
             }
 
             mLineEdits[i]->setCursorPosition(0);
+
+            if (!mLineEdits[i]->hasFocus()) {
+                mLineEdits[i]->focusIn();
+            }
         });
     }
 

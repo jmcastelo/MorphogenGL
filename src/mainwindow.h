@@ -17,6 +17,7 @@
 #include "midilistwidget.h"
 #include "midilinkmanager.h"
 #include "overlay.h"
+#include "videoinputcontrol.h"
 
 #include <QMainWindow>
 #include <QStackedLayout>
@@ -63,6 +64,7 @@ private:
     MidiListWidget* midiListWidget;
     MidiLinkManager midiLinkManager;
     Overlay* overlay;
+    VideoInputControl* videoInControl;
 
     TimerThread* updateTimer;
     std::chrono::time_point<std::chrono::steady_clock> updateStart;

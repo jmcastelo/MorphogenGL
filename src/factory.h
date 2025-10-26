@@ -8,6 +8,7 @@
 #include "operationwidget.h"
 #include "seedwidget.h"
 #include "parameters/number.h"
+#include "videoinputcontrol.h"
 
 #include <QObject>
 #include <QUuid>
@@ -22,7 +23,7 @@ class Factory : public QObject
     Q_OBJECT
 
 public:
-    explicit Factory(QObject *parent = nullptr);
+    explicit Factory(VideoInputControl* videoInCtrl, QObject *parent = nullptr);
     ~Factory();
 
     QList<ImageOperation*> operations();
@@ -32,6 +33,7 @@ public:
     void createNewSeed();
 
     void addAvailableOperation(int index);
+    void addAvailableOperation(int index, QUuid& id);
 
     void addOperation(QUuid id, ImageOperation* operation, QPointF position);
     void addSeed(QUuid id, Seed* operation);
@@ -72,6 +74,8 @@ private:
     QList<Seed*> mSeeds;
 
     bool mMidiEnabled = false;
+
+    VideoInputControl* mVideoInputControl;
 };
 
 

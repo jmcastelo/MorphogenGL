@@ -83,6 +83,11 @@ public slots:
     void setSortedOperations(QList<ImageOperation*> sortedOperations);
     void reset();
 
+    void genImageTexture(QByteArray devId);
+    void delImageTexture(QByteArray devId);
+    void setVideoTextures();
+    void setImageTexture(QByteArray devId, const QImage& image);
+
 private:
     Factory* mFactory;
 
@@ -93,8 +98,6 @@ private:
     GLuint mReadFbo = 0;
     GLuint mDrawFbo = 0;
 
-    // QList<Seed*> mSeeds;
-    // QList<ImageOperation*> mOperations;
     QList<ImageOperation*> mSortedOperations;
 
     GLuint mTexWidth = 2048;
@@ -132,6 +135,8 @@ private:
     int mReadIndex = 0;
     QList<GLsync> mFences;
 
+    QMap<QByteArray, GLuint> mVideoTextures;
+
     void setPbos();
     void setOutputImage();
 
@@ -156,6 +161,7 @@ private:
     void shiftCopyArrayTextures();
 
     void clearTexture(GLuint* texId);
+    void clearArrayTexture(GLuint* arrayTexId, GLsizei arrayTexDepth);
 
     void copyTextures();
     void blend(ImageOperation* operation);

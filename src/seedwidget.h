@@ -4,19 +4,20 @@
 
 
 #include "seed.h"
+#include "videoinputcontrol.h"
 
-#include <QObject>
-#include <QFrame>
+#include <QWidget>
 #include <QUuid>
+#include <QMenu>
 
 
 
-class SeedWidget : public QFrame
+class SeedWidget : public QWidget
 {
     Q_OBJECT
 
 public:
-    SeedWidget(QUuid id, Seed* seed, QWidget* parent = nullptr);
+    SeedWidget(QUuid id, Seed* seed, VideoInputControl* videoInCtrl, QWidget* parent = nullptr);
 
     QUuid id();
 
@@ -34,16 +35,24 @@ private:
     QUuid mId;
     Seed* mSeed;
 
+    VideoInputControl* mVideoInputControl;
+
     QWidget* headerWidget;
 
     QAction* outputAction;
     QAction* fixedAction;
     QAction* imageAction;
+    QAction* videoAction;
+
+    QMenu* mAvailVideoMenu;
+    QList<QAction*> mAvailVideoActions;
 
 private slots:
     void setFixedSeed(bool fixed);
     void setSeedType();
     void loadSeedImage();
+    void populateAvailVideoMenu();
+    void selectVideo(QAction* action);
 };
 
 

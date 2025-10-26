@@ -173,6 +173,7 @@ private slots:
     void connectNodes(QUuid srcId, QUuid dstId, EdgeWidget* widget);
     void removeNode(QUuid id);
     void removeEdge(QUuid srcId, QUuid dstId);
+    void centerNodeBetween(QUuid srcId, QUuid dstId, QUuid opId);
     void clearScene();
 };
 

@@ -11,17 +11,18 @@
 
 
 
-SeedWidget::SeedWidget(QUuid id, Seed *seed, QWidget *parent) :
-    QFrame { parent },
+SeedWidget::SeedWidget(QUuid id, Seed* seed, VideoInputControl* videoInCtrl, QWidget* parent) :
+    QWidget{ parent },
     mId { id },
-    mSeed { seed }
+    mSeed { seed },
+    mVideoInputControl { videoInCtrl }
 {
     // Header widget
 
     headerWidget = new QWidget;
     headerWidget->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
     headerWidget->setObjectName("header");
-    headerWidget->setStyleSheet("QWidget#header { border: 1px solid gray; }");
+    headerWidget->setStyleSheet("QWidget#header { border: 1px dotted gray; }");
 
     QToolBar* headerToolBar = new QToolBar;
     headerToolBar->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
@@ -40,6 +41,12 @@ SeedWidget::SeedWidget(QUuid id, Seed *seed, QWidget *parent) :
     imageAction->setEnabled(mSeed->type() == 2);
     imageAction->setCheckable(true);
     imageAction->setData(QVariant(2));
+
+    videoAction = headerToolBar->addAction(QIcon(QPixmap(":/icons/camera-web.png")), "Video", this, &SeedWidget::populateAvailVideoMenu);
+    mAvailVideoMenu = new QMenu("Inputs");
+    videoAction->setMenu(mAvailVideoMenu);
+
+    connect(mAvailVideoMenu, &QMenu::triggered, this, &SeedWidget::selectVideo);
 
     QActionGroup* type = new QActionGroup(this);
     type->addAction(colorAction);
@@ -99,10 +106,6 @@ SeedWidget::SeedWidget(QUuid id, Seed *seed, QWidget *parent) :
 
     setLayout(mainLayout);
 
-    setFrameShape(QFrame::Box);
-    setFrameShadow(QFrame::Raised);
-    setMidLineWidth(1);
-    setLineWidth(1);
     setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
 }
 
@@ -133,6 +136,11 @@ void SeedWidget::setSeedType()
     mSeed->setType(type);
 
     emit typeChanged();
+
+    if (type != 3 && !mSeed->videoDevId().isEmpty()) {
+        mVideoInputControl->unuseCamera(mSeed->videoDevId());
+        mSeed->setVideoDevId(QByteArray());
+    }
 }
 
 
@@ -157,9 +165,42 @@ void SeedWidget::toggleOutputAction(QUuid id)
     outputAction->setChecked(checked);
 
     if (checked) {
-        headerWidget->setStyleSheet("QWidget#header { border: 1px solid pink; }");
+        headerWidget->setStyleSheet("QWidget#header { border: 1px solid orange; }");
     }
     else {
-        headerWidget->setStyleSheet("QWidget#header { border: 1px solid gray; }");
+        headerWidget->setStyleSheet("QWidget#header { border: 1px dotted gray; }");
+    }
+}
+
+
+
+void SeedWidget::populateAvailVideoMenu()
+{
+    mAvailVideoMenu->clear();
+
+    qDeleteAll(mAvailVideoActions);
+    mAvailVideoActions.clear();
+
+    foreach (QString description, mVideoInputControl->cameraDescriptions()) {
+        mAvailVideoActions.append(new QAction(description));
+    }
+
+    mAvailVideoMenu->addActions(mAvailVideoActions);
+    mAvailVideoMenu->exec(QCursor::pos());
+}
+
+
+
+void SeedWidget::selectVideo(QAction* action)
+{
+    if (mAvailVideoActions.contains(action))
+    {
+        int index = mAvailVideoActions.indexOf(action);
+
+        mSeed->setVideoDevId(mVideoInputControl->cameraId(index));
+        mVideoInputControl->useCamera(index);
+
+        mSeed->setType(3);
+        emit typeChanged();
     }
 }

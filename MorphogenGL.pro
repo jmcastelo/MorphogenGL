@@ -78,6 +78,7 @@ HEADERS += \
     src/seedwidget.h \
     src/texformat.h \
     src/timerthread.h \
+    src/videoinputcontrol.h \
     src/widgets/focuswidgets.h \
     src/widgets/layoutformat.h \
     src/widgets/optionswidget.h \
@@ -123,5 +124,6 @@ SOURCES += \
     src/seed.cpp \
     src/seedwidget.cpp \
     src/timerthread.cpp \
+    src/videoinputcontrol.cpp \
     src/widgets/uniformmat4widget.cpp \
     src/widgets/uniformwidget.cpp

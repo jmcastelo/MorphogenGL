@@ -169,35 +169,13 @@ void NodeManager::setOutput(QUuid id)
 {
     mOutputId = id;
 
-    if (mOperationNodesMap.contains(id))
-    {
-        // Avoid disabling blit for output node if it is blit connected (predge)
-
-        // if (!mOutputId.isNull() && operationNodes.contains(mOutputId) && !operationNodes.value(mOutputId)->isBlitConnected())
-            // operationNodes.value(mOutputId)->enableBlit(false);
-
-        // mOutputId = id;
-
-        // We enable blit for output node so that QOpenGLWidget renders the previous texture
-        // This kind of double buffering allows for smoother, flickerless rendering
-
-        // operationNodes.value(id)->enableBlit(true);
-        // mOutputTextureId = *operationNodes.value(id)->operation->blitTextureId();
+    if (mOperationNodesMap.contains(id)) {
         pOutputTextureId = mOperationNodesMap.value(id)->pOutTextureId();
-
-
-        //emit outputFBOChanged(operationNodes.value(id)->operation->getFBO());
     }
-    else if (mSeedsMap.contains(id))
-    {
-        // mOutputId = id;
+    else if (mSeedsMap.contains(id)) {
         pOutputTextureId = mSeedsMap.value(id)->pOutTextureId();
-
-        // emit outputTextureChanged(mOutputTextureId);
-        // emit outputFBOChanged(seeds.value(id)->getFBO());
     }
-    else
-    {
+    else {
         pOutputTextureId = nullptr;
     }
 
@@ -381,10 +359,12 @@ void NodeManager::swapTwoOperations(QUuid id1, QUuid id2)
 
     sortOperations();
 
-    if (isOutput(id1))
+    if (isOutput(id1)) {
         setOutput(id1);
-    else if (isOutput(id2))
+    }
+    else if (isOutput(id2)) {
         setOutput(id2);
+    }
 }
 
 
@@ -501,7 +481,7 @@ bool NodeManager::isOperationEnabled(QUuid id)
 
 EdgeWidget* NodeManager::addEdgeWidget(QUuid srcId, QUuid dstId, Number<float>* blendFactor)
 {
-    EdgeWidget* edgeWidget = new EdgeWidget(blendFactor, mOperationNodesMap.contains(srcId));
+    EdgeWidget* edgeWidget = new EdgeWidget(blendFactor, mOperationNodesMap.contains(srcId), mFactory);
 
     QUuid id = QUuid::createUuid();
 
@@ -510,10 +490,22 @@ EdgeWidget* NodeManager::addEdgeWidget(QUuid srcId, QUuid dstId, Number<float>* 
     });*/
 
     connect(edgeWidget, &EdgeWidget::edgeTypeChanged, this, [=, this](bool predge) {
-        if (predge)
+        if (predge) {
             setOperationInputType(srcId, dstId, InputType::Blit);
-        else
+        }
+        else {
             setOperationInputType(srcId, dstId, InputType::Normal);
+        }
+    });
+
+    connect(edgeWidget, &EdgeWidget::operationInsert, this, [=, this](int index) {
+        QUuid opId;
+        mFactory->addAvailableOperation(index, opId);
+
+        connectOperations(srcId, opId, 1.0);
+        connectOperations(opId, dstId, 1.0);
+
+        emit nodeInserted(srcId, dstId, opId);
     });
 
     connect(edgeWidget, &EdgeWidget::remove, this, [=, this]() {
@@ -900,11 +892,13 @@ void NodeManager::removeSeedNode(QUuid id)
         mFactory->deleteSeed(mSeedsMap.value(id));
         mSeedsMap.remove(id);
 
-        if (mOutputId == id)
+        if (mOutputId == id) {
             setOutput(QUuid());
+        }
 
-        foreach (ImageOperationNode* node, mOperationNodesMap)
+        foreach (ImageOperationNode* node, mOperationNodesMap) {
             node->removeSeedInput(id);
+        }
 
         sortOperations();
     }
@@ -967,16 +961,3 @@ void NodeManager::removeAllNodes()
 
     mSeedsMap.clear();
 }
-
-/*void NodeManager::setTextureFormat(TextureFormat format)
-{
-    FBO::texFormat = format;
-
-    foreach (Seed* seed, seeds)
-        seed->setTextureFormat();
-
-    foreach (ImageOperationNode* node, operationNodes)
-        node->operation->setTextureFormat();
-
-    setOutput(mOutputId);
-}*/

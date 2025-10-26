@@ -181,6 +181,12 @@ bool Node::connectedTo(Node *node)
 
 
 
+void Node::centerBetween(QPointF src, QPointF dst)
+{
+    setPos(src + 0.5 * (dst - src) - QPointF(0.5 * mWidget->width(), 0.5 * mWidget->height()));
+}
+
+
 /*void Node::setAsOutput()
 {
     graph->generator->setOutput(id);

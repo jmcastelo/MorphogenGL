@@ -6,9 +6,10 @@
 
 
 
-EdgeWidget::EdgeWidget(Number<float>* blendFactor, bool srcIsOp, QWidget *parent) :
-    QFrame(parent),
-    mBlendFactor { blendFactor }
+EdgeWidget::EdgeWidget(Number<float>* blendFactor, bool srcIsOp, Factory *factory, QWidget *parent) :
+    QWidget { parent },
+    mBlendFactor { blendFactor },
+    mFactory { factory }
 {
     // Blend factor line edit
 
@@ -33,11 +34,20 @@ EdgeWidget::EdgeWidget(Number<float>* blendFactor, bool srcIsOp, QWidget *parent
     midiLinkAction->setCheckable(true);
     midiLinkAction->setVisible(false);
 
+
     // Set edge type
 
     mTypeAction = headerToolBar->addAction(QIcon(QPixmap(":/icons/edit-undo.png")), "Set as predge");
     mTypeAction->setCheckable(true);
     mTypeAction->setVisible(srcIsOp);
+
+    // Insert operation
+
+    mInsertOpAction = headerToolBar->addAction(QIcon(QPixmap(":/icons/go-bottom.png")), "Insert", this, &EdgeWidget::populateAvailOpsMenu);
+    mAvailOpsMenu = new QMenu("Operation");
+    mInsertOpAction->setMenu(mAvailOpsMenu);
+
+    connect(mAvailOpsMenu, &QMenu::triggered, this, &EdgeWidget::insertOperation);
 
     // Delete
 
@@ -55,6 +65,8 @@ EdgeWidget::EdgeWidget(Number<float>* blendFactor, bool srcIsOp, QWidget *parent
     headerLayout->addWidget(headerToolBar);
 
     QVBoxLayout* layout = new QVBoxLayout;
+    layout->setContentsMargins(5, 5, 5, 5);
+    layout->setSpacing(0);
     layout->addLayout(headerLayout);
     layout->addWidget(slider);
 
@@ -93,13 +105,11 @@ EdgeWidget::EdgeWidget(Number<float>* blendFactor, bool srcIsOp, QWidget *parent
     connect(mBlendFactor, &Number<float>::valueChanged, this, [=, this](QVariant value){
         lineEdit->setText(QString::number(value.toFloat()));
         mBlendFactor->setIndex();
-        // emit blendFactorChanged(value.toFloat());
     });
 
     connect(lineEdit, &QLineEdit::editingFinished, this, [=, this](){
         mBlendFactor->setValue(lineEdit->text().toFloat());
         mBlendFactor->setIndex();
-        // emit blendFactorChanged(lineEdit->text().toFloat());
     });
 
     connect(lineEdit, &FocusLineEdit::focusOut, this, [=, this](){
@@ -108,11 +118,9 @@ EdgeWidget::EdgeWidget(Number<float>* blendFactor, bool srcIsOp, QWidget *parent
 
     setLayout(layout);
 
-    setFrameShape(QFrame::Box);
-    setFrameShadow(QFrame::Raised);
-    setMidLineWidth(3);
-    setLineWidth(3);
     setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+
+    adjustAllSizes();
 }
 
 
@@ -165,4 +173,36 @@ void EdgeWidget::adjustAllSizes()
 {
     headerToolBar->adjustSize();
     adjustSize();
+}
+
+
+
+void EdgeWidget::populateAvailOpsMenu()
+{
+    mAvailOpsMenu->clear();
+
+    qDeleteAll(mAvailOpsActions);
+    mAvailOpsActions.clear();
+
+    mFactory->scan();
+
+    foreach (QString opName, mFactory->availableOperationNames()) {
+        mAvailOpsActions.append(new QAction(opName));
+    }
+
+    mAvailOpsMenu->addActions(mAvailOpsActions);
+    mAvailOpsMenu->exec(QCursor::pos());
+}
+
+
+
+void EdgeWidget::insertOperation(QAction* action)
+{
+    if (mAvailOpsActions.contains(action))
+    {
+        int index = mAvailOpsActions.indexOf(action);
+
+        emit operationInsert(index);
+        emit remove();
+    }
 }
