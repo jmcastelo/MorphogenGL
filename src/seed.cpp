@@ -33,6 +33,8 @@ Seed::Seed()
 {
     pOutTexId = new GLuint(0);
     pVideoTexId = new GLuint(0);
+
+    mVideoDevId = QByteArray();
 }
 
 
@@ -41,6 +43,8 @@ Seed::Seed(int type, bool fixed, QString imageFilename)
 {
     pOutTexId = new GLuint(0);
     pVideoTexId = new GLuint(0);
+
+    mVideoDevId = QByteArray();
 
     mType = type;
     mFixed = fixed;
@@ -400,8 +404,9 @@ QString Seed::imageFilename() const
 
 void Seed::draw()
 {
-    if (mType == 0 || mType == 1)
+    if (mType == 0 || mType == 1) {
         drawRandom(mType == 1);
+    }
 
     mCleared = false;
 

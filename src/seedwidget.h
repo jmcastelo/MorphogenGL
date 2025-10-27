@@ -39,10 +39,12 @@ private:
 
     QWidget* headerWidget;
 
-    QAction* outputAction;
-    QAction* fixedAction;
+    QAction* colorAction;
+    QAction* grayScaleAction;
     QAction* imageAction;
     QAction* videoAction;
+    QAction* outputAction;
+    QAction* fixedAction;
 
     QMenu* mAvailVideoMenu;
     QList<QAction*> mAvailVideoActions;

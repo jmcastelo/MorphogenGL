@@ -171,7 +171,8 @@ void ControlWidget::closeEvent(QCloseEvent* event)
 {
     displayOptionsWidget->close();
     recordingOptionsWidget->close();
-    event->accept();
+
+    QWidget::closeEvent(event);
 }
 
 
@@ -198,9 +199,11 @@ void ControlWidget::constructSystemToolBar()
     systemToolBar->addSeparator();
 
     screenshotAction = systemToolBar->addAction(QIcon(QPixmap(":/icons/digikam.png")), "Take screenshot");
+    screenshotAction->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_S));
 
     recordAction = systemToolBar->addAction(QIcon(QPixmap(":/icons/media-record.png")), "Record video");
     recordAction->setCheckable(true);
+    recordAction->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_R));
 
     systemToolBar->addSeparator();
 
@@ -391,7 +394,7 @@ void ControlWidget::about()
     QMessageBox* aboutBox = new QMessageBox(this);
 
     aboutBox->setTextFormat(Qt::RichText);
-
+    aboutBox->setIconPixmap(QPixmap(":/icons/logo.png"));
     aboutBox->setWindowTitle("About");
 
     QStringList lines;
@@ -405,7 +408,11 @@ void ControlWidget::about()
 
     aboutBox->setText(text);
 
-    aboutBox->setInformativeText("Copyright 2024 Jose Maria Castelo Ares\nLicense: GPLv3");
+    aboutBox->setInformativeText("Copyright 2025 Jose Maria Castelo Ares\nLicense: GPLv3");
+
+    aboutBox->adjustSize();
+    aboutBox->layout()->activate();
+    aboutBox->adjustSize();
 
     aboutBox->exec();
 }

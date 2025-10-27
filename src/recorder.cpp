@@ -2,14 +2,13 @@
 
 #include <QUrl>
 #include <QVideoFrame>
-#include <QDebug>
 
 
 
 Recorder::Recorder(QString filename, qreal framesPerSecond, QMediaFormat format) : fps { framesPerSecond }
 {
     recorder.setOutputLocation(QUrl::fromLocalFile(filename));
-    recorder.setQuality(QMediaRecorder::VeryHighQuality);
+    recorder.setQuality(QMediaRecorder::NormalQuality);
     recorder.setEncodingMode(QMediaRecorder::ConstantQualityEncoding);
     recorder.setVideoFrameRate(framesPerSecond);
     recorder.setVideoResolution(QSize());
@@ -56,7 +55,7 @@ void Recorder::setVideoFrameInputReady()
 
 void Recorder::sendVideoFrame(const QImage& image)
 {
-    QVideoFrame frame(image);
+    QVideoFrame frame(image.convertToFormat(QImage::Format_RGB888));
 
     frame.setStreamFrameRate(fps);
     qint64 start = static_cast<qint64>(frameNumber * 1000000 / fps);

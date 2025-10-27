@@ -82,15 +82,18 @@ void VideoInputControl::useCamera(int index)
     QList<QByteArray> cameraIds = mCameraDescMap.keys();
     QByteArray camId = cameraIds.at(index);
 
-    mNumUsedCamerasMap[camId]++;
-
-    if (mNumUsedCamerasMap[camId] == 1)
+    if (mNumUsedCamerasMap.contains(camId))
     {
-        emit cameraUsed(camId);
-        mVideoInMap.value(camId)->setCameraActive(true);
-    }
+        mNumUsedCamerasMap[camId]++;
 
-    emit numUsedCamerasChanged();
+        if (mNumUsedCamerasMap[camId] == 1)
+        {
+            emit cameraUsed(camId);
+            mVideoInMap.value(camId)->setCameraActive(true);
+        }
+
+        emit numUsedCamerasChanged();
+    }
 }
 
 
@@ -113,6 +116,13 @@ void VideoInputControl::unuseCamera(QByteArray camId)
 
 
 
+QImage* VideoInputControl::frameImage(QByteArray camId)
+{
+    return &mFrameImageMap[camId];
+}
+
+
+
 void VideoInputControl::setVideoInputs()
 {
     const QList<QCameraDevice> videoDevices = QMediaDevices::videoInputs();
@@ -129,11 +139,15 @@ void VideoInputControl::setVideoInputs()
         {
             disconnect(videoInput, &VideoInput::videoFrameChanged, this, nullptr);
 
-            unuseCamera(id);
+            // mVideoInMap.value(id)->setCameraActive(false);
+            emit cameraUnused(id);
+            emit numUsedCamerasChanged();
 
             delete videoInput;
             mVideoInMap.remove(id);
             mCameraDescMap.remove(id);
+            mNumUsedCamerasMap.remove(id);
+            mFrameImageMap.remove(id);
         }
         else
         {
@@ -146,9 +160,13 @@ void VideoInputControl::setVideoInputs()
         VideoInput* videoInput = new VideoInput(device);
         mVideoInMap.insert(id, videoInput);
         mCameraDescMap.insert(id, device.description());
+        mNumUsedCamerasMap.insert(id, 0);
+        mFrameImageMap.insert(id, QImage());
 
         connect(videoInput, &VideoInput::videoFrameChanged, [=, this](const QVideoFrame& videoFrame) {
-            emit newFrameImage(id, videoFrame.toImage());
+            // emit newFrameImage(id, videoFrame.toImage());
+            // mFrameImageMap[id] = videoFrame.toImage().convertToFormat(QImage::Format_RGB888);
+            mFrameImageMap[id] = videoFrame.toImage();
         });
     }
 }

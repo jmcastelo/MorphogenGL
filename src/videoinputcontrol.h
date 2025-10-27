@@ -49,6 +49,8 @@ public:
     void useCamera(int index);
     void unuseCamera(QByteArray camId);
 
+    QImage* frameImage(QByteArray camId);
+
 signals:
     void cameraUsed(QByteArray camId);
     void cameraUnused(QByteArray camId);
@@ -64,6 +66,7 @@ private:
     QMap<QByteArray, QString> mCameraDescMap;
     QMap<QByteArray, VideoInput*> mVideoInMap;
     QMap<QByteArray, int> mNumUsedCamerasMap;
+    QMap<QByteArray, QImage> mFrameImageMap;
 };
 
 

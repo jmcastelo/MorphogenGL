@@ -30,14 +30,20 @@
 
 
 
-RenderManager::RenderManager(Factory *factory)
-    : mFactory { factory }
+RenderManager::RenderManager(Factory *factory, VideoInputControl *videoInCtrl)
+    : mFactory { factory },
+    mVideoInputControl { videoInCtrl }
 {
     setOutputImage();
 
     connect(mFactory, &Factory::newOperationCreated, this, &RenderManager::initOperation);
     connect(mFactory, &Factory::replaceOpCreated, this, &RenderManager::initOperation);
     connect(mFactory, &Factory::newSeedCreated, this, &RenderManager::initSeed);
+
+    connect(mVideoInputControl, &VideoInputControl::cameraUsed, this, &RenderManager::genImageTexture);
+    connect(mVideoInputControl, &VideoInputControl::cameraUnused, this, &RenderManager::delImageTexture);
+    connect(mVideoInputControl, &VideoInputControl::numUsedCamerasChanged, this, &RenderManager::setVideoTextures);
+    // connect(mVideoInputControl, &VideoInputControl::newFrameImage, this, &RenderManager::setImageTexture);
 }
 
 
@@ -170,6 +176,10 @@ void RenderManager::setActive(bool set)
 
 void RenderManager::iterate()
 {
+    for (auto [id, texId] : mVideoTextures.asKeyValueRange()) {
+        setImageTexture(texId, mVideoInputControl->frameImage(id));
+    }
+
     if (!mSortedOperations.isEmpty())
     {
         mContext->makeCurrent(mSurface);
@@ -570,32 +580,27 @@ void RenderManager::setVideoTextures()
     foreach (Seed* seed, mFactory->seeds())
     {
         QByteArray devId = seed->videoDevId();
-        if (mVideoTextures.contains(devId)) {
-            seed->setVideoTexture(mVideoTextures.value(devId));
-        }
-        else {
-            seed->setVideoTexture(0);
-        }
+        seed->setVideoTexture(mVideoTextures.value(devId, 0));
     }
 }
 
 
 
-void RenderManager::setImageTexture(QByteArray devId, const QImage& image)
+void RenderManager::setImageTexture(GLuint texId, QImage* image)
 {
-    if (!image.isNull())
+    if (!image->isNull())
     {
-        qreal sx = static_cast<qreal>(mTexWidth)  / image.width();
-        qreal sy = static_cast<qreal>(mTexHeight) / image.height();
+        qreal sx = static_cast<qreal>(mTexWidth)  / image->width();
+        qreal sy = static_cast<qreal>(mTexHeight) / image->height();
         qreal scale = qMin(1.0, qMin(sx, sy));
 
-        int displayWidth = qRound(image.width() * scale);
-        int displayHeight = qRound(image.height() * scale);
+        int displayWidth = qRound(image->width() * scale);
+        int displayHeight = qRound(image->height() * scale);
 
         int offsetX = (mTexWidth  - displayWidth) / 2;
         int offsetY = (mTexHeight - displayHeight) / 2;
 
-        QImage scaled = image.scaled(displayWidth, displayHeight, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+        QImage scaled = image->scaled(displayWidth, displayHeight, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
 
         QImage buffer(mTexWidth, mTexHeight, QImage::Format_RGBA8888);
         buffer.fill(Qt::black);
@@ -605,7 +610,7 @@ void RenderManager::setImageTexture(QByteArray devId, const QImage& image)
 
         mContext->makeCurrent(mSurface);
 
-        glBindTexture(GL_TEXTURE_2D, mVideoTextures[devId]);
+        glBindTexture(GL_TEXTURE_2D, texId);
 
         glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 

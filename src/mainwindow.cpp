@@ -11,7 +11,7 @@ MainWindow::MainWindow()
 
     factory = new Factory(videoInControl);
 
-    renderManager = new RenderManager(factory);
+    renderManager = new RenderManager(factory, videoInControl);
 
     nodeManager = new NodeManager(factory);
 
@@ -52,11 +52,6 @@ MainWindow::MainWindow()
     setCentralWidget(stackedWidget);
 
     stackedLayout->setCurrentWidget(controlWidget);
-
-    connect(videoInControl, &VideoInputControl::cameraUsed, renderManager, &RenderManager::genImageTexture);
-    connect(videoInControl, &VideoInputControl::cameraUnused, renderManager, &RenderManager::delImageTexture);
-    connect(videoInControl, &VideoInputControl::numUsedCamerasChanged, renderManager, &RenderManager::setVideoTextures);
-    connect(videoInControl, &VideoInputControl::newFrameImage, renderManager, &RenderManager::setImageTexture);
 
     midiListWidget = new MidiListWidget();
 
@@ -129,7 +124,7 @@ MainWindow::MainWindow()
     connect(configParser, &ConfigurationParser::newImageSizeRead, this, &MainWindow::setSize);
 
     setWindowTitle("Fosforo");
-    setWindowIcon(QIcon(":/icons/morphogengl.png"));
+    setWindowIcon(QIcon(QPixmap(":/icons/logo.png")));
     resize(renderManager->texWidth(), renderManager->texHeight());
 }
 
@@ -401,5 +396,5 @@ void MainWindow::closeEvent(QCloseEvent* event)
 
     plotsWidget->close();
 
-    event->accept();
+    QMainWindow::closeEvent(event);
 }

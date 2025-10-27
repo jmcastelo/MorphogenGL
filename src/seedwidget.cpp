@@ -29,11 +29,11 @@ SeedWidget::SeedWidget(QUuid id, Seed* seed, VideoInputControl* videoInCtrl, QWi
 
     // Seed type actions
 
-    QAction* colorAction = headerToolBar->addAction(QIcon(QPixmap(":/icons/color-chooser.png")), "Random: color", this, &SeedWidget::setSeedType);
+    colorAction = headerToolBar->addAction(QIcon(QPixmap(":/icons/color-chooser.png")), "Random: color", this, &SeedWidget::setSeedType);
     colorAction->setCheckable(true);
     colorAction->setData(QVariant(0));
 
-    QAction* grayScaleAction = headerToolBar->addAction(QIcon(QPixmap(":/icons/gray-chooser.png")), "Random: grayscale", this, &SeedWidget::setSeedType);
+    grayScaleAction = headerToolBar->addAction(QIcon(QPixmap(":/icons/gray-chooser.png")), "Random: grayscale", this, &SeedWidget::setSeedType);
     grayScaleAction->setCheckable(true);
     grayScaleAction->setData(QVariant(1));
 
@@ -89,6 +89,7 @@ SeedWidget::SeedWidget(QUuid id, Seed* seed, VideoInputControl* videoInCtrl, QWi
     // Remove action
 
     headerToolBar->addAction(QIcon(QPixmap(":/icons/dialog-close.png")), "Delete", this, [=, this]() {
+        mVideoInputControl->unuseCamera(mSeed->videoDevId());
         emit remove(mId);
     });
 
@@ -137,7 +138,7 @@ void SeedWidget::setSeedType()
 
     emit typeChanged();
 
-    if (type != 3 && !mSeed->videoDevId().isEmpty()) {
+    if (type != 3) {
         mVideoInputControl->unuseCamera(mSeed->videoDevId());
         mSeed->setVideoDevId(QByteArray());
     }
@@ -197,10 +198,18 @@ void SeedWidget::selectVideo(QAction* action)
     {
         int index = mAvailVideoActions.indexOf(action);
 
+        QByteArray id = mSeed->videoDevId();
+
         mSeed->setVideoDevId(mVideoInputControl->cameraId(index));
         mVideoInputControl->useCamera(index);
 
+        mVideoInputControl->unuseCamera(id);
+
         mSeed->setType(3);
         emit typeChanged();
+
+        colorAction->setChecked(false);
+        grayScaleAction->setChecked(false);
+        imageAction->setChecked(false);
     }
 }

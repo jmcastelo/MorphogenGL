@@ -116,6 +116,8 @@ GraphWidget::~GraphWidget()
     qDeleteAll(mAvailOpsActions);
     delete mAvailOpsMenu;
     delete mMainMenu;
+
+    scene()->clear();
 }
 
 
@@ -197,14 +199,14 @@ void GraphWidget::closeEvent(QCloseEvent* event)
 {
     const QList<QGraphicsItem*> items = scene()->items();
 
-    foreach (QGraphicsItem* item, items)
+    for (QGraphicsItem* item : items)
     {
         if (auto proxy = qgraphicsitem_cast<QGraphicsProxyWidget*>(item)) {
             proxy->widget()->close();
         }
     }
 
-    event->accept();
+    QGraphicsView::closeEvent(event);
 }
 
 

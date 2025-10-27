@@ -31,6 +31,7 @@
 #include "imageoperation.h"
 #include "seed.h"
 #include "factory.h"
+#include "videoinputcontrol.h"
 
 #include <QObject>
 #include <QOpenGLFunctions_4_5_Core>
@@ -46,7 +47,7 @@ class RenderManager : public QObject, protected QOpenGLFunctions_4_5_Core
     Q_OBJECT
 
 public:
-    RenderManager(Factory* factory);
+    RenderManager(Factory* factory, VideoInputControl* videoInCtrl);
     ~RenderManager();
 
     void init(QOpenGLContext* shareContext);
@@ -86,10 +87,11 @@ public slots:
     void genImageTexture(QByteArray devId);
     void delImageTexture(QByteArray devId);
     void setVideoTextures();
-    void setImageTexture(QByteArray devId, const QImage& image);
+    void setImageTexture(GLuint texId, QImage *image);
 
 private:
     Factory* mFactory;
+    VideoInputControl* mVideoInputControl;
 
     QOpenGLContext* mContext = nullptr;
     QOffscreenSurface* mSurface = nullptr;
