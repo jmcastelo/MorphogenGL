@@ -2,11 +2,16 @@
 <fosforo>
     <operation name="Gradient" enabled="0">
         <vertex_shader>I3ZlcnNpb24gMzMwIGNvcmUKCmxheW91dChsb2NhdGlvbiA9IDApIGluIHZlYzIgcG9zOwpsYXlvdXQobG9jYXRpb24gPSAxKSBpbiB2ZWMyIHRleDsKCm91dCB2ZWMyIHRleENvb3JkczsKCnZvaWQgbWFpbigpCnsKICAgIGdsX1Bvc2l0aW9uID0gdmVjNChwb3MsIDAuMCwgMS4wKTsKICAgIHRleENvb3JkcyA9IHRleDsKfQo=</vertex_shader>
-        <fragment_shader>I3ZlcnNpb24gMzMwIGNvcmUKCmluIHZlYzIgdGV4Q29vcmRzOwpvdXQgdmVjNCBmcmFnQ29sb3I7Cgp1bmlmb3JtIHNhbXBsZXIyRCBpblRleHR1cmU7Cgp1bmlmb3JtIHVpbnQgc2l6ZTsKdW5pZm9ybSBmbG9hdCB0aHJlc2hvbGQ7CnVuaWZvcm0gZmxvYXQgb3BhY2l0eTsKCnZvaWQgbWFpbigpCnsKICAgIHZlYzMgc3JjQ29sb3IgPSB0ZXh0dXJlKGluVGV4dHVyZSwgdGV4Q29vcmRzKS5yZ2I7CgogICAgaXZlYzIgdGV4U2l6ZSA9IHRleHR1cmVTaXplKGluVGV4dHVyZSwgMCk7CiAgICB2ZWMyIGZhY3RvciA9IHZlYzIoc2l6ZSkgLyB2ZWMyKHRleFNpemUpOwoKICAgIHZlYzMgc2FtcGxlUiA9IHRleHR1cmUoaW5UZXh0dXJlLCBjbGFtcCh0ZXhDb29yZHMgKyB2ZWMyKGZhY3Rvci54LCAwLjApLCAwLjAsIDEuMCkpLnJnYjsKICAgIHZlYzMgc2FtcGxlTCA9IHRleHR1cmUoaW5UZXh0dXJlLCBjbGFtcCh0ZXhDb29yZHMgKyB2ZWMyKC1mYWN0b3IueCwgMC4wKSwgMC4wLCAxLjApKS5yZ2I7CiAgICB2ZWMzIHNhbXBsZVUgPSB0ZXh0dXJlKGluVGV4dHVyZSwgY2xhbXAodGV4Q29vcmRzICsgdmVjMigwLjAsIGZhY3Rvci55KSwgMC4wLCAxLjApKS5yZ2I7CiAgICB2ZWMzIHNhbXBsZUQgPSB0ZXh0dXJlKGluVGV4dHVyZSwgY2xhbXAodGV4Q29vcmRzICsgdmVjMigwLjAsIC1mYWN0b3IueSksIDAuMCwgMS4wKSkucmdiOwoKICAgIHZlYzMgZHggPSBhYnMoc2FtcGxlUiAtIHNhbXBsZUwpOwogICAgdmVjMyBkeSA9IGFicyhzYW1wbGVVIC0gc2FtcGxlRCk7CgogICAgdmVjMyBkc3RDb2xvciA9IDAuNSAqIChkeCArIGR5KTsKCiAgICBmcmFnQ29sb3IgPSB2ZWM0KG1peChzcmNDb2xvciwgY2xhbXAoZHN0Q29sb3IsIDAuMCwgMS4wKSwgb3BhY2l0eSksIDEuMCk7Cn0=</fragment_shader>
+        <fragment_shader>I3ZlcnNpb24gMzMwIGNvcmUKCmluIHZlYzIgdGV4Q29vcmRzOwpvdXQgdmVjNCBmcmFnQ29sb3I7Cgp1bmlmb3JtIHNhbXBsZXIyRCBpblRleHR1cmU7Cgp1bmlmb3JtIHVpbnQgc2l6ZTsKdW5pZm9ybSBmbG9hdCBnYWluOwp1bmlmb3JtIGZsb2F0IG9wYWNpdHk7Cgp2b2lkIG1haW4oKQp7CiAgICB2ZWMzIHNyY0NvbG9yID0gdGV4dHVyZShpblRleHR1cmUsIHRleENvb3JkcykucmdiOwoKICAgIGl2ZWMyIHRleFNpemUgPSB0ZXh0dXJlU2l6ZShpblRleHR1cmUsIDApOwogICAgdmVjMiBmYWN0b3IgPSB2ZWMyKHNpemUpIC8gdmVjMih0ZXhTaXplKTsKCiAgICB2ZWMzIHNhbXBsZVIgPSB0ZXh0dXJlKGluVGV4dHVyZSwgY2xhbXAodGV4Q29vcmRzICsgdmVjMihmYWN0b3IueCwgMC4wKSwgMC4wLCAxLjApKS5yZ2I7CiAgICB2ZWMzIHNhbXBsZUwgPSB0ZXh0dXJlKGluVGV4dHVyZSwgY2xhbXAodGV4Q29vcmRzICsgdmVjMigtZmFjdG9yLngsIDAuMCksIDAuMCwgMS4wKSkucmdiOwogICAgdmVjMyBzYW1wbGVVID0gdGV4dHVyZShpblRleHR1cmUsIGNsYW1wKHRleENvb3JkcyArIHZlYzIoMC4wLCBmYWN0b3IueSksIDAuMCwgMS4wKSkucmdiOwogICAgdmVjMyBzYW1wbGVEID0gdGV4dHVyZShpblRleHR1cmUsIGNsYW1wKHRleENvb3JkcyArIHZlYzIoMC4wLCAtZmFjdG9yLnkpLCAwLjAsIDEuMCkpLnJnYjsKCiAgICB2ZWMzIGR4ID0gYWJzKHNhbXBsZVIgLSBzYW1wbGVMKTsKICAgIHZlYzMgZHkgPSBhYnMoc2FtcGxlVSAtIHNhbXBsZUQpOwoKICAgIHZlYzMgZHN0Q29sb3IgPSBjbGFtcChnYWluICogMC41ICogKGR4ICsgZHkpLCAwLjAsIDEuMCk7CgogICAgZnJhZ0NvbG9yID0gdmVjNChtaXgoc3JjQ29sb3IsIGNsYW1wKGRzdENvbG9yLCAwLjAsIDEuMCksIG9wYWNpdHkpLCAxLjApOwp9</fragment_shader>
         <sampler2d>inTexture</sampler2d>
-        <parameter name="Opacity" type="float_uniform" editable="1" row="0" column="1">
+        <parameter name="Opacity" type="float_uniform" editable="1" row="0" column="2">
             <uniform name="opacity" type="5126" numitems="1">
                 <number inf="0" sup="1" min="0" max="1">0</number>
+            </uniform>
+        </parameter>
+        <parameter name="Gain" type="float_uniform" editable="1" row="0" column="1">
+            <uniform name="gain" type="5126" numitems="1">
+                <number inf="0" sup="100" min="0" max="5">1</number>
             </uniform>
         </parameter>
         <parameter name="Size" type="uint_uniform" editable="1" row="0" column="0">

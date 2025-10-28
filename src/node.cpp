@@ -67,11 +67,11 @@ Node::~Node()
 }
 
 
-/*void Node::closeEvent(QCloseEvent* event)
+void Node::closeEvent(QCloseEvent* event)
 {
     mWidget->close();
     event->accept();
-}*/
+}
 
 
 
