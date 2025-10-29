@@ -6,6 +6,7 @@
 #include <QWidget>
 #include <QListWidget>
 #include <QTableWidgetItem>
+#include <QPushButton>
 
 
 
@@ -23,9 +24,11 @@ signals:
 
 public slots:
     void populatePortsTable(QList<QString> portNames);
+    void toggleMultiLinkButton(bool checked);
 
 private:
     QListWidget* portsTable;
+    QPushButton* multiLinkButton;
 };
 
 

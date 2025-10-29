@@ -65,7 +65,7 @@
         constructBlendFactorWidget();
 }*/
 
-Edge::Edge(Node* sourceNode, Node* destNode, EdgeWidget *widget, QGraphicsItem* parent) :
+Edge::Edge(Node* sourceNode, Node* destNode, bool predge, EdgeWidget *widget, QGraphicsItem* parent) :
     QGraphicsWidget(parent),
     mWidget { widget },
     source { sourceNode },
@@ -87,11 +87,17 @@ Edge::Edge(Node* sourceNode, Node* destNode, EdgeWidget *widget, QGraphicsItem* 
 
     setWidgetVisible(false);
 
+    // Predge?
+
+    setPredge(predge);
+
     adjust();
 
-    foreach (Edge* edge, dest->edges())
-        if (edge->destNode() == source)
+    foreach (Edge* edge, dest->edges()) {
+        if (edge->destNode() == source) {
             edge->adjust();
+        }
+    }
 
     // Connections
 

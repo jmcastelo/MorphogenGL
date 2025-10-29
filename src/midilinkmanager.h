@@ -29,6 +29,7 @@ public:
 
 signals:
     void midiEnabled(bool enabled);
+    void multiLinkSet(bool set);
 
 public slots:
     void addMidiSignals(QUuid id, MidiSignals* midiSignals);
@@ -43,6 +44,8 @@ public slots:
     void setupMidiLink(QString portName, int key, Number<unsigned int>* number);
 
     void clearLinks();
+
+    bool multiLink();
     void setMultiLink(bool enabled);
 
 private:

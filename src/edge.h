@@ -48,7 +48,7 @@ class Edge : public QGraphicsWidget
 
 public:
     //Edge(GraphWidget* graphWidget, Node *sourceNode, Node *destNode);
-    explicit Edge(Node* sourceNode, Node* destNode, EdgeWidget* widget, QGraphicsItem* parent = nullptr);
+    explicit Edge(Node* sourceNode, Node* destNode, bool predge, EdgeWidget* widget, QGraphicsItem* parent = nullptr);
 
     Node* sourceNode() const;
     Node* destNode() const;

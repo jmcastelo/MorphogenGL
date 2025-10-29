@@ -293,6 +293,13 @@ void MidiLinkManager::clearLinks()
 
 
 
+bool MidiLinkManager::multiLink()
+{
+    return mMultiLink;
+}
+
+
+
 void MidiLinkManager::setMultiLink(bool enabled)
 {
     mMultiLink = enabled;
@@ -341,6 +348,8 @@ void MidiLinkManager::setMultiLink(bool enabled)
             }
         }
     }
+
+    emit multiLinkSet(enabled);
 }
 
 

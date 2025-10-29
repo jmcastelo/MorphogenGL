@@ -217,7 +217,8 @@ void NodeManager::connectOperations(QUuid srcId, QUuid dstId, float factor)
 {
     bool connected = tryConnectOperations(srcId, dstId, factor);
     if (connected) {
-        emit nodesConnected(srcId, dstId, addEdgeWidget(srcId, dstId, blendFactor(srcId, dstId)));
+        InputType type = mOperationNodesMap.value(dstId)->inputs().value(srcId)->type();
+        emit nodesConnected(srcId, dstId, type, addEdgeWidget(srcId, dstId, blendFactor(srcId, dstId)));
     }
 }
 
@@ -245,13 +246,13 @@ void NodeManager::connectOperations(QMap<QUuid, QMap<QUuid, InputData*>> connect
                 mOperationNodesMap.value(dstId)->addInput(mOperationNodesMap.value(srcId), inData);
                 mOperationNodesMap.value(srcId)->addOutput(mOperationNodesMap.value(dstId));
 
-                emit nodesConnected(srcId, dstId, addEdgeWidget(srcId, dstId, inData->blendFactor()));
+                emit nodesConnected(srcId, dstId, inData->type(), addEdgeWidget(srcId, dstId, inData->blendFactor()));
             }
             else if (mSeedsMap.contains(srcId))
             {
                 inData->setpTextureId(mSeedsMap.value(srcId)->pOutTextureId());
                 mOperationNodesMap.value(dstId)->addSeedInput(srcId, inData);
-                emit nodesConnected(srcId, dstId, addEdgeWidget(srcId, dstId, inData->blendFactor()));
+                emit nodesConnected(srcId, dstId, inData->type(), addEdgeWidget(srcId, dstId, inData->blendFactor()));
             }
         }
     }

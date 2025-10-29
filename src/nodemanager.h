@@ -117,7 +117,7 @@ signals:
     void outputTextureChanged(GLuint* pTexId);
     // void sortedOperationsChanged(QList<QPair<QUuid, QString>> sortedData, QList<QUuid> unsortedData);
     void sortedOperationsChanged(QList<ImageOperation*> operations);
-    void nodesConnected(QUuid srcId, QUuid dstId, EdgeWidget* widget);
+    void nodesConnected(QUuid srcId, QUuid dstId, InputType type, EdgeWidget* widget);
     void nodeRemoved(QUuid id);
     void nodesDisconnected(QUuid srcId, QUuid dstId);
     void nodeInserted(QUuid srcId, QUuid dstId, QUuid opId);

@@ -315,14 +315,14 @@ void GraphWidget::addNewNodeOnPos(QUuid id, QWidget* widget, QPointF pos)
 
 
 
-void GraphWidget::connectNodes(QUuid srcId, QUuid dstId, EdgeWidget* widget)
+void GraphWidget::connectNodes(QUuid srcId, QUuid dstId, InputType type, EdgeWidget* widget)
 {
     Node* srcNode = getNode(srcId);
     Node* dstNode = getNode(dstId);
 
     if (srcNode && dstNode && srcNode != dstNode)
     {
-        scene()->addItem(new Edge(srcNode, dstNode, widget));
+        scene()->addItem(new Edge(srcNode, dstNode, type == InputType::Blit, widget));
         searchElementaryCycles();
     }
 }

@@ -5,7 +5,6 @@
 
 #include <QListWidgetItem>
 #include <QCheckBox>
-#include <QPushButton>
 #include <QHBoxLayout>
 #include <QVBoxLayout>
 
@@ -13,7 +12,7 @@
 
 MidiListWidget::MidiListWidget(QWidget *parent): QWidget{parent}
 {
-    QPushButton* multiLinkButton = new QPushButton("Multi-assign");
+    multiLinkButton = new QPushButton("Multi-assign");
     multiLinkButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
     multiLinkButton->setCheckable(true);
 
@@ -56,4 +55,11 @@ void MidiListWidget::populatePortsTable(QList<QString> portNames)
         });
         portId++;
     }
+}
+
+
+
+void MidiListWidget::toggleMultiLinkButton(bool checked)
+{
+    multiLinkButton->setChecked(checked);
 }

@@ -32,45 +32,48 @@
 void ConfigurationParser::write(QString filename)
 {
     QFile outFile(filename);
-    outFile.open(QIODevice::WriteOnly);
+    if (outFile.open(QIODevice::WriteOnly))
+    {
+        QXmlStreamWriter mStream;
+        mStream.setDevice(&outFile);
+        mStream.setAutoFormatting(true);
 
-    QXmlStreamWriter mStream;
-    mStream.setDevice(&outFile);
-    mStream.setAutoFormatting(true);
+        mStream.writeStartDocument();
 
-    mStream.writeStartDocument();
+        mStream.writeStartElement("fosforo");
 
-    mStream.writeStartElement("fosforo");
+        mStream.writeAttribute("version", mNodeManager->version);
 
-    mStream.writeAttribute("version", mNodeManager->version);
+        // Display
 
-    // Display
+        writeDisplay(mStream);
 
-    writeDisplay(mStream);
+        // Nodes: seeds and operation nodes
 
-    // Nodes: seeds and operation nodes
+        mStream.writeStartElement("nodes");
 
-    mStream.writeStartElement("nodes");
+        for (auto [id, seed] : mNodeManager->seedsMap().asKeyValueRange()) {
+            writeSeedNode(id, seed, mStream);
+        }
 
-    for (auto [id, seed] : mNodeManager->seedsMap().asKeyValueRange()) {
-        writeSeedNode(id, seed, mStream);
+        foreach (ImageOperationNode* node, mNodeManager->operationNodesMap()) {
+            writeOperationNode(node, mStream);
+        }
+
+        mStream.writeEndElement();
+
+        // Midi
+
+        if (mMidiLinkManager->enabled()) {
+            writeMidiData(mStream);
+        }
+
+        mStream.writeEndElement();
+
+        mStream.writeEndDocument();
+
+        outFile.close();
     }
-
-    foreach (ImageOperationNode* node, mNodeManager->operationNodesMap()) {
-        writeOperationNode(node, mStream);
-    }
-
-    mStream.writeEndElement();
-
-    // Midi
-
-    if (mMidiLinkManager->enabled()) {
-        writeMidiData(mStream);
-    }
-
-    mStream.writeEndElement();
-
-    mStream.writeEndDocument();
 }
 
 
@@ -192,6 +195,8 @@ void ConfigurationParser::writeMidiData(QXmlStreamWriter& stream)
 
     stream.writeStartElement("links");
 
+    stream.writeAttribute("multi_link", QString::number(mMidiLinkManager->multiLink()));
+
     for (auto [portName, links]: mMidiLinkManager->floatLinks().asKeyValueRange())
     {
         for (auto [key, number]: links.asKeyValueRange())
@@ -241,70 +246,71 @@ void ConfigurationParser::writeMidiData(QXmlStreamWriter& stream)
 void ConfigurationParser::read(QString filename)
 {
     QFile inFile(filename);
-    inFile.open(QIODevice::ReadOnly);
-
-    QXmlStreamReader mStream;
-    mStream.setDevice(&inFile);
-
-    OperationParser opParser;
-
-    if (mStream.readNextStartElement() && mStream.name() == "fosforo")
+    if (inFile.open(QIODevice::ReadOnly))
     {
-        mFactory->clear();
+        QXmlStreamReader mStream;
+        mStream.setDevice(&inFile);
 
-        QUuid outputNodeId;
-        int width = mRenderManager->texWidth();
-        int height = mRenderManager->texHeight();
+        OperationParser opParser;
 
-        while (mStream.readNextStartElement())
+        if (mStream.readNextStartElement() && mStream.name() == "fosforo")
         {
-            if (mStream.name() == "nodes")
+            mFactory->clear();
+
+            QUuid outputNodeId;
+            int width = mRenderManager->texWidth();
+            int height = mRenderManager->texHeight();
+
+            while (mStream.readNextStartElement())
             {
-                QMap<QUuid, QMap<QUuid, InputData*>> connections;
-
-                while (mStream.readNextStartElement())
+                if (mStream.name() == "nodes")
                 {
-                    if (mStream.name() == "seed_node") {
-                        readSeedNode(mStream);
+                    QMap<QUuid, QMap<QUuid, InputData*>> connections;
+
+                    while (mStream.readNextStartElement())
+                    {
+                        if (mStream.name() == "seed_node") {
+                            readSeedNode(mStream);
+                        }
+                        else if (mStream.name() == "operation_node") {
+                            readOperationNode(connections, mStream);
+                        }
+                        else {
+                            mStream.skipCurrentElement();
+                        }
                     }
-                    else if (mStream.name() == "operation_node") {
-                        readOperationNode(connections, mStream);
-                    }
-                    else {
-                        mStream.skipCurrentElement();
-                    }
+
+                    mNodeManager->connectOperations(connections);
+                    mNodeManager->sortOperations();
                 }
+                else if (mStream.name() == "display") {
+                    readDisplay(width, height, outputNodeId, mStream);
+                }
+                else if (mStream.name() == "midi") {
+                    readMidiData(mStream);
+                }
+                else {
+                    mStream.skipCurrentElement();
+                }
+            }
 
-                mNodeManager->connectOperations(connections);
-                mNodeManager->sortOperations();
+            if (!outputNodeId.isNull()) {
+                mNodeManager->setOutput(outputNodeId);
             }
-            else if (mStream.name() == "display") {
-                readDisplay(width, height, outputNodeId, mStream);
-            }
-            else if (mStream.name() == "midi") {
-                readMidiData(mStream);
-            }
-            else {
-                mStream.skipCurrentElement();
-            }   
+
+            emit newImageSizeRead(width, height);
         }
 
-        if (!outputNodeId.isNull()) {
-            mNodeManager->setOutput(outputNodeId);
+        if (mStream.tokenType() == QXmlStreamReader::Invalid) {
+            mStream.readNext();
         }
 
-        emit newImageSizeRead(width, height);
-    }
+        if (mStream.hasError()) {
+            mStream.raiseError();
+        }
 
-    if (mStream.tokenType() == QXmlStreamReader::Invalid) {
-        mStream.readNext();
+        inFile.close();
     }
-
-    if (mStream.hasError()) {
-        mStream.raiseError();
-    }
-
-    inFile.close();
 }
 
 
@@ -317,12 +323,15 @@ void ConfigurationParser::readDisplay(int &width, int &height, QUuid &outputNode
         {
             while (stream.readNextStartElement())
             {
-                if (stream.name() == "width")
+                if (stream.name() == "width") {
                     width = stream.readElementText().toInt();
-                else if (stream.name() == "height")
+                }
+                else if (stream.name() == "height") {
                     height = stream.readElementText().toInt();
-                else
+                }
+                else {
                     stream.skipCurrentElement();
+                }
             }
         }
         else if (stream.name() == "output_node") {
@@ -361,16 +370,13 @@ void ConfigurationParser::readSeedNode(QXmlStreamReader& stream)
         {
             while (stream.readNextStartElement())
             {
-                if (stream.name() == "x")
-                {
+                if (stream.name() == "x") {
                     position.setX(stream.readElementText().toFloat());
                 }
-                else if (stream.name() == "y")
-                {
+                else if (stream.name() == "y") {
                     position.setY(stream.readElementText().toFloat());
                 }
-                else
-                {
+                else {
                     stream.skipCurrentElement();
                 }
             }
@@ -460,7 +466,14 @@ void ConfigurationParser::readMidiData(QXmlStreamReader& stream)
     {
         if (stream.name() == "links")
         {
+            bool multiLink = false;
+            if (stream.attributes().hasAttribute("multi_link")) {
+                multiLink = stream.attributes().value("multi_link").toInt();
+            }
+            mMidiLinkManager->setMultiLink(multiLink);
+
             stream.readNextStartElement();
+
             while (stream.name() == "link")
             {
                 QString type = stream.attributes().value("type").toString();
