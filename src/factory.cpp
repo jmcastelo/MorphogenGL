@@ -259,13 +259,13 @@ void Factory::scan()
 
 void Factory::clear()
 {
+    emit cleared();
+
     qDeleteAll(mOperations);
     mOperations.clear();
 
     qDeleteAll(mSeeds);
     mSeeds.clear();
-
-    emit cleared();
 }
 
 

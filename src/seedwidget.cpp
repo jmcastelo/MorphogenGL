@@ -112,6 +112,13 @@ SeedWidget::SeedWidget(QUuid id, Seed* seed, VideoInputControl* videoInCtrl, QWi
 
 
 
+SeedWidget::~SeedWidget()
+{
+    qDeleteAll(mAvailVideoActions);
+}
+
+
+
 QUuid SeedWidget::id()
 {
     return mId;

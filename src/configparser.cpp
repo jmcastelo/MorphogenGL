@@ -91,6 +91,23 @@ void ConfigurationParser::writeDisplay(QXmlStreamWriter& stream)
     stream.writeEndElement();
     stream.writeEndElement();
 
+    QRectF sceneRect = mGraphWidget->mapToScene(mGraphWidget->viewport()->rect()).boundingRect();
+
+    stream.writeStartElement("scene");
+    stream.writeStartElement("x");
+    stream.writeCharacters(QString::number(sceneRect.x()));
+    stream.writeEndElement();
+    stream.writeStartElement("y");
+    stream.writeCharacters(QString::number(sceneRect.y()));
+    stream.writeEndElement();
+    stream.writeStartElement("width");
+    stream.writeCharacters(QString::number(sceneRect.width()));
+    stream.writeEndElement();
+    stream.writeStartElement("height");
+    stream.writeCharacters(QString::number(sceneRect.height()));
+    stream.writeEndElement();
+    stream.writeEndElement();
+
     stream.writeStartElement("output_node");
     stream.writeCharacters(mNodeManager->outputId().toString());
     stream.writeEndElement();
@@ -333,6 +350,31 @@ void ConfigurationParser::readDisplay(int &width, int &height, QUuid &outputNode
                     stream.skipCurrentElement();
                 }
             }
+        }
+        else if (stream.name() == "scene") {
+
+            QRectF sceneRect;
+
+            while (stream.readNextStartElement())
+            {
+                if (stream.name() == "x") {
+                    sceneRect.setX(stream.readElementText().toFloat());
+                }
+                else if (stream.name() == "y") {
+                    sceneRect.setY(stream.readElementText().toFloat());
+                }
+                else if (stream.name() == "width") {
+                    sceneRect.setWidth(stream.readElementText().toFloat());
+                }
+                else if (stream.name() == "height") {
+                    sceneRect.setHeight(stream.readElementText().toFloat());
+                }
+                else {
+                    stream.skipCurrentElement();
+                }
+            }
+
+            mGraphWidget->fitInView(sceneRect);
         }
         else if (stream.name() == "output_node") {
             outputNodeId = QUuid(stream.readElementText());

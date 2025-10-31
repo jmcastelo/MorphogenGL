@@ -84,7 +84,7 @@ public slots:
     void toggleMidiButton(bool show);
 
 protected:
-    void closeEvent(QCloseEvent* event) override;
+    // void closeEvent(QCloseEvent* event) override;
     void focusInEvent(QFocusEvent *event) override;
     bool eventFilter(QObject *obj, QEvent *event) override;
 

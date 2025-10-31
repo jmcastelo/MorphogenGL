@@ -17,6 +17,8 @@ OperationWidget::OperationWidget(QUuid id, ImageOperation* operation, bool midiE
     mFactory { factory },
     mMidiEnabled { midiEnabled }
 {
+    setAttribute(Qt::WA_DeleteOnClose, false);
+
     mMidiSignals = new MidiSignals(this);
 
     mOpBuilder = new OperationBuilder(mOperation);
@@ -714,11 +716,11 @@ void OperationWidget::enableOperation(bool checked)
 
 
 
-void OperationWidget::closeEvent(QCloseEvent* event)
+/*void OperationWidget::closeEvent(QCloseEvent* event)
 {
     mOpBuilder->close();
     event->accept();
-}
+}*/
 
 
 

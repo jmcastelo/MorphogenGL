@@ -56,7 +56,7 @@ public:
 
     //Node(GraphWidget* graphWidget, QString name);
     explicit Node(QUuid id, QWidget* widget, QGraphicsItem* parent = nullptr);
-    ~Node();
+    // ~Node();
 
     enum { Type = UserType + 1 };
     int type() const override { return Type; }
@@ -87,7 +87,7 @@ protected:
     void resizeEvent(QGraphicsSceneResizeEvent *event) override;
     //QSizeF sizeHint(Qt::SizeHint which, const QSizeF &constraint = QSizeF()) const override;
     bool eventFilter(QObject *obj, QEvent *event) override;
-    void closeEvent(QCloseEvent* event) override;
+    // void closeEvent(QCloseEvent* event) override;
 
     //GraphWidget* graph;
     QList<Edge*> edgeList;

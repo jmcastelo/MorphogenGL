@@ -90,7 +90,6 @@ GraphWidget::GraphWidget(Factory *factory, NodeManager* nodeManager, QWidget *pa
     mBuildNewOpAction = new QAction("Build new operation");
     mMainMenu->addActions({mBuildNewOpAction});
 
-
     // Connections
 
     connect(mFactory, QOverload<QUuid, OperationWidget*>::of(&Factory::newOpWidgetCreated), this, &GraphWidget::addNewNode);
@@ -196,12 +195,12 @@ void GraphWidget::onActionTriggered(QAction* action)
 
 
 
-void GraphWidget::closeEvent(QCloseEvent* event)
+/*void GraphWidget::closeEvent(QCloseEvent* event)
 {
     QList<QPointer<Node>> watchers;
 
-    for (auto *it : scene()->items()) {
-        if (Node* node = qgraphicsitem_cast<Node*>(it)) {
+    for (auto* item : scene()->items()) {
+        if (Node* node = qgraphicsitem_cast<Node*>(item)) {
             watchers.append(QPointer<Node>(node));
         }
     }
@@ -213,7 +212,7 @@ void GraphWidget::closeEvent(QCloseEvent* event)
     }
 
     QGraphicsView::closeEvent(event);
-}
+}*/
 
 
 
@@ -322,7 +321,8 @@ void GraphWidget::connectNodes(QUuid srcId, QUuid dstId, InputType type, EdgeWid
 
     if (srcNode && dstNode && srcNode != dstNode)
     {
-        scene()->addItem(new Edge(srcNode, dstNode, type == InputType::Blit, widget));
+        Edge* edge = new Edge(srcNode, dstNode, type == InputType::Blit, widget);
+        scene()->addItem(edge);
         searchElementaryCycles();
     }
 }

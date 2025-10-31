@@ -95,6 +95,7 @@ public:
     //void closeWidgets();
 
 public slots:
+    void clearScene();
     //void drawSelectedSeeds();
     //void enableSelectedOperations();
     //void disableSelectedOperations();
@@ -124,7 +125,7 @@ protected:
     void drawBackground(QPainter* painter, const QRectF& rect) override;
     void mousePressEvent(QMouseEvent* event) override;
     void mouseMoveEvent(QMouseEvent* event) override;
-    void closeEvent(QCloseEvent* event) override;
+    // void closeEvent(QCloseEvent* event) override;
 
 private:
     Factory* mFactory;
@@ -174,7 +175,6 @@ private slots:
     void removeNode(QUuid id);
     void removeEdge(QUuid srcId, QUuid dstId);
     void centerNodeBetween(QUuid srcId, QUuid dstId, QUuid opId);
-    void clearScene();
 };
 
 

@@ -40,6 +40,7 @@ class Cycle : public QGraphicsItem
 {
 public:
     Cycle(QList<Node*> nodes, QGraphicsItem* parent = nullptr);
+    // ~Cycle(){};
 
     enum { Type = UserType + 3 };
     int type() const override { return Type; }

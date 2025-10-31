@@ -30,7 +30,7 @@
 #include "edgewidget.h"
 
 #include <QPainter>
-#include <QGraphicsScene>
+// #include <QGraphicsScene>
 //#include <QtMath>
 //#include <QGraphicsSceneContextMenuEvent>
 //#include <QMenu>
@@ -66,7 +66,7 @@
 }*/
 
 Edge::Edge(Node* sourceNode, Node* destNode, bool predge, EdgeWidget *widget, QGraphicsItem* parent) :
-    QGraphicsWidget(parent),
+    QGraphicsWidget { parent },
     mWidget { widget },
     source { sourceNode },
     dest { destNode }
@@ -104,6 +104,12 @@ Edge::Edge(Node* sourceNode, Node* destNode, bool predge, EdgeWidget *widget, QG
     connect(mWidget, &EdgeWidget::typeActionToggled, this, &Edge::setPredge);
 }
 
+
+
+/*Edge::~Edge()
+{
+    qDebug() << this;
+}*/
 
 
 /*void Edge::remove()
@@ -459,11 +465,11 @@ void Edge::paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWid
 
 
 
-void Edge::closeEvent(QCloseEvent* event)
+/*void Edge::closeEvent(QCloseEvent* event)
 {
     mWidget->close();
     event->accept();
-}
+}*/
 
 
 /*void Edge::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)

@@ -11,6 +11,8 @@ EdgeWidget::EdgeWidget(Number<float>* blendFactor, bool srcIsOp, Factory *factor
     mBlendFactor { blendFactor },
     mFactory { factory }
 {
+    setAttribute(Qt::WA_DeleteOnClose, false);
+
     // Blend factor line edit
 
     FocusLineEdit* lineEdit = new FocusLineEdit;

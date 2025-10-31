@@ -32,7 +32,7 @@
 
 
 Cycle::Cycle(QList<Node*> nodes, QGraphicsItem *parent) :
-    QGraphicsItem(parent)
+    QGraphicsItem { parent }
 {
     // Construct list of edges
     // Nodes of the cycle are ordered
@@ -55,8 +55,9 @@ Cycle::Cycle(QList<Node*> nodes, QGraphicsItem *parent) :
 
     // Cycle must contain at least one predge
 
-    if (!containsPredge)
+    if (!containsPredge) {
         edges.back()->setPredge(true);
+    }
 
     setAcceptedMouseButtons(Qt::NoButton);
     setCacheMode(DeviceCoordinateCache);
@@ -69,9 +70,11 @@ int Cycle::numPredges()
 {
     int n = 0;
 
-    foreach (Edge* edge, edges)
-        if (edge->isPredge())
+    foreach (Edge* edge, edges) {
+        if (edge->isPredge()) {
             n++;
+        }
+    }
 
     return n;
 }
@@ -82,8 +85,9 @@ QRectF Cycle::boundingRect() const
 {
     QRectF whole;
 
-    foreach (Edge* edge, edges)
+    foreach (Edge* edge, edges) {
         whole = whole.united(edge->boundingRect());
+    }
 
     return whole;
 }

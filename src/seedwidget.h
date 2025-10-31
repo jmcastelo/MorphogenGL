@@ -18,6 +18,7 @@ class SeedWidget : public QWidget
 
 public:
     SeedWidget(QUuid id, Seed* seed, VideoInputControl* videoInCtrl, QWidget* parent = nullptr);
+    ~SeedWidget();
 
     QUuid id();
 

@@ -49,6 +49,7 @@ class Edge : public QGraphicsWidget
 public:
     //Edge(GraphWidget* graphWidget, Node *sourceNode, Node *destNode);
     explicit Edge(Node* sourceNode, Node* destNode, bool predge, EdgeWidget* widget, QGraphicsItem* parent = nullptr);
+    // ~Edge();
 
     Node* sourceNode() const;
     Node* destNode() const;
@@ -97,7 +98,7 @@ protected:
     QPainterPath shape() const override;
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) override;
     //void contextMenuEvent(QGraphicsSceneContextMenuEvent *event) override;
-    void closeEvent(QCloseEvent* event) override;
+    // void closeEvent(QCloseEvent* event) override;
 
 private:
     //GraphWidget* graph;
