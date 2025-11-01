@@ -183,6 +183,10 @@ void MidiLinkManager::setupMidiLink(QString portName, int key, Number<float>* nu
     // Store link
 
     mFloatLinks[portName].insert(key, number);
+
+    if (!mPortOpen[portName]) {
+        emit midiLinkSet(portName);
+    }
 }
 
 
@@ -215,6 +219,10 @@ void MidiLinkManager::setupMidiLink(QString portName, int key, Number<int>* numb
     // Store link
 
     mIntLinks[portName].insert(key, number);
+
+    if (!mPortOpen[portName]) {
+        emit midiLinkSet(portName);
+    }
 }
 
 
@@ -247,6 +255,10 @@ void MidiLinkManager::setupMidiLink(QString portName, int key, Number<unsigned i
     // Store link
 
     mUintLinks[portName].insert(key, number);
+
+    if (!mPortOpen[portName]) {
+        emit midiLinkSet(portName);
+    }
 }
 
 

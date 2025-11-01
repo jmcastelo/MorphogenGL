@@ -3,6 +3,7 @@
 
 
 #include <QObject>
+#include <QMap>
 #include <libremidi/libremidi.hpp>
 
 
@@ -23,11 +24,12 @@ signals:
     void ccInputMessageReceived(QString portName, int key, int value);
 
 public slots:
-    void openPort(int portId, bool open);
+    void openPort(QString portName, bool open);
 
 private:
     libremidi::observer observer;
-    QList<libremidi::midi_in*> midiInputs;
+    QMap<QString, libremidi::midi_in*> midiInputs;
+    QMap<QString, libremidi::input_port> midiInputPorts;
 };
 
 

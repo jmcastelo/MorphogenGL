@@ -24,21 +24,26 @@ MidiControl::MidiControl(QObject *parent) : QObject(parent)
 
 MidiControl::~MidiControl()
 {
-    foreach (auto midiInput, midiInputs)
+    foreach (auto midiInput, midiInputs) {
         delete midiInput;
+    }
 }
 
 
 
 void MidiControl::setInputPorts()
 {
+    qDeleteAll(midiInputs);
     midiInputs.clear();
+
+    midiInputPorts.clear();
 
     QList<QString> portNames;
 
     for (const libremidi::input_port& port : observer.get_input_ports())
     {
-        portNames.push_back(QString::fromStdString(port.port_name));
+        QString portName = QString::fromStdString(port.port_name);
+        portNames.push_back(portName);
 
         libremidi::input_configuration config {
             .on_message = [=, this](const libremidi::message& message) {
@@ -57,7 +62,8 @@ void MidiControl::setInputPorts()
 
         libremidi::midi_in* midiIn = new libremidi::midi_in { std::move(config) };
 
-        midiInputs.append(midiIn);
+        midiInputs.insert(portName, midiIn);
+        midiInputPorts.insert(portName, port);
     }
 
     emit inputPortsChanged(portNames);
@@ -65,16 +71,17 @@ void MidiControl::setInputPorts()
 
 
 
-void MidiControl::openPort(int portId, bool open)
+void MidiControl::openPort(QString portName, bool open)
 {
-    auto inputPorts = observer.get_input_ports();
+    if (midiInputs.contains(portName))
+    {
+        if (open) {
+            midiInputs[portName]->open_port(midiInputPorts[portName]);
+        }
+        else {
+            midiInputs[portName]->close_port();
+        }
 
-    if (open) {
-        midiInputs[portId]->open_port(inputPorts[portId]);
+        emit inputPortOpen(portName, midiInputs[portName]->is_port_open());
     }
-    else {
-        midiInputs[portId]->close_port();
-    }
-
-    emit inputPortOpen(QString::fromStdString(inputPorts[portId].port_name), midiInputs[portId]->is_port_open());
 }

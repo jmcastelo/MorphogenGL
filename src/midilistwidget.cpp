@@ -4,7 +4,6 @@
 #include "midilistwidget.h"
 
 #include <QListWidgetItem>
-#include <QCheckBox>
 #include <QHBoxLayout>
 #include <QVBoxLayout>
 
@@ -35,28 +34,69 @@ MidiListWidget::MidiListWidget(QWidget *parent): QWidget{parent}
 
     connect(clearLinksButton, &QPushButton::clicked, this, &MidiListWidget::clearLinksButtonClicked);
     connect(multiLinkButton, &QPushButton::clicked, this, &MidiListWidget::multiLinkButtonChecked);
+    connect(portsTable, &QListWidget::itemClicked, this, &MidiListWidget::portChecked);
 }
 
 
 
 void MidiListWidget::populatePortsTable(QList<QString> portNames)
 {
-    portsTable->clear();
+    // portsTable->clear();
 
-    int portId = 0;
+    // int portId = 0;
 
-    foreach (QString name, portNames)
+
+    int numItems = portsTable->count();
+
+    for (int row = numItems - 1; row >= 0; row--)
     {
-        QListWidgetItem* item = new QListWidgetItem("", portsTable);
-        QCheckBox* checkBox = new QCheckBox(name);
+        QListWidgetItem* item = portsTable->item(row);
+
+        if (item && !portNames.contains(item->text())) {
+            delete item;
+        }
+    }
+
+    foreach (QString portName, portNames)
+    {
+        /*QListWidgetItem* item = new QListWidgetItem(name, portsTable);
+        QCheckBox* checkBox = new QCheckBox();
         portsTable->setItemWidget(item, checkBox);
         connect(checkBox, &QCheckBox::checkStateChanged, this, [=, this](Qt::CheckState state){
             emit portSelected(portId, state == Qt::Checked);
         });
-        portId++;
+        portId++;*/
+
+        QList<QListWidgetItem*> items = portsTable->findItems(portName, Qt::MatchCaseSensitive);
+
+        if (items.isEmpty())
+        {
+            QListWidgetItem* item = new QListWidgetItem(portName, portsTable);
+            item->setFlags(Qt::ItemIsEnabled | Qt::ItemIsUserCheckable);
+            item->setCheckState(Qt::Unchecked);
+        }
+
     }
+
 }
 
+
+
+void MidiListWidget::portChecked(QListWidgetItem* item)
+{
+    emit portSelected(item->text(), item->checkState() == Qt::Checked);
+}
+
+
+
+void MidiListWidget::checkPort(QString portName)
+{
+    QList<QListWidgetItem*> items = portsTable->findItems(portName, Qt::MatchCaseSensitive);
+    if (!items.isEmpty()) {
+        items[0]->setCheckState(Qt::Checked);
+        emit portSelected(portName, true);
+    }
+}
 
 
 void MidiListWidget::toggleMultiLinkButton(bool checked)
